@@ -3,11 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import { Zap, Link2, Puzzle, LayoutTemplate, Upload, Palette } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useSession } from '@/lib/auth-client'
 
-// ─── Shared easing ─────────────────────────────────────────────────────────────
-// Use named easing string — Framer Motion accepts 'easeOut', 'easeInOut', etc.
 const EASE = 'easeOut' as const
 
 function fadeUpProps(delay = 0) {
@@ -22,32 +21,32 @@ function fadeUpProps(delay = 0) {
 
 const features = [
   {
-    icon: '⚡',
+    Icon: Zap,
     title: 'One-click UML',
     desc: 'Press C for a class, I for an interface, E for an enum. No shape-picking, no resizing, no formatting.',
   },
   {
-    icon: '🔗',
+    Icon: Link2,
     title: 'Smart Connectors',
     desc: 'Drag between two classes and pick the relationship type. Inheritance, composition, aggregation — correct arrowheads rendered instantly.',
   },
   {
-    icon: '🧩',
+    Icon: Puzzle,
     title: 'Pattern Skeletons',
     desc: 'Insert a pre-wired Strategy, Observer, or Factory pattern in one keystroke. Start from the right structure, not from a blank box.',
   },
   {
-    icon: '📋',
+    Icon: LayoutTemplate,
     title: 'LLD Templates',
     desc: 'Start from a Parking Lot, Elevator, ATM, or 10 other well-known interview problems. The boilerplate is done. You design.',
   },
   {
-    icon: '📤',
+    Icon: Upload,
     title: 'Export anywhere',
     desc: 'Export to PNG, SVG, or PlantUML. Paste into your notes, share in your resume, drop into any LLD resource.',
   },
   {
-    icon: '🎨',
+    Icon: Palette,
     title: 'Three themes',
     desc: 'Light, dark, and whiteboard themes. Looks sharp on any background — your diagrams, your style.',
   },
@@ -82,7 +81,7 @@ function CanvasPreview() {
           className="absolute top-10 left-16"
           initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.3, duration: 0.4, ease: 'easeOut' }}
         >
           <ClassBox
             name="ParkingLot"
@@ -95,7 +94,7 @@ function CanvasPreview() {
           className="absolute top-8 left-[260px]"
           initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.55, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.55, duration: 0.4, ease: 'easeOut' }}
         >
           <ClassBox
             name="Level"
@@ -108,7 +107,7 @@ function CanvasPreview() {
           className="absolute top-8 right-14"
           initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.8, duration: 0.4, ease: 'easeOut' }}
         >
           <InterfaceBox name="FeeStrategy" methods={['+ calculate(t: Ticket): float']} />
         </motion.div>
@@ -117,7 +116,7 @@ function CanvasPreview() {
           className="absolute bottom-10 left-[200px]"
           initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 1.05, duration: 0.4, ease: 'easeOut' }}
         >
           <ClassBox
             name="Vehicle"
@@ -128,7 +127,6 @@ function CanvasPreview() {
 
         {/* Animated connector lines */}
         <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
-          {/* ParkingLot → Level composition */}
           <motion.line
             x1="196" y1="60" x2="260" y2="60"
             stroke="#6366F1" strokeWidth="1.5"
@@ -137,7 +135,6 @@ function CanvasPreview() {
             animate={{ pathLength: 1, opacity: 1 }}
             transition={{ delay: 1.1, duration: 0.4 }}
           />
-          {/* Level → FeeStrategy */}
           <motion.line
             x1="380" y1="60" x2="430" y2="60"
             stroke="#6366F1" strokeWidth="1.5"
@@ -148,7 +145,7 @@ function CanvasPreview() {
           />
         </svg>
 
-        {/* Keyboard shortcut hint */}
+        {/* Keyboard shortcut hints */}
         <motion.div
           className="absolute bottom-4 right-4 flex items-center gap-2"
           initial={{ opacity: 0 }}
@@ -233,7 +230,7 @@ export default function LandingPage() {
               href="/dashboard"
               className="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] transition-all duration-150 rounded-lg"
             >
-              Go to Dashboard →
+              Go to Dashboard
             </Link>
           ) : (
             <>
@@ -256,7 +253,6 @@ export default function LandingPage() {
 
       {/* ─── Hero ───────────────────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-24 px-6 text-center">
-        {/* Gradient glow behind hero */}
         <div
           className="absolute inset-x-0 top-0 h-[500px] pointer-events-none"
           style={{
@@ -321,7 +317,7 @@ export default function LandingPage() {
           className="mt-16"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45, duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ delay: 0.45, duration: 0.65, ease: 'easeOut' }}
         >
           <CanvasPreview />
           <p className="mt-3 text-xs text-white/25">
@@ -358,7 +354,9 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.07, duration: 0.45 }}
             >
-              <span className="text-2xl mb-4 block">{f.icon}</span>
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
+                <f.Icon size={18} className="text-indigo-400" />
+              </div>
               <h3 className="font-semibold text-white mb-2 group-hover:text-indigo-300 transition-colors">
                 {f.title}
               </h3>
@@ -388,7 +386,7 @@ export default function LandingPage() {
               href="/editor/local"
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.97] transition-all duration-150 rounded-xl font-semibold shadow-lg shadow-indigo-500/20"
             >
-              Open canvas →
+              Open canvas
             </Link>
             <button
               onClick={openSignup}
@@ -405,7 +403,6 @@ export default function LandingPage() {
         <p>LLDCanvas · Built for engineers, by engineers</p>
       </footer>
 
-      {/* Auth modal */}
       <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </div>
   )
