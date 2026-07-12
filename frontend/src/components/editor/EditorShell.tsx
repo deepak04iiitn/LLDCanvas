@@ -24,6 +24,7 @@ import { RelationshipPicker } from '@/components/canvas/RelationshipPicker'
 import { Topbar } from '@/components/editor/Topbar'
 import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
+import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
@@ -47,6 +48,7 @@ function makeEmptyDiagram(): DiagramData {
 function makeCentreNode(
   nodeType: UMLNodeData['nodeType'],
   rfInstance: ReactFlowInstance | null,
+  overrides: Partial<UMLNodeData> = {},
 ): Node<UMLNodeData> {
   const centre = rfInstance
     ? rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
@@ -67,7 +69,7 @@ function makeCentreNode(
       id: nanoid(8),
       type: 'note',
       position: { x: centre.x + jitter(), y: centre.y + jitter() },
-      data: { nodeType: 'note', name: 'note', attributes: [], methods: [], noteText: '', isEditing: true },
+      data: { nodeType: 'note', name: 'note', attributes: [], methods: [], noteText: '', isEditing: true, ...overrides },
     }
   }
 
@@ -75,7 +77,7 @@ function makeCentreNode(
     id: nanoid(8),
     type: nodeType,
     position: { x: centre.x - 90 + jitter(), y: centre.y - 60 + jitter() },
-    data: { nodeType, name: nameMap[nodeType], attributes: [], methods: [], isEditing: true } as UMLNodeData,
+    data: { nodeType, name: nameMap[nodeType], attributes: [], methods: [], isEditing: true, ...overrides } as UMLNodeData,
   }
 }
 
@@ -91,12 +93,18 @@ interface EditorInnerProps {
 
 function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
-  const { getNodes, flowToScreenPosition } = useReactFlow()
+  const { getNodes, fitView, flowToScreenPosition } = useReactFlow()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
+
+  // ── Clipboard ─────────────────────────────────────────────────────────────
+  const clipboard = useRef<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
+
+  // ── Command palette ───────────────────────────────────────────────────────
+  const [paletteOpen, setPaletteOpen] = useState(false)
 
   // ── Relationship picker state ─────────────────────────────────────────────
   const [pendingConn, setPendingConn] = useState<Connection | null>(null)
@@ -111,14 +119,21 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     edges: edges as unknown[],
     meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
   }
-  useAutosave(diagramId, diagramData)
+  const saveStatus = useAutosave(diagramId, diagramData)
+
+  // ── Derived: selection count ──────────────────────────────────────────────
+  const selectedCount = nodes.filter(n => n.selected).length
+
+  // ── Clear selection ───────────────────────────────────────────────────────
+  const handleClearSelection = useCallback(() => {
+    setNodes(nds => nds.map(n => ({ ...n, selected: false })))
+  }, [setNodes])
 
   // ── Connect — open relationship picker instead of creating edge immediately
   const onConnect = useCallback(
     (params: Connection) => {
       setPendingConn(params)
 
-      // Position picker between source and target nodes
       const allNodes = getNodes()
       const src = allNodes.find(n => n.id === params.source)
       const tgt = allNodes.find(n => n.id === params.target)
@@ -168,12 +183,18 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Insert node ───────────────────────────────────────────────────────────
   const insertNode = useCallback(
-    (nodeType: UMLNodeData['nodeType']) => {
-      const node = makeCentreNode(nodeType, rfInstance.current)
+    (nodeType: UMLNodeData['nodeType'], overrides: Partial<UMLNodeData> = {}) => {
+      const node = makeCentreNode(nodeType, rfInstance.current, overrides)
       history.push({ nodes, edges })
       setNodes(prev => [...prev, node as Node])
     },
     [history, nodes, edges, setNodes],
+  )
+
+  // ── Insert with stereotype ────────────────────────────────────────────────
+  const insertStereotype = useCallback(
+    (stereotype: string) => insertNode('class', { stereotype } as Partial<UMLNodeData>),
+    [insertNode],
   )
 
   // ── Delete selected ───────────────────────────────────────────────────────
@@ -192,6 +213,76 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     [history, nodes, edges],
   )
 
+  // ── Copy ──────────────────────────────────────────────────────────────────
+  const handleCopy = useCallback(() => {
+    const selected = nodes.filter(n => n.selected)
+    if (selected.length === 0) return
+    const selectedIds = new Set(selected.map(n => n.id))
+    clipboard.current = {
+      nodes: selected,
+      edges: edges.filter(e => selectedIds.has(e.source) && selectedIds.has(e.target)),
+    }
+    toast.success(`${selected.length} node${selected.length !== 1 ? 's' : ''} copied`)
+  }, [nodes, edges])
+
+  // ── Paste ─────────────────────────────────────────────────────────────────
+  const handlePaste = useCallback(() => {
+    const { nodes: clipNodes, edges: clipEdges } = clipboard.current
+    if (clipNodes.length === 0) return
+    const idMap = new Map<string, string>()
+    const pasted = clipNodes.map(n => {
+      const newId = nanoid(8)
+      idMap.set(n.id, newId)
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 32, y: n.position.y + 32 },
+        selected: false,
+        data: { ...(n.data as UMLNodeData), isEditing: false },
+      }
+    })
+    const pastedEdges: Edge[] = clipEdges
+      .filter(e => idMap.has(e.source) && idMap.has(e.target))
+      .map(e => ({
+        ...e,
+        id: nanoid(8),
+        source: idMap.get(e.source)!,
+        target: idMap.get(e.target)!,
+      }))
+    history.push({ nodes, edges })
+    setNodes(prev => [...prev, ...pasted as Node[]])
+    setEdges(prev => [...prev, ...pastedEdges])
+  }, [history, nodes, edges, setNodes, setEdges])
+
+  // ── Duplicate selected ────────────────────────────────────────────────────
+  const handleDuplicate = useCallback(() => {
+    const selected = nodes.filter(n => n.selected)
+    if (selected.length === 0) return
+    const idMap = new Map<string, string>()
+    const duped = selected.map(n => {
+      const newId = nanoid(8)
+      idMap.set(n.id, newId)
+      return {
+        ...n,
+        id: newId,
+        position: { x: n.position.x + 32, y: n.position.y + 32 },
+        selected: false,
+        data: { ...(n.data as UMLNodeData), isEditing: false },
+      }
+    })
+    const dupedEdges: Edge[] = edges
+      .filter(e => idMap.has(e.source) && idMap.has(e.target))
+      .map(e => ({
+        ...e,
+        id: nanoid(8),
+        source: idMap.get(e.source)!,
+        target: idMap.get(e.target)!,
+      }))
+    history.push({ nodes, edges })
+    setNodes(prev => [...prev, ...duped as Node[]])
+    setEdges(prev => [...prev, ...dupedEdges])
+  }, [nodes, edges, history, setNodes, setEdges])
+
   // ── Undo / Redo ───────────────────────────────────────────────────────────
   const handleUndo = useCallback(() => {
     const prev = history.undo({ nodes, edges })
@@ -203,13 +294,19 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     if (next) { setNodes(next.nodes); setEdges(next.edges) }
   }, [history, nodes, edges, setNodes, setEdges])
 
+  // ── Fit View ──────────────────────────────────────────────────────────────
+  const handleFitView = useCallback(
+    () => fitView({ padding: 0.12, duration: 400 }),
+    [fitView],
+  )
+
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportPNG = useCallback(async () => {
     try { await exportPNG(theme); toast.success('Exported as PNG') }
     catch { toast.error('Export failed') }
   }, [theme])
 
-  const handleExportSVG = useCallback(() => toast('SVG export coming in Phase 6'), [])
+  const handleExportSVG = useCallback(() => toast('SVG export coming soon'), [])
 
   const handleExportPlantUML = useCallback(() => {
     const text = toPlantUML(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
@@ -232,15 +329,30 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     onAddEnum:            () => insertNode('enum'),
     onAddAbstract:        () => insertNode('abstract-class'),
     onDelete:             handleDelete,
-    onDuplicate:          () => {/* Phase 6 */ },
+    onDuplicate:          handleDuplicate,
     onUndo:               handleUndo,
     onRedo:               handleRedo,
-    onOpenCommandPalette: () => {/* Phase 6 */ },
-    onFitView:            () => rfInstance.current?.fitView({ padding: 0.12, duration: 400 }),
+    onOpenCommandPalette: () => setPaletteOpen(true),
+    onFitView:            handleFitView,
     onTogglePanel:        togglePanel,
-    onCopy:               () => {/* Phase 6 */ },
-    onPaste:              () => {/* Phase 6 */ },
+    onCopy:               handleCopy,
+    onPaste:              handlePaste,
   })
+
+  // ── Command palette actions ───────────────────────────────────────────────
+  const paletteActions: CommandPaletteActions = {
+    addClass:      () => insertNode('class'),
+    addInterface:  () => insertNode('interface'),
+    addEnum:       () => insertNode('enum'),
+    addAbstract:   () => insertNode('abstract-class'),
+    addNote:       () => insertNode('note'),
+    addStereotype: insertStereotype,
+    fitView:       handleFitView,
+    togglePanel,
+    exportPNG:     handleExportPNG,
+    exportSVG:     handleExportSVG,
+    exportPlantUML: handleExportPlantUML,
+  }
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden" data-theme={theme}>
@@ -254,6 +366,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
         onExportPlantUML={handleExportPlantUML}
+        saveStatus={saveStatus}
+        selectedCount={selectedCount}
+        onClearSelection={handleClearSelection}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -263,6 +378,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           onAddEnum={() => insertNode('enum')}
           onAddAbstract={() => insertNode('abstract-class')}
           onAddNote={() => insertNode('note')}
+          onAddStereotype={insertStereotype}
         />
 
         <main className="relative flex-1 overflow-hidden">
@@ -276,7 +392,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onNodesDelete={onNodesDelete}
           />
 
-          {/* Relationship picker portal — outside canvas, above everything */}
           <RelationshipPicker
             open={pickerOpen}
             position={pickerPos}
@@ -287,6 +402,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       </div>
 
       <Statusbar />
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        actions={paletteActions}
+      />
     </div>
   )
 }
