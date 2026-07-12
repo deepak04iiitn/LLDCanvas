@@ -20,6 +20,8 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useEditor } from '@/contexts/EditorContext'
 import { nodeTypes } from './nodes'
+import { edgeTypes } from './edges'
+import { UMLMarkers } from './UMLMarkers'
 
 // ─── Alignment guide overlay ──────────────────────────────────────────────────
 
@@ -143,6 +145,7 @@ export function CanvasView({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
+      <UMLMarkers />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -152,6 +155,7 @@ export function CanvasView({
         onInit={onInit}
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         snapToGrid
         snapGrid={[16, 16]}
         minZoom={0.1}
