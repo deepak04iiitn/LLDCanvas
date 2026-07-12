@@ -1,8 +1,13 @@
-// Phase 9: local no-login editor implementation
+'use client'
+
+import { EditorShell } from '@/components/editor/EditorShell'
+
 export default function LocalEditorPage() {
   return (
-    <div className="flex h-screen items-center justify-center text-gray-400">
-      Local Editor — coming in Phase 9
-    </div>
+    <EditorShell
+      diagramId={null}
+      initialTitle="Untitled Diagram"
+      initialData={null}
+    />
   )
 }
