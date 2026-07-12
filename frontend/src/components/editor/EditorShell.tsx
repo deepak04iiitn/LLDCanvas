@@ -9,7 +9,7 @@ import {
   addEdge,
   type Node,
   type Edge,
-  type OnConnect,
+  type Connection,
   type OnNodesDelete,
   type ReactFlowInstance,
   type Node as RFNode,
@@ -20,13 +20,14 @@ import { toast } from 'sonner'
 
 import { EditorProvider, useEditor } from '@/contexts/EditorContext'
 import { CanvasView } from '@/components/canvas/CanvasView'
+import { RelationshipPicker } from '@/components/canvas/RelationshipPicker'
 import { Topbar } from '@/components/editor/Topbar'
 import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
-import type { DiagramData, UMLNodeData, UMLEdgeData, CanvasTheme } from '@/types'
+import type { DiagramData, UMLNodeData, UMLEdgeData, RelationshipType, CanvasTheme } from '@/types'
 import { exportPNG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
 
@@ -37,12 +38,12 @@ interface EditorShellProps {
   onRename?: (title: string) => Promise<void>
 }
 
-// ─── Default empty diagram ────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function makeEmptyDiagram(): DiagramData {
   return { version: 1, nodes: [], edges: [], meta: { theme: 'light', zoom: 1, panX: 0, panY: 0 } }
 }
 
-// ─── Node factory ─────────────────────────────────────────────────────────────
 function makeCentreNode(
   nodeType: UMLNodeData['nodeType'],
   rfInstance: ReactFlowInstance | null,
@@ -74,17 +75,12 @@ function makeCentreNode(
     id: nanoid(8),
     type: nodeType,
     position: { x: centre.x - 90 + jitter(), y: centre.y - 60 + jitter() },
-    data: {
-      nodeType,
-      name: nameMap[nodeType],
-      attributes: [],
-      methods: [],
-      isEditing: true,
-    } as UMLNodeData,
+    data: { nodeType, name: nameMap[nodeType], attributes: [], methods: [], isEditing: true } as UMLNodeData,
   }
 }
 
-// ─── Inner editor (must be inside ReactFlowProvider) ─────────────────────────
+// ─── Inner editor ─────────────────────────────────────────────────────────────
+
 interface EditorInnerProps {
   diagramId: string | null
   initialTitle: string
@@ -95,12 +91,17 @@ interface EditorInnerProps {
 
 function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
-  const { getNodes } = useReactFlow()
+  const { getNodes, flowToScreenPosition } = useReactFlow()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
+
+  // ── Relationship picker state ─────────────────────────────────────────────
+  const [pendingConn, setPendingConn] = useState<Connection | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerPos, setPickerPos] = useState({ x: 0, y: 0 })
 
   // ── Autosave ──────────────────────────────────────────────────────────────
   const vp = rfInstance.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 }
@@ -112,13 +113,57 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   }
   useAutosave(diagramId, diagramData)
 
-  // ── Connect ───────────────────────────────────────────────────────────────
-  const onConnect: OnConnect = useCallback(
-    params => {
-      history.push({ nodes, edges })
-      setEdges(eds => addEdge(params, eds))
+  // ── Connect — open relationship picker instead of creating edge immediately
+  const onConnect = useCallback(
+    (params: Connection) => {
+      setPendingConn(params)
+
+      // Position picker between source and target nodes
+      const allNodes = getNodes()
+      const src = allNodes.find(n => n.id === params.source)
+      const tgt = allNodes.find(n => n.id === params.target)
+
+      let pos = { x: window.innerWidth / 2 - 130, y: window.innerHeight / 2 - 160 }
+
+      if (src && tgt) {
+        const midX = (src.position.x + (src.measured?.width ?? 180) / 2 +
+                      tgt.position.x + (tgt.measured?.width ?? 180) / 2) / 2
+        const midY = (src.position.y + (src.measured?.height ?? 100) / 2 +
+                      tgt.position.y + (tgt.measured?.height ?? 100) / 2) / 2
+        const screen = flowToScreenPosition({ x: midX, y: midY })
+        pos = { x: screen.x - 130, y: screen.y - 80 }
+      }
+
+      setPickerPos(pos)
+      setPickerOpen(true)
     },
-    [history, nodes, edges, setEdges],
+    [getNodes, flowToScreenPosition],
+  )
+
+  // ── Confirm relationship type from picker ─────────────────────────────────
+  const onRelationshipPick = useCallback(
+    (relType: RelationshipType) => {
+      if (!pendingConn) return
+      history.push({ nodes, edges })
+      setEdges(eds =>
+        addEdge(
+          {
+            ...pendingConn,
+            id: nanoid(8),
+            type: relType,
+            data: {
+              relationshipType: relType,
+              sourceMultiplicity: undefined,
+              targetMultiplicity: undefined,
+            } satisfies UMLEdgeData,
+          },
+          eds,
+        ),
+      )
+      setPendingConn(null)
+      setPickerOpen(false)
+    },
+    [pendingConn, history, nodes, edges, setEdges],
   )
 
   // ── Insert node ───────────────────────────────────────────────────────────
@@ -131,7 +176,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     [history, nodes, edges, setNodes],
   )
 
-  // ── Delete selected nodes ─────────────────────────────────────────────────
+  // ── Delete selected ───────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
     const allNodes = getNodes()
     const selected = allNodes.filter(n => n.selected)
@@ -142,13 +187,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)))
   }, [getNodes, history, nodes, edges, setNodes, setEdges])
 
-  // ── History after external delete (e.g., from node context menu) ──────────
   const onNodesDelete: OnNodesDelete = useCallback(
-    deletedNodes => {
-      if (deletedNodes.length > 0) {
-        history.push({ nodes, edges })
-      }
-    },
+    deleted => { if (deleted.length > 0) history.push({ nodes, edges }) },
     [history, nodes, edges],
   )
 
@@ -169,9 +209,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     catch { toast.error('Export failed') }
   }, [theme])
 
-  const handleExportSVG = useCallback(() => {
-    toast('SVG export coming in Phase 6')
-  }, [])
+  const handleExportSVG = useCallback(() => toast('SVG export coming in Phase 6'), [])
 
   const handleExportPlantUML = useCallback(() => {
     const text = toPlantUML(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
@@ -236,6 +274,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onConnect={onConnect}
             onInit={inst => { rfInstance.current = inst }}
             onNodesDelete={onNodesDelete}
+          />
+
+          {/* Relationship picker portal — outside canvas, above everything */}
+          <RelationshipPicker
+            open={pickerOpen}
+            position={pickerPos}
+            onSelect={onRelationshipPick}
+            onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
         </main>
       </div>
