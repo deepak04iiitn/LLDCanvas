@@ -20,30 +20,33 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-// ─── Diagrams ─────────────────────────────────────────────────────────────────
-
 export const api = {
   diagrams: {
-    list: () =>
-      request<{ diagrams: DiagramSummary[] }>('/diagrams'),
+    list: (q?: string) => {
+      const qs = q ? `?q=${encodeURIComponent(q)}` : ''
+      return request<{ diagrams: DiagramSummary[] }>(`/diagrams${qs}`)
+    },
 
     get: (id: string) =>
       request<{ diagram: DiagramFull }>(`/diagrams/${id}`),
 
-    create: (payload?: { title?: string; fromTemplate?: string }) =>
+    create: (payload?: { title?: string; fromTemplateId?: string }) =>
       request<{ diagram: DiagramFull }>('/diagrams', {
         method: 'POST',
         body: JSON.stringify(payload ?? {}),
       }),
 
-    save: (id: string, diagramData: DiagramData) =>
+    duplicate: (id: string) =>
+      request<{ diagram: DiagramFull }>(`/diagrams/${id}/duplicate`, { method: 'POST' }),
+
+    save: (id: string, diagramData: DiagramData, thumbnail?: string) =>
       request<{ ok: boolean }>(`/diagrams/${id}`, {
         method: 'PUT',
-        body: JSON.stringify({ diagramData }),
+        body: JSON.stringify({ diagramData, thumbnail }),
       }),
 
     rename: (id: string, title: string) =>
-      request<{ ok: boolean }>(`/diagrams/${id}/title`, {
+      request<{ ok: boolean; title: string }>(`/diagrams/${id}/title`, {
         method: 'PATCH',
         body: JSON.stringify({ title }),
       }),
