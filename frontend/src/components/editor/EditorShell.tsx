@@ -5,11 +5,15 @@ import {
   ReactFlowProvider,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   addEdge,
   type Node,
   type Edge,
   type OnConnect,
+  type OnNodesDelete,
   type ReactFlowInstance,
+  type Node as RFNode,
+  type Edge as RFEdge,
 } from '@xyflow/react'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
@@ -25,26 +29,20 @@ import { useAutosave } from '@/hooks/useAutosave'
 import type { DiagramData, UMLNodeData, UMLEdgeData, CanvasTheme } from '@/types'
 import { exportPNG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
-import type { Node as RFNode, Edge as RFEdge } from '@xyflow/react'
 
 interface EditorShellProps {
-  diagramId: string | null         // null = local mode
+  diagramId: string | null
   initialTitle: string
   initialData: DiagramData | null
   onRename?: (title: string) => Promise<void>
 }
 
-// ─── Default empty state ──────────────────────────────────────────────────────
+// ─── Default empty diagram ────────────────────────────────────────────────────
 function makeEmptyDiagram(): DiagramData {
-  return {
-    version: 1,
-    nodes: [],
-    edges: [],
-    meta: { theme: 'light', zoom: 1, panX: 0, panY: 0 },
-  }
+  return { version: 1, nodes: [], edges: [], meta: { theme: 'light', zoom: 1, panX: 0, panY: 0 } }
 }
 
-// ─── Helper: create a blank UML class node centred in viewport ────────────────
+// ─── Node factory ─────────────────────────────────────────────────────────────
 function makeCentreNode(
   nodeType: UMLNodeData['nodeType'],
   rfInstance: ReactFlowInstance | null,
@@ -53,30 +51,40 @@ function makeCentreNode(
     ? rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
     : { x: 200, y: 200 }
 
-  const defaults: Record<UMLNodeData['nodeType'], Partial<UMLNodeData>> = {
-    class:          { name: 'NewClass',    stereotype: undefined },
-    interface:      { name: 'NewInterface', stereotype: 'interface' },
-    enum:           { name: 'NewEnum',     stereotype: 'enum' },
-    'abstract-class': { name: 'NewAbstractClass', stereotype: undefined },
+  const jitter = () => Math.random() * 24 - 12
+
+  const nameMap: Record<UMLNodeData['nodeType'], string> = {
+    class: 'ClassName',
+    interface: 'InterfaceName',
+    enum: 'EnumName',
+    'abstract-class': 'AbstractClass',
+    note: '',
+  }
+
+  if (nodeType === 'note') {
+    return {
+      id: nanoid(8),
+      type: 'note',
+      position: { x: centre.x + jitter(), y: centre.y + jitter() },
+      data: { nodeType: 'note', name: 'note', attributes: [], methods: [], noteText: '', isEditing: true },
+    }
   }
 
   return {
     id: nanoid(8),
     type: nodeType,
-    position: {
-      x: centre.x - 90 + Math.random() * 32 - 16,
-      y: centre.y - 60 + Math.random() * 32 - 16,
-    },
+    position: { x: centre.x - 90 + jitter(), y: centre.y - 60 + jitter() },
     data: {
       nodeType,
-      ...defaults[nodeType],
+      name: nameMap[nodeType],
       attributes: [],
       methods: [],
+      isEditing: true,
     } as UMLNodeData,
   }
 }
 
-// ─── Inner editor — needs to be inside ReactFlowProvider ─────────────────────
+// ─── Inner editor (must be inside ReactFlowProvider) ─────────────────────────
 interface EditorInnerProps {
   diagramId: string | null
   initialTitle: string
@@ -85,21 +93,16 @@ interface EditorInnerProps {
   onRename?: (title: string) => Promise<void>
 }
 
-function EditorInner({
-  diagramId,
-  initialTitle,
-  initialNodes,
-  initialEdges,
-  onRename,
-}: EditorInnerProps) {
+function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
+  const { getNodes } = useReactFlow()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
 
-  // ── Autosave (uses the existing hook signature) ───────────────────────────
+  // ── Autosave ──────────────────────────────────────────────────────────────
   const vp = rfInstance.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 }
   const diagramData: DiagramData = {
     version: 1,
@@ -109,18 +112,45 @@ function EditorInner({
   }
   useAutosave(diagramId, diagramData)
 
-  // ── Connection ────────────────────────────────────────────────────────────
+  // ── Connect ───────────────────────────────────────────────────────────────
   const onConnect: OnConnect = useCallback(
-    params => setEdges(eds => addEdge(params, eds)),
-    [setEdges],
+    params => {
+      history.push({ nodes, edges })
+      setEdges(eds => addEdge(params, eds))
+    },
+    [history, nodes, edges, setEdges],
   )
 
-  // ── Insert helpers ────────────────────────────────────────────────────────
-  function insertNode(nodeType: UMLNodeData['nodeType']) {
-    const node = makeCentreNode(nodeType, rfInstance.current)
+  // ── Insert node ───────────────────────────────────────────────────────────
+  const insertNode = useCallback(
+    (nodeType: UMLNodeData['nodeType']) => {
+      const node = makeCentreNode(nodeType, rfInstance.current)
+      history.push({ nodes, edges })
+      setNodes(prev => [...prev, node as Node])
+    },
+    [history, nodes, edges, setNodes],
+  )
+
+  // ── Delete selected nodes ─────────────────────────────────────────────────
+  const handleDelete = useCallback(() => {
+    const allNodes = getNodes()
+    const selected = allNodes.filter(n => n.selected)
+    if (selected.length === 0) return
+    const selectedIds = new Set(selected.map(n => n.id))
     history.push({ nodes, edges })
-    setNodes(prev => [...prev, node as Node])
-  }
+    setNodes(nds => nds.filter(n => !selectedIds.has(n.id)))
+    setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)))
+  }, [getNodes, history, nodes, edges, setNodes, setEdges])
+
+  // ── History after external delete (e.g., from node context menu) ──────────
+  const onNodesDelete: OnNodesDelete = useCallback(
+    deletedNodes => {
+      if (deletedNodes.length > 0) {
+        history.push({ nodes, edges })
+      }
+    },
+    [history, nodes, edges],
+  )
 
   // ── Undo / Redo ───────────────────────────────────────────────────────────
   const handleUndo = useCallback(() => {
@@ -135,12 +165,8 @@ function EditorInner({
 
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportPNG = useCallback(async () => {
-    try {
-      await exportPNG(theme)
-      toast.success('Exported as PNG')
-    } catch {
-      toast.error('Export failed')
-    }
+    try { await exportPNG(theme); toast.success('Exported as PNG') }
+    catch { toast.error('Export failed') }
   }, [theme])
 
   const handleExportSVG = useCallback(() => {
@@ -148,9 +174,7 @@ function EditorInner({
   }, [])
 
   const handleExportPlantUML = useCallback(() => {
-    const typedNodes = nodes as RFNode<UMLNodeData>[]
-    const typedEdges = edges as RFEdge<UMLEdgeData>[]
-    const text = toPlantUML(typedNodes, typedEdges)
+    const text = toPlantUML(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
     navigator.clipboard.writeText(text).then(() => toast.success('PlantUML copied to clipboard'))
   }, [nodes, edges])
 
@@ -169,7 +193,7 @@ function EditorInner({
     onAddInterface:       () => insertNode('interface'),
     onAddEnum:            () => insertNode('enum'),
     onAddAbstract:        () => insertNode('abstract-class'),
-    onDelete:             () => {/* Phase 4 — node deletion */ },
+    onDelete:             handleDelete,
     onDuplicate:          () => {/* Phase 6 */ },
     onUndo:               handleUndo,
     onRedo:               handleRedo,
@@ -181,10 +205,7 @@ function EditorInner({
   })
 
   return (
-    <div
-      className="flex h-screen w-screen flex-col overflow-hidden"
-      data-theme={theme}
-    >
+    <div className="flex h-screen w-screen flex-col overflow-hidden" data-theme={theme}>
       <Topbar
         title={title}
         onRename={handleRename}
@@ -203,7 +224,7 @@ function EditorInner({
           onAddInterface={() => insertNode('interface')}
           onAddEnum={() => insertNode('enum')}
           onAddAbstract={() => insertNode('abstract-class')}
-          onAddNote={() => toast('Notes coming in Phase 4')}
+          onAddNote={() => insertNode('note')}
         />
 
         <main className="relative flex-1 overflow-hidden">
@@ -214,6 +235,7 @@ function EditorInner({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onInit={inst => { rfInstance.current = inst }}
+            onNodesDelete={onNodesDelete}
           />
         </main>
       </div>
@@ -223,7 +245,7 @@ function EditorInner({
   )
 }
 
-// ─── Public export ────────────────────────────────────────────────────────────
+// ─── Public shell ─────────────────────────────────────────────────────────────
 export function EditorShell({ diagramId, initialTitle, initialData, onRename }: EditorShellProps) {
   const data = initialData ?? makeEmptyDiagram()
   const initialTheme = (data.meta?.theme ?? 'light') as CanvasTheme

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState, useCallback } from 'react'
 import {
   ReactFlow,
   Background,
@@ -7,20 +8,98 @@ import {
   Controls,
   MiniMap,
   useReactFlow,
+  useViewport,
   type Node,
   type Edge,
   type OnNodesChange,
   type OnEdgesChange,
   type OnConnect,
+  type OnNodesDelete,
   type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useEffect } from 'react'
 import { useEditor } from '@/contexts/EditorContext'
+import { nodeTypes } from './nodes'
 
-// Placeholder node/edge types — real ones are wired in Phase 4 & 5
-const nodeTypes = {}
-const edgeTypes = {}
+// ─── Alignment guide overlay ──────────────────────────────────────────────────
+
+interface GuideLines {
+  x?: number  // flow-space X position for a vertical guide
+  y?: number  // flow-space Y position for a horizontal guide
+}
+
+function AlignmentGuideOverlay({ guides }: { guides: GuideLines }) {
+  const { x: vpX, y: vpY, zoom } = useViewport()
+
+  if (!guides.x && !guides.y) return null
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+      {guides.x !== undefined && (
+        <div
+          className="absolute top-0 bottom-0 w-px bg-indigo-500/60"
+          style={{ left: guides.x * zoom + vpX }}
+        />
+      )}
+      {guides.y !== undefined && (
+        <div
+          className="absolute left-0 right-0 h-px bg-indigo-500/60"
+          style={{ top: guides.y * zoom + vpY }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Zoom tracker (inside ReactFlow context) ──────────────────────────────────
+
+function ZoomTracker({ nodes }: { nodes: Node[] }) {
+  const { setZoom, setNodeCount } = useEditor()
+  const { zoom } = useViewport()
+
+  useEffect(() => { setZoom(Math.round(zoom * 100) / 100) }, [zoom, setZoom])
+  useEffect(() => { setNodeCount(nodes.length) }, [nodes.length, setNodeCount])
+
+  return null
+}
+
+// ─── Snap threshold (in flow units) ──────────────────────────────────────────
+const SNAP_THRESHOLD = 6
+
+function computeGuides(draggedNode: Node, allNodes: Node[]): GuideLines {
+  const guides: GuideLines = {}
+  const dx = draggedNode.position.x
+  const dy = draggedNode.position.y
+  const dw = (draggedNode.measured?.width ?? 180)
+  const dh = (draggedNode.measured?.height ?? 100)
+
+  for (const node of allNodes) {
+    if (node.id === draggedNode.id) continue
+    const nx = node.position.x
+    const ny = node.position.y
+    const nw = (node.measured?.width ?? 180)
+    const nh = (node.measured?.height ?? 100)
+
+    // Vertical guide — left/right edge or center-x alignment
+    if (guides.x === undefined) {
+      if (Math.abs(dx - nx) < SNAP_THRESHOLD) guides.x = nx
+      else if (Math.abs(dx + dw - (nx + nw)) < SNAP_THRESHOLD) guides.x = nx + nw - dw
+      else if (Math.abs(dx + dw / 2 - (nx + nw / 2)) < SNAP_THRESHOLD) guides.x = nx + nw / 2 - dw / 2
+    }
+    // Horizontal guide — top/bottom edge or center-y alignment
+    if (guides.y === undefined) {
+      if (Math.abs(dy - ny) < SNAP_THRESHOLD) guides.y = ny
+      else if (Math.abs(dy + dh - (ny + nh)) < SNAP_THRESHOLD) guides.y = ny + nh - dh
+      else if (Math.abs(dy + dh / 2 - (ny + nh / 2)) < SNAP_THRESHOLD) guides.y = ny + nh / 2 - dh / 2
+    }
+
+    if (guides.x !== undefined && guides.y !== undefined) break
+  }
+
+  return guides
+}
+
+// ─── Main CanvasView ─────────────────────────────────────────────────────────
 
 interface CanvasViewProps {
   nodes: Node[]
@@ -29,23 +108,7 @@ interface CanvasViewProps {
   onEdgesChange: OnEdgesChange
   onConnect: OnConnect
   onInit: (instance: ReactFlowInstance) => void
-}
-
-// Inner component with access to useReactFlow() context
-function CanvasInner({ nodes }: { nodes: Node[] }) {
-  const { setZoom, setNodeCount } = useEditor()
-  const { getViewport } = useReactFlow()
-
-  useEffect(() => {
-    setNodeCount(nodes.length)
-  }, [nodes.length, setNodeCount])
-
-  useEffect(() => {
-    const vp = getViewport()
-    setZoom(vp.zoom)
-  }, [getViewport, setZoom])
-
-  return null
+  onNodesDelete?: OnNodesDelete
 }
 
 export function CanvasView({
@@ -55,10 +118,11 @@ export function CanvasView({
   onEdgesChange,
   onConnect,
   onInit,
+  onNodesDelete,
 }: CanvasViewProps) {
-  const { theme, setZoom } = useEditor()
+  const { theme } = useEditor()
+  const [guides, setGuides] = useState<GuideLines>({})
 
-  // Theme-derived canvas colours
   const canvasBg =
     theme === 'dark' ? '#111111' : theme === 'whiteboard' ? '#FFFFFF' : '#F8F8F8'
   const gridColor =
@@ -67,6 +131,15 @@ export function CanvasView({
     theme === 'dark' ? '#1C1C1E' : theme === 'whiteboard' ? '#F5F5F5' : '#EEEEEE'
   const gridVariant =
     theme === 'whiteboard' ? BackgroundVariant.Lines : BackgroundVariant.Dots
+
+  const onNodeDrag = useCallback(
+    (_evt: unknown, draggedNode: Node, allNodes: Node[]) => {
+      setGuides(computeGuides(draggedNode, allNodes))
+    },
+    [],
+  )
+
+  const onNodeDragStop = useCallback(() => setGuides({}), [])
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -77,17 +150,18 @@ export function CanvasView({
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onInit={onInit}
+        onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
         snapToGrid
         snapGrid={[16, 16]}
         minZoom={0.1}
         maxZoom={4}
         fitView
-        deleteKeyCode={['Delete', 'Backspace']}
+        deleteKeyCode={null}        // handled manually in EditorShell
         selectionKeyCode="Shift"
         multiSelectionKeyCode="Shift"
-        onMoveEnd={(_, vp) => setZoom(Math.round(vp.zoom * 100) / 100)}
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
         style={{ background: canvasBg }}
         proOptions={{ hideAttribution: true }}
       >
@@ -110,7 +184,8 @@ export function CanvasView({
           maskColor={theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)'}
           className="canvas-minimap"
         />
-        <CanvasInner nodes={nodes} />
+        <ZoomTracker nodes={nodes} />
+        <AlignmentGuideOverlay guides={guides} />
       </ReactFlow>
     </div>
   )

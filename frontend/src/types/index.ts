@@ -1,6 +1,6 @@
 // ─── Node Types ───────────────────────────────────────────────────────────────
 
-export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum'
+export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum' | 'note'
 
 export type Visibility = '+' | '-' | '#' | '~'
 
@@ -20,6 +20,7 @@ export interface UMLMethod {
   returnType: string
   isStatic: boolean
   isAbstract: boolean
+  isConstructor?: boolean
 }
 
 export interface UMLNodeData {
@@ -27,10 +28,12 @@ export interface UMLNodeData {
   name: string
   stereotype?: string       // e.g. 'singleton', 'repository'
   genericParam?: string     // e.g. 'T' for Repository<T>
+  constraints?: string[]    // e.g. ['readOnly', 'ordered']
   attributes: UMLAttribute[]
   methods: UMLMethod[]
+  noteText?: string         // used only when nodeType === 'note'
   packageName?: string
-  isEditing?: boolean
+  isEditing?: boolean       // triggers auto-focus of name on mount
   [key: string]: unknown    // React Flow requires index signature on node data
 }
 
