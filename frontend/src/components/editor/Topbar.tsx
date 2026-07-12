@@ -13,8 +13,12 @@ import {
   PenLine,
   Image,
   FileCode2,
+  Check,
+  Loader2,
+  AlertCircle,
+  X,
 } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +29,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
 import { cn } from '@/lib/utils'
+import type { SaveStatus } from '@/hooks/useAutosave'
 
 interface TopbarProps {
   title: string
@@ -36,21 +41,66 @@ interface TopbarProps {
   onExportPNG: () => void
   onExportSVG: () => void
   onExportPlantUML: () => void
+  saveStatus: SaveStatus
+  selectedCount: number
+  onClearSelection: () => void
 }
 
-function ThemeIcon({ theme }: { theme: string }) {
-  if (theme === 'dark') return <Moon className="h-4 w-4" />
-  if (theme === 'whiteboard') return <Clipboard className="h-4 w-4" />
-  return <Sun className="h-4 w-4" />
+// ─── Save status indicator ────────────────────────────────────────────────────
+function SaveIndicator({ status }: { status: SaveStatus }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (status === 'idle') { setVisible(false); return }
+    setVisible(true)
+    if (status === 'saved') {
+      const t = setTimeout(() => setVisible(false), 2000)
+      return () => clearTimeout(t)
+    }
+  }, [status])
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, width: 0 }}
+          animate={{ opacity: 1, width: 'auto' }}
+          exit={{ opacity: 0, width: 0 }}
+          transition={{ duration: 0.18 }}
+          className="flex items-center gap-1 overflow-hidden"
+        >
+          {status === 'saving' && (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+              <span className="whitespace-nowrap text-[11px] text-amber-600 dark:text-amber-400">
+                Saving…
+              </span>
+            </>
+          )}
+          {status === 'saved' && (
+            <>
+              <Check className="h-3 w-3 text-emerald-500" />
+              <span className="whitespace-nowrap text-[11px] text-emerald-600 dark:text-emerald-400">
+                Saved
+              </span>
+            </>
+          )}
+          {status === 'error' && (
+            <>
+              <AlertCircle className="h-3 w-3 text-red-500" />
+              <span className="whitespace-nowrap text-[11px] text-red-600 dark:text-red-400">
+                Save failed
+              </span>
+            </>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }
 
-function EditableTitle({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (v: string) => void
-}) {
+// ─── Editable diagram title ───────────────────────────────────────────────────
+function EditableTitle({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -59,7 +109,7 @@ function EditableTitle({
 
   function startEdit() {
     setEditing(true)
-    setTimeout(() => inputRef.current?.select(), 0)
+    setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select() }, 0)
   }
 
   function commit() {
@@ -72,6 +122,7 @@ function EditableTitle({
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') commit()
     if (e.key === 'Escape') { setDraft(value); setEditing(false) }
+    e.stopPropagation()
   }
 
   if (editing) {
@@ -99,12 +150,15 @@ function EditableTitle({
                  hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10"
     >
       <span className="truncate">{draft}</span>
-      <PenLine
-        className="h-3.5 w-3.5 flex-shrink-0 text-gray-400 opacity-0 transition-opacity
-                   group-hover:opacity-100"
-      />
+      <PenLine className="h-3.5 w-3.5 shrink-0 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100" />
     </button>
   )
+}
+
+function ThemeIcon({ theme }: { theme: string }) {
+  if (theme === 'dark') return <Moon className="h-4 w-4" />
+  if (theme === 'whiteboard') return <Clipboard className="h-4 w-4" />
+  return <Sun className="h-4 w-4" />
 }
 
 const iconBtnBase =
@@ -113,6 +167,7 @@ const iconBtnBase =
   'disabled:cursor-not-allowed disabled:opacity-30 ' +
   'dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-100'
 
+// ─── Topbar ───────────────────────────────────────────────────────────────────
 export function Topbar({
   title,
   onRename,
@@ -123,40 +178,70 @@ export function Topbar({
   onExportPNG,
   onExportSVG,
   onExportPlantUML,
+  saveStatus,
+  selectedCount,
+  onClearSelection,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
 
   return (
     <header
-      className="relative z-20 flex h-12 flex-shrink-0 items-center border-b
+      className="relative z-20 flex h-12 shrink-0 items-center gap-1 border-b
                  border-gray-200 bg-white px-3 dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
     >
-      {/* Left — Logo */}
+      {/* Logo */}
       <div className="flex items-center gap-2 select-none">
         <motion.div
           whileHover={{ rotate: 10 }}
           transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center"
+          className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600"
         >
-          <span className="text-xs font-bold text-white tracking-tight">LC</span>
+          <span className="text-xs font-bold tracking-tight text-white">LC</span>
         </motion.div>
-        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 hidden sm:block">
+        <span className="hidden text-sm font-semibold text-gray-900 dark:text-gray-100 sm:block">
           LLDCanvas
         </span>
       </div>
 
       {/* Divider */}
-      <div className="mx-3 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+      <div className="mx-2 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
-      {/* Center — editable diagram title */}
+      {/* Editable title */}
       <EditableTitle value={title} onChange={onRename} />
+
+      {/* Save status */}
+      <div className="ml-2">
+        <SaveIndicator status={saveStatus} />
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Right — action buttons */}
+      {/* Multi-select badge */}
+      <AnimatePresence>
+        {selectedCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.85 }}
+            className="mr-1 flex items-center gap-1.5 rounded-full border border-indigo-200
+                       bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700
+                       dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
+          >
+            <span>{selectedCount} selected</span>
+            <button
+              onClick={onClearSelection}
+              className="rounded-full text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-200"
+              aria-label="Clear selection"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Action buttons */}
       <div className="flex items-center gap-1">
-        {/* Undo */}
         <Tooltip>
           <TooltipTrigger
             className={cn(iconBtnBase, 'w-8')}
@@ -169,7 +254,6 @@ export function Topbar({
           <TooltipContent side="bottom">Undo (Ctrl+Z)</TooltipContent>
         </Tooltip>
 
-        {/* Redo */}
         <Tooltip>
           <TooltipTrigger
             className={cn(iconBtnBase, 'w-8')}
@@ -182,10 +266,8 @@ export function Topbar({
           <TooltipContent side="bottom">Redo (Ctrl+Shift+Z)</TooltipContent>
         </Tooltip>
 
-        {/* Divider */}
         <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
-        {/* Theme cycle */}
         <Tooltip>
           <TooltipTrigger
             className={cn(iconBtnBase, 'w-8')}
@@ -194,12 +276,9 @@ export function Topbar({
           >
             <ThemeIcon theme={theme} />
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Theme: {theme} (click to cycle)
-          </TooltipContent>
+          <TooltipContent side="bottom">Theme: {theme} (click to cycle)</TooltipContent>
         </Tooltip>
 
-        {/* Export dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger
             className={cn(iconBtnBase, 'w-auto gap-1.5 px-3 text-xs font-medium')}
@@ -226,12 +305,8 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Share */}
         <Tooltip>
-          <TooltipTrigger
-            className={cn(iconBtnBase, 'w-8')}
-            aria-label="Share"
-          >
+          <TooltipTrigger className={cn(iconBtnBase, 'w-8')} aria-label="Share">
             <Share2 className="h-4 w-4" />
           </TooltipTrigger>
           <TooltipContent side="bottom">Share (coming soon)</TooltipContent>

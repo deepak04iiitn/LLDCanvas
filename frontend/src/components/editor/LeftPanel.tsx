@@ -11,9 +11,11 @@ import {
   Lock,
   StickyNote,
   Layers,
+  Tag,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
+import { STEREOTYPES } from '@/components/editor/CommandPalette'
 import { cn } from '@/lib/utils'
 
 interface NodeInsertItem {
@@ -29,6 +31,7 @@ interface LeftPanelProps {
   onAddEnum: () => void
   onAddAbstract: () => void
   onAddNote: () => void
+  onAddStereotype: (stereotype: string) => void
 }
 
 const PANEL_WIDTH = 220
@@ -48,11 +51,8 @@ function InsertButton({ item, collapsed }: { item: NodeInsertItem; collapsed: bo
   if (collapsed) {
     return (
       <Tooltip>
-        <TooltipTrigger
-          onClick={item.action}
-          className={cn(itemBase, itemCollapsed)}
-        >
-          <span className="flex-shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+        <TooltipTrigger onClick={item.action} className={cn(itemBase, itemCollapsed)}>
+          <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
             {item.icon}
           </span>
         </TooltipTrigger>
@@ -66,7 +66,7 @@ function InsertButton({ item, collapsed }: { item: NodeInsertItem; collapsed: bo
 
   return (
     <button onClick={item.action} className={itemBase}>
-      <span className="flex-shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+      <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
         {item.icon}
       </span>
       <span className="flex-1 truncate">{item.label}</span>
@@ -76,6 +76,21 @@ function InsertButton({ item, collapsed }: { item: NodeInsertItem; collapsed: bo
       >
         {item.shortcut}
       </kbd>
+    </button>
+  )
+}
+
+function StereotypeChip({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left
+                 text-[11px] text-gray-600 transition-colors
+                 hover:bg-indigo-50 hover:text-indigo-700
+                 dark:text-gray-400 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300"
+    >
+      <Tag className="h-3 w-3 shrink-0 text-gray-400" />
+      <span className="truncate italic">&laquo;{label}&raquo;</span>
     </button>
   )
 }
@@ -91,7 +106,7 @@ function ProPatternItem({ collapsed }: { collapsed: boolean }) {
           )}
           disabled
         >
-          <Layers className="h-4 w-4 flex-shrink-0" />
+          <Layers className="h-4 w-4 shrink-0" />
         </TooltipTrigger>
         <TooltipContent side="right">Design Patterns (Pro)</TooltipContent>
       </Tooltip>
@@ -103,7 +118,7 @@ function ProPatternItem({ collapsed }: { collapsed: boolean }) {
       className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg
                  px-3 py-2 text-sm text-gray-400 opacity-60"
     >
-      <Layers className="h-4 w-4 flex-shrink-0" />
+      <Layers className="h-4 w-4 shrink-0" />
       <span className="flex-1">Design Patterns</span>
       <Lock className="h-3.5 w-3.5 text-amber-500" />
     </div>
@@ -116,6 +131,7 @@ export function LeftPanel({
   onAddEnum,
   onAddAbstract,
   onAddNote,
+  onAddStereotype,
 }: LeftPanelProps) {
   const { panelOpen, togglePanel } = useEditor()
 
@@ -128,7 +144,7 @@ export function LeftPanel({
   ]
 
   return (
-    <div className="relative z-10 flex-shrink-0">
+    <div className="relative z-10 shrink-0">
       <AnimatePresence initial={false}>
         {panelOpen ? (
           <motion.aside
@@ -141,8 +157,9 @@ export function LeftPanel({
                        bg-white dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
             style={{ width: PANEL_WIDTH, minWidth: PANEL_WIDTH }}
           >
-            <div className="flex-1 overflow-y-auto py-4 space-y-5">
-              <section>
+            <div className="flex-1 overflow-y-auto py-4 no-scrollbar">
+              {/* ── Insert section ──────────────────────────────────── */}
+              <section className="mb-4">
                 <p className={sectionTitle}>Insert</p>
                 <div className="space-y-0.5 px-2">
                   {insertItems.map(item => (
@@ -153,14 +170,34 @@ export function LeftPanel({
 
               <div className="mx-3 h-px bg-gray-100 dark:bg-[#2C2C2E]" />
 
-              <section>
+              {/* ── Stereotypes ─────────────────────────────────────── */}
+              <section className="my-4">
+                <p className={sectionTitle}>Stereotypes</p>
+                <p className="mb-2 px-3 text-[10px] text-gray-400 dark:text-gray-600">
+                  Inserts a Class pre-tagged with stereotype
+                </p>
+                <div className="px-2 space-y-0.5">
+                  {STEREOTYPES.map(s => (
+                    <StereotypeChip
+                      key={s}
+                      label={s}
+                      onClick={() => onAddStereotype(s)}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <div className="mx-3 h-px bg-gray-100 dark:bg-[#2C2C2E]" />
+
+              {/* ── Patterns (Pro) ──────────────────────────────────── */}
+              <section className="mt-4">
                 <p className={sectionTitle}>Patterns</p>
                 <div className="px-2">
                   <ProPatternItem collapsed={false} />
                 </div>
                 <p className="mt-2 px-3 text-[11px] leading-relaxed text-gray-400 dark:text-gray-600">
-                  Scaffold GoF and LLD patterns instantly.
-                  <span className="ml-1 font-medium text-amber-500">Pro</span>
+                  Scaffold GoF and LLD patterns instantly.{' '}
+                  <span className="font-medium text-amber-500">Pro</span>
                 </p>
               </section>
             </div>
