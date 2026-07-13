@@ -97,11 +97,3 @@ export interface ApiUser {
   authProvider: 'google' | 'email'
 }
 
-// ─── Pattern Skeleton ─────────────────────────────────────────────────────────
-
-export interface PatternData {
-  name: string
-  description: string
-  nodes: unknown[]
-  edges: unknown[]
-}
