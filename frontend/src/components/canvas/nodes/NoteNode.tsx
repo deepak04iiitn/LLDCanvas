@@ -14,7 +14,19 @@ import { cn } from '@/lib/utils'
 
 const HANDLE_CLS =
   '!h-3 !w-3 !rounded-full !border-2 !border-white !bg-amber-400 ' +
-  '!opacity-0 !transition-opacity group-hover:!opacity-100'
+  '!opacity-0 !transition-all !duration-150 group-hover:!opacity-100 hover:!scale-125'
+
+// One handle per side, each with a unique `id` — required whenever a node has
+// more than one handle (see the matching note in UMLClassNode.tsx). Paired with
+// `connectionMode: Loose` on <ReactFlow>, a single `type="source"` handle can
+// both start and receive a connection, so notes can attach to (or be attached
+// from) a class on any side.
+const HANDLE_POSITIONS = [
+  { id: 'top', position: Position.Top },
+  { id: 'right', position: Position.Right },
+  { id: 'bottom', position: Position.Bottom },
+  { id: 'left', position: Position.Left },
+] as const
 
 export function NoteNode({ id, data: rawData, selected }: NodeProps) {
   const data = rawData as UMLNodeData
@@ -81,10 +93,15 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
           )}
         >
           {/* Handles */}
-          <Handle type="source" position={Position.Top}    className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Right}  className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Bottom} className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Left}   className={HANDLE_CLS} />
+          {HANDLE_POSITIONS.map(({ id: handleId, position }) => (
+            <Handle
+              key={handleId}
+              id={handleId}
+              type="source"
+              position={position}
+              className={HANDLE_CLS}
+            />
+          ))}
 
           {/* Folded corner */}
           <div className="absolute top-0 right-0 h-5 w-5 overflow-hidden rounded-sm">

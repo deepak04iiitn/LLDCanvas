@@ -20,6 +20,7 @@ export async function createAuth() {
   const db = mongoClient.db()
 
   return betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4000',
     database: mongodbAdapter(db),
 
     // ─── Social providers ──────────────────────────────────────────────

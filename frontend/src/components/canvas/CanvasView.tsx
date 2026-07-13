@@ -7,7 +7,8 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
-  useReactFlow,
+  ConnectionMode,
+  ConnectionLineType,
   useViewport,
   type Node,
   type Edge,
@@ -168,6 +169,16 @@ export function CanvasView({
         onNodeDragStop={onNodeDragStop}
         style={{ background: canvasBg }}
         proOptions={{ hideAttribution: true }}
+        // Every node handle is declared `type="source"` (see UMLClassNode/NoteNode) —
+        // Loose mode lets a single handle per side both start AND receive a
+        // connection, instead of stacking an invisible duplicate target handle
+        // exactly on top of each source handle (the previous setup, which made
+        // React Flow's handle resolution ambiguous and edges always render from
+        // whichever handle happened to be registered first).
+        connectionMode={ConnectionMode.Loose}
+        connectionRadius={28}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={{ stroke: '#6366F1', strokeWidth: 1.5, strokeDasharray: '6 3' }}
       >
         <Background
           variant={gridVariant}

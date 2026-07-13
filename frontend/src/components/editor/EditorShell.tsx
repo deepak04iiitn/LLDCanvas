@@ -175,6 +175,25 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   // ── Connect — open relationship picker instead of creating edge immediately
   const onConnect = useCallback(
     (params: Connection) => {
+      // Reject a zero-length loop back onto the exact same handle (an accidental
+      // click-and-release on a handle rather than a real drag) and an exact
+      // duplicate of an existing edge (same source/target/handles) — neither is
+      // a relationship the user meant to draw, and both would render as a
+      // degenerate or invisibly-stacked edge.
+      const isSameHandle =
+        params.source === params.target && params.sourceHandle === params.targetHandle
+      const isDuplicate = edges.some(
+        e =>
+          e.source === params.source &&
+          e.target === params.target &&
+          (e.sourceHandle ?? null) === (params.sourceHandle ?? null) &&
+          (e.targetHandle ?? null) === (params.targetHandle ?? null),
+      )
+      if (isSameHandle || isDuplicate) {
+        if (isDuplicate) toast.info('That relationship already exists')
+        return
+      }
+
       setPendingConn(params)
 
       const allNodes = getNodes()
@@ -195,7 +214,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       setPickerPos(pos)
       setPickerOpen(true)
     },
-    [getNodes, flowToScreenPosition],
+    [getNodes, flowToScreenPosition, edges],
   )
 
   // ── Confirm relationship type from picker ─────────────────────────────────

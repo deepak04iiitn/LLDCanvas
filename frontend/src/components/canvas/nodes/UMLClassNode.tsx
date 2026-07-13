@@ -34,10 +34,23 @@ import { formatAttribute, parseAttribute, formatMethod, parseMethod } from '@/li
 import { cn } from '@/lib/utils'
 
 // ─── Handle appearance ────────────────────────────────────────────────────────
+// One handle per side (not a stacked source+target pair) — with `connectionMode:
+// Loose` set on <ReactFlow> (CanvasView.tsx), each can both start and receive a
+// connection. Each MUST have a unique `id`: React Flow requires this whenever a
+// node has more than one handle, otherwise it can't tell them apart and silently
+// falls back to the first one registered — which is how every edge used to end
+// up anchored to the top handle no matter which side was actually dragged.
 const HANDLE_CLS =
   '!h-3 !w-3 !rounded-full !border-2 !border-white !bg-indigo-500 ' +
-  '!opacity-0 !transition-opacity group-hover:!opacity-100 hover:!opacity-100 ' +
-  '!shadow-sm'
+  '!opacity-0 !transition-all !duration-150 group-hover:!opacity-100 hover:!opacity-100 ' +
+  'hover:!scale-125 !shadow-sm'
+
+const HANDLE_POSITIONS = [
+  { id: 'top', position: Position.Top },
+  { id: 'right', position: Position.Right },
+  { id: 'bottom', position: Position.Bottom },
+  { id: 'left', position: Position.Left },
+] as const
 
 // ─── Inline edit hook ─────────────────────────────────────────────────────────
 function useInlineEdit(initial: string, onCommit: (val: string) => void) {
@@ -370,15 +383,16 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     <ContextMenu>
       <ContextMenuTrigger>
         <div ref={nodeRef} className={containerCls}>
-          {/* ── Handles (all 4 sides) ──────────────────────────────── */}
-          <Handle type="source" position={Position.Top}    className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Right}  className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Bottom} className={HANDLE_CLS} />
-          <Handle type="source" position={Position.Left}   className={HANDLE_CLS} />
-          <Handle type="target" position={Position.Top}    className={HANDLE_CLS} style={{ opacity: 0 }} />
-          <Handle type="target" position={Position.Right}  className={HANDLE_CLS} style={{ opacity: 0 }} />
-          <Handle type="target" position={Position.Bottom} className={HANDLE_CLS} style={{ opacity: 0 }} />
-          <Handle type="target" position={Position.Left}   className={HANDLE_CLS} style={{ opacity: 0 }} />
+          {/* ── Handles (one per side, works as both source & target — see HANDLE_CLS note) */}
+          {HANDLE_POSITIONS.map(({ id: handleId, position }) => (
+            <Handle
+              key={handleId}
+              id={handleId}
+              type="source"
+              position={position}
+              className={HANDLE_CLS}
+            />
+          ))}
 
           {/* ── Header: stereotype + name ───────────────────────────── */}
           <div className="px-3 pt-2 pb-1.5 text-center">
