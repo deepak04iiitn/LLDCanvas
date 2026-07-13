@@ -183,9 +183,13 @@
     transition: all 150ms ease-out;
   }
 
-  /* Soothing focus rings — indigo accent, not the browser default */
+  /* Soothing focus rings — brand accent, not the browser default. This is a
+     global rule, so it also lights up inside the editor — that's fine, it's
+     an incidental keyboard-navigation outline, not one of the editor's own
+     deliberately-indigo elements (selection borders, handles, etc.), which
+     stay exactly as they were. */
   :focus-visible {
-    outline: 2px solid #6366F1;
+    outline: 2px solid var(--brand);
     outline-offset: 2px;
   }
 

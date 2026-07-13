@@ -26,7 +26,7 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   'Everything in Free',
-  '10 GoF design pattern skeletons',
+  '10 design pattern skeletons',
   'LLD problem templates (Parking Lot, ATM…)',
   'More templates added regularly',
   'Priority support',
