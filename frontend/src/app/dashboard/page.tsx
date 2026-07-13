@@ -16,6 +16,12 @@ import { NewDiagramModal } from '@/components/dashboard/NewDiagramModal'
 import { useSession, signOut } from '@/lib/auth-client'
 import { api } from '@/lib/api'
 import { useDebounce } from '@/hooks/useDebounce'
+import {
+  hasMigratePending,
+  getLocalDiagramData,
+  getLocalTitle,
+  clearLocalDiagram,
+} from '@/hooks/useLocalDiagram'
 import { DiagramSummary } from '@/types'
 
 // ─── Sidebar nav ───────────────────────────────────────────────────────────────
@@ -41,6 +47,36 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!sessionLoading && !session) router.replace('/')
   }, [session, sessionLoading, router])
+
+  // ─── Local → Cloud migration ─────────────────────────────────────────────
+  // Fires once after sign-in when the user previously clicked "Sign in to save"
+  // from the local editor banner.
+  useEffect(() => {
+    if (!session || !hasMigratePending()) return
+
+    async function migrate() {
+      try {
+        const localData = getLocalDiagramData()
+        const localTitle = getLocalTitle()
+        if (!localData) { clearLocalDiagram(); return }
+
+        const { diagram } = await api.diagrams.create({ title: localTitle })
+        // Save the local canvas data into the newly created diagram
+        await api.diagrams.save(diagram._id, localData)
+
+        clearLocalDiagram()
+        toast.success('Your local diagram has been saved to the cloud!')
+        router.push(`/editor/${diagram._id}`)
+      } catch {
+        toast.error('Could not migrate your local diagram. Your work is still in local storage.')
+        clearLocalDiagram() // Clear the flag so we don't retry forever
+      }
+    }
+
+    migrate()
+  // Run only once when session appears — intentionally no dep on migrate fn
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session])
 
   // ─── Fetch diagrams ─────────────────────────────────────────────────────────
   const fetchDiagrams = useCallback(async (q?: string) => {
