@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ReactFlowProvider,
   useNodesState,
@@ -26,7 +26,9 @@ import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
 import { UpgradeModal } from '@/components/editor/UpgradeModal'
+import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
+import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
@@ -40,6 +42,8 @@ interface EditorShellProps {
   initialTitle: string
   initialData: DiagramData | null
   onRename?: (title: string) => Promise<void>
+  /** When true, shows the local-mode banner and persists to localStorage */
+  localMode?: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -92,9 +96,10 @@ interface EditorInnerProps {
   initialNodes: Node[]
   initialEdges: Edge[]
   onRename?: (title: string) => Promise<void>
+  localMode?: boolean
 }
 
-function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename }: EditorInnerProps) {
+function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
   const { getNodes, fitView, flowToScreenPosition } = useReactFlow()
   const [title, setTitle] = useState(initialTitle)
@@ -129,6 +134,17 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
   }
   const saveStatus = useAutosave(diagramId, diagramData, theme)
+
+  // ── Local-mode persistence → localStorage ────────────────────────────────
+  // Run after the autosave effect; only active when diagramId is null (local mode).
+  // Debounced via a simple useEffect — writes are cheap and instant.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!localMode) return
+    saveLocalDiagram(diagramData, title)
+  // We intentionally spread diagramData so the effect fires on data changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localMode, nodes, edges, title])
 
   // ── Derived: selection count ──────────────────────────────────────────────
   const selectedCount = nodes.filter(n => n.selected).length
@@ -469,6 +485,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         </main>
       </div>
 
+      {localMode && <DismissableLocalBanner />}
+
       <Statusbar />
 
       <CommandPalette
@@ -483,7 +501,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 }
 
 // ─── Public shell ─────────────────────────────────────────────────────────────
-export function EditorShell({ diagramId, initialTitle, initialData, onRename }: EditorShellProps) {
+export function EditorShell({ diagramId, initialTitle, initialData, onRename, localMode }: EditorShellProps) {
   const data = initialData ?? makeEmptyDiagram()
   const initialTheme = (data.meta?.theme ?? 'light') as CanvasTheme
   const initialNodes = (data.nodes ?? []) as Node[]
@@ -498,6 +516,7 @@ export function EditorShell({ diagramId, initialTitle, initialData, onRename }: 
           initialNodes={initialNodes}
           initialEdges={initialEdges}
           onRename={onRename}
+          localMode={localMode}
         />
       </ReactFlowProvider>
     </EditorProvider>
