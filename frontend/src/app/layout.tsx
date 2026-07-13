@@ -15,13 +15,25 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'LLDCanvas',
-  description: 'The fastest way to create UML diagrams for Low-Level Design interviews.',
-  keywords: ['UML', 'Low-Level Design', 'LLD', 'class diagram', 'interview prep'],
+  title: {
+    template: '%s — LLDCanvas',
+    default: 'LLDCanvas',
+  },
+  description: 'The fastest way to create UML diagrams for Low-Level Design interviews. Draw class diagrams, relationships, and design patterns in seconds.',
+  keywords: ['UML', 'Low-Level Design', 'LLD', 'class diagram', 'interview prep', 'software design'],
   openGraph: {
-    title: 'LLDCanvas',
-    description: 'The fastest way to create UML diagrams for Low-Level Design interviews.',
+    title: 'LLDCanvas — UML diagrams for LLD interviews',
+    description: 'The fastest way to create UML class diagrams for Low-Level Design interviews.',
     type: 'website',
+    siteName: 'LLDCanvas',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LLDCanvas — UML diagrams for LLD interviews',
+    description: 'Draw class diagrams, design patterns, and LLD skeletons instantly.',
+  },
+  icons: {
+    icon: '/favicon.svg',
   },
 }
 

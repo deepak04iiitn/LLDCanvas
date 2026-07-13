@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { EditorShell } from '@/components/editor/EditorShell'
+import { MobileEditorGuard } from '@/components/editor/MobileBanner'
 import { useSession } from '@/lib/auth-client'
 import { getLocalDiagramData, getLocalTitle } from '@/hooks/useLocalDiagram'
 import type { DiagramData } from '@/types'
@@ -46,11 +47,13 @@ export default function LocalEditorPage() {
   if (session) return null
 
   return (
-    <EditorShell
-      diagramId={null}
-      initialTitle={initialTitle}
-      initialData={initialData}
-      localMode
-    />
+    <MobileEditorGuard>
+      <EditorShell
+        diagramId={null}
+        initialTitle={initialTitle}
+        initialData={initialData}
+        localMode
+      />
+    </MobileEditorGuard>
   )
 }

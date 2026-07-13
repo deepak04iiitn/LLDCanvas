@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { EditorShell } from '@/components/editor/EditorShell'
+import { MobileEditorGuard } from '@/components/editor/MobileBanner'
 import { api } from '@/lib/api'
 import type { DiagramFull } from '@/types'
 
@@ -56,11 +57,13 @@ export default function EditorPage() {
   }
 
   return (
-    <EditorShell
-      diagramId={id}
-      initialTitle={diagram.title}
-      initialData={diagram.diagramData}
-      onRename={handleRename}
-    />
+    <MobileEditorGuard>
+      <EditorShell
+        diagramId={id}
+        initialTitle={diagram.title}
+        initialData={diagram.diagramData}
+        onRename={handleRename}
+      />
+    </MobileEditorGuard>
   )
 }

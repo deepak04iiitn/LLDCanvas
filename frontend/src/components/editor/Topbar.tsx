@@ -43,12 +43,13 @@ interface TopbarProps {
   onExportPlantUML: () => void
   onExportMermaid: () => void
   saveStatus: SaveStatus
+  onRetrySave: () => void
   selectedCount: number
   onClearSelection: () => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
-function SaveIndicator({ status }: { status: SaveStatus }) {
+function SaveIndicator({ status, onRetry }: { status: SaveStatus; onRetry?: () => void }) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -86,12 +87,20 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
               </span>
             </>
           )}
-          {status === 'error' && (
+          {status === 'error' && onRetry && (
             <>
               <AlertCircle className="h-3 w-3 text-red-500" />
               <span className="whitespace-nowrap text-[11px] text-red-600 dark:text-red-400">
                 Save failed
               </span>
+              <button
+                onClick={onRetry}
+                className="ml-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-red-600
+                           underline underline-offset-2 hover:text-red-800
+                           dark:text-red-400 dark:hover:text-red-200"
+              >
+                Retry
+              </button>
             </>
           )}
         </motion.div>
@@ -181,6 +190,7 @@ export function Topbar({
   onExportPlantUML,
   onExportMermaid,
   saveStatus,
+  onRetrySave,
   selectedCount,
   onClearSelection,
 }: TopbarProps) {
@@ -213,7 +223,7 @@ export function Topbar({
 
       {/* Save status */}
       <div className="ml-2">
-        <SaveIndicator status={saveStatus} />
+        <SaveIndicator status={saveStatus} onRetry={onRetrySave} />
       </div>
 
       {/* Spacer */}
