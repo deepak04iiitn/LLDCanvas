@@ -3,8 +3,8 @@
 import { useState, useCallback } from 'react'
 import {
   getSmoothStepPath,
-  getBezierPath,
   EdgeLabelRenderer,
+  Position,
   useReactFlow,
   type EdgeProps,
 } from '@xyflow/react'
@@ -143,32 +143,42 @@ export function UMLEdge({
   const { theme } = useEditor()
   const dark = theme === 'dark'
   const { setEdges } = useReactFlow()
+  const [hovered, setHovered] = useState(false)
 
   const edgeColor = dark ? '#9CA3AF' : '#374151'
+  const hoverColor = dark ? '#A5B4FC' : '#818CF8'
   const selectedColor = '#6366F1'
-  const stroke = selected ? selectedColor : edgeColor
-  const strokeWidth = selected ? 2 : 1.5
+  const stroke = selected ? selectedColor : hovered ? hoverColor : edgeColor
+  const strokeWidth = selected ? 2 : hovered ? 2 : 1.5
 
   const markers = getMarkers(relType, dark)
 
   // ── Self-loop (source === target) ──────────────────────────────────────────
+  // Bows outward from whichever side the connection actually started on, so
+  // the loop reads as attached to the node instead of floating off in a fixed
+  // up-right direction that could cut back across the box.
   const isSelfLoop = source === target
   let edgePath: string
   let labelX: number
   let labelY: number
 
   if (isSelfLoop) {
-    const offset = 80
-    ;[edgePath, labelX, labelY] = getBezierPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX: targetX + offset,
-      targetY: targetY - offset,
-      targetPosition,
-    })
-    labelX = sourceX + offset / 2
-    labelY = sourceY - offset / 2
+    const DIR_VECTORS: Partial<Record<Position, { x: number; y: number }>> = {
+      [Position.Top]: { x: 0, y: -1 },
+      [Position.Right]: { x: 1, y: 0 },
+      [Position.Bottom]: { x: 0, y: 1 },
+      [Position.Left]: { x: -1, y: 0 },
+    }
+    const dir = DIR_VECTORS[sourcePosition] ?? { x: 1, y: 0 }
+    const loopSize = 64
+    const c1x = sourceX + dir.x * loopSize
+    const c1y = sourceY + dir.y * loopSize
+    const c2x = targetX + dir.x * loopSize
+    const c2y = targetY + dir.y * loopSize
+
+    edgePath = `M ${sourceX},${sourceY} C ${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`
+    labelX = (sourceX + targetX) / 2 + dir.x * loopSize
+    labelY = (sourceY + targetY) / 2 + dir.y * loopSize
   } else {
     ;[edgePath, labelX, labelY] = getSmoothStepPath({
       sourceX,
@@ -177,7 +187,7 @@ export function UMLEdge({
       targetX,
       targetY,
       targetPosition,
-      borderRadius: 8,
+      borderRadius: 10,
     })
   }
 
@@ -203,13 +213,15 @@ export function UMLEdge({
 
   return (
     <>
-      {/* Invisible wider hit area for easier selection */}
+      {/* Invisible wider hit area for easier selection + hover detection */}
       <path
         d={edgePath}
         fill="none"
         stroke="transparent"
         strokeWidth={14}
-        className="react-flow__edge-interaction"
+        className="react-flow__edge-interaction cursor-pointer"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       />
 
       {/* Visible edge path */}
@@ -224,7 +236,7 @@ export function UMLEdge({
         markerStart={markers.markerStart}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="transition-colors"
+        className="transition-all duration-150 ease-out pointer-events-none"
       />
 
       {/* Edge label (relationship type) — shown when selected */}
