@@ -56,7 +56,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="h-full bg-paper text-ink">
+      <body className="h-full overflow-x-hidden bg-paper text-ink">
         <TooltipProvider>
           {children}
         </TooltipProvider>
