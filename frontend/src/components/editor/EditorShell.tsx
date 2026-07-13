@@ -25,7 +25,9 @@ import { Topbar } from '@/components/editor/Topbar'
 import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
+import { UpgradeModal } from '@/components/editor/UpgradeModal'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
+import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
 import type { DiagramData, UMLNodeData, UMLEdgeData, RelationshipType, CanvasTheme } from '@/types'
@@ -106,6 +108,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Command palette ───────────────────────────────────────────────────────
   const [paletteOpen, setPaletteOpen] = useState(false)
+
+  // ── Upgrade modal (Pro gate for pattern skeletons) ────────────────────────
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+
+  // ── User plan: hardcoded 'free' until payment integration in a later phase ─
+  const userPlan: 'free' | 'pro' = 'free'
 
   // ── Relationship picker state ─────────────────────────────────────────────
   const [pendingConn, setPendingConn] = useState<Connection | null>(null)
@@ -196,6 +204,53 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const insertStereotype = useCallback(
     (stereotype: string) => insertNode('class', { stereotype } as Partial<UMLNodeData>),
     [insertNode],
+  )
+
+  // ── Insert design pattern skeleton ────────────────────────────────────────
+  const insertPattern = useCallback(
+    (patternKey: string) => {
+      if (userPlan === 'free') {
+        setUpgradeOpen(true)
+        return
+      }
+      const pattern: PatternData | undefined = PATTERN_BY_KEY.get(patternKey)
+      if (!pattern) return
+
+      const centre = rfInstance.current
+        ? rfInstance.current.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+        : { x: 300, y: 200 }
+
+      // Build old→new ID map for edge remapping
+      const idMap = new Map<string, string>()
+      const newNodes = pattern.nodes.map(n => {
+        const newId = `${n.id}-${nanoid(6)}`
+        idMap.set(n.id, newId)
+        return {
+          ...n,
+          id: newId,
+          position: {
+            x: n.position.x + centre.x - 300,
+            y: n.position.y + centre.y - 150,
+          },
+          data: { ...n.data, isEditing: false },
+        }
+      })
+
+      const newEdges = pattern.edges.map(e => ({
+        ...e,
+        id: nanoid(8),
+        source: idMap.get(e.source) ?? e.source,
+        target: idMap.get(e.target) ?? e.target,
+      }))
+
+      history.push({ nodes, edges })
+      setNodes(prev => [...prev, ...newNodes as Node[]])
+      setEdges(prev => [...prev, ...newEdges as Edge[]])
+
+      toast.success(`${pattern.name} pattern inserted`)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userPlan, nodes, edges, history, setNodes, setEdges],
   )
 
   // ── Delete selected ───────────────────────────────────────────────────────
@@ -356,12 +411,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     addAbstract:   () => insertNode('abstract-class'),
     addNote:       () => insertNode('note'),
     addStereotype: insertStereotype,
+    insertPattern,
     fitView:       handleFitView,
     togglePanel,
     exportPNG:     handleExportPNG,
     exportSVG:     handleExportSVG,
     exportPlantUML: handleExportPlantUML,
     exportMermaid: handleExportMermaid,
+    userPlan,
   }
 
   return (
@@ -419,6 +476,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClose={() => setPaletteOpen(false)}
         actions={paletteActions}
       />
+
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }
