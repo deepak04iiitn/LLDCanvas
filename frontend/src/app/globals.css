@@ -10,6 +10,25 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
+
+  /* ── Marketing / dashboard / settings design tokens ──────────────────────
+     Scoped to app-shell pages only (landing, dashboard, templates, settings,
+     auth). The editor never reads these — its chrome hardcodes its own
+     literal Tailwind/hex values — so changing these cannot affect it. */
+  --color-paper: var(--paper);
+  --color-paper-elevated: var(--paper-elevated);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-gold: var(--gold);
+  --color-gold-tint: var(--gold-tint);
+  --font-serif: var(--font-fraunces);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,12 +68,31 @@
 }
 
 :root {
-  /* LLDCanvas design tokens */
+  /* LLDCanvas editor design tokens — do not repurpose these for app-shell
+     pages; the editor's own components read some of these literally. */
   --canvas-bg-light: #F8F8F8;
   --canvas-bg-dark: #111111;
   --canvas-bg-whiteboard: #FFFFFF;
   --accent: #6366F1;
   --accent-hover: #4F46E5;
+
+  /* App-shell tokens (landing, dashboard, templates, settings, auth) — a
+     warm paper-and-ink palette with a single restrained pine accent, kept
+     deliberately apart from the editor's indigo brand so a redesign here
+     never touches canvas/node/edge colors. */
+  --paper: #FBF9F4;
+  --paper-elevated: #FFFFFF;
+  --ink: #201F1C;
+  --ink-muted: #74705F;
+  --ink-faint: #A69F8C;
+  --brand: #234E3F;
+  --brand-hover: #1B3D31;
+  --brand-tint: #E7F0EB;
+  --brand-foreground: #FBF9F4;
+  --hairline: #E7E2D6;
+  --hairline-strong: #D9D2C1;
+  --gold: #A6741C;
+  --gold-tint: #FBF1DE;
 
   --background: oklch(0.988 0 0);   /* #F8F8F8 — not pure white */
   --foreground: oklch(0.145 0 0);

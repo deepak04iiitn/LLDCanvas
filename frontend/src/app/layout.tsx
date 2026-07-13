@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
@@ -12,6 +12,14 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+})
+
+// Display serif for headings on marketing/dashboard/settings pages only —
+// the editor's own chrome never references --font-serif.
+const fraunces = Fraunces({
+  variable: '--font-fraunces',
+  subsets: ['latin'],
+  axes: ['opsz', 'SOFT', 'WONK'],
 })
 
 export const metadata: Metadata = {
@@ -45,14 +53,17 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="h-full bg-[#F8F8F8] text-gray-900">
+      <body className="h-full bg-paper text-ink">
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <Toaster richColors position="bottom-right" />
+        {/* Forced light: there's no dark-mode toggle anywhere in the app shell,
+            so the Toaster must not fall back to next-themes' "system" default
+            (which silently renders dark-styled toasts under a dark OS setting). */}
+        <Toaster richColors position="bottom-right" theme="light" />
       </body>
     </html>
   )

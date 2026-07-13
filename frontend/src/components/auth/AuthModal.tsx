@@ -79,10 +79,10 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
 
   return (
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset() }}>
-      <DialogContent className="sm:max-w-[400px] p-0 overflow-hidden rounded-2xl border border-gray-100 shadow-lg">
+      <DialogContent className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-0 shadow-lg sm:max-w-[400px]">
         <div className="p-8">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-xl font-semibold text-gray-900 text-center">
+            <DialogTitle className="text-center font-serif text-xl font-medium text-ink">
               {isSignup ? 'Create your account' : 'Sign in to LLDCanvas'}
             </DialogTitle>
           </DialogHeader>
@@ -91,7 +91,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 gap-3 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-150 active:scale-[0.97] font-medium"
+            className="h-11 w-full gap-3 border-hairline-strong font-medium transition-all duration-150 hover:border-ink-faint hover:bg-paper active:scale-[0.97]"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
           >
@@ -103,10 +103,10 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
             Continue with Google
           </Button>
 
-          <div className="flex items-center gap-3 my-5">
-            <Separator className="flex-1" />
-            <span className="text-xs text-gray-400 font-medium tracking-wide">OR</span>
-            <Separator className="flex-1" />
+          <div className="my-5 flex items-center gap-3">
+            <Separator className="flex-1 bg-hairline" />
+            <span className="text-xs font-medium tracking-wide text-ink-faint">OR</span>
+            <Separator className="flex-1 bg-hairline" />
           </div>
 
           {/* Email / password form */}
@@ -125,7 +125,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     autoComplete="name"
-                    className="h-11 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all"
+                    className="h-11 border-hairline-strong bg-paper transition-all focus:border-brand focus:ring-brand/15"
                   />
                 </motion.div>
               )}
@@ -138,7 +138,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
               onChange={(e) => setEmail(e.target.value)}
               autoComplete={isSignup ? 'email' : 'username'}
               required
-              className="h-11 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all"
+              className="h-11 border-hairline-strong bg-paper transition-all focus:border-brand focus:ring-brand/15"
             />
             <Input
               type="password"
@@ -147,12 +147,12 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
               onChange={(e) => setPassword(e.target.value)}
               autoComplete={isSignup ? 'new-password' : 'current-password'}
               required
-              className="h-11 bg-gray-50 border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all"
+              className="h-11 border-hairline-strong bg-paper transition-all focus:border-brand focus:ring-brand/15"
             />
 
             <Button
               type="submit"
-              className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] transition-all duration-150 font-medium mt-1"
+              className="mt-1 h-11 w-full bg-brand font-medium text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
               disabled={loading || googleLoading}
             >
               {loading ? <Spinner light /> : isSignup ? 'Create account' : 'Sign in'}
@@ -160,11 +160,11 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
           </form>
 
           {/* Toggle mode */}
-          <p className="text-center text-sm text-gray-500 mt-5">
+          <p className="mt-5 text-center text-sm text-ink-muted">
             {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               type="button"
-              className="text-indigo-600 font-medium hover:text-indigo-700 transition-colors"
+              className="font-medium text-brand transition-colors hover:text-brand-hover"
               onClick={() => setMode(isSignup ? 'signin' : 'signup')}
             >
               {isSignup ? 'Sign in' : 'Sign up'}
@@ -190,7 +190,7 @@ function GoogleIcon() {
 function Spinner({ light = false }: { light?: boolean }) {
   return (
     <svg
-      className={`animate-spin h-4 w-4 ${light ? 'text-white' : 'text-gray-600'}`}
+      className={`animate-spin h-4 w-4 ${light ? 'text-white' : 'text-ink-muted'}`}
       fill="none"
       viewBox="0 0 24 24"
     >

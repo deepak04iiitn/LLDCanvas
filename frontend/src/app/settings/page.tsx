@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  ArrowLeft,
   LogOut,
   User,
   Trash2,
@@ -13,7 +12,6 @@ import {
   AlertTriangle,
   Loader2,
 } from 'lucide-react'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -23,13 +21,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { AppShell } from '@/components/dashboard/AppShell'
 import { useSession, signOut } from '@/lib/auth-client'
 import { api } from '@/lib/api'
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-gray-200 bg-white p-6 ${className}`}>
+    <div className={`rounded-lg border border-hairline bg-paper-elevated p-6 ${className}`}>
       {children}
     </div>
   )
@@ -37,7 +36,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-4 text-xs font-semibold uppercase tracking-widest text-gray-400">
+    <h2 className="mb-4 text-xs font-semibold tracking-widest text-ink-faint uppercase">
       {children}
     </h2>
   )
@@ -65,7 +64,7 @@ function DeleteAccountDialog({
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
             <AlertTriangle className="h-5 w-5 text-red-600" />
           </div>
-          <DialogTitle className="text-left text-base font-semibold text-gray-900">
+          <DialogTitle className="text-left text-base font-semibold text-ink">
             Delete your account?
           </DialogTitle>
           <DialogDescription className="text-left">
@@ -76,8 +75,8 @@ function DeleteAccountDialog({
 
         <div className="mt-3 space-y-4">
           <div>
-            <p className="mb-1.5 text-sm text-gray-600">
-              Type <span className="font-mono font-medium text-gray-900">{PHRASE}</span> to confirm:
+            <p className="mb-1.5 text-sm text-ink-muted">
+              Type <span className="font-mono font-medium text-ink">{PHRASE}</span> to confirm:
             </p>
             <Input
               value={confirm}
@@ -174,8 +173,8 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#F8F8F8]">
-        <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
+      <div className="flex h-screen items-center justify-center bg-paper">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     )
   }
@@ -185,130 +184,123 @@ export default function SettingsPage() {
   const { user } = session
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8] px-4 py-8">
-      <div className="mx-auto max-w-xl">
-        {/* Back link */}
-        <Link
-          href="/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-gray-900"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Dashboard
-        </Link>
+    <AppShell>
+      <div className="no-scrollbar h-full overflow-y-auto px-5 py-8 sm:px-8">
+        <div className="mx-auto max-w-xl">
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 font-serif text-2xl font-medium text-ink"
+          >
+            Account Settings
+          </motion.h1>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 text-2xl font-bold text-gray-900"
-        >
-          Account Settings
-        </motion.h1>
+          <div className="space-y-4">
+            {/* ── Profile ──────────────────────────────────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+              <Card>
+                <SectionTitle>Profile</SectionTitle>
 
-        <div className="space-y-4">
-          {/* ── Profile ──────────────────────────────────────────────────── */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <Card>
-              <SectionTitle>Profile</SectionTitle>
-
-              <div className="flex items-center gap-4">
-                {/* Avatar */}
-                <div className="relative h-16 w-16 shrink-0">
-                  {user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="h-full w-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center rounded-full bg-indigo-100">
-                      <User className="h-8 w-8 text-indigo-400" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Name + email */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <label className="mb-1 block text-xs font-medium text-gray-500">
-                        Display name
-                      </label>
-                      <Input
-                        ref={nameInputRef}
-                        value={name}
-                        onChange={e => { setName(e.target.value); setNameSaved(false) }}
-                        onKeyDown={e => e.key === 'Enter' && handleSaveName()}
-                        className="h-9 text-sm"
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  {/* Avatar */}
+                  <div className="relative h-16 w-16 shrink-0">
+                    {user.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={user.image}
+                        alt={user.name}
+                        className="h-full w-full rounded-full object-cover"
                       />
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={handleSaveName}
-                      disabled={nameSaving || !name.trim() || name === user.name}
-                      className="h-9 shrink-0 bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      {nameSaving ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : nameSaved ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : (
-                        'Save'
-                      )}
-                    </Button>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center rounded-full bg-brand-tint">
+                        <User className="h-8 w-8 text-brand" />
+                      </div>
+                    )}
                   </div>
-                  <p className="mt-2 text-xs text-gray-400">
-                    {user.email}
-                    <span className="ml-1.5 text-gray-300">· read-only</span>
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
 
-          {/* ── Session ───────────────────────────────────────────────────── */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card>
-              <SectionTitle>Session</SectionTitle>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Sign out of LLDCanvas</p>
-                  <p className="text-xs text-gray-400">You'll be returned to the home page.</p>
+                  {/* Name + email */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <label className="mb-1 block text-xs font-medium text-ink-muted">
+                          Display name
+                        </label>
+                        <Input
+                          ref={nameInputRef}
+                          value={name}
+                          onChange={e => { setName(e.target.value); setNameSaved(false) }}
+                          onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+                          className="h-9 border-hairline-strong text-sm focus:border-brand"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveName}
+                        disabled={nameSaving || !name.trim() || name === user.name}
+                        className="h-9 shrink-0 bg-brand text-brand-foreground hover:bg-brand-hover"
+                      >
+                        {nameSaving ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : nameSaved ? (
+                          <Check className="h-3.5 w-3.5" />
+                        ) : (
+                          'Save'
+                        )}
+                      </Button>
+                    </div>
+                    <p className="mt-2 text-xs text-ink-faint">
+                      {user.email}
+                      <span className="ml-1.5 text-ink-faint/70">· read-only</span>
+                    </p>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={handleSignOut}
-                  className="gap-2 text-gray-600"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
+              </Card>
+            </motion.div>
 
-          {/* ── Danger zone ───────────────────────────────────────────────── */}
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <Card className="border-red-100">
-              <SectionTitle>Danger Zone</SectionTitle>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">Delete account</p>
-                  <p className="text-xs text-gray-400">
-                    Permanently delete your account and all diagrams. Cannot be undone.
-                  </p>
+            {/* ── Session ───────────────────────────────────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Card>
+                <SectionTitle>Session</SectionTitle>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-ink">Sign out of LLDCanvas</p>
+                    <p className="text-xs text-ink-faint">You&apos;ll be returned to the home page.</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleSignOut}
+                    className="gap-2 border-hairline-strong text-ink-muted sm:self-auto"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setDeleteOpen(true)}
-                  className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete account
-                </Button>
-              </div>
-            </Card>
-          </motion.div>
+              </Card>
+            </motion.div>
+
+            {/* ── Danger zone ───────────────────────────────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <Card className="border-red-200/70">
+                <SectionTitle>Danger Zone</SectionTitle>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-ink">Delete account</p>
+                    <p className="text-xs text-ink-faint">
+                      Permanently delete your account and all diagrams. Cannot be undone.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteOpen(true)}
+                    className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete account
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </div>
 
@@ -318,6 +310,6 @@ export default function SettingsPage() {
         onConfirm={handleDeleteAccount}
         loading={deleteLoading}
       />
-    </div>
+    </AppShell>
   )
 }

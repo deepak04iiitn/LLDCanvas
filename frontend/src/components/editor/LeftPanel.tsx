@@ -8,7 +8,6 @@ import {
   LayoutList,
   ChevronLeft,
   ChevronRight,
-  Lock,
   StickyNote,
   Layers,
   Tag,
@@ -16,6 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
 import { STEREOTYPES } from '@/components/editor/CommandPalette'
+import { ALL_PATTERNS, type PatternData } from '@/data/patterns'
 import { cn } from '@/lib/utils'
 
 interface NodeInsertItem {
@@ -32,9 +32,14 @@ interface LeftPanelProps {
   onAddAbstract: () => void
   onAddNote: () => void
   onAddStereotype: (stereotype: string) => void
+  onInsertPattern: (key: string) => void
 }
 
 const PANEL_WIDTH = 220
+
+// Fixed display order — matches the Gang-of-Four grouping used in the
+// command palette, so the two entry points read the same way.
+const PATTERN_CATEGORIES = ['Creational', 'Structural', 'Behavioral'] as const
 
 const sectionTitle =
   'px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400'
@@ -95,33 +100,19 @@ function StereotypeChip({ label, onClick }: { label: string; onClick: () => void
   )
 }
 
-function ProPatternItem({ collapsed }: { collapsed: boolean }) {
-  if (collapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger
-          className={cn(
-            'flex w-full cursor-not-allowed items-center justify-center',
-            'rounded-lg px-2 py-2 text-sm text-gray-400 opacity-60',
-          )}
-          disabled
-        >
-          <Layers className="h-4 w-4 shrink-0" />
-        </TooltipTrigger>
-        <TooltipContent side="right">Design Patterns (Pro)</TooltipContent>
-      </Tooltip>
-    )
-  }
-
+function PatternChip({ pattern, onClick }: { pattern: PatternData; onClick: () => void }) {
   return (
-    <div
-      className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg
-                 px-3 py-2 text-sm text-gray-400 opacity-60"
+    <button
+      onClick={onClick}
+      title={pattern.description}
+      className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left
+                 text-[11px] text-gray-600 transition-colors
+                 hover:bg-indigo-50 hover:text-indigo-700
+                 dark:text-gray-400 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300"
     >
-      <Layers className="h-4 w-4 shrink-0" />
-      <span className="flex-1">Design Patterns</span>
-      <Lock className="h-3.5 w-3.5 text-amber-500" />
-    </div>
+      <Layers className="h-3 w-3 shrink-0 text-gray-400" />
+      <span className="truncate">{pattern.name}</span>
+    </button>
   )
 }
 
@@ -132,6 +123,7 @@ export function LeftPanel({
   onAddAbstract,
   onAddNote,
   onAddStereotype,
+  onInsertPattern,
 }: LeftPanelProps) {
   const { panelOpen, togglePanel } = useEditor()
 
@@ -189,16 +181,34 @@ export function LeftPanel({
 
               <div className="mx-3 h-px bg-gray-100 dark:bg-[#2C2C2E]" />
 
-              {/* ── Patterns (Pro) ──────────────────────────────────── */}
+              {/* ── Patterns ─────────────────────────────────────────── */}
               <section className="mt-4">
                 <p className={sectionTitle}>Patterns</p>
-                <div className="px-2">
-                  <ProPatternItem collapsed={false} />
-                </div>
-                <p className="mt-2 px-3 text-[11px] leading-relaxed text-gray-400 dark:text-gray-600">
-                  Scaffold GoF and LLD patterns instantly.{' '}
-                  <span className="font-medium text-amber-500">Pro</span>
+                <p className="mb-2 px-3 text-[10px] text-gray-400 dark:text-gray-600">
+                  Inserts a pre-wired, connected pattern skeleton
                 </p>
+                <div className="space-y-3 px-2">
+                  {PATTERN_CATEGORIES.map(category => {
+                    const items = ALL_PATTERNS.filter(p => p.category === category)
+                    if (!items.length) return null
+                    return (
+                      <div key={category}>
+                        <p className="mb-0.5 px-2.5 text-[9px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-600">
+                          {category}
+                        </p>
+                        <div className="space-y-0.5">
+                          {items.map(p => (
+                            <PatternChip
+                              key={p.key}
+                              pattern={p}
+                              onClick={() => onInsertPattern(p.key)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </section>
             </div>
 
@@ -231,7 +241,16 @@ export function LeftPanel({
               ))}
             </div>
             <div className="my-2 h-px w-8 bg-gray-200 dark:bg-[#2C2C2E]" />
-            <ProPatternItem collapsed />
+
+            {/* Patterns list needs room to browse — collapsed rail just expands the panel */}
+            <Tooltip>
+              <TooltipTrigger onClick={togglePanel} className={cn(itemBase, itemCollapsed)}>
+                <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                  <Layers className="h-4 w-4" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right">Design Patterns — expand to browse</TooltipContent>
+            </Tooltip>
 
             <div className="mt-auto">
               <Tooltip>

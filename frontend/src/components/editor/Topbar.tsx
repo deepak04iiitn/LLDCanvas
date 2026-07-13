@@ -29,6 +29,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
 import { cn } from '@/lib/utils'
+import { Wordmark } from '@/components/Brand'
 import type { SaveStatus } from '@/hooks/useAutosave'
 
 interface TopbarProps {
@@ -202,17 +203,8 @@ export function Topbar({
                  border-gray-200 bg-white px-3 dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 select-none">
-        <motion.div
-          whileHover={{ rotate: 10 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600"
-        >
-          <span className="text-xs font-bold tracking-tight text-white">LC</span>
-        </motion.div>
-        <span className="hidden text-sm font-semibold text-gray-900 dark:text-gray-100 sm:block">
-          LLDCanvas
-        </span>
+      <div className="flex items-center select-none">
+        <Wordmark height={22} priority />
       </div>
 
       {/* Divider */}

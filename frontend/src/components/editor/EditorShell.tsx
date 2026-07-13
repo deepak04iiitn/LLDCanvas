@@ -25,7 +25,6 @@ import { Topbar } from '@/components/editor/Topbar'
 import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
-import { UpgradeModal } from '@/components/editor/UpgradeModal'
 import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
@@ -113,12 +112,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Command palette ───────────────────────────────────────────────────────
   const [paletteOpen, setPaletteOpen] = useState(false)
-
-  // ── Upgrade modal (Pro gate for pattern skeletons) ────────────────────────
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
-
-  // ── User plan: hardcoded 'free' until payment integration in a later phase ─
-  const userPlan: 'free' | 'pro' = 'free'
 
   // ── Relationship picker state ─────────────────────────────────────────────
   const [pendingConn, setPendingConn] = useState<Connection | null>(null)
@@ -260,12 +253,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   )
 
   // ── Insert design pattern skeleton ────────────────────────────────────────
+  // Not Pro-gated for now — every pattern is freely insertable until a real
+  // paid plan exists to gate it behind.
   const insertPattern = useCallback(
     (patternKey: string) => {
-      if (userPlan === 'free') {
-        setUpgradeOpen(true)
-        return
-      }
       const pattern: PatternData | undefined = PATTERN_BY_KEY.get(patternKey)
       if (!pattern) return
 
@@ -303,7 +294,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       toast.success(`${pattern.name} pattern inserted`)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [userPlan, nodes, edges, history, setNodes, setEdges],
+    [nodes, edges, history, setNodes, setEdges],
   )
 
   // ── Delete selected ───────────────────────────────────────────────────────
@@ -471,7 +462,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     exportSVG:     handleExportSVG,
     exportPlantUML: handleExportPlantUML,
     exportMermaid: handleExportMermaid,
-    userPlan,
   }
 
   return (
@@ -501,6 +491,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           onAddAbstract={() => insertNode('abstract-class')}
           onAddNote={() => insertNode('note')}
           onAddStereotype={insertStereotype}
+          onInsertPattern={insertPattern}
         />
 
         <main className="relative flex-1 overflow-hidden">
@@ -532,8 +523,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClose={() => setPaletteOpen(false)}
         actions={paletteActions}
       />
-
-      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} />
     </div>
   )
 }

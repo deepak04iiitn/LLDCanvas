@@ -4,13 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Check } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import {
-  ParkingCircle, ArrowUpDown, CreditCard, Film,
-  Crown, UtensilsCrossed, Car, Database,
-  DollarSign, Gamepad2, BookOpen, FileText, Bell, Box,
-} from 'lucide-react'
+import { Check, Box } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogFooter,
@@ -18,31 +12,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { api } from '@/lib/api'
+import { TEMPLATES } from '@/lib/data/templates'
+import { useSeededTemplates } from '@/hooks/useSeededTemplates'
 import { DiagramSummary } from '@/types'
-
-// ─── Template definitions ──────────────────────────────────────────────────────
-
-interface Template {
-  id: string
-  Icon: LucideIcon
-  label: string
-}
-
-const TEMPLATES: Template[] = [
-  { id: 'parking-lot',   Icon: ParkingCircle,    label: 'Parking Lot' },
-  { id: 'elevator',      Icon: ArrowUpDown,       label: 'Elevator System' },
-  { id: 'atm',           Icon: CreditCard,        label: 'ATM' },
-  { id: 'bookmyshow',    Icon: Film,              label: 'BookMyShow' },
-  { id: 'chess',         Icon: Crown,             label: 'Chess' },
-  { id: 'food-delivery', Icon: UtensilsCrossed,   label: 'Food Delivery' },
-  { id: 'ride-sharing',  Icon: Car,               label: 'Ride Sharing' },
-  { id: 'lru-cache',     Icon: Database,          label: 'LRU/LFU Cache' },
-  { id: 'splitwise',     Icon: DollarSign,        label: 'Splitwise' },
-  { id: 'snake-ladder',  Icon: Gamepad2,          label: 'Snake & Ladder' },
-  { id: 'library',       Icon: BookOpen,          label: 'Library System' },
-  { id: 'logger',        Icon: FileText,          label: 'Logger' },
-  { id: 'notification',  Icon: Bell,              label: 'Notification Service' },
-]
 
 interface NewDiagramModalProps {
   open: boolean
@@ -52,18 +24,24 @@ interface NewDiagramModalProps {
 
 export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramModalProps) {
   const router = useRouter()
+  const { idByTitle } = useSeededTemplates()
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleCreate(tab: 'blank' | 'template') {
+    let fromTemplateId: string | undefined
+    if (tab === 'template') {
+      const template = TEMPLATES.find((t) => t.id === selectedTemplate)
+      fromTemplateId = template?.seedTitle ? idByTitle.get(template.seedTitle) : undefined
+      if (!fromTemplateId) {
+        toast.error('That template isn’t available yet')
+        return
+      }
+    }
+
     setLoading(true)
     try {
-      const payload =
-        tab === 'template' && selectedTemplate
-          ? { fromTemplateId: selectedTemplate }
-          : {}
-
-      const { diagram } = await api.diagrams.create(payload)
+      const { diagram } = await api.diagrams.create(fromTemplateId ? { fromTemplateId } : {})
       onCreated?.(diagram as unknown as DiagramSummary)
       onOpenChange(false)
       setSelectedTemplate(null)
@@ -80,25 +58,25 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
       open={open}
       onOpenChange={(v) => { onOpenChange(v); if (!v) setSelectedTemplate(null) }}
     >
-      <DialogContent className="sm:max-w-[620px] p-0 overflow-hidden rounded-2xl border border-gray-100 shadow-xl">
+      <DialogContent className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-0 shadow-xl sm:max-w-[620px]">
         <div className="p-6 pb-0">
           <DialogHeader className="mb-4">
-            <DialogTitle className="text-lg font-semibold text-gray-900">
+            <DialogTitle className="font-serif text-lg font-medium text-ink">
               New Diagram
             </DialogTitle>
           </DialogHeader>
 
           <Tabs defaultValue="blank" className="w-full">
-            <TabsList className="w-full mb-5 rounded-lg bg-gray-100 p-1 h-10">
+            <TabsList className="mb-5 h-10 w-full rounded-md bg-paper p-1">
               <TabsTrigger
                 value="blank"
-                className="flex-1 text-sm rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                className="flex-1 rounded-md text-sm transition-all data-[state=active]:bg-paper-elevated data-[state=active]:shadow-sm"
               >
                 Blank Canvas
               </TabsTrigger>
               <TabsTrigger
                 value="template"
-                className="flex-1 text-sm rounded-md data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+                className="flex-1 rounded-md text-sm transition-all data-[state=active]:bg-paper-elevated data-[state=active]:shadow-sm"
               >
                 From Template
               </TabsTrigger>
@@ -106,30 +84,30 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
 
             {/* ── Blank canvas tab ── */}
             <TabsContent value="blank" className="mt-0">
-              <div className="flex flex-col items-center justify-center py-10 px-6">
-                <div className="w-20 h-20 rounded-2xl bg-indigo-50 border-2 border-dashed border-indigo-200 flex items-center justify-center mb-5">
-                  <Box size={32} className="text-indigo-300" />
+              <div className="flex flex-col items-center justify-center px-6 py-10">
+                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-xl border-2 border-dashed border-hairline-strong bg-paper">
+                  <Box size={30} className="text-brand" />
                 </div>
-                <p className="text-sm text-gray-500 text-center max-w-xs">
+                <p className="max-w-xs text-center text-sm text-ink-muted">
                   Start with an empty canvas. Press{' '}
-                  <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded border">C</kbd> to add a
+                  <kbd className="rounded border border-hairline-strong bg-paper px-1.5 py-0.5 text-xs">C</kbd> to add a
                   class,{' '}
-                  <kbd className="px-1.5 py-0.5 text-xs bg-gray-100 rounded border">I</kbd> for an
+                  <kbd className="rounded border border-hairline-strong bg-paper px-1.5 py-0.5 text-xs">I</kbd> for an
                   interface.
                 </p>
               </div>
-              <DialogFooter className="px-6 pb-6 pt-2">
+              <DialogFooter className="px-6 pt-2 pb-6">
                 <Button
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="transition-all active:scale-[0.97]"
+                  className="border-hairline-strong transition-all active:scale-[0.97]"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={() => handleCreate('blank')}
                   disabled={loading}
-                  className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] transition-all"
+                  className="bg-brand text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97]"
                 >
                   {loading ? 'Creating…' : 'Create Diagram'}
                 </Button>
@@ -138,62 +116,71 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
 
             {/* ── Template tab ── */}
             <TabsContent value="template" className="mt-0">
-              <div className="grid grid-cols-4 gap-3 max-h-64 overflow-y-auto pr-1 pb-1 no-scrollbar">
+              <div className="no-scrollbar grid max-h-64 grid-cols-3 gap-3 overflow-y-auto pr-1 pb-1 sm:grid-cols-4">
                 {TEMPLATES.map((t) => {
-                  const selected = selectedTemplate === t.id
+                  const available = !!(t.seedTitle && idByTitle.get(t.seedTitle))
+                  const selected = available && selectedTemplate === t.id
                   return (
                     <motion.button
                       key={t.id}
-                      onClick={() => setSelectedTemplate(t.id)}
-                      whileTap={{ scale: 0.96 }}
-                      className={`relative flex flex-col items-center gap-2.5 p-4 rounded-xl border text-center transition-all duration-150 ${
-                        selected
-                          ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                          : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-white'
+                      type="button"
+                      onClick={() => available && setSelectedTemplate(t.id)}
+                      whileTap={available ? { scale: 0.96 } : undefined}
+                      disabled={!available}
+                      title={available ? undefined : 'Coming soon'}
+                      className={`relative flex flex-col items-center gap-2.5 rounded-lg border p-4 text-center transition-all duration-150 ${
+                        !available
+                          ? 'cursor-not-allowed border-hairline bg-paper opacity-45'
+                          : selected
+                            ? 'border-brand bg-brand-tint shadow-sm'
+                            : 'border-hairline bg-paper hover:border-hairline-strong hover:bg-paper-elevated'
                       }`}
                     >
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                          selected ? 'bg-indigo-100' : 'bg-white'
-                        }`}
-                      >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-paper-elevated">
                         <t.Icon
                           size={17}
-                          className={selected ? 'text-indigo-600' : 'text-gray-400'}
+                          className={selected ? 'text-brand' : 'text-ink-faint'}
                         />
                       </div>
-                      <span className="text-[11px] font-medium text-gray-700 leading-tight">
+                      <span className="text-[11px] leading-tight font-medium text-ink">
                         {t.label}
                       </span>
 
                       {/* Selection checkmark */}
                       {selected && (
                         <motion.span
-                          className="absolute top-2 right-2 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center"
+                          className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-brand"
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           transition={{ duration: 0.15, ease: 'easeOut' }}
                         >
-                          <Check size={9} className="text-white" strokeWidth={3} />
+                          <Check size={9} className="text-brand-foreground" strokeWidth={3} />
                         </motion.span>
+                      )}
+
+                      {/* Not-yet-available badge */}
+                      {!available && (
+                        <span className="absolute top-1.5 right-1.5 rounded-full bg-gold-tint px-1.5 py-0.5 text-[9px] font-medium text-gold">
+                          Soon
+                        </span>
                       )}
                     </motion.button>
                   )
                 })}
               </div>
 
-              <DialogFooter className="px-6 pb-6 pt-4">
+              <DialogFooter className="px-6 pt-4 pb-6">
                 <Button
                   variant="outline"
                   onClick={() => onOpenChange(false)}
-                  className="transition-all active:scale-[0.97]"
+                  className="border-hairline-strong transition-all active:scale-[0.97]"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={() => handleCreate('template')}
                   disabled={loading || !selectedTemplate}
-                  className="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.97] transition-all disabled:opacity-50"
+                  className="bg-brand text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97] disabled:opacity-50"
                 >
                   {loading ? 'Creating…' : 'Create Diagram'}
                 </Button>
