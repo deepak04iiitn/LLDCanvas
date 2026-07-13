@@ -53,6 +53,7 @@ export interface CommandPaletteActions {
   exportPNG: () => void
   exportSVG: () => void
   exportPlantUML: () => void
+  exportMermaid: () => void
 }
 
 interface CommandPaletteProps {
@@ -213,6 +214,14 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             >
               <FileCode2 className="h-4 w-4 text-amber-500" />
               Copy PlantUML Text
+            </CommandItem>
+            <CommandItem
+              value="export mermaid diagram"
+              onSelect={() => run(actions.exportMermaid, onClose)}
+              className="gap-2"
+            >
+              <FileCode2 className="h-4 w-4 text-violet-500" />
+              Copy Mermaid Text
             </CommandItem>
           </CommandGroup>
         </CommandList>

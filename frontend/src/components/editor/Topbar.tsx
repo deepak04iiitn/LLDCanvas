@@ -41,6 +41,7 @@ interface TopbarProps {
   onExportPNG: () => void
   onExportSVG: () => void
   onExportPlantUML: () => void
+  onExportMermaid: () => void
   saveStatus: SaveStatus
   selectedCount: number
   onClearSelection: () => void
@@ -178,6 +179,7 @@ export function Topbar({
   onExportPNG,
   onExportSVG,
   onExportPlantUML,
+  onExportMermaid,
   saveStatus,
   selectedCount,
   onClearSelection,
@@ -300,7 +302,11 @@ export function Topbar({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onExportPlantUML} className="gap-2">
               <FileCode2 className="h-4 w-4 text-amber-500" />
-              PlantUML text
+              Copy PlantUML
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onExportMermaid} className="gap-2">
+              <FileCode2 className="h-4 w-4 text-violet-500" />
+              Copy Mermaid
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

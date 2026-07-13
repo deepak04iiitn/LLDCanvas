@@ -29,8 +29,9 @@ import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
 import type { DiagramData, UMLNodeData, UMLEdgeData, RelationshipType, CanvasTheme } from '@/types'
-import { exportPNG } from '@/lib/export/toPNG'
+import { exportPNG, exportSVG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
+import { toMermaid } from '@/lib/export/toMermaid'
 
 interface EditorShellProps {
   diagramId: string | null
@@ -119,7 +120,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     edges: edges as unknown[],
     meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
   }
-  const saveStatus = useAutosave(diagramId, diagramData)
+  const saveStatus = useAutosave(diagramId, diagramData, theme)
 
   // ── Derived: selection count ──────────────────────────────────────────────
   const selectedCount = nodes.filter(n => n.selected).length
@@ -302,15 +303,23 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Export ────────────────────────────────────────────────────────────────
   const handleExportPNG = useCallback(async () => {
-    try { await exportPNG(theme); toast.success('Exported as PNG') }
-    catch { toast.error('Export failed') }
-  }, [theme])
+    try { await exportPNG(theme, title); toast.success('Exported as PNG') }
+    catch { toast.error('PNG export failed') }
+  }, [theme, title])
 
-  const handleExportSVG = useCallback(() => toast('SVG export coming soon'), [])
+  const handleExportSVG = useCallback(async () => {
+    try { await exportSVG(theme, title); toast.success('Exported as SVG') }
+    catch { toast.error('SVG export failed') }
+  }, [theme, title])
 
   const handleExportPlantUML = useCallback(() => {
     const text = toPlantUML(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
     navigator.clipboard.writeText(text).then(() => toast.success('PlantUML copied to clipboard'))
+  }, [nodes, edges])
+
+  const handleExportMermaid = useCallback(() => {
+    const text = toMermaid(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
+    navigator.clipboard.writeText(text).then(() => toast.success('Mermaid copied to clipboard'))
   }, [nodes, edges])
 
   // ── Rename ────────────────────────────────────────────────────────────────
@@ -352,6 +361,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     exportPNG:     handleExportPNG,
     exportSVG:     handleExportSVG,
     exportPlantUML: handleExportPlantUML,
+    exportMermaid: handleExportMermaid,
   }
 
   return (
@@ -366,6 +376,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
         onExportPlantUML={handleExportPlantUML}
+        onExportMermaid={handleExportMermaid}
         saveStatus={saveStatus}
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}

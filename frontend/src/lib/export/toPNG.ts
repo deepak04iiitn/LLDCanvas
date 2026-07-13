@@ -1,5 +1,5 @@
 import { toPng, toSvg } from 'html-to-image'
-import { CanvasTheme } from '@/types'
+import type { CanvasTheme } from '@/types'
 
 const BG: Record<CanvasTheme, string> = {
   light: '#F8F8F8',
@@ -7,11 +7,15 @@ const BG: Record<CanvasTheme, string> = {
   whiteboard: '#FFFFFF',
 }
 
+function slug(title: string): string {
+  return title.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'diagram'
+}
+
 function getCanvasElement(): HTMLElement | null {
   return document.querySelector('.react-flow__renderer') as HTMLElement | null
 }
 
-export async function exportPNG(theme: CanvasTheme, scale = 2): Promise<void> {
+export async function exportPNG(theme: CanvasTheme, title = 'diagram', scale = 2): Promise<void> {
   const el = getCanvasElement()
   if (!el) return
 
@@ -21,10 +25,10 @@ export async function exportPNG(theme: CanvasTheme, scale = 2): Promise<void> {
     cacheBust: true,
   })
 
-  downloadDataUrl(dataUrl, 'lldcanvas-diagram.png')
+  downloadDataUrl(dataUrl, `${slug(title)}.png`)
 }
 
-export async function exportSVG(theme: CanvasTheme): Promise<void> {
+export async function exportSVG(theme: CanvasTheme, title = 'diagram'): Promise<void> {
   const el = getCanvasElement()
   if (!el) return
 
@@ -33,7 +37,7 @@ export async function exportSVG(theme: CanvasTheme): Promise<void> {
     cacheBust: true,
   })
 
-  downloadDataUrl(dataUrl, 'lldcanvas-diagram.svg')
+  downloadDataUrl(dataUrl, `${slug(title)}.svg`)
 }
 
 export async function generateThumbnail(theme: CanvasTheme): Promise<string | null> {
@@ -42,9 +46,10 @@ export async function generateThumbnail(theme: CanvasTheme): Promise<string | nu
 
   return toPng(el, {
     backgroundColor: BG[theme],
-    pixelRatio: 0.5,   // small — just for dashboard preview
+    pixelRatio: 0.5,
     width: 400,
     height: 300,
+    cacheBust: false,
   }).catch(() => null)
 }
 
