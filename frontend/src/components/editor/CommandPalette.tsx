@@ -8,10 +8,8 @@ import {
   StickyNote,
   Maximize2,
   PanelLeftClose,
-  Download,
   FileCode2,
   Image,
-  Lock,
   Tag,
   Sparkles,
 } from 'lucide-react'
@@ -27,7 +25,6 @@ import {
   CommandShortcut,
 } from '@/components/ui/command'
 import { ALL_PATTERNS } from '@/data/patterns'
-import { cn } from '@/lib/utils'
 
 // ─── All 13 LLD stereotypes from PRD §6.5 ────────────────────────────────────
 export const STEREOTYPES = [
@@ -51,7 +48,6 @@ export interface CommandPaletteActions {
   exportSVG: () => void
   exportPlantUML: () => void
   exportMermaid: () => void
-  userPlan: 'free' | 'pro'
 }
 
 interface CommandPaletteProps {
@@ -67,8 +63,6 @@ function run(fn: () => void, onClose: () => void) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) {
-  const isPro = actions.userPlan === 'pro'
-
   return (
     <CommandDialog
       open={open}
@@ -136,22 +130,13 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
                 key={p.key}
                 value={`pattern ${p.key} ${p.name.toLowerCase()} ${p.category.toLowerCase()}`}
                 onSelect={() => run(() => actions.insertPattern(p.key), onClose)}
-                className={cn('gap-2', !isPro && 'opacity-60')}
+                className="gap-2"
               >
-                {isPro ? (
-                  <Sparkles className="h-4 w-4 text-violet-500" />
-                ) : (
-                  <Lock className="h-3.5 w-3.5 text-amber-500" />
-                )}
+                <Sparkles className="h-4 w-4 text-violet-500" />
                 <span className="flex-1">
                   {p.name}
                   <span className="ml-1.5 text-[10px] text-gray-400">{p.category}</span>
                 </span>
-                {!isPro && (
-                  <span className="ml-auto rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-950/60 dark:text-amber-400">
-                    Pro
-                  </span>
-                )}
               </CommandItem>
             ))}
           </CommandGroup>

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import mongoose from 'mongoose'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 
@@ -46,7 +47,11 @@ export const diagramsController = {
 
       let diagramData = undefined
 
-      if (fromTemplateId) {
+      // A malformed or unknown fromTemplateId (e.g. a stale/unseeded slug) must
+      // fall back to a blank diagram, not crash the request — Mongoose throws
+      // a CastError for any non-ObjectId string passed straight into a `_id`
+      // query, which previously surfaced to the client as a raw 500.
+      if (fromTemplateId && mongoose.isValidObjectId(fromTemplateId)) {
         const template = await Diagram.findOne({ _id: fromTemplateId, isTemplate: true }).lean()
         if (template) diagramData = template.diagramData
       }

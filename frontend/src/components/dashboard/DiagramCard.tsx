@@ -83,7 +83,7 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
     <ContextMenu>
       <ContextMenuTrigger>
         <motion.div
-          className="group relative rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:border-gray-200 transition-all duration-200 cursor-pointer overflow-hidden"
+          className="group relative cursor-pointer overflow-hidden rounded-lg border border-hairline bg-paper-elevated shadow-sm transition-all duration-200 hover:border-hairline-strong hover:shadow-md"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
@@ -95,13 +95,13 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
           }}
         >
           {/* Thumbnail */}
-          <div className="h-36 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden relative">
+          <div className="relative flex h-36 items-center justify-center overflow-hidden bg-paper">
             {diagram.thumbnail ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={diagram.thumbnail}
                 alt={diagram.title}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
               <EmptyThumbnail />
@@ -109,13 +109,13 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
 
             {/* Hover overlay */}
             <motion.div
-              className="absolute inset-0 bg-indigo-600/80 backdrop-blur-[2px] flex items-center justify-center gap-2"
+              className="absolute inset-0 flex items-center justify-center gap-2 bg-ink/70"
               initial={{ opacity: 0 }}
               animate={{ opacity: hovered ? 1 : 0 }}
               transition={{ duration: 0.15 }}
             >
-              <ExternalLink size={14} className="text-white" />
-              <span className="text-white text-sm font-semibold tracking-wide">Open</span>
+              <ExternalLink size={14} className="text-paper-elevated" />
+              <span className="text-sm font-semibold tracking-wide text-paper-elevated">Open</span>
             </motion.div>
           </div>
 
@@ -132,44 +132,44 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
                   if (e.key === 'Escape') { setRenaming(false); setRenameValue(diagram.title) }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="h-7 text-sm px-2 py-0 border-indigo-300 focus:border-indigo-500"
+                className="h-7 border-hairline-strong px-2 py-0 text-sm focus:border-brand"
                 autoFocus
               />
             ) : (
               <p
-                className="text-sm font-medium text-gray-800 truncate leading-5"
+                className="truncate text-sm font-medium leading-5 text-ink"
                 onDoubleClick={(e) => { e.stopPropagation(); startRename() }}
               >
                 {diagram.title}
               </p>
             )}
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="mt-1 text-xs text-ink-faint">
               {formatRelativeTime(diagram.updatedAt)}
             </p>
           </div>
         </motion.div>
       </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-48 rounded-xl shadow-lg border-gray-100">
-        <ContextMenuItem onClick={openEditor} className="gap-2.5 cursor-pointer">
-          <ExternalLink size={13} className="text-gray-400" /> Open
+      <ContextMenuContent className="w-48 rounded-lg border-hairline shadow-lg">
+        <ContextMenuItem onClick={openEditor} className="cursor-pointer gap-2.5">
+          <ExternalLink size={13} className="text-ink-faint" /> Open
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem onClick={startRename} className="gap-2.5 cursor-pointer">
-          <Pencil size={13} className="text-gray-400" /> Rename
+        <ContextMenuItem onClick={startRename} className="cursor-pointer gap-2.5">
+          <Pencil size={13} className="text-ink-faint" /> Rename
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleDuplicate} className="gap-2.5 cursor-pointer">
-          <Copy size={13} className="text-gray-400" /> Duplicate
+        <ContextMenuItem onClick={handleDuplicate} className="cursor-pointer gap-2.5">
+          <Copy size={13} className="text-ink-faint" /> Duplicate
         </ContextMenuItem>
-        <ContextMenuItem onClick={handleExport} className="gap-2.5 cursor-pointer">
-          <Download size={13} className="text-gray-400" /> Export
+        <ContextMenuItem onClick={handleExport} className="cursor-pointer gap-2.5">
+          <Download size={13} className="text-ink-faint" /> Export
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
           onClick={handleDelete}
-          className="gap-2.5 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+          className="cursor-pointer gap-2.5 text-red-700 focus:bg-red-50 focus:text-red-700"
         >
-          <Trash2 size={13} className="text-red-400" /> Delete
+          <Trash2 size={13} className="text-red-500" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -178,13 +178,13 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
 
 function EmptyThumbnail() {
   return (
-    <div className="flex flex-col items-center gap-2 opacity-25">
+    <div className="flex flex-col items-center gap-2 opacity-40">
       <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="4" width="24" height="7" rx="2" stroke="#6366F1" strokeWidth="1.5" />
-        <rect x="4" y="14" width="24" height="14" rx="2" stroke="#6366F1" strokeWidth="1.5" />
-        <line x1="4" y1="18" x2="28" y2="18" stroke="#6366F1" strokeWidth="1.5" />
+        <rect x="4" y="4" width="24" height="7" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
+        <rect x="4" y="14" width="24" height="14" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
+        <line x1="4" y1="18" x2="28" y2="18" stroke="var(--brand)" strokeWidth="1.5" />
       </svg>
-      <span className="text-[10px] font-mono text-gray-500">Empty diagram</span>
+      <span className="font-mono text-[10px] text-ink-faint">Empty diagram</span>
     </div>
   )
 }
