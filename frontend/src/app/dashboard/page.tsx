@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DiagramCard } from '@/components/dashboard/DiagramCard'
 import { NewDiagramModal } from '@/components/dashboard/NewDiagramModal'
+import { Monitor } from 'lucide-react'
 import { useSession, signOut } from '@/lib/auth-client'
 import { api } from '@/lib/api'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -42,6 +43,9 @@ export default function DashboardPage() {
   const [newModalOpen, setNewModalOpen] = useState(false)
 
   const debouncedSearch = useDebounce(search, 300)
+
+  // ─── Page title ─────────────────────────────────────────────────────────────
+  useEffect(() => { document.title = 'Dashboard — LLDCanvas' }, [])
 
   // ─── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -129,7 +133,13 @@ export default function DashboardPage() {
   if (!session) return null
 
   return (
-    <div className="flex h-screen bg-[#F8F8F8] overflow-hidden">
+    <div className="flex h-screen flex-col bg-[#F8F8F8] overflow-hidden">
+      {/* Mobile hint banner — visible only on small screens */}
+      <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800 sm:hidden">
+        <Monitor className="h-3.5 w-3.5 shrink-0" />
+        LLDCanvas works best on a desktop browser — the editor is not supported on mobile.
+      </div>
+      <div className="flex flex-1 overflow-hidden">
 
       {/* ─── Sidebar ────────────────────────────────────────────────────────── */}
       <aside className="w-56 shrink-0 bg-white border-r border-gray-100 flex flex-col">
@@ -262,6 +272,7 @@ export default function DashboardPage() {
         onOpenChange={setNewModalOpen}
         onCreated={handleCreated}
       />
+      </div>  {/* end inner flex */}
     </div>
   )
 }

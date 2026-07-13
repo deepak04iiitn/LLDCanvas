@@ -133,7 +133,25 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     edges: edges as unknown[],
     meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
   }
-  const saveStatus = useAutosave(diagramId, diagramData, theme)
+  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme)
+
+  // ── Browser tab title ────────────────────────────────────────────────────
+  useEffect(() => {
+    document.title = `${title} — LLDCanvas`
+    return () => { document.title = 'LLDCanvas' }
+  }, [title])
+
+  // ── Offline / online detection ───────────────────────────────────────────
+  useEffect(() => {
+    const handleOffline = () => toast('Working offline — changes will sync when reconnected.', { duration: Infinity, id: 'offline' })
+    const handleOnline  = () => { toast.dismiss('offline'); toast.success('Back online') }
+    window.addEventListener('offline', handleOffline)
+    window.addEventListener('online', handleOnline)
+    return () => {
+      window.removeEventListener('offline', handleOffline)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [])
 
   // ── Local-mode persistence → localStorage ────────────────────────────────
   // Run after the autosave effect; only active when diagramId is null (local mode).
@@ -451,6 +469,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onExportPlantUML={handleExportPlantUML}
         onExportMermaid={handleExportMermaid}
         saveStatus={saveStatus}
+        onRetrySave={retrySave}
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}
       />

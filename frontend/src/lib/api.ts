@@ -21,6 +21,17 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  account: {
+    updateName: (name: string) =>
+      request<{ ok: boolean; name: string }>('/account/name', {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      }),
+
+    deleteAccount: () =>
+      request<{ ok: boolean }>('/account', { method: 'DELETE' }),
+  },
+
   diagrams: {
     list: (q?: string) => {
       const qs = q ? `?q=${encodeURIComponent(q)}` : ''

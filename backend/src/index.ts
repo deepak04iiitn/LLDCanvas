@@ -10,6 +10,7 @@ import { errorHandler } from './middleware/error'
 import { authRateLimit } from './middleware/rateLimit'
 import diagramsRouter from './routes/diagrams.route'
 import exportRouter from './routes/export.route'
+import accountRouter from './routes/account.route'
 
 const app = express()
 
@@ -49,6 +50,7 @@ app.all('/api/auth/*', async (req, res, next) => {
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use('/diagrams', diagramsRouter)
 app.use('/diagrams', exportRouter)
+app.use('/account',  accountRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
