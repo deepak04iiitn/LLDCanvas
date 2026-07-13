@@ -135,7 +135,7 @@ function FeatureChain() {
 
 // ─── Spec strip ───────────────────────────────────────────────────────────────
 const SPECS = [
-  { n: '10', label: 'Design patterns' },
+  { n: '23', label: 'Design patterns' },
   { n: '7',  label: 'Relationship types' },
   { n: '4',  label: 'Export formats' },
   { n: '3',  label: 'Canvas themes' },
@@ -171,7 +171,7 @@ const PERSONAS = [
     n: '03',
     mono: 'OOP & patterns',
     title: 'CS students',
-    desc: 'All 10 design patterns are pre-wired and one keystroke away. See exactly how the classes connect.',
+    desc: 'All 23 design patterns are pre-wired and one keystroke away. See exactly how the classes connect.',
   },
 ]
 
@@ -253,8 +253,10 @@ const TEMPLATE_SHOWCASE = [
   { name: 'LRU Cache',        desc: 'Hash map + doubly linked list' },
 ]
 const PATTERNS_SHOWCASE = [
-  'Singleton', 'Factory Method', 'Abstract Factory', 'Builder',
-  'Adapter', 'Decorator', 'Proxy', 'Facade', 'Strategy', 'Observer',
+  'Singleton', 'Factory Method', 'Abstract Factory', 'Builder', 'Prototype',
+  'Adapter', 'Bridge', 'Composite', 'Decorator', 'Facade', 'Flyweight', 'Proxy',
+  'Chain of Responsibility', 'Command', 'Interpreter', 'Iterator', 'Mediator',
+  'Memento', 'Observer', 'State', 'Strategy', 'Template Method', 'Visitor',
 ]
 
 function LibrarySection() {
@@ -351,7 +353,7 @@ const FAQS = [
   },
   {
     q: 'How is LLDCanvas different from draw.io or Lucidchart?',
-    a: 'draw.io and Lucidchart work with generic shapes. LLDCanvas works with classes. Every node is a real UML class node — with a header, attributes section, and methods section. Relationships have semantic meaning (a filled diamond is composition, a hollow triangle is inheritance). You also get 10 design pattern skeletons and LLD-specific problem templates — neither of which exists in generic tools.',
+    a: 'draw.io and Lucidchart work with generic shapes. LLDCanvas works with classes. Every node is a real UML class node — with a header, attributes section, and methods section. Relationships have semantic meaning (a filled diamond is composition, a hollow triangle is inheritance). You also get all 23 classic design pattern skeletons and LLD-specific problem templates — neither of which exists in generic tools.',
   },
   {
     q: 'How is it different from Excalidraw?',
@@ -374,8 +376,8 @@ const FAQS = [
     a: 'Yes. Export as PNG (for resumes, slide decks), SVG (scalable, for design docs), PlantUML text (for rendering in other tools), or Mermaid text (for GitHub READMEs, Notion, Confluence). All exports are available from the toolbar or the Ctrl+K command palette.',
   },
   {
-    q: 'Are all 10 design patterns included?',
-    a: 'Yes — Singleton, Factory Method, Abstract Factory, Builder, Adapter, Decorator, Proxy, Facade, Strategy, and Observer are all pre-built with the correct UML structure and relationship wiring. Insert any of them with Ctrl+K → "Patterns".',
+    q: 'Are all design patterns included?',
+    a: 'Yes — all 23 classic design patterns (Creational, Structural, and Behavioral) are pre-built with the correct UML structure and relationship wiring. Insert any of them with Ctrl+K → "Patterns", or from the left panel.',
   },
   {
     q: 'Which LLD problem templates are available?',
@@ -383,7 +385,7 @@ const FAQS = [
   },
   {
     q: 'Is it free?',
-    a: 'Yes — the entire editor is free right now: every node type, every relationship, all 10 design pattern skeletons, and every export format. Signing in (free, just Google or email) only adds cloud sync across devices.',
+    a: 'Yes — the entire editor is free right now: every node type, every relationship, all 23 design pattern skeletons, and every export format. Signing in (free, just Google or email) only adds cloud sync across devices.',
   },
 ]
 

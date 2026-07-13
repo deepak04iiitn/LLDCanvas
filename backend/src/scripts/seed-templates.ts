@@ -13,6 +13,8 @@ import { Diagram } from '../models/diagram.model'
 
 const MONGO_URI = process.env.MONGO_URI ?? 'mongodb://127.0.0.1:27017/lldcanvas'
 
+type HandleSide = 'top' | 'right' | 'bottom' | 'left'
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function cls(id: string, name: string, x: number, y: number, attrs: string[], methods: string[]) {
   return {
@@ -62,8 +64,19 @@ function iface(id: string, name: string, x: number, y: number, methods: string[]
   }
 }
 
-function edge(id: string, source: string, target: string, type: string) {
-  return { id, source, target, type, data: { relationshipType: type } }
+// `sourceHandle`/`targetHandle` are required — see the matching note in
+// frontend/src/data/patterns/patterns.ts. Without them, every edge in every
+// template rendered from the top of both boxes regardless of actual layout,
+// which is what produced the crossed/overlapping arrows.
+function edge(
+  id: string,
+  source: string,
+  target: string,
+  type: string,
+  sourceHandle: HandleSide,
+  targetHandle: HandleSide,
+) {
+  return { id, source, target, type, sourceHandle, targetHandle, data: { relationshipType: type } }
 }
 
 // ─── Template 1: Parking Lot ──────────────────────────────────────────────────
@@ -79,13 +92,13 @@ const parkingLot = {
     cls('hourly-fee', 'HourlyFeeStrategy', 800, 260, [], ['+calculate(ticket: Ticket): double']),
   ],
   edges: [
-    edge('e1', 'parking-lot', 'level', 'composition'),
-    edge('e2', 'level', 'parking-spot', 'composition'),
-    edge('e3', 'parking-spot', 'vehicle', 'association'),
-    edge('e4', 'ticket', 'parking-spot', 'association'),
-    edge('e5', 'ticket', 'vehicle', 'association'),
-    edge('e6', 'hourly-fee', 'fee-strategy', 'realization'),
-    edge('e7', 'parking-lot', 'fee-strategy', 'association'),
+    edge('e1', 'parking-lot', 'level', 'composition', 'bottom', 'top'),
+    edge('e2', 'level', 'parking-spot', 'composition', 'bottom', 'top'),
+    edge('e3', 'parking-spot', 'vehicle', 'association', 'right', 'left'),
+    edge('e4', 'ticket', 'parking-spot', 'association', 'bottom', 'top'),
+    edge('e5', 'ticket', 'vehicle', 'association', 'bottom', 'top'),
+    edge('e6', 'hourly-fee', 'fee-strategy', 'realization', 'top', 'bottom'),
+    edge('e7', 'parking-lot', 'fee-strategy', 'association', 'right', 'left'),
   ],
 }
 
@@ -105,10 +118,10 @@ const elevatorSystem = {
     cls('elevator-btn', 'ElevatorButton', 700, 300, ['-floor: int', '-direction: Direction'], ['+pressButton(): void']),
   ],
   edges: [
-    edge('e1', 'elevator-ctrl', 'elevator', 'composition'),
-    edge('e2', 'elevator', 'request', 'association'),
-    edge('e3', 'elevator', 'direction-enum', 'dependency'),
-    edge('e4', 'elevator-btn', 'elevator-ctrl', 'association'),
+    edge('e1', 'elevator-ctrl', 'elevator', 'composition', 'bottom', 'top'),
+    edge('e2', 'elevator', 'request', 'association', 'right', 'left'),
+    edge('e3', 'elevator', 'direction-enum', 'dependency', 'right', 'left'),
+    edge('e4', 'elevator-btn', 'elevator-ctrl', 'association', 'left', 'right'),
   ],
 }
 
@@ -124,11 +137,11 @@ const atm = {
     cls('cash-dispenser', 'CashDispenser', 700, 280, ['-cashAvailable: double'], ['+dispenseCash(amount: double): boolean', '+hasSufficientCash(amount: double): boolean']),
   ],
   edges: [
-    edge('e1', 'atm', 'card', 'association'),
-    edge('e2', 'card', 'account', 'association'),
-    edge('e3', 'atm', 'transaction', 'dependency'),
-    edge('e4', 'atm', 'auth-service', 'association'),
-    edge('e5', 'atm', 'cash-dispenser', 'composition'),
+    edge('e1', 'atm', 'card', 'association', 'right', 'left'),
+    edge('e2', 'card', 'account', 'association', 'bottom', 'top'),
+    edge('e3', 'atm', 'transaction', 'dependency', 'bottom', 'top'),
+    edge('e4', 'atm', 'auth-service', 'association', 'right', 'left'),
+    edge('e5', 'atm', 'cash-dispenser', 'composition', 'right', 'left'),
   ],
 }
 
@@ -145,13 +158,13 @@ const bookMyShow = {
     cls('payment', 'Payment', 40, 560, ['-paymentId: String', '-amount: double', '-status: PaymentStatus'], ['+processPayment(): boolean']),
   ],
   edges: [
-    edge('e1', 'theater', 'screen', 'composition'),
-    edge('e2', 'screen', 'show', 'composition'),
-    edge('e3', 'show', 'seat', 'association'),
-    edge('e4', 'booking', 'show', 'association'),
-    edge('e5', 'booking', 'seat', 'association'),
-    edge('e6', 'booking', 'user', 'association'),
-    edge('e7', 'booking', 'payment', 'association'),
+    edge('e1', 'theater', 'screen', 'composition', 'bottom', 'top'),
+    edge('e2', 'screen', 'show', 'composition', 'right', 'left'),
+    edge('e3', 'show', 'seat', 'association', 'right', 'left'),
+    edge('e4', 'booking', 'show', 'association', 'bottom', 'top'),
+    edge('e5', 'booking', 'seat', 'association', 'right', 'left'),
+    edge('e6', 'booking', 'user', 'association', 'right', 'left'),
+    edge('e7', 'booking', 'payment', 'association', 'left', 'top'),
   ],
 }
 
@@ -165,10 +178,10 @@ const lruCache = {
     cls('dll', 'DoublyLinkedList', 700, 80, ['-head: Node', '-tail: Node', '-size: int'], ['+addFirst(n: Node): void', '+removeLast(): Node', '+remove(n: Node): void']),
   ],
   edges: [
-    edge('e1', 'lru-cache', 'cache-iface', 'realization'),
-    edge('e2', 'lru-cache', 'dll-node', 'composition'),
-    edge('e3', 'lru-cache', 'dll', 'composition'),
-    edge('e4', 'dll', 'dll-node', 'aggregation'),
+    edge('e1', 'lru-cache', 'cache-iface', 'realization', 'top', 'bottom'),
+    edge('e2', 'lru-cache', 'dll-node', 'composition', 'right', 'left'),
+    edge('e3', 'lru-cache', 'dll', 'composition', 'right', 'left'),
+    edge('e4', 'dll', 'dll-node', 'aggregation', 'bottom', 'top'),
   ],
 }
 
@@ -180,13 +193,23 @@ async function seed() {
   console.log('Connected to MongoDB:', MONGO_URI)
 
   let inserted = 0
-  let skipped = 0
+  let updated = 0
 
   for (const tpl of TEMPLATES) {
     const existing = await Diagram.findOne({ isTemplate: true, title: tpl.title })
     if (existing) {
-      console.log(`  SKIP  "${tpl.title}" (already exists)`)
-      skipped++
+      // Re-running the seed after this fix must actually replace the old
+      // (handle-less, broken-arrow) diagramData — skipping would leave every
+      // previously-seeded template permanently broken.
+      existing.diagramData = {
+        version: 1,
+        nodes: tpl.nodes,
+        edges: tpl.edges,
+        meta: existing.diagramData?.meta ?? { theme: 'light', zoom: 1, panX: 0, panY: 0 },
+      } as typeof existing.diagramData
+      await existing.save()
+      console.log(`  UPDATE "${tpl.title}" (refreshed arrow routing)`)
+      updated++
       continue
     }
 
@@ -206,7 +229,7 @@ async function seed() {
     inserted++
   }
 
-  console.log(`\nDone. Inserted: ${inserted}  Skipped: ${skipped}`)
+  console.log(`\nDone. Inserted: ${inserted}  Updated: ${updated}`)
   await mongoose.disconnect()
 }
 
