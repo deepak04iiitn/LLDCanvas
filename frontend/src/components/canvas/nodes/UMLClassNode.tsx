@@ -581,9 +581,13 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   }, [pendingMethodId])
 
   useEffect(() => {
-    const observer = new ResizeObserver(() => updateNodeInternals(id))
+    let raf: number
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => updateNodeInternals(id))
+    })
     if (nodeRef.current) observer.observe(nodeRef.current)
-    return () => observer.disconnect()
+    return () => { observer.disconnect(); cancelAnimationFrame(raf) }
   }, [id, updateNodeInternals])
 
   useEffect(() => { setNameDraft(data.name) }, [data.name])
@@ -676,7 +680,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
 
   const containerCls = cn(
     'group relative min-w-[200px] rounded-lg border bg-white text-gray-900',
-    'shadow-sm transition-shadow dark:bg-[#1E1E1E] dark:text-gray-100',
+    'shadow-sm dark:bg-[#1E1E1E] dark:text-gray-100',
     isInterface ? 'border-dashed' : 'border-solid',
     selected
       ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
