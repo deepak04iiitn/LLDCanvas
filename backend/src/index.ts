@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
-import cors from 'cors'
+import cors, { type CorsOptions } from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
@@ -14,14 +14,32 @@ import accountRouter from './routes/account.route'
 
 const app = express()
 
+// ─── Allowed origins ───────────────────────────────────────────────────────────
+// Strip trailing slashes so "https://foo.com/" and "https://foo.com" both match
+// the Origin header the browser sends (which never has a trailing slash).
+const allowedOrigins: string[] = (
+  process.env.CORS_ORIGINS ?? process.env.CLIENT_URL ?? 'http://localhost:3000'
+)
+  .split(',')
+  .map((o) => o.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS: origin "${origin}" not allowed`))
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+}
+
 // ─── Security & parsing ────────────────────────────────────────────────────────
 app.use(helmet())
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL ?? 'http://localhost:3000',
-    credentials: true,   // required for cross-site Better Auth session cookies
-  })
-)
+app.use(cors(corsOptions))
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use(express.json({ limit: '10mb' }))
 
@@ -32,13 +50,46 @@ app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, l
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }))
 
 // ─── Auth routes (Better Auth) ────────────────────────────────────────────────
-// Stricter rate limit on sign-in / sign-up to prevent brute-force
 app.use('/api/auth/sign-in', authRateLimit)
 app.use('/api/auth/sign-up', authRateLimit)
 
-// toNodeHandler bridges Better Auth's web-standard handler to Express
-app.all('/api/auth/*', async (req, res, next) => {
+// `toNodeHandler` converts Better Auth's web-standard handler to a Node handler.
+// It calls res.writeHead() internally, which REPLACES all headers set by the
+// global cors() middleware above — so CORS headers get dropped for auth routes.
+//
+// Fix: apply cors() again on this route, intercept OPTIONS preflight ourselves,
+// and patch res.writeHead to re-inject the CORS headers after Better Auth writes
+// its own header set.
+app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
   try {
+    const requestOrigin = req.headers.origin as string | undefined
+    const isAllowed = Boolean(requestOrigin && allowedOrigins.includes(requestOrigin))
+
+    // Answer OPTIONS preflight before Better Auth sees the request
+    if (req.method === 'OPTIONS') {
+      if (isAllowed) {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin!)
+        res.setHeader('Access-Control-Allow-Credentials', 'true')
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Cookie')
+        res.setHeader('Vary', 'Origin')
+      }
+      return res.status(204).end()
+    }
+
+    // Patch writeHead so CORS headers survive even if toNodeHandler replaces them
+    if (isAllowed) {
+      const _writeHead = res.writeHead.bind(res)
+      // @ts-expect-error – overloaded signature; we only use the common path
+      res.writeHead = (statusCode: number, ...rest: unknown[]) => {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin!)
+        res.setHeader('Access-Control-Allow-Credentials', 'true')
+        res.setHeader('Vary', 'Origin')
+        // @ts-expect-error
+        return _writeHead(statusCode, ...rest)
+      }
+    }
+
     const auth = await getAuth()
     const { toNodeHandler } = await import('better-auth/node')
     return toNodeHandler(auth)(req, res)
@@ -60,7 +111,6 @@ const PORT = Number(process.env.PORT) || 4000
 
 async function start() {
   await connectDB()
-  // Pre-warm the auth singleton so first request isn't slow
   await getAuth()
   app.listen(PORT, () => {
     console.log(`✓ API listening on http://localhost:${PORT}`)

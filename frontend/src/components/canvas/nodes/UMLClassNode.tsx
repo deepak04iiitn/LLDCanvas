@@ -7,6 +7,7 @@ import {
   useCallback,
   type KeyboardEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Handle,
   Position,
@@ -21,6 +22,8 @@ import {
   Copy,
   RefreshCw,
   FunctionSquare,
+  Check,
+  X,
 } from 'lucide-react'
 import {
   ContextMenu,
@@ -29,65 +32,197 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import type { UMLNodeData, UMLAttribute, UMLMethod } from '@/types'
-import { formatAttribute, parseAttribute, formatMethod, parseMethod } from '@/lib/uml/parser'
+import type { UMLNodeData, UMLAttribute, UMLMethod, Visibility } from '@/types'
+import { formatAttribute, formatMethod } from '@/lib/uml/parser'
 import { cn } from '@/lib/utils'
 
 // ─── Handle appearance ────────────────────────────────────────────────────────
-// One handle per side (not a stacked source+target pair) — with `connectionMode:
-// Loose` set on <ReactFlow> (CanvasView.tsx), each can both start and receive a
-// connection. Each MUST have a unique `id`: React Flow requires this whenever a
-// node has more than one handle, otherwise it can't tell them apart and silently
-// falls back to the first one registered — which is how every edge used to end
-// up anchored to the top handle no matter which side was actually dragged.
 const HANDLE_CLS =
   '!h-3 !w-3 !rounded-full !border-2 !border-white !bg-indigo-500 ' +
   '!opacity-0 !transition-all !duration-150 group-hover:!opacity-100 hover:!opacity-100 ' +
   'hover:!scale-125 !shadow-sm'
 
 const HANDLE_POSITIONS = [
-  { id: 'top', position: Position.Top },
-  { id: 'right', position: Position.Right },
+  { id: 'top',    position: Position.Top    },
+  { id: 'right',  position: Position.Right  },
   { id: 'bottom', position: Position.Bottom },
-  { id: 'left', position: Position.Left },
+  { id: 'left',   position: Position.Left   },
 ] as const
 
-// ─── Inline edit hook ─────────────────────────────────────────────────────────
-function useInlineEdit(initial: string, onCommit: (val: string) => void) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(initial)
-  const inputRef = useRef<HTMLInputElement>(null)
+// ─── Type autocomplete list ───────────────────────────────────────────────────
+const COMMON_TYPES = [
+  'void', 'boolean', 'int', 'long', 'float', 'double', 'char', 'byte', 'short',
+  'String', 'Object', 'Integer', 'Long', 'Float', 'Double', 'Boolean', 'Character',
+  'List<>', 'ArrayList<>', 'LinkedList<>', 'Map<,>', 'HashMap<,>', 'TreeMap<,>',
+  'Set<>', 'HashSet<>', 'TreeSet<>', 'Queue<>', 'Deque<>', 'Stack<>', 'PriorityQueue<>',
+  'Optional<>', 'Iterator<>', 'Iterable<>', 'Comparable<>', 'Enum',
+]
 
-  const open = useCallback(
-    (val?: string) => {
-      setDraft(val ?? initial)
-      setEditing(true)
-      setTimeout(() => {
-        inputRef.current?.focus()
-        inputRef.current?.select()
-      }, 0)
-    },
-    [initial],
+// ─── Visibility config ────────────────────────────────────────────────────────
+const VIS_ORDER: Visibility[] = ['+', '-', '#', '~']
+const VIS_NEXT: Record<Visibility, Visibility> = { '+': '-', '-': '#', '#': '~', '~': '+' }
+const VIS_BADGE: Record<Visibility, string> = {
+  '+': 'bg-emerald-500 text-white',
+  '-': 'bg-red-500    text-white',
+  '#': 'bg-amber-500  text-white',
+  '~': 'bg-sky-500    text-white',
+}
+const VIS_TITLE: Record<Visibility, string> = {
+  '+': 'public (+)', '-': 'private (−)', '#': 'protected (#)', '~': 'package (~)',
+}
+
+// ─── Single cycling visibility badge ─────────────────────────────────────────
+function VisibilityCycle({
+  value,
+  onChange,
+}: {
+  value: Visibility
+  onChange: (v: Visibility) => void
+}) {
+  return (
+    <button
+      type="button"
+      title={`${VIS_TITLE[value]} — click to change`}
+      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onChange(VIS_NEXT[value]) }}
+      className={cn(
+        'shrink-0 h-[18px] w-[18px] rounded text-[10px] font-bold font-mono',
+        'flex items-center justify-center transition-all hover:scale-110',
+        VIS_BADGE[value],
+      )}
+    >
+      {value}
+    </button>
+  )
+}
+
+// ─── Type combobox — dropdown rendered in a portal to escape canvas clipping ──
+interface TypeComboboxProps {
+  value: string
+  onChange: (v: string) => void
+  onEnter?: () => void
+  onEscape?: () => void
+  placeholder?: string
+  className?: string
+  autoFocus?: boolean
+}
+
+function TypeCombobox({ value, onChange, onEnter, onEscape, placeholder = 'Type', className, autoFocus }: TypeComboboxProps) {
+  const [open, setOpen]       = useState(false)
+  const [activeIdx, setActiveIdx] = useState(-1)
+  const [pos, setPos]         = useState({ top: 0, left: 0, width: 0 })
+  const inputRef              = useRef<HTMLInputElement>(null)
+
+  const filtered = COMMON_TYPES.filter(
+    t => !value || t.toLowerCase().includes(value.toLowerCase()),
   )
 
-  const commit = useCallback(() => {
-    const trimmed = draft.trim()
-    if (trimmed) onCommit(trimmed)
-    setEditing(false)
-  }, [draft, onCommit])
-
-  const cancel = useCallback(() => {
-    setDraft(initial)
-    setEditing(false)
-  }, [initial])
-
-  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') { e.preventDefault(); commit() }
-    if (e.key === 'Escape') { e.preventDefault(); cancel() }
-    e.stopPropagation()
+  function openDrop() {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom, left: r.left, width: Math.max(r.width, 140) })
+    }
+    setOpen(true)
   }
 
-  return { editing, draft, setDraft, open, commit, cancel, onKeyDown, inputRef }
+  function select(t: string) {
+    onChange(t)
+    setOpen(false)
+    setActiveIdx(-1)
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault(); e.stopPropagation()
+      setActiveIdx(i => Math.min(i + 1, filtered.length - 1))
+      if (!open) openDrop()
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault(); e.stopPropagation()
+      setActiveIdx(i => Math.max(i - 1, -1))
+    } else if (e.key === 'Enter') {
+      e.preventDefault(); e.stopPropagation()
+      if (activeIdx >= 0 && filtered[activeIdx]) { select(filtered[activeIdx]) }
+      else { setOpen(false); onEnter?.() }
+    } else if (e.key === 'Escape') {
+      e.preventDefault(); e.stopPropagation()
+      setOpen(false); onEscape?.()
+    } else if (e.key === 'Tab') {
+      setOpen(false)
+    }
+  }
+
+  const dropdown = open && filtered.length > 0 && (
+    <div
+      style={{ position: 'fixed', top: pos.top + 2, left: pos.left, width: pos.width, zIndex: 99999 }}
+      className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl
+                 dark:border-slate-700 dark:bg-[#1a1a1a]"
+      onMouseDown={e => e.stopPropagation()}
+    >
+      {filtered.map((t, i) => (
+        <div
+          key={t}
+          onMouseDown={e => { e.preventDefault(); e.stopPropagation(); select(t) }}
+          className={cn(
+            'cursor-pointer px-3 py-1.5 font-mono text-[11px] transition-colors',
+            i === activeIdx
+              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300'
+              : 'text-gray-700 hover:bg-slate-50 dark:text-gray-300 dark:hover:bg-slate-800/60',
+          )}
+        >
+          {t}
+        </div>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className={cn('relative', className)}>
+      <input
+        ref={inputRef}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={autoFocus}
+        value={value}
+        onChange={e => { onChange(e.target.value); openDrop(); setActiveIdx(-1) }}
+        onFocus={openDrop}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onKeyDown={handleKeyDown}
+        onPointerDown={e => e.stopPropagation()}
+        placeholder={placeholder}
+        className="w-full rounded-md border border-slate-200 bg-white px-2 py-0.5
+                   font-mono text-[11px] text-gray-800 outline-none
+                   focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+                   dark:border-slate-600 dark:bg-slate-900 dark:text-gray-200
+                   dark:focus:border-indigo-500 dark:focus:ring-indigo-900/40"
+      />
+      {typeof window !== 'undefined' && open && createPortal(dropdown, document.body)}
+    </div>
+  )
+}
+
+// ─── Toggle pill (static / abstract) ─────────────────────────────────────────
+function TogglePill({
+  active, label, onToggle, activeClass,
+}: {
+  active: boolean
+  label: string
+  onToggle: () => void
+  activeClass: string
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onToggle() }}
+      className={cn(
+        'rounded-full border px-2 py-px text-[9px] font-mono font-semibold uppercase',
+        'tracking-wide transition-all select-none',
+        active
+          ? cn('border-transparent shadow-sm', activeClass)
+          : ('border-slate-200 text-gray-400 hover:border-slate-300 hover:text-gray-600 ' +
+             'dark:border-slate-600 dark:text-gray-500 dark:hover:border-slate-500 dark:hover:text-gray-300'),
+      )}
+    >
+      {label}
+    </button>
+  )
 }
 
 // ─── Section divider ──────────────────────────────────────────────────────────
@@ -95,59 +230,136 @@ function Divider() {
   return <div className="h-px bg-slate-200 dark:bg-slate-700" />
 }
 
+// ─── Shared editor action row (save / cancel) ─────────────────────────────────
+function EditorActions({ onCancel, onCommit }: { onCancel: () => void; onCommit: () => void }) {
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        title="Cancel (Esc)"
+        onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onCancel() }}
+        className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200
+                   text-gray-400 transition-colors
+                   hover:border-red-200 hover:bg-red-50 hover:text-red-600
+                   dark:border-slate-600 dark:text-gray-500
+                   dark:hover:border-red-900/50 dark:hover:bg-red-950/30 dark:hover:text-red-400"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        title="Save (Enter)"
+        onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onCommit() }}
+        className="flex h-6 w-6 items-center justify-center rounded-md border border-indigo-200
+                   bg-indigo-50 text-indigo-600 shadow-sm transition-colors
+                   hover:border-indigo-300 hover:bg-indigo-100
+                   dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400
+                   dark:hover:bg-indigo-900/40"
+      >
+        <Check className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+}
+
 // ─── Attribute row ────────────────────────────────────────────────────────────
 interface AttrRowProps {
   attr: UMLAttribute
   onUpdate: (id: string, updates: Partial<UMLAttribute>) => void
   onDelete: (id: string) => void
+  autoOpen?: boolean
 }
 
-function AttrRow({ attr, onUpdate, onDelete }: AttrRowProps) {
-  const formatted = formatAttribute(attr)
-  const edit = useInlineEdit(formatted, val => {
-    const parsed = parseAttribute(val)
-    onUpdate(attr.id, parsed)
-  })
+function AttrRow({ attr, onUpdate, onDelete, autoOpen = false }: AttrRowProps) {
+  const [editing, setEditing] = useState(autoOpen)
+  const [draft, setDraft]     = useState<UMLAttribute>(attr)
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    edit.onKeyDown(e)
+  function open()   { setDraft({ ...attr }); setEditing(true) }
+  function cancel() { setDraft({ ...attr }); setEditing(false) }
+  function commit() {
+    const name = draft.name.trim()
+    if (name) onUpdate(attr.id, { visibility: draft.visibility, name, type: draft.type.trim() || 'String', isStatic: draft.isStatic })
+    setEditing(false)
+  }
+
+  const kd = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter')  { e.preventDefault(); commit() }
+    if (e.key === 'Escape') { e.preventDefault(); cancel() }
+    e.stopPropagation()
+  }
+
+  if (editing) {
+    return (
+      <div
+        className="nodrag space-y-1.5 border-b border-indigo-100 bg-indigo-50/60 px-2 py-2
+                   dark:border-indigo-900/30 dark:bg-indigo-950/20"
+        onPointerDown={e => e.stopPropagation()}
+      >
+        {/* Row 1: vis badge + name + type — all inline */}
+        <div className="flex items-center gap-1.5">
+          <VisibilityCycle value={draft.visibility} onChange={v => setDraft(d => ({ ...d, visibility: v }))} />
+          <input
+            autoFocus
+            value={draft.name}
+            onChange={e => setDraft(d => ({ ...d, name: e.target.value }))}
+            onKeyDown={kd}
+            onPointerDown={e => e.stopPropagation()}
+            placeholder="fieldName"
+            className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-2 py-0.5
+                       font-mono text-[11px] text-gray-800 outline-none
+                       focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100
+                       dark:border-slate-600 dark:bg-slate-900 dark:text-gray-200"
+          />
+          <span className="shrink-0 select-none text-[11px] text-slate-400">:</span>
+          <TypeCombobox
+            value={draft.type}
+            onChange={v => setDraft(d => ({ ...d, type: v }))}
+            onEnter={commit}
+            onEscape={cancel}
+            placeholder="String"
+            className="w-[92px] shrink-0"
+          />
+        </div>
+
+        {/* Row 2: modifiers + actions */}
+        <div className="flex items-center justify-between">
+          <TogglePill
+            active={draft.isStatic}
+            label="static"
+            onToggle={() => setDraft(d => ({ ...d, isStatic: !d.isStatic }))}
+            activeClass="bg-indigo-500 text-white dark:bg-indigo-500"
+          />
+          <EditorActions onCancel={cancel} onCommit={commit} />
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="group/row relative flex items-center px-2 py-[3px]">
-      {edit.editing ? (
-        <input
-          ref={edit.inputRef}
-          value={edit.draft}
-          onChange={e => edit.setDraft(e.target.value)}
-          onBlur={edit.commit}
-          onKeyDown={handleKeyDown}
-          placeholder="+ field: Type"
-          className="w-full rounded bg-indigo-50/80 px-1 font-mono text-[11px] text-gray-800
-                     outline-none ring-1 ring-indigo-300 dark:bg-indigo-950/60 dark:text-gray-200"
-        />
-      ) : (
-        <span
-          onDoubleClick={() => edit.open()}
-          className={cn(
-            'flex-1 cursor-text font-mono text-[11px] text-gray-700 dark:text-gray-300',
-            'select-none truncate leading-5',
-            attr.isStatic && 'underline',
-          )}
-        >
-          {formatted}
-        </span>
-      )}
-      {!edit.editing && (
-        <button
-          onClick={() => onDelete(attr.id)}
-          className="ml-1 flex-shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-opacity
-                     hover:text-red-500 group-hover/row:opacity-100"
-          tabIndex={-1}
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </button>
-      )}
+    <div
+      className="group/row nodrag flex cursor-pointer items-center px-2 py-[3px]
+                 hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
+      onPointerDown={e => e.stopPropagation()}
+      onClick={open}
+      title="Click to edit"
+    >
+      <span className={cn(
+        'flex-1 select-none truncate font-mono text-[11px] leading-5 text-gray-700 dark:text-gray-300',
+        attr.isStatic && 'underline',
+      )}>
+        {formatAttribute(attr)}
+      </span>
+      <button
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onDelete(attr.id) }}
+        className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
+                   hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
+                   dark:text-gray-600 dark:hover:text-red-400"
+        tabIndex={-1}
+        title="Remove"
+      >
+        <Trash2 className="h-2.5 w-2.5" />
+      </button>
     </div>
   )
 }
@@ -158,57 +370,187 @@ interface MethodRowProps {
   className: string
   onUpdate: (id: string, updates: Partial<UMLMethod>) => void
   onDelete: (id: string) => void
+  autoOpen?: boolean
 }
 
-function MethodRow({ method, className, onUpdate, onDelete }: MethodRowProps) {
-  const formatted = formatMethod(method, className)
-  const edit = useInlineEdit(formatted, val => {
-    const parsed = parseMethod(val)
-    onUpdate(method.id, parsed)
-  })
+function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoOpen = false }: MethodRowProps) {
+  const [editing, setEditing] = useState(autoOpen)
+  const [draft, setDraft]     = useState<UMLMethod>(method)
 
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    edit.onKeyDown(e)
+  function open()   { setDraft({ ...method }); setEditing(true) }
+  function cancel() { setDraft({ ...method }); setEditing(false) }
+  function commit() {
+    const name = draft.name.trim()
+    if (name) {
+      onUpdate(method.id, {
+        visibility: draft.visibility,
+        name,
+        params:     draft.params,
+        returnType: draft.isConstructor ? '' : (draft.returnType.trim() || 'void'),
+        isStatic:   draft.isStatic,
+        isAbstract: draft.isAbstract,
+      })
+    }
+    setEditing(false)
+  }
+
+  const kd = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter')  { e.preventDefault(); commit() }
+    if (e.key === 'Escape') { e.preventDefault(); cancel() }
+    e.stopPropagation()
+  }
+
+  // Width of the visibility badge — used as a spacer so rows 2-4 align under the name input
+  const VIS_W = 'w-[18px] shrink-0'
+
+  if (editing) {
+    return (
+      <div
+        className="nodrag space-y-1.5 border-b border-indigo-100 bg-indigo-50/60 px-2 py-2
+                   dark:border-indigo-900/30 dark:bg-indigo-950/20"
+        onPointerDown={e => e.stopPropagation()}
+      >
+        {/* Row 1: vis badge + name */}
+        <div className="flex items-center gap-1.5">
+          <VisibilityCycle value={draft.visibility} onChange={v => setDraft(d => ({ ...d, visibility: v }))} />
+          <input
+            autoFocus
+            value={draft.isConstructor ? nodeClassName : draft.name}
+            readOnly={draft.isConstructor}
+            onChange={e => { if (!draft.isConstructor) setDraft(d => ({ ...d, name: e.target.value })) }}
+            onKeyDown={kd}
+            onPointerDown={e => e.stopPropagation()}
+            placeholder="methodName"
+            className={cn(
+              'min-w-0 flex-1 rounded-md border px-2 py-0.5 font-mono text-[11px] outline-none',
+              'focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
+              'dark:text-gray-200 dark:focus:border-indigo-500',
+              draft.isConstructor
+                ? 'border-slate-200 bg-slate-100 text-gray-400 dark:bg-slate-800 dark:border-slate-700'
+                : 'border-slate-200 bg-white text-gray-800 dark:bg-slate-900 dark:border-slate-600',
+            )}
+          />
+        </div>
+
+        {/* Row 2: params + return type, combined */}
+        <div className="flex items-center gap-1.5">
+          <div className={VIS_W} />
+          {/* ( ) brackets are decorative — input is inside */}
+          <div className="flex min-w-0 flex-[1.4] items-center gap-px rounded-md border border-slate-200
+                          bg-white px-1.5 py-0.5 font-mono text-[11px]
+                          focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100
+                          dark:border-slate-600 dark:bg-slate-900">
+            <span className="shrink-0 select-none text-slate-400">(</span>
+            <input
+              value={draft.params}
+              onChange={e => setDraft(d => ({ ...d, params: e.target.value }))}
+              onKeyDown={kd}
+              onPointerDown={e => e.stopPropagation()}
+              placeholder="a: Type, b: Type"
+              className="min-w-0 flex-1 bg-transparent px-1 text-gray-800 outline-none
+                         placeholder:text-slate-300 dark:text-gray-200 dark:placeholder:text-slate-600"
+            />
+            <span className="shrink-0 select-none text-slate-400">)</span>
+          </div>
+          {!draft.isConstructor && (
+            <>
+              <span className="shrink-0 select-none text-[11px] text-slate-400">→</span>
+              <TypeCombobox
+                value={draft.returnType}
+                onChange={v => setDraft(d => ({ ...d, returnType: v }))}
+                onEnter={commit}
+                onEscape={cancel}
+                placeholder="void"
+                className="w-[74px] shrink-0"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Row 3: modifiers (aligned with inputs) + actions */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <div className={VIS_W} />
+            {!draft.isConstructor && (
+              <>
+                <TogglePill
+                  active={draft.isStatic}
+                  label="static"
+                  onToggle={() => setDraft(d => ({ ...d, isStatic: !d.isStatic }))}
+                  activeClass="bg-indigo-500 text-white dark:bg-indigo-500"
+                />
+                <TogglePill
+                  active={draft.isAbstract}
+                  label="abstract"
+                  onToggle={() => setDraft(d => ({ ...d, isAbstract: !d.isAbstract }))}
+                  activeClass="bg-violet-500 text-white dark:bg-violet-500"
+                />
+              </>
+            )}
+          </div>
+          <EditorActions onCancel={cancel} onCommit={commit} />
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="group/row relative flex items-center px-2 py-[3px]">
-      {edit.editing ? (
-        <input
-          ref={edit.inputRef}
-          value={edit.draft}
-          onChange={e => edit.setDraft(e.target.value)}
-          onBlur={edit.commit}
-          onKeyDown={handleKeyDown}
-          placeholder="+ method(param: Type): ReturnType"
-          className="w-full rounded bg-indigo-50/80 px-1 font-mono text-[11px] text-gray-800
-                     outline-none ring-1 ring-indigo-300 dark:bg-indigo-950/60 dark:text-gray-200"
-        />
-      ) : (
-        <span
-          onDoubleClick={() => edit.open()}
-          className={cn(
-            'flex-1 cursor-text font-mono text-[11px] text-gray-700 dark:text-gray-300',
-            'select-none truncate leading-5',
-            method.isStatic && 'underline',
-            method.isAbstract && 'italic',
-          )}
-        >
-          {formatted}
-        </span>
-      )}
-      {!edit.editing && (
-        <button
-          onClick={() => onDelete(method.id)}
-          className="ml-1 flex-shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-opacity
-                     hover:text-red-500 group-hover/row:opacity-100"
-          tabIndex={-1}
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-        </button>
-      )}
+    <div
+      className="group/row nodrag flex cursor-pointer items-center px-2 py-[3px]
+                 hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
+      onPointerDown={e => e.stopPropagation()}
+      onClick={open}
+      title="Click to edit"
+    >
+      <span className={cn(
+        'flex-1 select-none truncate font-mono text-[11px] leading-5 text-gray-700 dark:text-gray-300',
+        method.isStatic && 'underline',
+        method.isAbstract && 'italic',
+      )}>
+        {formatMethod(method, nodeClassName)}
+      </span>
+      <button
+        onPointerDown={e => e.stopPropagation()}
+        onClick={e => { e.stopPropagation(); onDelete(method.id) }}
+        className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
+                   hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
+                   dark:text-gray-600 dark:hover:text-red-400"
+        tabIndex={-1}
+        title="Remove"
+      >
+        <Trash2 className="h-2.5 w-2.5" />
+      </button>
     </div>
   )
+}
+
+// ─── Inline name edit hook (node header only) ─────────────────────────────────
+function useInlineEdit(initial: string, onCommit: (val: string) => void) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft]     = useState(initial)
+  const inputRef              = useRef<HTMLInputElement>(null)
+
+  const open = useCallback((val?: string) => {
+    setDraft(val ?? initial)
+    setEditing(true)
+    setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select() }, 0)
+  }, [initial])
+
+  const commit = useCallback(() => {
+    const trimmed = draft.trim()
+    if (trimmed) onCommit(trimmed)
+    setEditing(false)
+  }, [draft, onCommit])
+
+  const cancel = useCallback(() => { setDraft(initial); setEditing(false) }, [initial])
+
+  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter')  { e.preventDefault(); commit() }
+    if (e.key === 'Escape') { e.preventDefault(); cancel() }
+    e.stopPropagation()
+  }
+
+  return { editing, draft, setDraft, open, commit, cancel, onKeyDown, inputRef }
 }
 
 // ─── Main UML Class Node ──────────────────────────────────────────────────────
@@ -219,189 +561,147 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const updateNodeInternals = useUpdateNodeInternals()
   const { setNodes, getNodes, setEdges } = useReactFlow()
   const [editingName, setEditingName] = useState(false)
-  const [nameDraft, setNameDraft] = useState(data.name)
+  const [nameDraft, setNameDraft]     = useState(data.name)
 
-  // ── Auto-resize observer ────────────────────────────────────────────────────
+  // Which just-added row should mount already open for editing. State, not a
+  // ref mutated inline during render — React (in dev, under StrictMode)
+  // double-invokes render bodies to catch impure renders, and a ref cleared
+  // mid-render gets nulled out before the row that needed it ever mounts,
+  // which is exactly why "add attribute" stopped auto-opening. Clearing it in
+  // an effect (after commit) instead is pure and safe to double-invoke.
+  const [pendingAttrId, setPendingAttrId]     = useState<string | null>(null)
+  const [pendingMethodId, setPendingMethodId] = useState<string | null>(null)
+
   useEffect(() => {
-    const observer = new ResizeObserver(() => updateNodeInternals(id))
+    if (pendingAttrId !== null) setPendingAttrId(null)
+  }, [pendingAttrId])
+
+  useEffect(() => {
+    if (pendingMethodId !== null) setPendingMethodId(null)
+  }, [pendingMethodId])
+
+  useEffect(() => {
+    let raf: number
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => updateNodeInternals(id))
+    })
     if (nodeRef.current) observer.observe(nodeRef.current)
-    return () => observer.disconnect()
+    return () => { observer.disconnect(); cancelAnimationFrame(raf) }
   }, [id, updateNodeInternals])
 
-  // ── Sync nameDraft when data.name changes externally ────────────────────────
   useEffect(() => { setNameDraft(data.name) }, [data.name])
 
-  // ── Auto-focus name when node is first inserted ─────────────────────────────
   useEffect(() => {
     if (data.isEditing) {
       setEditingName(true)
-      setNodes(nds =>
-        nds.map(n => n.id === id ? { ...n, data: { ...n.data, isEditing: false } } : n),
-      )
-      setTimeout(() => {
-        nameInputRef.current?.focus()
-        nameInputRef.current?.select()
-      }, 40)
+      setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, isEditing: false } } : n))
+      setTimeout(() => { nameInputRef.current?.focus(); nameInputRef.current?.select() }, 40)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.isEditing])
 
-  // ── Data mutation ────────────────────────────────────────────────────────────
-  const updateData = useCallback(
-    (updates: Partial<UMLNodeData>) => {
-      setNodes(nds =>
-        nds.map(n => n.id === id ? { ...n, data: { ...n.data, ...updates } } : n),
-      )
-    },
-    [id, setNodes],
-  )
+  const updateData = useCallback((updates: Partial<UMLNodeData>) => {
+    setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, ...updates } } : n))
+  }, [id, setNodes])
 
-  // ── Name editing ─────────────────────────────────────────────────────────────
   function commitName() {
     const trimmed = nameDraft.trim() || data.name
-    updateData({
-      name: trimmed,
-      // Auto-rename constructor methods
-      methods: data.methods.map(m =>
-        m.isConstructor ? { ...m, name: trimmed } : m,
-      ),
-    })
+    updateData({ name: trimmed, methods: data.methods.map(m => m.isConstructor ? { ...m, name: trimmed } : m) })
     setEditingName(false)
   }
 
-  function cancelName() {
-    setNameDraft(data.name)
-    setEditingName(false)
-  }
+  function cancelName() { setNameDraft(data.name); setEditingName(false) }
 
   function onNameKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') { e.preventDefault(); commitName() }
+    if (e.key === 'Enter')  { e.preventDefault(); commitName() }
     if (e.key === 'Escape') { e.preventDefault(); cancelName() }
     e.stopPropagation()
   }
 
-  // ── Attribute CRUD ────────────────────────────────────────────────────────────
   function addAttribute() {
-    const newAttr: UMLAttribute = {
-      id: nanoid(6), visibility: '+', name: 'field', type: 'String', isStatic: false,
-    }
-    updateData({ attributes: [...data.attributes, newAttr] })
+    const newId = nanoid(6)
+    setPendingAttrId(newId)
+    updateData({ attributes: [...data.attributes, { id: newId, visibility: '+', name: 'field', type: 'String', isStatic: false }] })
   }
 
   function updateAttribute(attrId: string, updates: Partial<UMLAttribute>) {
-    updateData({
-      attributes: data.attributes.map(a =>
-        a.id === attrId ? { ...a, ...updates } : a,
-      ),
-    })
+    updateData({ attributes: data.attributes.map(a => a.id === attrId ? { ...a, ...updates } : a) })
   }
 
   function deleteAttribute(attrId: string) {
     updateData({ attributes: data.attributes.filter(a => a.id !== attrId) })
   }
 
-  // ── Method CRUD ───────────────────────────────────────────────────────────────
   function addMethod() {
-    const newMethod: UMLMethod = {
-      id: nanoid(6), visibility: '+', name: 'method', params: '', returnType: 'void',
-      isStatic: false, isAbstract: false, isConstructor: false,
-    }
-    updateData({ methods: [...data.methods, newMethod] })
+    const newId = nanoid(6)
+    setPendingMethodId(newId)
+    updateData({ methods: [...data.methods, { id: newId, visibility: '+', name: 'method', params: '', returnType: 'void', isStatic: false, isAbstract: false, isConstructor: false }] })
   }
 
   function addConstructor() {
-    const ctor: UMLMethod = {
-      id: nanoid(6), visibility: '+', name: data.name, params: '',
-      returnType: '', isStatic: false, isAbstract: false, isConstructor: true,
-    }
-    updateData({ methods: [ctor, ...data.methods] })
+    const newId = nanoid(6)
+    setPendingMethodId(newId)
+    updateData({ methods: [{ id: newId, visibility: '+', name: data.name, params: '', returnType: '', isStatic: false, isAbstract: false, isConstructor: true }, ...data.methods] })
   }
 
   function updateMethod(methodId: string, updates: Partial<UMLMethod>) {
-    updateData({
-      methods: data.methods.map(m =>
-        m.id === methodId ? { ...m, ...updates } : m,
-      ),
-    })
+    updateData({ methods: data.methods.map(m => m.id === methodId ? { ...m, ...updates } : m) })
   }
 
   function deleteMethod(methodId: string) {
     updateData({ methods: data.methods.filter(m => m.id !== methodId) })
   }
 
-  // ── Convert node type ─────────────────────────────────────────────────────────
-  function convertTo(nodeType: UMLNodeData['nodeType']) {
-    updateData({ nodeType })
-  }
+  function convertTo(nodeType: UMLNodeData['nodeType']) { updateData({ nodeType }) }
 
-  // ── Duplicate node ────────────────────────────────────────────────────────────
   function duplicateNode() {
     const original = getNodes().find(n => n.id === id)
     if (!original) return
-    setNodes(nds => [
-      ...nds,
-      {
-        ...original,
-        id: nanoid(8),
-        position: { x: original.position.x + 32, y: original.position.y + 32 },
-        selected: false,
-        data: { ...original.data, name: `${original.data.name}Copy` },
-      },
-    ])
+    setNodes(nds => [...nds, {
+      ...original, id: nanoid(8),
+      position: { x: original.position.x + 32, y: original.position.y + 32 },
+      selected: false,
+      data: { ...original.data, name: `${original.data.name}Copy` },
+    }])
   }
 
-  // ── Delete this node ──────────────────────────────────────────────────────────
   function deleteNode() {
     setNodes(nds => nds.filter(n => n.id !== id))
     setEdges(eds => eds.filter(e => e.source !== id && e.target !== id))
   }
 
-  // ── Style derivations ─────────────────────────────────────────────────────────
   const isInterface = data.nodeType === 'interface'
-  const isAbstract = data.nodeType === 'abstract-class'
-  const isEnum = data.nodeType === 'enum'
+  const isAbstract  = data.nodeType === 'abstract-class'
+  const isEnum      = data.nodeType === 'enum'
 
   const effectiveStereotype =
-    data.stereotype ??
-    (isInterface ? 'interface' : isEnum ? 'enum' : undefined)
-
-  const borderStyle = isInterface ? 'border-dashed' : 'border-solid'
+    data.stereotype ?? (isInterface ? 'interface' : isEnum ? 'enum' : undefined)
 
   const containerCls = cn(
-    'group relative min-w-[180px] rounded-md border bg-white text-gray-900',
-    'shadow-sm transition-shadow dark:bg-[#1E1E1E] dark:text-gray-100',
-    borderStyle,
+    'group relative min-w-[200px] rounded-lg border bg-white text-gray-900',
+    'shadow-sm dark:bg-[#1E1E1E] dark:text-gray-100',
+    isInterface ? 'border-dashed' : 'border-solid',
     selected
-      ? 'border-indigo-500 border-[2px] shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
-      : 'border-slate-300 dark:border-slate-600',
+      ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
+      : 'border-slate-200 dark:border-slate-600',
   )
 
-  // Tab navigation refs are handled per-row via nextRef prop
-
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <ContextMenu>
       <ContextMenuTrigger>
         <div ref={nodeRef} className={containerCls}>
-          {/* ── Handles (one per side, works as both source & target — see HANDLE_CLS note) */}
-          {HANDLE_POSITIONS.map(({ id: handleId, position }) => (
-            <Handle
-              key={handleId}
-              id={handleId}
-              type="source"
-              position={position}
-              className={HANDLE_CLS}
-            />
+          {HANDLE_POSITIONS.map(({ id: hid, position }) => (
+            <Handle key={hid} id={hid} type="source" position={position} className={HANDLE_CLS} />
           ))}
 
-          {/* ── Header: stereotype + name ───────────────────────────── */}
-          <div className="px-3 pt-2 pb-1.5 text-center">
+          {/* ── Header ─────────────────────────────────────────────────── */}
+          <div className="px-3 pt-2 pb-2 text-center">
             {effectiveStereotype && (
-              <p className="mb-0.5 text-[10px] italic text-gray-500 dark:text-gray-400 leading-none">
-                &laquo;{effectiveStereotype}&raquo;
+              <p className="mb-0.5 text-[10px] italic text-gray-400 dark:text-gray-500 leading-none">
+                «{effectiveStereotype}»
               </p>
             )}
-
             {editingName ? (
               <input
                 ref={nameInputRef}
@@ -409,9 +709,10 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                 onChange={e => setNameDraft(e.target.value)}
                 onBlur={commitName}
                 onKeyDown={onNameKeyDown}
-                className="w-full rounded bg-indigo-50/80 px-1 text-center text-sm font-bold
-                           text-gray-900 outline-none ring-1 ring-indigo-300
-                           dark:bg-indigo-950/60 dark:text-gray-100"
+                className="w-full rounded-md border border-indigo-300 bg-indigo-50/60 px-2 py-0.5
+                           text-center text-sm font-bold text-gray-900 outline-none
+                           focus:ring-2 focus:ring-indigo-200
+                           dark:bg-indigo-950/60 dark:text-gray-100 dark:border-indigo-700"
               />
             ) : (
               <p
@@ -424,68 +725,81 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                 {data.genericParam ? `${data.name}<${data.genericParam}>` : data.name}
               </p>
             )}
-
-            {/* Constraints row */}
             {data.constraints && data.constraints.length > 0 && (
-              <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+              <p className="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
                 {`{${data.constraints.join(', ')}}`}
               </p>
             )}
           </div>
 
-          {/* ── Attributes section ──────────────────────────────────── */}
+          {/* ── Attributes section ──────────────────────────────────────── */}
           <Divider />
           <div className="py-0.5">
-            {data.attributes.map((attr) => (
-              <AttrRow
-                key={attr.id}
-                attr={attr}
-                onUpdate={updateAttribute}
-                onDelete={deleteAttribute}
-              />
-            ))}
-            {data.attributes.length === 0 && (
-              <p
-                onDoubleClick={addAttribute}
-                className="cursor-default px-2 py-[3px] text-[10px] italic text-gray-300 dark:text-gray-600 select-none"
-              >
-                {isEnum ? '(no constants)' : '(no attributes)'}
-              </p>
-            )}
+            {data.attributes.map(attr => {
+              const isNew = attr.id === pendingAttrId
+              return (
+                <AttrRow key={attr.id} attr={attr} onUpdate={updateAttribute} onDelete={deleteAttribute} autoOpen={isNew} />
+              )
+            })}
+            <button
+              className="nodrag flex w-full items-center gap-1 px-2 py-[3px] text-[10px]
+                         text-gray-300 transition-colors
+                         hover:bg-indigo-50/80 hover:text-indigo-500
+                         dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
+              onPointerDown={e => e.stopPropagation()}
+              onClick={addAttribute}
+              title={isEnum ? 'Add constant' : 'Add attribute'}
+            >
+              <Plus className="h-3 w-3" />
+              <span>{isEnum ? 'add constant' : 'add attribute'}</span>
+            </button>
           </div>
 
-          {/* ── Methods section (skip for enum) ─────────────────────── */}
+          {/* ── Methods section ─────────────────────────────────────────── */}
           {!isEnum && (
             <>
               <Divider />
               <div className="py-0.5">
-                {data.methods.map((method) => (
-                  <MethodRow
-                    key={method.id}
-                    method={method}
-                    className={data.name}
-                    onUpdate={updateMethod}
-                    onDelete={deleteMethod}
-                  />
-                ))}
-                {data.methods.length === 0 && (
-                  <p
-                    onDoubleClick={addMethod}
-                    className="cursor-default px-2 py-[3px] text-[10px] italic text-gray-300 dark:text-gray-600 select-none"
+                {data.methods.map(method => {
+                  const isNew = method.id === pendingMethodId
+                  return (
+                    <MethodRow key={method.id} method={method} className={data.name} onUpdate={updateMethod} onDelete={deleteMethod} autoOpen={isNew} />
+                  )
+                })}
+                <div
+                  className="nodrag flex items-center"
+                  onPointerDown={e => e.stopPropagation()}
+                >
+                  <button
+                    className="flex flex-1 items-center gap-1 px-2 py-[3px] text-[10px]
+                               text-gray-300 transition-colors
+                               hover:bg-indigo-50/80 hover:text-indigo-500
+                               dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
+                    onClick={addMethod}
+                    title="Add method"
                   >
-                    (no methods)
-                  </p>
-                )}
+                    <Plus className="h-3 w-3" />
+                    <span>add method</span>
+                  </button>
+                  <button
+                    className="px-2 py-[3px] text-gray-300 transition-colors
+                               hover:bg-emerald-50/80 hover:text-emerald-600
+                               dark:text-gray-600 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400"
+                    onClick={addConstructor}
+                    title="Add constructor"
+                  >
+                    <FunctionSquare className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </>
           )}
 
-          {/* ── Bottom padding ──────────────────────────────────────── */}
           <div className="h-1" />
         </div>
       </ContextMenuTrigger>
 
-      {/* ── Context Menu ─────────────────────────────────────────────── */}
+      {/* ── Context Menu ───────────────────────────────────────────────── */}
       <ContextMenuContent className="w-56">
         <ContextMenuItem onClick={addAttribute} className="gap-2">
           <Plus className="h-4 w-4 text-indigo-500" />
@@ -505,9 +819,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
             </ContextMenuItem>
           </>
         )}
-
         <ContextMenuSeparator />
-
         {!isInterface && (
           <ContextMenuItem onClick={() => convertTo('interface')} className="gap-2">
             <RefreshCw className="h-4 w-4 text-sky-500" />
@@ -526,9 +838,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
             Convert to Class
           </ContextMenuItem>
         )}
-
         <ContextMenuSeparator />
-
         <ContextMenuItem onClick={duplicateNode} className="gap-2">
           <Copy className="h-4 w-4 text-gray-500" />
           Duplicate
@@ -536,8 +846,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
         </ContextMenuItem>
         <ContextMenuItem
           onClick={deleteNode}
-          className="gap-2 text-red-600 focus:bg-red-50 focus:text-red-700
-                     dark:focus:bg-red-950/40"
+          className="gap-2 text-red-600 focus:bg-red-50 focus:text-red-700 dark:focus:bg-red-950/40"
         >
           <Trash2 className="h-4 w-4" />
           Delete

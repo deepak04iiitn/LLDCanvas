@@ -19,8 +19,12 @@ export async function createAuth() {
   const mongoClient = await getMongoClient()
   const db = mongoClient.db()
 
+  // Strip trailing slashes — Vercel env vars often have them, but Better Auth
+  // and browser Origin headers never include them, causing silent mismatches.
+  const normalizeUrl = (u: string) => u.trim().replace(/\/+$/, '')
+
   return betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:4000',
+    baseURL: normalizeUrl(process.env.BETTER_AUTH_URL ?? 'http://localhost:4000'),
     database: mongodbAdapter(db),
 
     // ─── Social providers ──────────────────────────────────────────────
@@ -56,7 +60,12 @@ export async function createAuth() {
       },
     },
 
-    trustedOrigins: [process.env.CLIENT_URL ?? 'http://localhost:3000'],
+    trustedOrigins: (
+      process.env.CORS_ORIGINS ?? process.env.CLIENT_URL ?? 'http://localhost:3000'
+    )
+      .split(',')
+      .map(normalizeUrl)
+      .filter(Boolean),
   })
 }
 

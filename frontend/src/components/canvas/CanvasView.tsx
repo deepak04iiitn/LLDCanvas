@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import {
   ReactFlow,
   Background,
@@ -125,6 +125,7 @@ export function CanvasView({
 }: CanvasViewProps) {
   const { theme } = useEditor()
   const [guides, setGuides] = useState<GuideLines>({})
+  const dragRaf = useRef<number | null>(null)
 
   const canvasBg =
     theme === 'dark' ? '#111111' : theme === 'whiteboard' ? '#FFFFFF' : '#F8F8F8'
@@ -135,14 +136,24 @@ export function CanvasView({
   const gridVariant =
     theme === 'whiteboard' ? BackgroundVariant.Lines : BackgroundVariant.Dots
 
+  // Throttle guide computation to one state update per animation frame —
+  // without this, setGuides fires on every pointermove (~600 calls/second at
+  // 60 fps), causing a full React reconcile on every mouse move tick.
   const onNodeDrag = useCallback(
     (_evt: unknown, draggedNode: Node, allNodes: Node[]) => {
-      setGuides(computeGuides(draggedNode, allNodes))
+      if (dragRaf.current !== null) cancelAnimationFrame(dragRaf.current)
+      dragRaf.current = requestAnimationFrame(() => {
+        setGuides(computeGuides(draggedNode, allNodes))
+        dragRaf.current = null
+      })
     },
     [],
   )
 
-  const onNodeDragStop = useCallback(() => setGuides({}), [])
+  const onNodeDragStop = useCallback(() => {
+    if (dragRaf.current !== null) { cancelAnimationFrame(dragRaf.current); dragRaf.current = null }
+    setGuides({})
+  }, [])
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -157,8 +168,6 @@ export function CanvasView({
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
-        snapToGrid
-        snapGrid={[16, 16]}
         minZoom={0.1}
         maxZoom={4}
         fitView
