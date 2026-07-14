@@ -48,11 +48,14 @@ export type RelationshipType =
   | 'dependency'
   | 'bidirectional'
 
+export type EdgeLineStyle = 'step' | 'straight'
+
 export interface UMLEdgeData {
   relationshipType: RelationshipType
   sourceMultiplicity?: string   // '1', '0..1', '1..*', '0..*'
   targetMultiplicity?: string
   label?: string
+  lineStyle?: EdgeLineStyle    // defaults to 'step' (elbow) when unset
   [key: string]: unknown
 }
 

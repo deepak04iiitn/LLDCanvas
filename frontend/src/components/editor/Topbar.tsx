@@ -17,6 +17,8 @@ import {
   Loader2,
   AlertCircle,
   X,
+  Hand,
+  MousePointer2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -47,6 +49,8 @@ interface TopbarProps {
   onRetrySave: () => void
   selectedCount: number
   onClearSelection: () => void
+  canvasMode: 'pan' | 'select'
+  onCanvasModeChange: (m: 'pan' | 'select') => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -194,6 +198,8 @@ export function Topbar({
   onRetrySave,
   selectedCount,
   onClearSelection,
+  canvasMode,
+  onCanvasModeChange,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
 
@@ -221,31 +227,44 @@ export function Topbar({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Multi-select badge */}
-      <AnimatePresence>
-        {selectedCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            className="mr-1 flex items-center gap-1.5 rounded-full border border-indigo-200
-                       bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700
-                       dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
-          >
-            <span>{selectedCount} selected</span>
-            <button
-              onClick={onClearSelection}
-              className="rounded-full text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-200"
-              aria-label="Clear selection"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Action buttons */}
       <div className="flex items-center gap-1">
+
+        {/* Pan / Select mode toggle */}
+        <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-gray-200
+                        bg-gray-50 p-0.5 dark:border-[#3C3C3E] dark:bg-[#2C2C2E]">
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onCanvasModeChange('pan')}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-100',
+                canvasMode === 'pan'
+                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#3C3C3E] dark:text-indigo-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <Hand className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Pan — drag to move canvas</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onCanvasModeChange('select')}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-100',
+                canvasMode === 'select'
+                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#3C3C3E] dark:text-indigo-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <MousePointer2 className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Select — drag to box-select nodes</TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+
         <Tooltip>
           <TooltipTrigger
             className={cn(iconBtnBase, 'w-8')}

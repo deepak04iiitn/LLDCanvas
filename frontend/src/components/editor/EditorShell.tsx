@@ -159,6 +159,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Derived: selection count ──────────────────────────────────────────────
   const selectedCount = nodes.filter(n => n.selected).length
+  const [canvasMode, setCanvasMode] = useState<'pan' | 'select'>('pan')
 
   // ── Clear selection ───────────────────────────────────────────────────────
   const handleClearSelection = useCallback(() => {
@@ -481,6 +482,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onRetrySave={retrySave}
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}
+        canvasMode={canvasMode}
+        onCanvasModeChange={setCanvasMode}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -503,6 +506,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onConnect={onConnect}
             onInit={inst => { rfInstance.current = inst }}
             onNodesDelete={onNodesDelete}
+            canvasMode={canvasMode}
+            selectedCount={selectedCount}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            onClearSelection={handleClearSelection}
           />
 
           <RelationshipPicker
