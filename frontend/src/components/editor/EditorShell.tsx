@@ -19,6 +19,7 @@ import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
 
 import { EditorProvider, useEditor } from '@/contexts/EditorContext'
+import { useInterview } from '@/contexts/InterviewContext'
 import { CanvasView } from '@/components/canvas/CanvasView'
 import { RelationshipPicker } from '@/components/canvas/RelationshipPicker'
 import { Topbar } from '@/components/editor/Topbar'
@@ -26,6 +27,8 @@ import { LeftPanel } from '@/components/editor/LeftPanel'
 import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
 import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
+import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawer'
+import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -100,12 +103,15 @@ interface EditorInnerProps {
 
 function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
-  const { getNodes, fitView, flowToScreenPosition } = useReactFlow()
+  const { activeSession, endSession } = useInterview()
+  const { getNodes, fitView, flowToScreenPosition, getEdges } = useReactFlow()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
+  const [interviewSetupOpen, setInterviewSetupOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
@@ -145,6 +151,39 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       window.removeEventListener('online', handleOnline)
     }
   }, [])
+
+  // ── Fullscreen API ────────────────────────────────────────────────────────
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {/* browser blocked */})
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen().catch(() => {/* no-op */})
+      setIsFullscreen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  // Auto-enter fullscreen the moment a practice session starts — keyed on the
+  // session id so it fires once per session, not on every activeSession update
+  // (e.g. notes autosave refreshing the object).
+  useEffect(() => {
+    if (activeSession && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {/* browser blocked */})
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSession?._id])
+
+  // ── End interview session (grab canvas snapshot first) ────────────────────
+  const handleEndSession = useCallback(async () => {
+    const snapshot = { nodes: getNodes(), edges: getEdges() }
+    await endSession(snapshot)
+  }, [endSession, getNodes, getEdges])
 
   // ── Local-mode persistence → localStorage ────────────────────────────────
   // Run after the autosave effect; only active when diagramId is null (local mode).
@@ -484,6 +523,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClearSelection={handleClearSelection}
         canvasMode={canvasMode}
         onCanvasModeChange={setCanvasMode}
+        onStartInterview={() => setInterviewSetupOpen(true)}
+        onEndInterview={handleEndSession}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={toggleFullscreen}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -524,12 +567,21 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
       {localMode && <DismissableLocalBanner />}
 
+      {/* ── Interview notes drawer ──────────────────────────────────────── */}
+      <InterviewNotesDrawer />
+
       <Statusbar />
 
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         actions={paletteActions}
+      />
+
+      <InterviewSetupModal
+        open={interviewSetupOpen}
+        onClose={() => setInterviewSetupOpen(false)}
+        currentDiagramId={diagramId}
       />
     </div>
   )

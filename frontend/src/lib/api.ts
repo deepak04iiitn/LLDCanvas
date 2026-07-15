@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -67,5 +67,39 @@ export const api = {
 
     templates: () =>
       request<{ templates: DiagramSummary[] }>('/diagrams/templates'),
+  },
+
+  interview: {
+    create: (payload: { title?: string; diagramId?: string | null; durationLimit?: number | null }) =>
+      request<{ session: InterviewSession }>('/interview', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    list: (page = 1, limit = 20) =>
+      request<{ sessions: InterviewSession[]; total: number; page: number; limit: number }>(
+        `/interview?page=${page}&limit=${limit}`,
+      ),
+
+    get: (id: string) =>
+      request<{ session: InterviewSession }>(`/interview/${id}`),
+
+    update: (id: string, patch: Partial<Pick<InterviewSession, 'timeElapsed' | 'status' | 'notes' | 'title'> & { canvasSnapshot: unknown }>) =>
+      request<{ session: InterviewSession }>(`/interview/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(patch),
+      }),
+
+    delete: (id: string) =>
+      request<{ ok: boolean }>(`/interview/${id}`, { method: 'DELETE' }),
+  },
+
+  stats: {
+    get: () => request<PracticeStats>('/stats'),
+    sync: (timeElapsed: number) =>
+      request<{ ok: boolean; stats: PracticeStats }>('/stats/sync', {
+        method: 'POST',
+        body: JSON.stringify({ timeElapsed }),
+      }),
   },
 }

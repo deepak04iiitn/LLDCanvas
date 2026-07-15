@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
+import { InterviewProvider } from '@/contexts/InterviewContext'
 import './globals.css'
 
 const geistSans = Geist({
@@ -57,9 +58,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full overflow-x-hidden bg-paper text-ink">
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <InterviewProvider>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+        </InterviewProvider>
         {/* Forced light: there's no dark-mode toggle anywhere in the app shell,
             so the Toaster must not fall back to next-themes' "system" default
             (which silently renders dark-styled toasts under a dark OS setting). */}

@@ -1,3 +1,36 @@
+// ─── Interview & Stats ────────────────────────────────────────────────────────
+
+export interface InterviewSession {
+  _id: string
+  userId: string
+  diagramId: string | null
+  title: string
+  status: 'active' | 'completed' | 'abandoned'
+  durationLimit: number | null
+  timeElapsed: number
+  notes: string
+  canvasSnapshot: unknown
+  startedAt: string
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DailyActivity {
+  date: string
+  sessionCount: number
+  timeSeconds: number
+}
+
+export interface PracticeStats {
+  totalSessions: number
+  totalTimeSeconds: number
+  longestStreakDays: number
+  currentStreakDays: number
+  lastPracticeDate: string | null
+  dailyActivity: DailyActivity[]
+}
+
 // ─── Node Types ───────────────────────────────────────────────────────────────
 
 export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum' | 'note'

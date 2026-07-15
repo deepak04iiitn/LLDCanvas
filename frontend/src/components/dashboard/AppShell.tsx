@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { FolderOpen, LayoutTemplate, Settings, LogOut, Menu } from 'lucide-react'
+import { FolderOpen, LayoutTemplate, Settings, LogOut, Menu, Timer, BarChart2, Mic } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useSession, signOut } from '@/lib/auth-client'
@@ -14,12 +14,16 @@ interface NavItem {
   href: string
   Icon: typeof FolderOpen
   isActive: (pathname: string) => boolean
+  dividerBefore?: boolean
 }
 
 const NAV: NavItem[] = [
   { label: 'My Diagrams', href: '/dashboard', Icon: FolderOpen, isActive: p => p === '/dashboard' },
   { label: 'Templates', href: '/dashboard/templates', Icon: LayoutTemplate, isActive: p => p.startsWith('/dashboard/templates') },
-  { label: 'Settings', href: '/settings', Icon: Settings, isActive: p => p.startsWith('/settings') },
+  { label: 'Interview Mode', href: '/dashboard/interview-mode', Icon: Mic, isActive: p => p.startsWith('/dashboard/interview-mode'), dividerBefore: true },
+  { label: 'Practice Sessions', href: '/dashboard/sessions', Icon: Timer, isActive: p => p.startsWith('/dashboard/sessions') },
+  { label: 'Stats', href: '/dashboard/stats', Icon: BarChart2, isActive: p => p.startsWith('/dashboard/stats') },
+  { label: 'Settings', href: '/settings', Icon: Settings, isActive: p => p.startsWith('/settings'), dividerBefore: true },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
@@ -28,20 +32,24 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
       {NAV.map(item => {
         const active = item.isActive(pathname)
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150',
-              active
-                ? 'bg-brand-tint font-medium text-brand'
-                : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
+          <div key={item.href}>
+            {item.dividerBefore && (
+              <div className="mx-3 my-1.5 h-px bg-hairline" />
             )}
-          >
-            <item.Icon size={15} className={active ? 'text-brand' : 'text-ink-faint'} />
-            {item.label}
-          </Link>
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150',
+                active
+                  ? 'bg-brand-tint font-medium text-brand'
+                  : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
+              )}
+            >
+              <item.Icon size={15} className={active ? 'text-brand' : 'text-ink-faint'} />
+              {item.label}
+            </Link>
+          </div>
         )
       })}
     </nav>
