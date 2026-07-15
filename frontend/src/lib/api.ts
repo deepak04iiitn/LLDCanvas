@@ -41,7 +41,7 @@ export const api = {
     get: (id: string) =>
       request<{ diagram: DiagramFull }>(`/diagrams/${id}`),
 
-    create: (payload?: { title?: string; fromTemplateId?: string }) =>
+    create: (payload?: { title?: string }) =>
       request<{ diagram: DiagramFull }>('/diagrams', {
         method: 'POST',
         body: JSON.stringify(payload ?? {}),
@@ -64,9 +64,6 @@ export const api = {
 
     delete: (id: string) =>
       request<{ ok: boolean }>(`/diagrams/${id}`, { method: 'DELETE' }),
-
-    templates: () =>
-      request<{ templates: DiagramSummary[] }>('/diagrams/templates'),
   },
 
   interview: {

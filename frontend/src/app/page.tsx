@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, ChevronDown, Check, X } from 'lucide-react'
+import {
+  ArrowRight, ChevronDown, Check, X,
+  Clock, StickyNote, Flame, BarChart2, CalendarDays, Mic,
+} from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
 import { DiagramStage, DiagramNode, DiagramBox, type DiagramEdge } from '@/components/marketing/ConnectedDiagram'
@@ -11,6 +14,14 @@ import { useSession } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
 const EASE = 'easeOut' as const
+
+// ─── Nav quick links ──────────────────────────────────────────────────────────
+const QUICK_LINKS = [
+  { label: 'Features',       href: '#features' },
+  { label: 'Interview Mode', href: '#interview-mode' },
+  { label: 'Patterns',       href: '#patterns' },
+  { label: 'FAQ',            href: '#faq' },
+]
 
 function fadeUpProps(delay = 0) {
   return {
@@ -98,12 +109,11 @@ function HeroDiagram() {
 // ─── Feature chain ────────────────────────────────────────────────────────────
 interface FeatureNode { id: string; stereotype: string; name: string; method: string }
 const FEATURES: FeatureNode[] = [
-  { id: 'f1', stereotype: 'keystroke', name: 'QuickInsert',      method: '+ addClass(): Instantly' },
-  { id: 'f2', stereotype: 'drag',      name: 'SmartConnect',     method: '+ connect(a, b): Relationship' },
-  { id: 'f3', stereotype: 'Ctrl+K',    name: 'PatternLibrary',   method: '+ insert(pattern): Skeleton' },
-  { id: 'f4', stereotype: 'starter',   name: 'ProblemTemplates', method: '+ start(problem): Canvas' },
-  { id: 'f5', stereotype: 'toolbar',   name: 'Export',           method: '+ export(): PNG | SVG | PlantUML | Mermaid' },
-  { id: 'f6', stereotype: 'click',     name: 'Canvas',           method: '+ theme(mode): Light | Dark | Whiteboard' },
+  { id: 'f1', stereotype: 'keystroke', name: 'QuickInsert',    method: '+ addClass(): Instantly' },
+  { id: 'f2', stereotype: 'drag',      name: 'SmartConnect',   method: '+ connect(a, b): Relationship' },
+  { id: 'f3', stereotype: 'Ctrl+K',    name: 'PatternLibrary', method: '+ insert(pattern): Skeleton' },
+  { id: 'f5', stereotype: 'toolbar',   name: 'Export',         method: '+ export(): PNG | SVG | PlantUML | Mermaid' },
+  { id: 'f6', stereotype: 'click',     name: 'Canvas',         method: '+ theme(mode): Light | Dark | Whiteboard' },
 ]
 const FEATURE_EDGES: DiagramEdge[] = FEATURES.slice(0, -1).map((f, i) => ({
   id: `fe-${i}`, from: { node: f.id, side: 'right' }, to: { node: FEATURES[i + 1].id, side: 'left' }, variant: 'dashed', marker: 'arrow',
@@ -159,7 +169,7 @@ const PERSONAS = [
     n: '01',
     mono: 'LLD interview prep',
     title: 'Interview candidates',
-    desc: 'Start from a Parking Lot or BookMyShow template. Spend the time on the design, not on drawing rectangles.',
+    desc: 'Open a blank canvas and start designing immediately. Spend the time on the design, not on drawing rectangles.',
   },
   {
     n: '02',
@@ -199,7 +209,6 @@ const COMPARISON_ROWS = [
   'UML relationship semantics — enforced, not hand-drawn',
   'Real class, interface, and enum node types',
   'Design pattern skeletons, pre-wired',
-  'LLD problem templates as starting canvases',
   'A keyboard shortcut for every insert action',
   'Visual editor with PlantUML / Mermaid export',
 ]
@@ -245,13 +254,6 @@ function ComparisonTable() {
 }
 
 // ─── Library section ──────────────────────────────────────────────────────────
-const TEMPLATE_SHOWCASE = [
-  { name: 'Parking Lot',      desc: 'Levels, spots, tickets, fee strategy' },
-  { name: 'Elevator System',  desc: 'Controller dispatching multiple cars' },
-  { name: 'ATM Machine',      desc: 'Card, account, auth, cash dispenser' },
-  { name: 'BookMyShow',       desc: 'Theaters, shows, seats, payment' },
-  { name: 'LRU Cache',        desc: 'Hash map + doubly linked list' },
-]
 const PATTERNS_SHOWCASE = [
   'Singleton', 'Factory Method', 'Abstract Factory', 'Builder', 'Prototype',
   'Adapter', 'Bridge', 'Composite', 'Decorator', 'Facade', 'Flyweight', 'Proxy',
@@ -261,50 +263,213 @@ const PATTERNS_SHOWCASE = [
 
 function LibrarySection() {
   return (
-    <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-      <div>
-        <p className="mb-4 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-          LLD problem templates
-        </p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {TEMPLATE_SHOWCASE.map((t, i) => (
-            <motion.div
-              key={t.name}
-              {...inViewProps(i * 0.04)}
-              className="rounded-md border border-hairline bg-paper-elevated p-4 transition-colors duration-150 hover:border-hairline-strong"
-            >
-              <p className="font-mono text-sm text-ink">{t.name}</p>
-              <p className="mt-1 text-xs leading-relaxed text-ink-faint">{t.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-ink-faint">More LLD problems ship regularly.</p>
+    <div>
+      <p className="mb-4 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
+        Design pattern skeletons
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {PATTERNS_SHOWCASE.map((p) => (
+          <span key={p} className="rounded-full border border-hairline-strong px-3 py-1.5 font-mono text-xs text-ink-muted">
+            {p}
+          </span>
+        ))}
       </div>
+      <p className="mt-4 text-xs leading-relaxed text-ink-faint">
+        Pre-wired and correctly connected — insert any of them with{' '}
+        <kbd className="rounded border border-hairline-strong bg-paper px-1 py-0.5 font-mono text-[10px]">Ctrl+K</kbd>{' '}
+        or the left panel.
+      </p>
+    </div>
+  )
+}
 
-      <div>
-        <p className="mb-4 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-          Design pattern skeletons
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {PATTERNS_SHOWCASE.map((p) => (
-            <span key={p} className="rounded-full border border-hairline-strong px-3 py-1.5 font-mono text-xs text-ink-muted">
-              {p}
-            </span>
-          ))}
-        </div>
-        <p className="mt-4 text-xs leading-relaxed text-ink-faint">
-          Pre-wired and correctly connected — insert any of them with{' '}
-          <kbd className="rounded border border-hairline-strong bg-paper px-1 py-0.5 font-mono text-[10px]">Ctrl+K</kbd>{' '}
-          or the left panel.
-        </p>
+// ─── Interview Mode ───────────────────────────────────────────────────────────
+// The pitch here isn't the timer — it's what the timer builds over time.
+// The centerpiece is a real analytics-style mockup (heatmap, streak, weekly
+// graph) built from the page's own paper/ink/brand/gold tokens, because
+// showing the habit loop is more persuasive than describing a countdown.
+
+const PRACTICE_CHIPS = [
+  { icon: Flame,      label: 'Daily streaks' },
+  { icon: CalendarDays, label: 'Activity heatmap' },
+  { icon: BarChart2,  label: 'Progress analytics' },
+  { icon: Clock,      label: 'Flexible timers' },
+  { icon: StickyNote, label: 'Session notes' },
+]
+
+const WHY_IT_WORKS = [
+  'Most candidates only ever practice untimed — the clock is the one part nobody rehearses.',
+  'A visible streak turns "I should probably practice" into something you actually do, daily.',
+  'Every canvas and note is saved automatically the moment you stop — nothing to set up first.',
+]
+
+// 14 weeks of deterministic "activity" — no randomness, so server and client
+// render identically. Deliberately builds to a solid run in the final ~12
+// days so the mockup visually matches the "12-day streak" badge next to it.
+const HEATMAP_LEVELS = Array.from({ length: 98 }, (_, i) => {
+  if (i >= 86) return (i % 3 === 0) ? 3 : 4 // the current streak
+  const cycle = i % 9
+  if (cycle === 0 || cycle === 4) return 0  // rest days
+  return 1 + (i % 3)                        // scattered early activity
+})
+const HEATMAP_LEVEL_CLASSES = [
+  'bg-hairline',
+  'bg-brand/20',
+  'bg-brand/45',
+  'bg-brand/70',
+  'bg-brand',
+]
+
+function StreakHeatmap() {
+  return (
+    <div>
+      <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
+        {HEATMAP_LEVELS.map((level, i) => (
+          <div key={i} className={cn('h-2.5 w-2.5 rounded-[2px]', HEATMAP_LEVEL_CLASSES[level])} />
+        ))}
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-1.5">
+        <span className="font-mono text-[9px] text-ink-faint">Less</span>
+        {HEATMAP_LEVEL_CLASSES.map((c, i) => (
+          <div key={i} className={cn('h-2 w-2 rounded-[2px]', c)} />
+        ))}
+        <span className="font-mono text-[9px] text-ink-faint">More</span>
       </div>
     </div>
   )
 }
 
+// Weekly practice minutes, last 8 weeks — a deliberate upward trend, the
+// same "line goes up" shape that makes habit-tracker dashboards satisfying.
+const WEEKLY_MINUTES = [20, 35, 15, 50, 40, 65, 55, 85]
+
+function StreakGraph() {
+  const max = Math.max(...WEEKLY_MINUTES)
+  return (
+    <div className="flex h-20 items-end gap-2">
+      {WEEKLY_MINUTES.map((m, i) => (
+        <motion.div
+          key={i}
+          className="flex-1 rounded-t-sm bg-brand/70 first:bg-brand/40 last:bg-brand"
+          initial={{ height: 0 }}
+          whileInView={{ height: `${(m / max) * 100}%` }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: i * 0.05, ease: EASE }}
+        />
+      ))}
+    </div>
+  )
+}
+
+const DASHBOARD_STATS = [
+  { n: '42',      label: 'Sessions logged' },
+  { n: '18h 20m', label: 'Time practiced' },
+  { n: '12 days', label: 'Current streak' },
+]
+
+// ── Live countdown card ──────────────────────────────────────────────────────
+// A real, ticking clock — decrements every second via setInterval, no
+// randomness in its math so the SSR/CSR first paint matches. Compressed to a
+// short loop (labelled honestly) so a visitor actually sees it run down and
+// the color shift from calm to urgent, without waiting through a real session.
+const DEMO_QUESTIONS = [
+  'Design a Parking Lot',
+  'Design a Rate Limiter',
+  'Design an Elevator System',
+  'Design a Notification Service',
+]
+const DEMO_DURATION = 40
+
+// Rendered as one row inside the dashboard card (not its own outer card) —
+// a compact "right now" strip sitting above the historical stats below it.
+function LiveSessionRow() {
+  const [secondsLeft, setSecondsLeft] = useState(DEMO_DURATION)
+  const [qIndex, setQIndex] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSecondsLeft(s => {
+        if (s <= 1) {
+          setQIndex(q => (q + 1) % DEMO_QUESTIONS.length)
+          return DEMO_DURATION
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const pct = 1 - secondsLeft / DEMO_DURATION
+  const color = pct < 0.5 ? 'text-brand' : pct < 0.8 ? 'text-gold' : 'text-red-600'
+  const m = String(Math.floor(secondsLeft / 60)).padStart(2, '0')
+  const s = String(secondsLeft % 60).padStart(2, '0')
+
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-hairline bg-brand-tint/40 px-6 py-5">
+      <div>
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-hairline-strong bg-paper-elevated px-2.5 py-1">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          <span className="font-mono text-[9px] font-semibold tracking-widest text-ink-faint uppercase">Live preview</span>
+        </div>
+        <p className="font-mono text-xs text-ink-muted">{DEMO_QUESTIONS[qIndex]}</p>
+        <p className="mt-0.5 font-mono text-[10px] text-ink-faint italic">sped up — real sessions run the full 45</p>
+      </div>
+      <div className={cn('shrink-0 font-mono text-4xl font-bold tabular-nums transition-colors duration-700 sm:text-5xl', color)}>
+        {m}:{s}
+      </div>
+    </div>
+  )
+}
+
+// The visual centerpiece — one cohesive card, not two stacked panels. Leads
+// with the "right now" live timer strip, then the "after": concrete, visible
+// proof of the habit that timed practice builds over time.
+function PracticeDashboardPreview() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, ease: EASE }}
+      className="overflow-hidden rounded-2xl border border-hairline-strong bg-paper-elevated shadow-lg"
+    >
+      <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+        <p className="font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
+          Your practice activity
+        </p>
+        <div className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold-tint px-2.5 py-1">
+          <Flame className="h-3 w-3 text-gold" />
+          <span className="font-mono text-[11px] font-semibold text-gold">12-day streak</span>
+        </div>
+      </div>
+
+      <LiveSessionRow />
+
+      <div className="px-6 py-5">
+        <p className="mb-2.5 font-mono text-[10px] tracking-widest text-ink-faint uppercase">Last 14 weeks</p>
+        <StreakHeatmap />
+      </div>
+
+      <div className="border-t border-hairline px-6 py-5">
+        <p className="mb-2.5 font-mono text-[10px] tracking-widest text-ink-faint uppercase">Minutes per week</p>
+        <StreakGraph />
+      </div>
+
+      <div className="grid grid-cols-3 divide-x divide-hairline border-t border-hairline">
+        {DASHBOARD_STATS.map(s => (
+          <div key={s.label} className="px-4 py-4 text-center">
+            <p className="font-mono text-lg font-semibold text-brand">{s.n}</p>
+            <p className="mt-0.5 text-[11px] text-ink-faint">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Process ──────────────────────────────────────────────────────────────────
 const STEPS = [
-  { n: '01', title: 'Pick a start',       desc: 'A blank canvas, or one of the built-in LLD problem templates.' },
+  { n: '01', title: 'Open a blank canvas', desc: 'Hit "Start for free" — no install, no account needed. Your canvas is ready in seconds.' },
   { n: '02', title: 'Draw with keystrokes', desc: 'C, I, E, A for class types — drag between handles to connect, pick the relationship type from the picker.' },
   { n: '03', title: 'Export, move on',    desc: 'PNG for a resume, PlantUML for your notes, SVG for a design doc. Done.' },
 ]
@@ -353,7 +518,7 @@ const FAQS = [
   },
   {
     q: 'How is LLDCanvas different from draw.io or Lucidchart?',
-    a: 'draw.io and Lucidchart work with generic shapes. LLDCanvas works with classes. Every node is a real UML class node — with a header, attributes section, and methods section. Relationships have semantic meaning (a filled diamond is composition, a hollow triangle is inheritance). You also get all 23 classic design pattern skeletons and LLD-specific problem templates — neither of which exists in generic tools.',
+    a: 'draw.io and Lucidchart work with generic shapes. LLDCanvas works with classes. Every node is a real UML class node — with a header, attributes section, and methods section. Relationships have semantic meaning (a filled diamond is composition, a hollow triangle is inheritance). You also get all 23 classic design pattern skeletons pre-wired with the correct structure — none of which exist in generic tools.',
   },
   {
     q: 'How is it different from Excalidraw?',
@@ -378,10 +543,6 @@ const FAQS = [
   {
     q: 'Are all design patterns included?',
     a: 'Yes — all 23 classic design patterns (Creational, Structural, and Behavioral) are pre-built with the correct UML structure and relationship wiring. Insert any of them with Ctrl+K → "Patterns", or from the left panel.',
-  },
-  {
-    q: 'Which LLD problem templates are available?',
-    a: 'Currently: Parking Lot, Elevator System, ATM Machine, BookMyShow (movie ticket booking), and LRU Cache. More are added regularly.',
   },
   {
     q: 'Is it free?',
@@ -452,6 +613,15 @@ export default function LandingPage() {
         <div className={cn('origin-left transition-transform duration-300', scrolled && 'scale-[0.85]')}>
           <Wordmark height={58} priority />
         </div>
+
+        <div className="hidden items-center gap-7 lg:flex">
+          {QUICK_LINKS.map(l => (
+            <a key={l.href} href={l.href} className="text-sm text-ink-muted transition-colors duration-150 hover:text-ink">
+              {l.label}
+            </a>
+          ))}
+        </div>
+
         <div className="flex items-center gap-3">
           {session ? (
             <Link href="/dashboard" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
@@ -541,11 +711,11 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Feature chain ──────────────────────────────────────────────────── */}
-      <section className="px-5 py-16 sm:px-8">
+      <section id="features" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <Eyebrow index="03">what it actually does</Eyebrow>
           <h2 className="mb-8 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Six interfaces. One canvas.
+            Five interfaces. One canvas.
           </h2>
           <FeatureChain />
         </div>
@@ -562,16 +732,92 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Library ────────────────────────────────────────────────────────── */}
-      <section className="px-5 py-16 sm:px-8">
+      {/* ─── Interview Mode ─────────────────────────────────────────────────── */}
+      {/* A soft brand-tinted band, built entirely from the page's own tokens.
+          The pitch is the habit loop — streak, heatmap, weekly progress —
+          shown as a real dashboard mockup, not described in a bullet list. */}
+      <section id="interview-mode" className="scroll-mt-20 bg-brand-tint/60 px-5 py-20 sm:px-8 sm:py-24">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="05">what&apos;s already inside</Eyebrow>
+          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2 lg:gap-16">
+            <div>
+              <motion.div {...inViewProps()} className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand-tint px-3 py-1">
+                  <Mic className="h-3 w-3 text-brand" />
+                  <span className="font-mono text-[10px] font-semibold tracking-widest text-brand uppercase">
+                    Interview Mode
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold-tint px-3 py-1">
+                  <Flame className="h-3 w-3 text-gold" />
+                  <span className="font-mono text-[10px] font-semibold tracking-widest text-gold uppercase">
+                    Our most-loved feature
+                  </span>
+                </span>
+              </motion.div>
+
+              <motion.p {...inViewProps(0.04)} className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
+                <span className="text-gold">¶05</span> — practice like the real thing
+              </motion.p>
+
+              <motion.h2 {...inViewProps(0.08)} className="mb-5 max-w-md font-serif text-3xl leading-[1.15] font-medium text-ink sm:text-4xl">
+                Practice under real pressure. Watch it add up.
+              </motion.h2>
+
+              <motion.p {...inViewProps(0.12)} className="mb-6 max-w-md text-base leading-relaxed text-ink-muted">
+                Set a timer and design against a real countdown — the exact pressure you&apos;ll
+                feel in the actual interview, so the first time you work under a clock isn&apos;t
+                the day it counts. Every session is then logged automatically: watch a daily
+                streak build, an activity heatmap fill in week by week, and a practice-time
+                graph trend upward.
+              </motion.p>
+
+              <motion.div {...inViewProps(0.14)} className="mb-8 max-w-md space-y-3">
+                {WHY_IT_WORKS.map(reason => (
+                  <div key={reason} className="flex items-start gap-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                    <p className="text-sm leading-relaxed text-ink-muted">{reason}</p>
+                  </div>
+                ))}
+              </motion.div>
+
+              <motion.div {...inViewProps(0.16)} className="mb-8 flex flex-wrap gap-2">
+                {PRACTICE_CHIPS.map(f => (
+                  <span
+                    key={f.label}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-hairline-strong bg-paper-elevated px-3.5 py-1.5 text-xs text-ink-muted shadow-sm transition-all duration-150 hover:border-brand/30 hover:text-ink"
+                  >
+                    <f.icon className="h-3 w-3 text-brand" />
+                    {f.label}
+                  </span>
+                ))}
+              </motion.div>
+
+              <motion.div {...inViewProps(0.2)}>
+                <Link
+                  href="/editor/local"
+                  className="group inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground shadow-md shadow-brand/20 transition-all duration-150 hover:bg-brand-hover hover:shadow-lg hover:shadow-brand/25 active:scale-[0.97]"
+                >
+                  Start your streak
+                  <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </Link>
+              </motion.div>
+            </div>
+
+            <PracticeDashboardPreview />
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Library ────────────────────────────────────────────────────────── */}
+      <section id="patterns" className="scroll-mt-20 px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <Eyebrow index="06">what&apos;s already inside</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             A library, not a blank page.
           </h2>
           <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Every LLD problem template and every design pattern skeleton is pre-built with
-            the correct UML structure. Start from a working skeleton and adapt it — instead of
+            All 23 classic design pattern skeletons are pre-built with the correct UML structure
+            and relationship wiring. Start from a working skeleton and adapt it — instead of
             recreating the same boilerplate diagram for the tenth time.
           </p>
           <LibrarySection />
@@ -581,7 +827,7 @@ export default function LandingPage() {
       {/* ─── Process ────────────────────────────────────────────────────────── */}
       <section className="px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-4xl">
-          <Eyebrow index="06">how it works</Eyebrow>
+          <Eyebrow index="07">how it works</Eyebrow>
           <h2 className="mb-10 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Three steps, not thirty.
           </h2>
@@ -590,9 +836,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FAQ ────────────────────────────────────────────────────────────── */}
-      <section className="px-5 py-16 sm:px-8">
+      <section id="faq" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-4xl">
-          <Eyebrow index="07">questions</Eyebrow>
+          <Eyebrow index="08">questions</Eyebrow>
           <h2 className="mb-10 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Everything worth knowing before you start.
           </h2>

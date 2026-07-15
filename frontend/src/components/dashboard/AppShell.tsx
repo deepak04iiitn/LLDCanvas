@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { FolderOpen, LayoutTemplate, Settings, LogOut, Menu, Timer, BarChart2, Mic } from 'lucide-react'
+import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useSession, signOut } from '@/lib/auth-client'
@@ -19,7 +19,6 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { label: 'My Diagrams', href: '/dashboard', Icon: FolderOpen, isActive: p => p === '/dashboard' },
-  { label: 'Templates', href: '/dashboard/templates', Icon: LayoutTemplate, isActive: p => p.startsWith('/dashboard/templates') },
   { label: 'Interview Mode', href: '/dashboard/interview-mode', Icon: Mic, isActive: p => p.startsWith('/dashboard/interview-mode'), dividerBefore: true },
   { label: 'Practice Sessions', href: '/dashboard/sessions', Icon: Timer, isActive: p => p.startsWith('/dashboard/sessions') },
   { label: 'Stats', href: '/dashboard/stats', Icon: BarChart2, isActive: p => p.startsWith('/dashboard/stats') },

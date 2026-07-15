@@ -4,10 +4,7 @@ import { diagramsController } from '../controllers/diagrams.controller'
 
 const router = Router()
 
-// Public — no auth required
-router.get('/templates', diagramsController.listTemplates)
-
-// All routes below require authentication
+// All routes require authentication
 router.use(requireAuth)
 
 router.get('/',                    diagramsController.list)

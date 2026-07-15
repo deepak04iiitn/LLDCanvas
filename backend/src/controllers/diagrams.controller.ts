@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express'
-import mongoose from 'mongoose'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 
@@ -43,23 +42,11 @@ export const diagramsController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id
-      const { title, fromTemplateId } = req.body as { title?: string; fromTemplateId?: string }
-
-      let diagramData = undefined
-
-      // A malformed or unknown fromTemplateId (e.g. a stale/unseeded slug) must
-      // fall back to a blank diagram, not crash the request — Mongoose throws
-      // a CastError for any non-ObjectId string passed straight into a `_id`
-      // query, which previously surfaced to the client as a raw 500.
-      if (fromTemplateId && mongoose.isValidObjectId(fromTemplateId)) {
-        const template = await Diagram.findOne({ _id: fromTemplateId, isTemplate: true }).lean()
-        if (template) diagramData = template.diagramData
-      }
+      const { title } = req.body as { title?: string }
 
       const diagram = await Diagram.create({
         userId,
         title: title ?? 'Untitled Diagram',
-        ...(diagramData ? { diagramData } : {}),
       })
 
       res.status(201).json({ diagram })
@@ -82,20 +69,6 @@ export const diagramsController = {
       })
 
       res.status(201).json({ diagram: copy })
-    } catch (err) {
-      next(err)
-    }
-  },
-
-  // GET /diagrams/templates
-  listTemplates: async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-      const templates = await Diagram.find({ isTemplate: true })
-        .select('_id title thumbnail')
-        .sort({ title: 1 })
-        .lean()
-
-      res.json({ templates })
     } catch (err) {
       next(err)
     }
