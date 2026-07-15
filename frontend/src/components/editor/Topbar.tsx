@@ -5,7 +5,7 @@ import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   Download, ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
-  Hand, MousePointer2, Timer,
+  Hand, MousePointer2, Mic,
   Pause, Play, StickyNote, StopCircle,
   Maximize2, Minimize2,
 } from 'lucide-react'
@@ -347,6 +347,43 @@ export function Topbar({
       className="relative z-20 flex h-12 shrink-0 items-center gap-1 border-b
                  border-gray-200 bg-white px-3 dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
     >
+      {/* Interview Mode — centered in the topbar, independent of the left/right
+          groups either side. A light indigo tint so it reads as a small
+          highlighted touch, not another neutral icon button. */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        {!activeSession && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onStartInterview}
+              className="group flex h-8 items-center gap-2 rounded-full border border-indigo-200
+                         bg-indigo-50 py-1 pr-3.5 pl-1 transition-all duration-150
+                         hover:border-indigo-300 hover:bg-indigo-100
+                         dark:border-indigo-500/25 dark:bg-indigo-500/10
+                         dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
+              aria-label="Turn on Interview Mode"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
+                               shadow-sm ring-1 ring-indigo-200
+                               dark:bg-[#1C1C1E] dark:ring-indigo-500/30">
+                <Mic className="h-3.5 w-3.5 text-indigo-500" />
+              </span>
+              <span className="hidden text-xs font-medium text-indigo-700 sm:block dark:text-indigo-300">
+                Interview Mode
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
+          </Tooltip>
+        )}
+
+        {activeSession && (
+          <InlineTimer
+            onEndSession={onEndInterview}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={onToggleFullscreen}
+          />
+        )}
+      </div>
+
       {/* Logo */}
       <div className="flex items-center select-none">
         <Wordmark height={22} priority />
@@ -470,33 +507,6 @@ export function Topbar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* When no active session — show plain "Practice" button */}
-        {!activeSession && (
-          <>
-            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
-            <Tooltip>
-              <TooltipTrigger
-                onClick={onStartInterview}
-                className={cn(iconBtnBase, 'w-auto gap-1.5 px-3 text-xs font-medium')}
-                aria-label="Practice mode"
-              >
-                <Timer className="h-4 w-4" />
-                <span className="hidden sm:block">Practice</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
-            </Tooltip>
-          </>
-        )}
-
-        {/* When session is active — inline timer replaces the Practice button */}
-        {activeSession && (
-          <InlineTimer
-            onEndSession={onEndInterview}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={onToggleFullscreen}
-          />
-        )}
 
         <Tooltip>
           <TooltipTrigger className={cn(iconBtnBase, 'w-8')} aria-label="Share">

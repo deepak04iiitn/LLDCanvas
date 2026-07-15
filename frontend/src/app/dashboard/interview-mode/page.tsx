@@ -18,8 +18,8 @@ const HOW_IT_WORKS = [
     icon: CheckCircle2,
   },
   {
-    title: 'Click Practice in the topbar',
-    desc: 'Hit the Practice button in the top navigation bar of the editor.',
+    title: 'Flip the Interview Mode toggle',
+    desc: 'Switch on Interview Mode in the top navigation bar of the editor.',
     icon: Timer,
   },
   {
@@ -296,7 +296,7 @@ export default function InterviewModePage() {
                 </div>
                 <h3 className="mb-2 font-serif text-xl font-medium text-brand-foreground">Ready to start?</h3>
                 <p className="mb-6 text-sm text-brand-foreground/75">
-                  Open any diagram in the editor — the Practice button is waiting in the top nav.
+                  Open any diagram in the editor — the Interview Mode toggle is waiting in the top nav.
                 </p>
                 <Link
                   href="/dashboard"
