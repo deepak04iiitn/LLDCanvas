@@ -7,8 +7,10 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
+  Panel,
   ConnectionMode,
   ConnectionLineType,
+  SelectionMode,
   useViewport,
   type Node,
   type Edge,
@@ -18,6 +20,7 @@ import {
   type OnNodesDelete,
   type ReactFlowInstance,
 } from '@xyflow/react'
+import { Trash2, CopyPlus } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 import { useEditor } from '@/contexts/EditorContext'
 import { nodeTypes } from './nodes'
@@ -104,6 +107,63 @@ function computeGuides(draggedNode: Node, allNodes: Node[]): GuideLines {
 
 // ─── Main CanvasView ─────────────────────────────────────────────────────────
 
+// ─── Selection action bar ──────────────────────────────────────────────────────
+function SelectionBar({
+  count, onClone, onDelete, onClear,
+}: {
+  count: number
+  onClone: () => void
+  onDelete: () => void
+  onClear: () => void
+}) {
+  if (count === 0) return null
+  return (
+    <Panel position="bottom-center">
+      <div className="mb-4 flex items-center gap-1 rounded-xl border border-gray-200/80
+                      bg-white/95 px-2 py-1.5 shadow-lg shadow-black/8 backdrop-blur-sm">
+        <span className="mr-1 select-none rounded-full bg-indigo-100 px-2.5 py-0.5
+                         font-mono text-[11px] font-semibold text-indigo-700">
+          {count} selected
+        </span>
+
+        <div className="mx-1 h-4 w-px bg-gray-200" />
+
+        <button
+          onClick={onClone}
+          title="Clone (Ctrl+D)"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium
+                     text-gray-600 transition-all duration-100 hover:bg-gray-100 active:scale-95"
+        >
+          <CopyPlus className="h-3.5 w-3.5" />
+          Clone
+        </button>
+
+        <button
+          onClick={onDelete}
+          title="Delete (Del)"
+          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[12px] font-medium
+                     text-red-600 transition-all duration-100 hover:bg-red-50 active:scale-95"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Delete
+        </button>
+
+        <div className="mx-1 h-4 w-px bg-gray-200" />
+
+        <button
+          onClick={onClear}
+          title="Clear selection (Escape)"
+          className="rounded-lg px-2 py-1 text-[11px] text-gray-400
+                     transition-colors hover:bg-gray-100 hover:text-gray-600"
+        >
+          Esc
+        </button>
+      </div>
+    </Panel>
+  )
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 interface CanvasViewProps {
   nodes: Node[]
   edges: Edge[]
@@ -112,6 +172,11 @@ interface CanvasViewProps {
   onConnect: OnConnect
   onInit: (instance: ReactFlowInstance) => void
   onNodesDelete?: OnNodesDelete
+  canvasMode: 'pan' | 'select'
+  selectedCount: number
+  onDuplicate: () => void
+  onDelete: () => void
+  onClearSelection: () => void
 }
 
 export function CanvasView({
@@ -122,6 +187,11 @@ export function CanvasView({
   onConnect,
   onInit,
   onNodesDelete,
+  canvasMode,
+  selectedCount,
+  onDuplicate,
+  onDelete,
+  onClearSelection,
 }: CanvasViewProps) {
   const { theme } = useEditor()
   const [guides, setGuides] = useState<GuideLines>({})
@@ -156,7 +226,16 @@ export function CanvasView({
   }, [])
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div
+      className="relative h-full w-full overflow-hidden"
+      data-mode={canvasMode}
+    >
+      {/* Force crosshair on the React Flow pane in select mode —
+          React Flow sets cursor:grab on .react-flow__pane internally,
+          which overrides any style on the outer wrapper. */}
+      {canvasMode === 'select' && (
+        <style>{`.react-flow__pane { cursor: crosshair !important; }`}</style>
+      )}
       <UMLMarkers />
       <ReactFlow
         nodes={nodes}
@@ -171,19 +250,18 @@ export function CanvasView({
         minZoom={0.1}
         maxZoom={4}
         fitView
-        deleteKeyCode={null}        // handled manually in EditorShell
+        deleteKeyCode={null}
+        // In select mode: left-drag box-selects; right/middle-drag pans.
+        // In pan mode: left-drag pans; Shift+drag still box-selects.
+        selectionOnDrag={canvasMode === 'select'}
+        panOnDrag={canvasMode === 'select' ? [1, 2] : true}
+        selectionMode={SelectionMode.Partial}
         selectionKeyCode="Shift"
         multiSelectionKeyCode="Shift"
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         style={{ background: canvasBg }}
         proOptions={{ hideAttribution: true }}
-        // Every node handle is declared `type="source"` (see UMLClassNode/NoteNode) —
-        // Loose mode lets a single handle per side both start AND receive a
-        // connection, instead of stacking an invisible duplicate target handle
-        // exactly on top of each source handle (the previous setup, which made
-        // React Flow's handle resolution ambiguous and edges always render from
-        // whichever handle happened to be registered first).
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
         connectionLineType={ConnectionLineType.SmoothStep}
@@ -210,6 +288,14 @@ export function CanvasView({
         />
         <ZoomTracker nodes={nodes} />
         <AlignmentGuideOverlay guides={guides} />
+
+        {/* ── Selection action bar ──────────────────────────────────────── */}
+        <SelectionBar
+          count={selectedCount}
+          onClone={onDuplicate}
+          onDelete={onDelete}
+          onClear={onClearSelection}
+        />
       </ReactFlow>
     </div>
   )

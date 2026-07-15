@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import {
   getSmoothStepPath,
+  getStraightPath,
   EdgeLabelRenderer,
   Position,
   useReactFlow,
@@ -140,6 +141,7 @@ export function UMLEdge({
 }: EdgeProps) {
   const edgeData = (rawData ?? {}) as Partial<UMLEdgeData>
   const relType: RelationshipType = edgeData.relationshipType ?? 'association'
+  const lineStyle = edgeData.lineStyle === 'straight' ? 'straight' : 'step'
   const { theme } = useEditor()
   const dark = theme === 'dark'
   const { setEdges } = useReactFlow()
@@ -179,6 +181,8 @@ export function UMLEdge({
     edgePath = `M ${sourceX},${sourceY} C ${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`
     labelX = (sourceX + targetX) / 2 + dir.x * loopSize
     labelY = (sourceY + targetY) / 2 + dir.y * loopSize
+  } else if (lineStyle === 'straight') {
+    ;[edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY })
   } else {
     ;[edgePath, labelX, labelY] = getSmoothStepPath({
       sourceX,
@@ -190,6 +194,14 @@ export function UMLEdge({
       borderRadius: 10,
     })
   }
+
+  // ── Line-style toggle (elbow / straight) ───────────────────────────────────
+  const toggleLineStyle = useCallback(() => {
+    const next = lineStyle === 'straight' ? 'step' : 'straight'
+    setEdges(eds =>
+      eds.map(e => (e.id === id ? { ...e, data: { ...(e.data ?? {}), lineStyle: next } } : e)),
+    )
+  }, [id, lineStyle, setEdges])
 
   // ── Multiplicity update helpers ────────────────────────────────────────────
   const updateMultiplicity = useCallback(
@@ -239,12 +251,12 @@ export function UMLEdge({
         className="transition-all duration-150 ease-out pointer-events-none"
       />
 
-      {/* Edge label (relationship type) — shown when selected */}
+      {/* Edge label (relationship type + line-style toggle) — shown when selected */}
       {selected && (
         <EdgeLabelRenderer>
           <div
             style={{ transform: 'translate(-50%, -50%)', position: 'absolute', left: labelX, top: labelY, zIndex: 20 }}
-            className="nodrag nopan pointer-events-none"
+            className="nodrag nopan pointer-events-auto flex items-center gap-1"
           >
             <span
               className="rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5
@@ -253,6 +265,20 @@ export function UMLEdge({
             >
               {relType}
             </span>
+            {!isSelfLoop && (
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); toggleLineStyle() }}
+                title={lineStyle === 'straight' ? 'Switch to elbow line' : 'Switch to straight line'}
+                className="rounded-full border border-gray-200 bg-white px-1.5 py-0.5
+                           text-[9px] font-medium text-gray-500 transition-colors
+                           hover:border-indigo-300 hover:text-indigo-600
+                           dark:border-slate-600 dark:bg-slate-900 dark:text-gray-400
+                           dark:hover:border-indigo-500 dark:hover:text-indigo-400"
+              >
+                {lineStyle === 'straight' ? 'straight' : 'elbow'}
+              </button>
+            )}
           </div>
         </EdgeLabelRenderer>
       )}

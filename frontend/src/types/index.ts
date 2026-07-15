@@ -1,3 +1,36 @@
+// ─── Interview & Stats ────────────────────────────────────────────────────────
+
+export interface InterviewSession {
+  _id: string
+  userId: string
+  diagramId: string | null
+  title: string
+  status: 'active' | 'completed' | 'abandoned'
+  durationLimit: number | null
+  timeElapsed: number
+  notes: string
+  canvasSnapshot: unknown
+  startedAt: string
+  completedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DailyActivity {
+  date: string
+  sessionCount: number
+  timeSeconds: number
+}
+
+export interface PracticeStats {
+  totalSessions: number
+  totalTimeSeconds: number
+  longestStreakDays: number
+  currentStreakDays: number
+  lastPracticeDate: string | null
+  dailyActivity: DailyActivity[]
+}
+
 // ─── Node Types ───────────────────────────────────────────────────────────────
 
 export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum' | 'note'
@@ -48,11 +81,14 @@ export type RelationshipType =
   | 'dependency'
   | 'bidirectional'
 
+export type EdgeLineStyle = 'step' | 'straight'
+
 export interface UMLEdgeData {
   relationshipType: RelationshipType
   sourceMultiplicity?: string   // '1', '0..1', '1..*', '0..*'
   targetMultiplicity?: string
   label?: string
+  lineStyle?: EdgeLineStyle    // defaults to 'step' (elbow) when unset
   [key: string]: unknown
 }
 

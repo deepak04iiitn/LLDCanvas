@@ -4,13 +4,15 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Search, Plus, Pen, Monitor } from 'lucide-react'
+import { Search, Plus, Pen, Monitor, Timer, X } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { DiagramCard } from '@/components/dashboard/DiagramCard'
 import { NewDiagramModal } from '@/components/dashboard/NewDiagramModal'
 import { useSession } from '@/lib/auth-client'
+import { useInterview } from '@/contexts/InterviewContext'
 import { api } from '@/lib/api'
 import { useDebounce } from '@/hooks/useDebounce'
 import {
@@ -19,16 +21,20 @@ import {
   getLocalTitle,
   clearLocalDiagram,
 } from '@/hooks/useLocalDiagram'
-import { DiagramSummary } from '@/types'
+import { DiagramSummary, InterviewSession } from '@/types'
+import { formatDistanceToNow } from 'date-fns'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session, isPending: sessionLoading } = useSession()
+  const { activeSession: runningSession, startSession } = useInterview()
 
   const [diagrams, setDiagrams] = useState<DiagramSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [newModalOpen, setNewModalOpen] = useState(false)
+  const [incompleteSession, setIncompleteSession] = useState<InterviewSession | null>(null)
+  const [resumeBannerDismissed, setResumeBannerDismissed] = useState(false)
 
   const debouncedSearch = useDebounce(search, 300)
 
@@ -68,6 +74,17 @@ export default function DashboardPage() {
     migrate()
   // Run only once when session appears — intentionally no dep on migrate fn
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session])
+
+  // ─── Check for incomplete interview sessions ─────────────────────────────
+  useEffect(() => {
+    if (!session) return
+    api.interview.list(1, 5)
+      .then(({ sessions }) => {
+        const active = sessions.find(s => s.status === 'active')
+        if (active) setIncompleteSession(active)
+      })
+      .catch(() => {/* silent */})
   }, [session])
 
   // ─── Fetch diagrams ─────────────────────────────────────────────────────────
@@ -125,6 +142,40 @@ export default function DashboardPage() {
       }
     >
       <div className="flex h-full flex-col overflow-hidden">
+
+        {/* ── Resume banner — incomplete session ─────────────────────────── */}
+        {incompleteSession && !resumeBannerDismissed && !runningSession && (
+          <div className="flex shrink-0 items-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2.5 sm:px-8">
+            <Timer className="h-4 w-4 shrink-0 text-amber-600" />
+            <p className="flex-1 text-sm text-amber-800">
+              Unfinished session{' '}
+              <span className="font-medium">"{incompleteSession.title}"</span>
+              {' '}from{' '}
+              {formatDistanceToNow(new Date(incompleteSession.startedAt), { addSuffix: true })}
+            </p>
+            <button
+              onClick={() => {
+                startSession(incompleteSession)
+                router.push(
+                  incompleteSession.diagramId
+                    ? `/editor/${incompleteSession.diagramId}`
+                    : '/editor/local'
+                )
+              }}
+              className="shrink-0 rounded-lg bg-amber-500 px-3 py-1 text-xs font-semibold text-white
+                         transition-colors hover:bg-amber-600"
+            >
+              Resume →
+            </button>
+            <button
+              onClick={() => setResumeBannerDismissed(true)}
+              className="shrink-0 text-amber-400 hover:text-amber-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-5 sm:px-8">
           <div>

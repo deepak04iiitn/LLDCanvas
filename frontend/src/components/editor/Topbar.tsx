@@ -2,21 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react'
 import {
-  Undo2,
-  Redo2,
-  Sun,
-  Moon,
-  Clipboard,
-  Download,
-  ChevronDown,
-  Share2,
-  PenLine,
-  Image,
-  FileCode2,
-  Check,
-  Loader2,
-  AlertCircle,
-  X,
+  Undo2, Redo2, Sun, Moon, Clipboard,
+  Download, ChevronDown, Share2, PenLine,
+  Image, FileCode2, Check, Loader2, AlertCircle,
+  Hand, MousePointer2, Timer,
+  Pause, Play, StickyNote, StopCircle,
+  Maximize2, Minimize2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -28,6 +19,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
+import { useInterview } from '@/contexts/InterviewContext'
+import { useInterviewTimer } from '@/hooks/useInterviewTimer'
 import { cn } from '@/lib/utils'
 import { Wordmark } from '@/components/Brand'
 import type { SaveStatus } from '@/hooks/useAutosave'
@@ -47,6 +40,12 @@ interface TopbarProps {
   onRetrySave: () => void
   selectedCount: number
   onClearSelection: () => void
+  canvasMode: 'pan' | 'select'
+  onCanvasModeChange: (m: 'pan' | 'select') => void
+  onStartInterview: () => void
+  onEndInterview: () => void
+  isFullscreen: boolean
+  onToggleFullscreen: () => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -178,6 +177,145 @@ const iconBtnBase =
   'disabled:cursor-not-allowed disabled:opacity-30 ' +
   'dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-100'
 
+// ─── Inline timer helpers ────────────────────────────────────────────────────
+
+function fmtElapsed(s: number) {
+  const h   = Math.floor(s / 3600)
+  const m   = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+}
+
+function timerAccentColor(elapsed: number, limit: number | null) {
+  if (!limit) return { bar: 'bg-emerald-500', text: 'text-emerald-600' }
+  const pct = elapsed / limit
+  if (pct < 0.5)  return { bar: 'bg-emerald-500', text: 'text-emerald-600' }
+  if (pct < 0.75) return { bar: 'bg-amber-500',   text: 'text-amber-600'   }
+  return               { bar: 'bg-red-500',        text: 'text-red-600'     }
+}
+
+// ─── Inline timer strip (shown inside topbar when a session is active) ───────
+
+interface InlineTimerProps {
+  onEndSession: () => void
+  isFullscreen: boolean
+  onToggleFullscreen: () => void
+}
+
+function InlineTimer({ onEndSession, isFullscreen, onToggleFullscreen }: InlineTimerProps) {
+  const {
+    activeSession, elapsed, isPaused,
+    pauseTimer, resumeTimer, setNotesOpen,
+  } = useInterview()
+
+  // Mount the 1-second tick + background sync here (moved from HUD)
+  useInterviewTimer()
+
+  const [confirmEnd, setConfirmEnd] = useState(false)
+
+  if (!activeSession) return null
+
+  const { bar, text } = timerAccentColor(elapsed, activeSession.durationLimit)
+  const isOvertime = activeSession.durationLimit && elapsed > activeSession.durationLimit
+
+  return (
+    <>
+      {/* Divider */}
+      <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+
+      {/* Timer strip — inline, same height as topbar */}
+      <div className="relative flex items-center gap-1.5">
+
+        {/* Colored accent bar */}
+        <div className={cn('h-4 w-0.5 rounded-full transition-colors duration-500', bar)} />
+
+        {/* Digits */}
+        <span className={cn(
+          'font-mono text-sm font-bold tabular-nums transition-colors duration-300 select-none',
+          text,
+          isPaused && 'opacity-50',
+        )}>
+          {fmtElapsed(elapsed)}
+        </span>
+
+        {isOvertime && (
+          <span className="rounded bg-red-100 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-red-600">
+            over
+          </span>
+        )}
+        {isPaused && (
+          <span className="rounded bg-amber-100 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-amber-600">
+            paused
+          </span>
+        )}
+
+        {/* Controls */}
+        <button
+          onClick={isPaused ? resumeTimer : pauseTimer}
+          title={isPaused ? 'Resume (P)' : 'Pause (P)'}
+          className={cn(iconBtnBase, 'h-7 w-7')}
+        >
+          {isPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+        </button>
+
+        <button
+          onClick={() => setNotesOpen(true)}
+          title="Session notes (N)"
+          className={cn(iconBtnBase, 'h-7 w-7')}
+        >
+          <StickyNote className="h-3.5 w-3.5" />
+        </button>
+
+        <button
+          onClick={onToggleFullscreen}
+          title="Fullscreen (F)"
+          className={cn(iconBtnBase, 'h-7 w-7')}
+        >
+          {isFullscreen
+            ? <Minimize2 className="h-3.5 w-3.5" />
+            : <Maximize2 className="h-3.5 w-3.5" />}
+        </button>
+
+        <button
+          onClick={() => setConfirmEnd(true)}
+          title="End session"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-red-400
+                     transition-colors hover:bg-red-50 hover:text-red-600"
+        >
+          <StopCircle className="h-3.5 w-3.5" />
+        </button>
+
+        {/* Inline confirm popover */}
+        {confirmEnd && (
+          <div className="absolute right-0 top-10 z-50 w-52 rounded-xl border border-gray-200
+                          bg-white p-3 shadow-xl dark:border-[#3C3C3E] dark:bg-[#1C1C1E]">
+            <p className="mb-2.5 text-[12px] text-gray-600 dark:text-gray-300">
+              End after <span className="font-semibold">{fmtElapsed(elapsed)}</span>?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setConfirmEnd(false); onEndSession() }}
+                className="flex-1 rounded-lg bg-indigo-600 py-1.5 text-[11px] font-semibold
+                           text-white hover:bg-indigo-700"
+              >
+                Save & Exit
+              </button>
+              <button
+                onClick={() => setConfirmEnd(false)}
+                className="flex-1 rounded-lg border border-gray-200 py-1.5 text-[11px]
+                           text-gray-500 hover:bg-gray-50 dark:border-[#3C3C3E] dark:text-gray-400"
+              >
+                Keep going
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 export function Topbar({
   title,
@@ -194,8 +332,15 @@ export function Topbar({
   onRetrySave,
   selectedCount,
   onClearSelection,
+  canvasMode,
+  onCanvasModeChange,
+  onStartInterview,
+  onEndInterview,
+  isFullscreen,
+  onToggleFullscreen,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
+  const { activeSession } = useInterview()
 
   return (
     <header
@@ -221,31 +366,44 @@ export function Topbar({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Multi-select badge */}
-      <AnimatePresence>
-        {selectedCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            className="mr-1 flex items-center gap-1.5 rounded-full border border-indigo-200
-                       bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700
-                       dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300"
-          >
-            <span>{selectedCount} selected</span>
-            <button
-              onClick={onClearSelection}
-              className="rounded-full text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-200"
-              aria-label="Clear selection"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Action buttons */}
       <div className="flex items-center gap-1">
+
+        {/* Pan / Select mode toggle */}
+        <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-gray-200
+                        bg-gray-50 p-0.5 dark:border-[#3C3C3E] dark:bg-[#2C2C2E]">
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onCanvasModeChange('pan')}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-100',
+                canvasMode === 'pan'
+                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#3C3C3E] dark:text-indigo-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <Hand className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Pan — drag to move canvas</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onCanvasModeChange('select')}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-100',
+                canvasMode === 'select'
+                  ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#3C3C3E] dark:text-indigo-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <MousePointer2 className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Select — drag to box-select nodes</TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+
         <Tooltip>
           <TooltipTrigger
             className={cn(iconBtnBase, 'w-8')}
@@ -312,6 +470,33 @@ export function Topbar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* When no active session — show plain "Practice" button */}
+        {!activeSession && (
+          <>
+            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onStartInterview}
+                className={cn(iconBtnBase, 'w-auto gap-1.5 px-3 text-xs font-medium')}
+                aria-label="Practice mode"
+              >
+                <Timer className="h-4 w-4" />
+                <span className="hidden sm:block">Practice</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
+            </Tooltip>
+          </>
+        )}
+
+        {/* When session is active — inline timer replaces the Practice button */}
+        {activeSession && (
+          <InlineTimer
+            onEndSession={onEndInterview}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={onToggleFullscreen}
+          />
+        )}
 
         <Tooltip>
           <TooltipTrigger className={cn(iconBtnBase, 'w-8')} aria-label="Share">

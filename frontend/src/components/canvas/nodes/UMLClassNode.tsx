@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useCallback,
+  type CSSProperties,
   type KeyboardEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
@@ -42,12 +43,28 @@ const HANDLE_CLS =
   '!opacity-0 !transition-all !duration-150 group-hover:!opacity-100 hover:!opacity-100 ' +
   'hover:!scale-125 !shadow-sm'
 
-const HANDLE_POSITIONS = [
-  { id: 'top',    position: Position.Top    },
-  { id: 'right',  position: Position.Right  },
-  { id: 'bottom', position: Position.Bottom },
-  { id: 'left',   position: Position.Left   },
-] as const
+// Several attachment points along each side (not just the center) so a
+// connection can originate/land anywhere along a node's border. The 50%
+// point on each side keeps the plain 'top'/'right'/'bottom'/'left' id so
+// diagrams and pattern/template data saved before this change still resolve
+// to the same spot.
+type Side = 'top' | 'right' | 'bottom' | 'left'
+const SIDE_POSITION: Record<Side, Position> = {
+  top: Position.Top, right: Position.Right, bottom: Position.Bottom, left: Position.Left,
+}
+const SIDE_OFFSETS = [20, 35, 50, 65, 80] as const
+
+function sideHandleStyle(side: Side, pct: number): CSSProperties {
+  return side === 'top' || side === 'bottom' ? { left: `${pct}%` } : { top: `${pct}%` }
+}
+
+const HANDLE_POSITIONS = (['top', 'right', 'bottom', 'left'] as Side[]).flatMap(side =>
+  SIDE_OFFSETS.map(pct => ({
+    id: pct === 50 ? side : `${side}@${pct}`,
+    position: SIDE_POSITION[side],
+    style: sideHandleStyle(side, pct),
+  })),
+)
 
 // ─── Type autocomplete list ───────────────────────────────────────────────────
 const COMMON_TYPES = [
@@ -691,8 +708,8 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     <ContextMenu>
       <ContextMenuTrigger>
         <div ref={nodeRef} className={containerCls}>
-          {HANDLE_POSITIONS.map(({ id: hid, position }) => (
-            <Handle key={hid} id={hid} type="source" position={position} className={HANDLE_CLS} />
+          {HANDLE_POSITIONS.map(({ id: hid, position, style }) => (
+            <Handle key={hid} id={hid} type="source" position={position} style={style} className={HANDLE_CLS} />
           ))}
 
           {/* ── Header ─────────────────────────────────────────────────── */}

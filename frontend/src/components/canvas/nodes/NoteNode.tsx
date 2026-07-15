@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
 } from 'react'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
@@ -18,12 +19,27 @@ import {
 import type { UMLNodeData } from '@/types'
 import { cn } from '@/lib/utils'
 
-const SIDES = [
-  { id: 'top',    position: Position.Top },
-  { id: 'right',  position: Position.Right },
-  { id: 'bottom', position: Position.Bottom },
-  { id: 'left',   position: Position.Left },
-] as const
+// A few attachment points per side (the pin is tiny, so fewer than the class
+// node) so a connection can land somewhere other than the dead center. The
+// 50% point keeps the plain 'top'/'right'/'bottom'/'left' id for backward
+// compatibility with previously-saved diagrams.
+type Side = 'top' | 'right' | 'bottom' | 'left'
+const SIDE_POSITION: Record<Side, Position> = {
+  top: Position.Top, right: Position.Right, bottom: Position.Bottom, left: Position.Left,
+}
+const SIDE_OFFSETS = [30, 50, 70] as const
+
+function sideHandleStyle(side: Side, pct: number): CSSProperties {
+  return side === 'top' || side === 'bottom' ? { left: `${pct}%` } : { top: `${pct}%` }
+}
+
+const SIDES = (['top', 'right', 'bottom', 'left'] as Side[]).flatMap(side =>
+  SIDE_OFFSETS.map(pct => ({
+    id: pct === 50 ? side : `${side}@${pct}`,
+    position: SIDE_POSITION[side],
+    style: sideHandleStyle(side, pct),
+  })),
+)
 
 const HANDLE_CLS =
   '!h-2 !w-2 !rounded-full !border !border-white !bg-indigo-400 ' +
@@ -87,8 +103,8 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
         <div className="group relative" style={{ width: 20, height: 20 }}>
 
           {/* Handles */}
-          {SIDES.map(({ id: hId, position }) => (
-            <Handle key={hId} id={hId} type="source" position={position} className={HANDLE_CLS} />
+          {SIDES.map(({ id: hId, position, style }) => (
+            <Handle key={hId} id={hId} type="source" position={position} style={style} className={HANDLE_CLS} />
           ))}
 
           {/* ── Floating card — pure CSS show/hide via group-hover + editing override ── */}

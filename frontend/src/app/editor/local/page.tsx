@@ -6,24 +6,30 @@ import { Loader2 } from 'lucide-react'
 import { EditorShell } from '@/components/editor/EditorShell'
 import { MobileEditorGuard } from '@/components/editor/MobileBanner'
 import { useSession } from '@/lib/auth-client'
+import { useInterview } from '@/contexts/InterviewContext'
 import { getLocalDiagramData, getLocalTitle } from '@/hooks/useLocalDiagram'
 import type { DiagramData } from '@/types'
 
 export default function LocalEditorPage() {
   const { data: session, isPending: sessionLoading } = useSession()
   const router = useRouter()
+  const { activeSession } = useInterview()
 
   const [initialData, setInitialData] = useState<DiagramData | null>(null)
   const [initialTitle, setInitialTitle] = useState('Untitled Diagram')
   const [ready, setReady] = useState(false)
 
   // ── Redirect authenticated users away from local mode ─────────────────────
-  // (They should use the cloud-backed editor instead)
+  // (They should use the cloud-backed editor instead) — unless they're
+  // resuming or starting a practice session that has no linked diagram, in
+  // which case local mode is exactly where the dashboard and setup modal
+  // send them, and bouncing them back to /dashboard would kill the session
+  // the instant it starts.
   useEffect(() => {
-    if (!sessionLoading && session) {
+    if (!sessionLoading && session && !activeSession) {
       router.replace('/dashboard')
     }
-  }, [session, sessionLoading, router])
+  }, [session, sessionLoading, activeSession, router])
 
   // ── Hydrate from localStorage (client-only) ───────────────────────────────
   useEffect(() => {
@@ -43,8 +49,8 @@ export default function LocalEditorPage() {
     )
   }
 
-  // Auth users are being redirected — render nothing
-  if (session) return null
+  // Auth users with no active practice session are being redirected — render nothing
+  if (session && !activeSession) return null
 
   return (
     <MobileEditorGuard>

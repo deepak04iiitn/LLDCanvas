@@ -11,6 +11,8 @@ import { authRateLimit } from './middleware/rateLimit'
 import diagramsRouter from './routes/diagrams.route'
 import exportRouter from './routes/export.route'
 import accountRouter from './routes/account.route'
+import interviewRouter from './routes/interview.route'
+import statsRouter from './routes/stats.route'
 
 const app = express()
 
@@ -80,13 +82,13 @@ app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
     // Patch writeHead so CORS headers survive even if toNodeHandler replaces them
     if (isAllowed) {
       const _writeHead = res.writeHead.bind(res)
-      // @ts-expect-error – overloaded signature; we only use the common path
-      res.writeHead = (statusCode: number, ...rest: unknown[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(res as any).writeHead = (statusCode: number, ...rest: unknown[]) => {
         res.setHeader('Access-Control-Allow-Origin', requestOrigin!)
         res.setHeader('Access-Control-Allow-Credentials', 'true')
         res.setHeader('Vary', 'Origin')
-        // @ts-expect-error
-        return _writeHead(statusCode, ...rest)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (_writeHead as any)(statusCode, ...rest)
       }
     }
 
@@ -99,9 +101,11 @@ app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
 })
 
 // ─── API routes ───────────────────────────────────────────────────────────────
-app.use('/diagrams', diagramsRouter)
-app.use('/diagrams', exportRouter)
-app.use('/account',  accountRouter)
+app.use('/diagrams',  diagramsRouter)
+app.use('/diagrams',  exportRouter)
+app.use('/account',   accountRouter)
+app.use('/interview', interviewRouter)
+app.use('/stats',     statsRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
