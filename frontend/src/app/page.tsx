@@ -211,11 +211,12 @@ const COMPARISON_ROWS = [
   'Design pattern skeletons, pre-wired',
   'A keyboard shortcut for every insert action',
   'Visual editor with PlantUML / Mermaid export',
+  'Interview Mode — timed practice with streaks & activity analytics',
 ]
 
 function ComparisonTable() {
   return (
-    <div className="overflow-x-auto rounded-md border border-hairline">
+    <div className="no-scrollbar overflow-x-auto rounded-md border border-hairline">
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-hairline">
@@ -641,7 +642,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="px-5 pt-8 pb-24 sm:px-8 lg:pt-16">
+      <section className="px-5 pt-2 pb-24 sm:px-8 lg:pt-4">
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div>
             <motion.div {...fadeUpProps(0)}>
