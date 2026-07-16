@@ -27,6 +27,24 @@ export async function createAuth() {
     baseURL: normalizeUrl(process.env.BETTER_AUTH_URL ?? 'http://localhost:4000'),
     database: mongodbAdapter(db),
 
+    // ─── User additional fields ────────────────────────────────────────
+    user: {
+      additionalFields: {
+        isAdmin: {
+          type: 'boolean' as const,
+          required: false,
+          defaultValue: false,
+          input: false,   // not settable by users via API
+        },
+        blocked: {
+          type: 'boolean' as const,
+          required: false,
+          defaultValue: false,
+          input: false,
+        },
+      },
+    },
+
     // ─── Social providers ──────────────────────────────────────────────
     socialProviders: {
       google: {
@@ -35,7 +53,7 @@ export async function createAuth() {
       },
     },
 
-    // ─── Email + password (optional secondary) ─────────────────────────
+    // ─── Email + password ──────────────────────────────────────────────
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
@@ -43,15 +61,11 @@ export async function createAuth() {
 
     // ─── Session ──────────────────────────────────────────────────────
     session: {
-      expiresIn: 60 * 60 * 24 * 30,          // 30 days
-      updateAge: 60 * 60 * 24,               // refresh token if older than 1 day
+      expiresIn: 60 * 60 * 24 * 30,
+      updateAge: 60 * 60 * 24,
     },
 
     // ─── Cross-origin cookie config ────────────────────────────────────
-    // Frontend (Vercel) and backend (Railway) are on different domains in
-    // production — SameSite=None + Secure is required for the cookie to
-    // be sent cross-site. In local dev both run on localhost so this is
-    // transparent, but it must be correct before staging/prod deploy.
     advanced: {
       defaultCookieAttributes: {
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -67,6 +81,28 @@ export async function createAuth() {
       .map(normalizeUrl)
       .filter(Boolean),
   })
+}
+
+// Ensures the admin email has isAdmin=true in the DB (runs on every startup).
+export async function ensureAdminUser() {
+  try {
+    const mongoClient = await getMongoClient()
+    const db = mongoClient.db()
+    const adminEmail = process.env.ADMIN_EMAIL
+    if (!adminEmail) {
+      console.warn('ADMIN_EMAIL env var not set — skipping admin flag.')
+      return
+    }
+    const result = await db.collection('user').updateOne(
+      { email: adminEmail },
+      { $set: { isAdmin: true } }
+    )
+    if (result.matchedCount > 0) {
+      console.log(`✓ Admin flag set for ${adminEmail}`)
+    }
+  } catch (err) {
+    console.warn('Could not set admin flag (user may not exist yet):', err)
+  }
 }
 
 // Singleton — resolved once on server startup, reused for every request
