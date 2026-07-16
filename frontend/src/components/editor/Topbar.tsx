@@ -350,7 +350,7 @@ export function Topbar({
       {/* Interview Mode — centered in the topbar, independent of the left/right
           groups either side. A light indigo tint so it reads as a small
           highlighted touch, not another neutral icon button. */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
         {!activeSession && (
           <Tooltip>
             <TooltipTrigger
