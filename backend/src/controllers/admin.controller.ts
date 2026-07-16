@@ -112,7 +112,7 @@ export const adminController = {
 
       const topUserIds = topUsersByDiagrams.map(u => u._id.toString())
       const topUsersInfo = await users.find(
-        { _id: { $in: topUserIds } },
+        { _id: { $in: topUserIds.map(id => new ObjectId(id)) } },
         { projection: { _id: 1, name: 1, email: 1 } }
       ).toArray()
 
@@ -238,7 +238,7 @@ export const adminController = {
   getUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id) })
+      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
       if (!user) throw createError('User not found', 404)
 
       const userId = user._id.toString()
@@ -276,12 +276,12 @@ export const adminController = {
   toggleBlock: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id) })
+      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
       if (!user) throw createError('User not found', 404)
       if (user.isAdmin) throw createError('Cannot block an admin user', 400)
 
       const newBlocked = !user.blocked
-      await users.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { blocked: newBlocked } })
+      await users.updateOne({ _id: new ObjectId(req.params.id as string) }, { $set: { blocked: newBlocked } })
       res.json({ ok: true, blocked: newBlocked })
     } catch (err) {
       next(err)
@@ -291,13 +291,13 @@ export const adminController = {
   deleteUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id) })
+      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
       if (!user) throw createError('User not found', 404)
       if (user.isAdmin) throw createError('Cannot delete an admin user', 400)
 
       const userId = user._id.toString()
       await Promise.all([
-        users.deleteOne({ _id: new ObjectId(req.params.id) }),
+        users.deleteOne({ _id: new ObjectId(req.params.id as string) }),
         Diagram.deleteMany({ userId }),
         InterviewSession.deleteMany({ userId }),
       ])
@@ -334,7 +334,7 @@ export const adminController = {
       const userIds = [...new Set(diagrams.map(d => d.userId.toString()))]
       const users = await userCollection()
       const owners = await users.find(
-        { _id: { $in: userIds } },
+        { _id: { $in: userIds.map(id => new ObjectId(id)) } },
         { projection: { _id: 1, name: 1, email: 1 } }
       ).toArray()
       const ownerMap = new Map(owners.map(o => [o._id.toString(), { name: o.name, email: o.email }]))
@@ -397,7 +397,7 @@ export const adminController = {
       const userIds = [...new Set(sessions.map(s => s.userId))]
       const users = await userCollection()
       const sessionUsers = await users.find(
-        { _id: { $in: userIds } },
+        { _id: { $in: userIds.map(id => new ObjectId(id)) } },
         { projection: { _id: 1, name: 1, email: 1 } }
       ).toArray()
       const userMap = new Map(sessionUsers.map(u => [u._id.toString(), { name: u.name, email: u.email }]))
