@@ -41,9 +41,12 @@ export default function DashboardPage() {
   // ─── Page title ─────────────────────────────────────────────────────────────
   useEffect(() => { document.title = 'Dashboard — LLDCanvas' }, [])
 
-  // ─── Auth guard ─────────────────────────────────────────────────────────────
+  // ─── Auth + admin guard ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (!sessionLoading && !session) router.replace('/')
+    if (sessionLoading) return
+    if (!session) { router.replace('/'); return }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((session.user as any).isAdmin) { router.replace('/admin'); return }
   }, [session, sessionLoading, router])
 
   // ─── Local → Cloud migration ─────────────────────────────────────────────

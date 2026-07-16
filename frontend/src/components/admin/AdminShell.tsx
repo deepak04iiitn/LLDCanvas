@@ -1,0 +1,153 @@
+'use client'
+
+import { useState, type ReactNode } from 'react'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import {
+  LayoutDashboard, Users, FileText, Timer,
+  LogOut, Menu, ShieldCheck, X,
+} from 'lucide-react'
+import { Wordmark } from '@/components/Brand'
+import { signOut } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
+
+const NAV = [
+  { label: 'Overview',     href: '/admin',          Icon: LayoutDashboard, isActive: (p: string) => p === '/admin' },
+  { label: 'Users',        href: '/admin/users',    Icon: Users,           isActive: (p: string) => p.startsWith('/admin/users') },
+  { label: 'Diagrams',     href: '/admin/diagrams', Icon: FileText,        isActive: (p: string) => p.startsWith('/admin/diagrams') },
+  { label: 'Sessions',     href: '/admin/sessions', Icon: Timer,           isActive: (p: string) => p.startsWith('/admin/sessions') },
+]
+
+function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
+    <nav className="flex-1 space-y-0.5 p-3">
+      {NAV.map(item => {
+        const active = item.isActive(pathname)
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
+              active
+                ? 'bg-brand-tint text-brand'
+                : 'text-ink-muted hover:bg-hairline/60 hover:text-ink',
+            )}
+          >
+            <item.Icon className="h-4 w-4 shrink-0" />
+            {item.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
+function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await signOut()
+    router.push('/')
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Logo + admin badge */}
+      <div className="flex items-center gap-2 border-b border-hairline px-4 py-4">
+        <Wordmark height={40} />
+        <span className="ml-1 rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
+          Admin
+        </span>
+      </div>
+
+      {/* Admin identity */}
+      <div className="border-b border-hairline px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand/10">
+            <ShieldCheck className="h-3.5 w-3.5 text-brand" />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-brand">
+              Admin Console
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <NavLinks pathname={pathname} onNavigate={onNavigate} />
+
+      <div className="border-t border-hairline p-3">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline/60 hover:text-ink"
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          User Dashboard
+        </Link>
+        <button
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-ink-muted transition-all hover:bg-red-50 hover:text-red-600"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function AdminShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-paper">
+      {/* Desktop sidebar */}
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-hairline bg-paper-elevated lg:flex">
+        <SidebarContent pathname={pathname} />
+      </aside>
+
+      {/* Mobile drawer overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="absolute left-0 top-0 h-full w-64 bg-paper-elevated shadow-xl">
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-3 top-3 rounded-md p-1.5 text-ink-faint hover:bg-hairline"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <SidebarContent pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile topbar */}
+        <header className="flex h-12 items-center gap-3 border-b border-hairline bg-paper-elevated px-4 lg:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="rounded-md p-1.5 text-ink-muted hover:bg-hairline"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+          <Wordmark height={32} />
+          <span className="rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
+            Admin
+          </span>
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}

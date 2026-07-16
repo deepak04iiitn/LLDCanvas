@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { InterviewProvider } from '@/contexts/InterviewContext'
+import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body className="h-full overflow-x-hidden bg-paper text-ink">
         <InterviewProvider>
           <TooltipProvider>
+            <AnalyticsProvider />
             {children}
           </TooltipProvider>
         </InterviewProvider>

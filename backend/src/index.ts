@@ -5,7 +5,7 @@ import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import { connectDB } from './config/db'
-import { getAuth } from './config/auth'
+import { getAuth, ensureAdminUser } from './config/auth'
 import { errorHandler } from './middleware/error'
 import { authRateLimit } from './middleware/rateLimit'
 import diagramsRouter from './routes/diagrams.route'
@@ -13,6 +13,8 @@ import exportRouter from './routes/export.route'
 import accountRouter from './routes/account.route'
 import interviewRouter from './routes/interview.route'
 import statsRouter from './routes/stats.route'
+import adminRouter from './routes/admin.route'
+import analyticsRouter from './routes/analytics.route'
 
 const app = express()
 
@@ -106,6 +108,8 @@ app.use('/diagrams',  exportRouter)
 app.use('/account',   accountRouter)
 app.use('/interview', interviewRouter)
 app.use('/stats',     statsRouter)
+app.use('/admin',     adminRouter)
+app.use('/analytics', analyticsRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
@@ -116,6 +120,7 @@ const PORT = Number(process.env.PORT) || 4000
 async function start() {
   await connectDB()
   await getAuth()
+  await ensureAdminUser()
   app.listen(PORT, () => {
     console.log(`✓ API listening on http://localhost:${PORT}`)
   })
