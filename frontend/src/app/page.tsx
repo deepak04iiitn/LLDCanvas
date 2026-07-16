@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -587,27 +587,35 @@ function Faq() {
   )
 }
 
+// ─── Auto-open sign-in modal when redirected from a share link (?auth=1) ───────
+// Isolated so only this sliver needs a Suspense boundary for useSearchParams —
+// the landing page itself stays statically prerenderable.
+function AuthRedirectListener({ onAuthRedirect }: { onAuthRedirect: () => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('auth') === '1') onAuthRedirect()
+  }, [searchParams, onAuthRedirect])
+
+  return null
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const { data: session } = useSession()
   const scrolled = useScrolled()
-  const searchParams = useSearchParams()
-
-  // Auto-open sign-in modal when redirected from a share link (?auth=1)
-  useEffect(() => {
-    if (searchParams.get('auth') === '1') {
-      setAuthMode('signin')
-      setAuthOpen(true)
-    }
-  }, [searchParams])
 
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
   function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
 
   return (
     <div className="min-h-screen text-ink">
+      <Suspense fallback={null}>
+        <AuthRedirectListener onAuthRedirect={openSignin} />
+      </Suspense>
+
       <CanvasBackdrop />
 
       {/* ─── Nav — sits on the canvas at rest, becomes a warm-tinted glass bar
