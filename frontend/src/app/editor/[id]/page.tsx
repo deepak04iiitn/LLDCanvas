@@ -22,6 +22,7 @@ export default function EditorPage() {
   const router           = useRouter()
   const searchParams     = useSearchParams()
   const shareToken       = searchParams.get('share') ?? undefined
+  const problemSlug      = searchParams.get('problem') ?? undefined
 
   const { data: session, isPending: sessionLoading } = useSession()
 
@@ -143,7 +144,7 @@ export default function EditorPage() {
     )
   }
 
-  const isReadOnly = access.permission === 'view'
+  const isReadOnly = access.kind === 'ok' && access.permission === 'view'
 
   async function handleRename(title: string) {
     if (isReadOnly) return
@@ -159,6 +160,7 @@ export default function EditorPage() {
         onRename={handleRename}
         readOnly={isReadOnly}
         shareToken={shareToken}
+        problemSlug={problemSlug}
       />
     </MobileEditorGuard>
   )

@@ -7,7 +7,7 @@ import {
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, BookOpen,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -49,6 +49,8 @@ interface TopbarProps {
   diagramId: string | null
   readOnly?: boolean
   onOpenShare?: () => void
+  problemSlug?: string
+  onOpenProblem?: () => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -344,6 +346,8 @@ export function Topbar({
   diagramId,
   readOnly,
   onOpenShare,
+  problemSlug,
+  onOpenProblem,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -532,6 +536,26 @@ export function Topbar({
             </TooltipTrigger>
             <TooltipContent side="bottom">Share this diagram</TooltipContent>
           </Tooltip>
+        )}
+
+        {/* Problem chip — shown when opened from the problems library */}
+        {problemSlug && (
+          <>
+            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onOpenProblem}
+                className="flex h-8 items-center gap-1.5 rounded-full border border-brand/20
+                           bg-brand-tint px-3 text-xs font-medium text-brand transition-all
+                           hover:border-brand/40 hover:bg-brand/10"
+                aria-label="View problem"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:block">Problem</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">View problem requirements & hints</TooltipContent>
+            </Tooltip>
+          </>
         )}
       </div>
     </header>

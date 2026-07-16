@@ -30,6 +30,7 @@ import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawer'
 import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { ShareModal } from '@/components/editor/ShareModal'
+import { ProblemPanel } from '@/components/editor/ProblemPanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -51,6 +52,8 @@ interface EditorShellProps {
   readOnly?: boolean
   /** Share token used for fetching and saving shared diagrams */
   shareToken?: string
+  /** Problem slug if this diagram is a practice problem solution */
+  problemSlug?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,9 +109,10 @@ interface EditorInnerProps {
   localMode?: boolean
   readOnly?: boolean
   shareToken?: string
+  problemSlug?: string
 }
 
-function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode, readOnly, shareToken }: EditorInnerProps) {
+function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode, readOnly, shareToken, problemSlug }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
   const { activeSession, endSession } = useInterview()
   const { getNodes, fitView, flowToScreenPosition, getEdges } = useReactFlow()
@@ -120,6 +124,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [interviewSetupOpen, setInterviewSetupOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
+    problemSlug ? 'open' : 'collapsed',
+  )
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
@@ -541,6 +548,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         diagramId={diagramId}
         readOnly={readOnly}
         onOpenShare={() => setShareModalOpen(true)}
+        problemSlug={problemSlug}
+        onOpenProblem={() => setProblemPanelState('open')}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -580,6 +589,17 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
         </main>
+
+        {/* Problem panel — right sidebar when practicing */}
+        {problemSlug && (
+          <ProblemPanel
+            slug={problemSlug}
+            collapsed={problemPanelState === 'collapsed'}
+            onCollapse={() => setProblemPanelState('collapsed')}
+            onExpand={() => setProblemPanelState('open')}
+            diagramId={diagramId}
+          />
+        )}
       </div>
 
       {localMode && <DismissableLocalBanner />}
@@ -614,7 +634,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 }
 
 // ─── Public shell ─────────────────────────────────────────────────────────────
-export function EditorShell({ diagramId, initialTitle, initialData, onRename, localMode, readOnly, shareToken }: EditorShellProps) {
+export function EditorShell({ diagramId, initialTitle, initialData, onRename, localMode, readOnly, shareToken, problemSlug }: EditorShellProps) {
   const data = initialData ?? makeEmptyDiagram()
   const initialTheme = (data.meta?.theme ?? 'light') as CanvasTheme
   const initialNodes = (data.nodes ?? []) as Node[]
@@ -632,6 +652,7 @@ export function EditorShell({ diagramId, initialTitle, initialData, onRename, lo
           localMode={localMode}
           readOnly={readOnly}
           shareToken={shareToken}
+          problemSlug={problemSlug}
         />
       </ReactFlowProvider>
     </EditorProvider>

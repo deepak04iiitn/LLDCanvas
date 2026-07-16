@@ -1,6 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 import {
   Box,
   Shapes,
@@ -8,6 +9,8 @@ import {
   LayoutList,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   StickyNote,
   Layers,
   Tag,
@@ -42,13 +45,12 @@ const PANEL_WIDTH = 220
 const PATTERN_CATEGORIES = ['Creational', 'Structural', 'Behavioral'] as const
 
 const sectionTitle =
-  'px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400'
+  'px-3 mb-1.5 font-mono text-[10px] font-medium uppercase tracking-widest text-ink-faint'
 
 const itemBase =
   'group relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 ' +
   'text-sm font-medium transition-all duration-150 ' +
-  'text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 ' +
-  'dark:text-gray-300 dark:hover:bg-indigo-950/60 dark:hover:text-indigo-300'
+  'text-ink-muted hover:bg-brand-tint hover:text-brand'
 
 const itemCollapsed = 'justify-center px-2'
 
@@ -57,13 +59,13 @@ function InsertButton({ item, collapsed }: { item: NodeInsertItem; collapsed: bo
     return (
       <Tooltip>
         <TooltipTrigger onClick={item.action} className={cn(itemBase, itemCollapsed)}>
-          <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+          <span className="shrink-0 text-ink-faint transition-colors group-hover:text-brand">
             {item.icon}
           </span>
         </TooltipTrigger>
         <TooltipContent side="right">
           {item.label}
-          <span className="ml-1.5 text-gray-400">{item.shortcut}</span>
+          <span className="ml-1.5 text-ink-faint">{item.shortcut}</span>
         </TooltipContent>
       </Tooltip>
     )
@@ -71,13 +73,12 @@ function InsertButton({ item, collapsed }: { item: NodeInsertItem; collapsed: bo
 
   return (
     <button onClick={item.action} className={itemBase}>
-      <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+      <span className="shrink-0 text-ink-faint transition-colors group-hover:text-brand">
         {item.icon}
       </span>
       <span className="flex-1 truncate">{item.label}</span>
       <kbd
-        className="ml-auto rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-mono
-                   text-gray-400 dark:bg-[#2C2C2E] dark:text-gray-500"
+        className="ml-auto rounded bg-hairline px-1.5 py-0.5 font-mono text-[10px] text-ink-faint"
       >
         {item.shortcut}
       </kbd>
@@ -90,11 +91,10 @@ function StereotypeChip({ label, onClick }: { label: string; onClick: () => void
     <button
       onClick={onClick}
       className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left
-                 text-[11px] text-gray-600 transition-colors
-                 hover:bg-indigo-50 hover:text-indigo-700
-                 dark:text-gray-400 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300"
+                 text-[11px] text-ink-muted transition-colors
+                 hover:bg-brand-tint hover:text-brand"
     >
-      <Tag className="h-3 w-3 shrink-0 text-gray-400" />
+      <Tag className="h-3 w-3 shrink-0 text-ink-faint" />
       <span className="truncate italic">&laquo;{label}&raquo;</span>
     </button>
   )
@@ -106,11 +106,10 @@ function PatternChip({ pattern, onClick }: { pattern: PatternData; onClick: () =
       onClick={onClick}
       title={pattern.description}
       className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-left
-                 text-[11px] text-gray-600 transition-colors
-                 hover:bg-indigo-50 hover:text-indigo-700
-                 dark:text-gray-400 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-300"
+                 text-[11px] text-ink-muted transition-colors
+                 hover:bg-brand-tint hover:text-brand"
     >
-      <Layers className="h-3 w-3 shrink-0 text-gray-400" />
+      <Layers className="h-3 w-3 shrink-0 text-ink-faint" />
       <span className="truncate">{pattern.name}</span>
     </button>
   )
@@ -126,6 +125,8 @@ export function LeftPanel({
   onInsertPattern,
 }: LeftPanelProps) {
   const { panelOpen, togglePanel } = useEditor()
+  const [patternsOpen,     setPatternsOpen]     = useState(false)
+  const [stereotypesOpen,  setStereotypesOpen]  = useState(false)
 
   const insertItems: NodeInsertItem[] = [
     { icon: <Box className="h-4 w-4" />,       label: 'Class',          shortcut: 'C', action: onAddClass },
@@ -145,8 +146,7 @@ export function LeftPanel({
             animate={{ width: PANEL_WIDTH, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
-            className="flex h-full flex-col overflow-hidden border-r border-gray-200
-                       bg-white dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
+            className="flex h-full flex-col overflow-hidden border-r border-hairline bg-paper-elevated"
             style={{ width: PANEL_WIDTH, minWidth: PANEL_WIDTH }}
           >
             <div className="flex-1 overflow-y-auto py-4 no-scrollbar">
@@ -160,64 +160,107 @@ export function LeftPanel({
                 </div>
               </section>
 
-              <div className="mx-3 h-px bg-gray-100 dark:bg-[#2C2C2E]" />
-
-              {/* ── Stereotypes ─────────────────────────────────────── */}
-              <section className="my-4">
-                <p className={sectionTitle}>Stereotypes</p>
-                <p className="mb-2 px-3 text-[10px] text-gray-400 dark:text-gray-600">
-                  Inserts a Class pre-tagged with stereotype
-                </p>
-                <div className="px-2 space-y-0.5">
-                  {STEREOTYPES.map(s => (
-                    <StereotypeChip
-                      key={s}
-                      label={s}
-                      onClick={() => onAddStereotype(s)}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              <div className="mx-3 h-px bg-gray-100 dark:bg-[#2C2C2E]" />
+              <div className="mx-3 h-px bg-hairline" />
 
               {/* ── Patterns ─────────────────────────────────────────── */}
-              <section className="mt-4">
-                <p className={sectionTitle}>Patterns</p>
-                <p className="mb-2 px-3 text-[10px] text-gray-400 dark:text-gray-600">
-                  Inserts a pre-wired, connected pattern skeleton
-                </p>
-                <div className="space-y-3 px-2">
-                  {PATTERN_CATEGORIES.map(category => {
-                    const items = ALL_PATTERNS.filter(p => p.category === category)
-                    if (!items.length) return null
-                    return (
-                      <div key={category}>
-                        <p className="mb-0.5 px-2.5 text-[9px] font-semibold tracking-wide text-gray-400 uppercase dark:text-gray-600">
-                          {category}
-                        </p>
-                        <div className="space-y-0.5">
-                          {items.map(p => (
-                            <PatternChip
-                              key={p.key}
-                              pattern={p}
-                              onClick={() => onInsertPattern(p.key)}
-                            />
-                          ))}
-                        </div>
+              <section className="my-1">
+                <button
+                  onClick={() => setPatternsOpen(o => !o)}
+                  className="flex w-full items-center justify-between px-3 py-2
+                             transition-colors hover:bg-hairline/50"
+                >
+                  <span className={sectionTitle + ' mb-0'}>Design Patterns</span>
+                  {patternsOpen
+                    ? <ChevronUp className="h-3 w-3 text-ink-faint" />
+                    : <ChevronDown className="h-3 w-3 text-ink-faint" />}
+                </button>
+                <AnimatePresence initial={false}>
+                  {patternsOpen && (
+                    <motion.div
+                      key="patterns-body"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="overflow-hidden"
+                    >
+                      <p className="mb-2 px-3 text-[10px] text-ink-faint">
+                        Inserts a pre-wired, connected pattern skeleton
+                      </p>
+                      <div className="space-y-3 px-2 pb-2">
+                        {PATTERN_CATEGORIES.map(category => {
+                          const items = ALL_PATTERNS.filter(p => p.category === category)
+                          if (!items.length) return null
+                          return (
+                            <div key={category}>
+                              <p className="mb-0.5 px-2.5 font-mono text-[9px] font-medium tracking-wide text-ink-faint uppercase">
+                                {category}
+                              </p>
+                              <div className="space-y-0.5">
+                                {items.map(p => (
+                                  <PatternChip
+                                    key={p.key}
+                                    pattern={p}
+                                    onClick={() => onInsertPattern(p.key)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
-                </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </section>
+
+              <div className="mx-3 h-px bg-hairline" />
+
+              {/* ── Stereotypes ─────────────────────────────────────── */}
+              <section className="my-1">
+                <button
+                  onClick={() => setStereotypesOpen(o => !o)}
+                  className="flex w-full items-center justify-between px-3 py-2
+                             transition-colors hover:bg-hairline/50"
+                >
+                  <span className={sectionTitle + ' mb-0'}>Class Roles</span>
+                  {stereotypesOpen
+                    ? <ChevronUp className="h-3 w-3 text-ink-faint" />
+                    : <ChevronDown className="h-3 w-3 text-ink-faint" />}
+                </button>
+                <AnimatePresence initial={false}>
+                  {stereotypesOpen && (
+                    <motion.div
+                      key="stereotypes-body"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="overflow-hidden"
+                    >
+                      <p className="mb-2 px-3 text-[10px] text-ink-faint">
+                        Inserts a Class pre-tagged with its role
+                      </p>
+                      <div className="px-2 space-y-0.5 pb-2">
+                        {STEREOTYPES.map(s => (
+                          <StereotypeChip
+                            key={s}
+                            label={s}
+                            onClick={() => onAddStereotype(s)}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </section>
             </div>
 
             <button
               onClick={togglePanel}
-              className="flex h-8 items-center justify-end gap-1 border-t border-gray-100
-                         px-3 text-[11px] text-gray-400 transition-colors
-                         hover:bg-gray-50 hover:text-gray-600
-                         dark:border-[#2C2C2E] dark:hover:bg-white/5 dark:hover:text-gray-300"
+              className="flex h-8 items-center justify-end gap-1 border-t border-hairline
+                         px-3 text-[11px] text-ink-faint transition-colors
+                         hover:bg-hairline/50 hover:text-ink"
               aria-label="Collapse panel"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -231,8 +274,8 @@ export function LeftPanel({
             animate={{ width: 48, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 380, damping: 38 }}
-            className="flex h-full flex-col items-center overflow-hidden border-r border-gray-200
-                       bg-white py-3 dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
+            className="flex h-full flex-col items-center overflow-hidden border-r border-hairline
+                       bg-paper-elevated py-3"
             style={{ width: 48, minWidth: 48 }}
           >
             <div className="flex flex-col gap-0.5">
@@ -240,12 +283,12 @@ export function LeftPanel({
                 <InsertButton key={item.label} item={item} collapsed />
               ))}
             </div>
-            <div className="my-2 h-px w-8 bg-gray-200 dark:bg-[#2C2C2E]" />
+            <div className="my-2 h-px w-8 bg-hairline" />
 
             {/* Patterns list needs room to browse — collapsed rail just expands the panel */}
             <Tooltip>
               <TooltipTrigger onClick={togglePanel} className={cn(itemBase, itemCollapsed)}>
-                <span className="shrink-0 text-gray-500 transition-colors group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+                <span className="shrink-0 text-ink-faint transition-colors group-hover:text-brand">
                   <Layers className="h-4 w-4" />
                 </span>
               </TooltipTrigger>
@@ -257,8 +300,7 @@ export function LeftPanel({
                 <TooltipTrigger
                   onClick={togglePanel}
                   className="flex h-8 w-8 items-center justify-center rounded-md
-                             text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600
-                             dark:hover:bg-white/10 dark:hover:text-gray-300"
+                             text-ink-faint transition-colors hover:bg-hairline hover:text-ink"
                   aria-label="Expand panel"
                 >
                   <ChevronRight className="h-4 w-4" />

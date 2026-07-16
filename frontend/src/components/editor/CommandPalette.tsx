@@ -103,9 +103,9 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
             </CommandItem>
           </CommandGroup>
 
-          {/* Stereotypes ─────────────────────────────────────────────────── */}
+          {/* Class roles ─────────────────────────────────────────────────── */}
           <CommandSeparator />
-          <CommandGroup heading="Insert with Stereotype">
+          <CommandGroup heading="Insert with Class Role">
             {STEREOTYPES.map(s => (
               <CommandItem
                 key={s}

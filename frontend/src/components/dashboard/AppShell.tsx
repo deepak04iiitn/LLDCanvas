@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic } from 'lucide-react'
+import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic, BookOpen } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useSession, signOut } from '@/lib/auth-client'
@@ -22,6 +22,7 @@ const NAV: NavItem[] = [
   { label: 'Interview Mode', href: '/dashboard/interview-mode', Icon: Mic, isActive: p => p.startsWith('/dashboard/interview-mode'), dividerBefore: true },
   { label: 'Practice Sessions', href: '/dashboard/sessions', Icon: Timer, isActive: p => p.startsWith('/dashboard/sessions') },
   { label: 'Stats', href: '/dashboard/stats', Icon: BarChart2, isActive: p => p.startsWith('/dashboard/stats') },
+  { label: 'Practice Problems', href: '/dashboard/problems', Icon: BookOpen, isActive: p => p.startsWith('/dashboard/problems'), dividerBefore: true },
   { label: 'Settings', href: '/settings', Icon: Settings, isActive: p => p.startsWith('/settings'), dividerBefore: true },
 ]
 
