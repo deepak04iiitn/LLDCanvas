@@ -29,6 +29,7 @@ import { CommandPalette, type CommandPaletteActions } from '@/components/editor/
 import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawer'
 import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
+import { ShareModal } from '@/components/editor/ShareModal'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -46,6 +47,10 @@ interface EditorShellProps {
   onRename?: (title: string) => Promise<void>
   /** When true, shows the local-mode banner and persists to localStorage */
   localMode?: boolean
+  /** When true, all editing is disabled (shared view-only access) */
+  readOnly?: boolean
+  /** Share token used for fetching and saving shared diagrams */
+  shareToken?: string
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -99,9 +104,11 @@ interface EditorInnerProps {
   initialEdges: Edge[]
   onRename?: (title: string) => Promise<void>
   localMode?: boolean
+  readOnly?: boolean
+  shareToken?: string
 }
 
-function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode }: EditorInnerProps) {
+function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRename, localMode, readOnly, shareToken }: EditorInnerProps) {
   const { theme, togglePanel } = useEditor()
   const { activeSession, endSession } = useInterview()
   const { getNodes, fitView, flowToScreenPosition, getEdges } = useReactFlow()
@@ -111,6 +118,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
   const [interviewSetupOpen, setInterviewSetupOpen] = useState(false)
+  const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
@@ -132,7 +140,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     edges: edges as unknown[],
     meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
   }
-  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme)
+  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme, 1500, {
+    readOnly,
+    shareToken,
+  })
 
   // ── Browser tab title ────────────────────────────────────────────────────
   useEffect(() => {
@@ -508,7 +519,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     <div className="flex h-screen w-screen flex-col overflow-hidden" data-theme={theme}>
       <Topbar
         title={title}
-        onRename={handleRename}
+        onRename={readOnly ? () => {} : handleRename}
         canUndo={history.canUndo}
         canRedo={history.canRedo}
         onUndo={handleUndo}
@@ -527,33 +538,39 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onEndInterview={handleEndSession}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
+        diagramId={diagramId}
+        readOnly={readOnly}
+        onOpenShare={() => setShareModalOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
-        <LeftPanel
-          onAddClass={() => insertNode('class')}
-          onAddInterface={() => insertNode('interface')}
-          onAddEnum={() => insertNode('enum')}
-          onAddAbstract={() => insertNode('abstract-class')}
-          onAddNote={() => insertNode('note')}
-          onAddStereotype={insertStereotype}
-          onInsertPattern={insertPattern}
-        />
+        {!readOnly && (
+          <LeftPanel
+            onAddClass={() => insertNode('class')}
+            onAddInterface={() => insertNode('interface')}
+            onAddEnum={() => insertNode('enum')}
+            onAddAbstract={() => insertNode('abstract-class')}
+            onAddNote={() => insertNode('note')}
+            onAddStereotype={insertStereotype}
+            onInsertPattern={insertPattern}
+          />
+        )}
 
         <main className="relative flex-1 overflow-hidden">
           <CanvasView
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            onNodesChange={readOnly ? () => {} : onNodesChange}
+            onEdgesChange={readOnly ? () => {} : onEdgesChange}
+            onConnect={readOnly ? () => {} : onConnect}
             onInit={inst => { rfInstance.current = inst }}
-            onNodesDelete={onNodesDelete}
+            onNodesDelete={readOnly ? () => {} : onNodesDelete}
             canvasMode={canvasMode}
             selectedCount={selectedCount}
             onDuplicate={handleDuplicate}
             onDelete={handleDelete}
             onClearSelection={handleClearSelection}
+            readOnly={readOnly}
           />
 
           <RelationshipPicker
@@ -583,12 +600,21 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClose={() => setInterviewSetupOpen(false)}
         currentDiagramId={diagramId}
       />
+
+      {diagramId && !readOnly && (
+        <ShareModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          diagramId={diagramId}
+          diagramTitle={title}
+        />
+      )}
     </div>
   )
 }
 
 // ─── Public shell ─────────────────────────────────────────────────────────────
-export function EditorShell({ diagramId, initialTitle, initialData, onRename, localMode }: EditorShellProps) {
+export function EditorShell({ diagramId, initialTitle, initialData, onRename, localMode, readOnly, shareToken }: EditorShellProps) {
   const data = initialData ?? makeEmptyDiagram()
   const initialTheme = (data.meta?.theme ?? 'light') as CanvasTheme
   const initialNodes = (data.nodes ?? []) as Node[]
@@ -604,6 +630,8 @@ export function EditorShell({ diagramId, initialTitle, initialData, onRename, lo
           initialEdges={initialEdges}
           onRename={onRename}
           localMode={localMode}
+          readOnly={readOnly}
+          shareToken={shareToken}
         />
       </ReactFlowProvider>
     </EditorProvider>

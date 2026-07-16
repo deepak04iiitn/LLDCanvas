@@ -1,3 +1,17 @@
+// ─── Sharing ─────────────────────────────────────────────────────────────────
+
+export interface ShareSettings {
+  _id: string
+  diagramId: string
+  ownerId: string
+  visibility: 'public' | 'private'
+  permission: 'view' | 'edit'
+  token: string
+  allowedEmails: string[]
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Interview & Stats ────────────────────────────────────────────────────────
 
 export interface InterviewSession {

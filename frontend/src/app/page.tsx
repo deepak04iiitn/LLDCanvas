@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   ArrowRight, ChevronDown, Check, X,
@@ -592,6 +593,15 @@ export default function LandingPage() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   const { data: session } = useSession()
   const scrolled = useScrolled()
+  const searchParams = useSearchParams()
+
+  // Auto-open sign-in modal when redirected from a share link (?auth=1)
+  useEffect(() => {
+    if (searchParams.get('auth') === '1') {
+      setAuthMode('signin')
+      setAuthOpen(true)
+    }
+  }, [searchParams])
 
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
   function openSignup() { setAuthMode('signup'); setAuthOpen(true) }

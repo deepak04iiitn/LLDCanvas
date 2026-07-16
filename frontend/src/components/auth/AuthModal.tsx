@@ -41,7 +41,12 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
   async function handleGoogle() {
     setGoogleLoading(true)
     try {
-      await signIn.social({ provider: 'google', callbackURL: `${window.location.origin}/dashboard` })
+      const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
+      const callbackURL = postLoginRedirect
+        ? `${window.location.origin}${postLoginRedirect}`
+        : `${window.location.origin}/dashboard`
+      if (postLoginRedirect) sessionStorage.removeItem('postLoginRedirect')
+      await signIn.social({ provider: 'google', callbackURL })
     } catch {
       toast.error('Google sign-in failed. Please try again.')
       setGoogleLoading(false)
@@ -61,7 +66,15 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
         await signIn.email({ email, password, callbackURL: '/dashboard' })
         toast.success('Signed in!')
       }
-      onOpenChange(false); reset(); router.push('/dashboard')
+      onOpenChange(false); reset()
+      // If the user was redirected here from a share link, send them back there
+      const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
+      if (postLoginRedirect) {
+        sessionStorage.removeItem('postLoginRedirect')
+        router.push(postLoginRedirect)
+      } else {
+        router.push('/dashboard')
+      }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong.')
       setLoading(false)

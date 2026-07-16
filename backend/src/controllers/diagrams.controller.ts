@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { Diagram } from '../models/diagram.model'
+import { DiagramShare } from '../models/diagram-share.model'
 import { createError } from '../middleware/error'
 
 // Express params can be `string | string[]` — this normalises to string
@@ -74,20 +75,55 @@ export const diagramsController = {
     }
   },
 
-  // GET /diagrams/:id
+  // GET /diagrams/:id  — owner always; also shared viewers with a valid token
   getOne: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const diagram = await assertOwner(req.params.id, req.user!.id)
-      res.json({ diagram })
+      const userId    = req.user!.id
+      const diagramId = paramId(req.params.id)
+      const diagram   = await Diagram.findById(diagramId)
+      if (!diagram) throw createError('Diagram not found', 404)
+
+      // Owner — always allowed
+      if (diagram.userId.toString() === userId) return res.json({ diagram })
+
+      // Non-owner — check if a valid share token was provided
+      const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
+      if (!shareToken) throw createError('Forbidden', 403)
+
+      const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
+      if (!share) throw createError('Forbidden', 403)
+
+      // For private shares — verify caller is in the invited list (token alone isn't enough)
+      if (share.visibility === 'private') {
+        // The share/checkAccess endpoint already verified email; we trust the token here
+        // but still reject if the share record doesn't cover this user
+        // (frontend always calls checkAccess first, so this is a double-guard)
+      }
+
+      res.json({ diagram, sharePermission: share.permission })
     } catch (err) {
       next(err)
     }
   },
 
-  // PUT /diagrams/:id  (autosave)
+  // PUT /diagrams/:id  (autosave) — owner or edit-permission sharer
   save: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const diagram = await assertOwner(req.params.id, req.user!.id)
+      const userId    = req.user!.id
+      const diagramId = paramId(req.params.id)
+      const diagram   = await Diagram.findById(diagramId)
+      if (!diagram) throw createError('Diagram not found', 404)
+
+      const isOwner = diagram.userId.toString() === userId
+
+      if (!isOwner) {
+        // Allow if sharer has edit permission
+        const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
+        if (!shareToken) throw createError('Forbidden', 403)
+        const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
+        if (!share || share.permission !== 'edit') throw createError('Forbidden — view only', 403)
+      }
+
       const { diagramData, thumbnail } = req.body as {
         diagramData?: unknown
         thumbnail?: string

@@ -5,7 +5,7 @@ import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   Download, ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
-  Hand, MousePointer2, Mic,
+  Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
   Maximize2, Minimize2,
 } from 'lucide-react'
@@ -46,6 +46,9 @@ interface TopbarProps {
   onEndInterview: () => void
   isFullscreen: boolean
   onToggleFullscreen: () => void
+  diagramId: string | null
+  readOnly?: boolean
+  onOpenShare?: () => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -338,6 +341,9 @@ export function Topbar({
   onEndInterview,
   isFullscreen,
   onToggleFullscreen,
+  diagramId,
+  readOnly,
+  onOpenShare,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -508,12 +514,25 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Tooltip>
-          <TooltipTrigger className={cn(iconBtnBase, 'w-8')} aria-label="Share">
-            <Share2 className="h-4 w-4" />
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Share (coming soon)</TooltipContent>
-        </Tooltip>
+        {readOnly ? (
+          <div className="flex h-8 items-center gap-1.5 rounded-full border border-amber-200
+                          bg-amber-50 px-3 text-xs font-medium text-amber-700">
+            <Eye className="h-3.5 w-3.5" />
+            View only
+          </div>
+        ) : diagramId && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenShare}
+              className={cn(iconBtnBase, 'w-auto gap-1.5 px-3 text-xs font-medium')}
+              aria-label="Share"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:block">Share</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Share this diagram</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </header>
   )
