@@ -16,6 +16,7 @@ import statsRouter from './routes/stats.route'
 import adminRouter from './routes/admin.route'
 import analyticsRouter from './routes/analytics.route'
 import shareRouter from './routes/share.route'
+import problemsRouter from './routes/problems.route'
 
 const app = express()
 
@@ -112,6 +113,7 @@ app.use('/stats',     statsRouter)
 app.use('/admin',     adminRouter)
 app.use('/analytics', analyticsRouter)
 app.use('/share',     shareRouter)
+app.use('/problems',  problemsRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)

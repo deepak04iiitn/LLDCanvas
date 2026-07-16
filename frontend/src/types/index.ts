@@ -1,3 +1,47 @@
+// ─── Problems ────────────────────────────────────────────────────────────────
+
+export interface ProblemSummary {
+  _id: string
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  category: string
+  description: string
+  companies: string[]
+  tags: string[]
+  order: number
+  submissionCount: number
+  myStatus: 'in_progress' | 'submitted' | null
+}
+
+export interface ProblemDetail extends ProblemSummary {
+  functionalRequirements: string[]
+  nonFunctionalRequirements: string[]
+}
+
+export interface UserSolution {
+  _id: string
+  problemId: string
+  userId: string
+  diagramId: string | null
+  status: 'in_progress' | 'submitted'
+  submittedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CommunitySolution {
+  _id: string
+  userId: string
+  isOwn: boolean
+  userName: string
+  userImage: string | null
+  diagramId: string | null
+  submittedAt: string
+  nodeCount: number
+  edgeCount: number
+}
+
 // ─── Sharing ─────────────────────────────────────────────────────────────────
 
 export interface ShareSettings {

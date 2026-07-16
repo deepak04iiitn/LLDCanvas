@@ -15,28 +15,32 @@ type AccessState =
   | { kind: 'loading' }
   | { kind: 'need-auth' }           // not signed in — must log in first
   | { kind: 'denied'; reason: string }
-  | { kind: 'ok'; permission: 'view' | 'edit' }
+  | { kind: 'ok' }
 
 export default function EditorPage() {
   const { id }           = useParams<{ id: string }>()
   const router           = useRouter()
   const searchParams     = useSearchParams()
   const shareToken       = searchParams.get('share') ?? undefined
+  const problemSlug      = searchParams.get('problem') ?? undefined
 
   const { data: session, isPending: sessionLoading } = useSession()
 
-  const [diagram,  setDiagram]  = useState<DiagramFull | null>(null)
-  const [loading,  setLoading]  = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
-  const [access,   setAccess]   = useState<AccessState>({ kind: 'loading' })
+  const [diagram,    setDiagram]    = useState<DiagramFull | null>(null)
+  const [permission, setPermission] = useState<'view' | 'edit'>('edit')
+  const [loading,    setLoading]    = useState(true)
+  const [error,      setError]      = useState<string | null>(null)
+  const [access,     setAccess]     = useState<AccessState>({ kind: 'loading' })
 
   // ── Step 1: resolve share token access (if present) ──────────────────────
   useEffect(() => {
     if (!id) return
 
-    // No share token — owner loading their own diagram
+    // No share token — owner loading their own diagram, or viewing a community
+    // solution. Either way, the diagram fetch in step 2 tells us the real
+    // permission (owner => edit, community solution => forced view-only).
     if (!shareToken) {
-      setAccess({ kind: 'ok', permission: 'edit' })
+      setAccess({ kind: 'ok' })
       return
     }
 
@@ -55,7 +59,8 @@ export default function EditorPage() {
         if (!res.canAccess) {
           setAccess({ kind: 'denied', reason: res.reason ?? 'You do not have access to this diagram.' })
         } else {
-          setAccess({ kind: 'ok', permission: res.permission ?? 'view' })
+          setPermission(res.permission ?? 'view')
+          setAccess({ kind: 'ok' })
         }
       })
       .catch(() => {
@@ -69,7 +74,12 @@ export default function EditorPage() {
 
     setLoading(true)
     api.diagrams.get(id, shareToken)
-      .then(res => setDiagram(res.diagram))
+      .then(res => {
+        setDiagram(res.diagram)
+        // Owner requests carry no sharePermission — default to edit.
+        // Shared / community-solution requests carry it explicitly.
+        if (!shareToken) setPermission(res.sharePermission ?? 'edit')
+      })
       .catch(() => {
         toast.error('Could not load diagram')
         setError('Diagram not found or access denied.')
@@ -143,7 +153,7 @@ export default function EditorPage() {
     )
   }
 
-  const isReadOnly = access.permission === 'view'
+  const isReadOnly = permission === 'view'
 
   async function handleRename(title: string) {
     if (isReadOnly) return
@@ -159,6 +169,7 @@ export default function EditorPage() {
         onRename={handleRename}
         readOnly={isReadOnly}
         shareToken={shareToken}
+        problemSlug={problemSlug}
       />
     </MobileEditorGuard>
   )

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { Diagram } from '../models/diagram.model'
 import { DiagramShare } from '../models/diagram-share.model'
+import { UserSolution } from '../models/user-solution.model'
 import { createError } from '../middleware/error'
 
 // Express params can be `string | string[]` — this normalises to string
@@ -86,7 +87,13 @@ export const diagramsController = {
       // Owner — always allowed
       if (diagram.userId.toString() === userId) return res.json({ diagram })
 
-      // Non-owner — check if a valid share token was provided
+      // Non-owner — a submitted community solution is publicly viewable, view-only
+      const isCommunitySolution = await UserSolution.exists({ diagramId, status: 'submitted' })
+      if (isCommunitySolution) {
+        return res.json({ diagram, sharePermission: 'view' })
+      }
+
+      // Otherwise, check if a valid share token was provided
       const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
       if (!shareToken) throw createError('Forbidden', 403)
 

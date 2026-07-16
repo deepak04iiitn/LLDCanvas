@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -142,5 +142,42 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ timeElapsed }),
       }),
+  },
+
+  problems: {
+    list: (params?: { q?: string; difficulty?: string; category?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)          qs.set('q',          params.q)
+      if (params?.difficulty) qs.set('difficulty', params.difficulty)
+      if (params?.category)   qs.set('category',   params.category)
+      const q = qs.toString()
+      return request<{ problems: ProblemSummary[] }>(`/problems${q ? `?${q}` : ''}`)
+    },
+
+    categories: () =>
+      request<{ categories: string[] }>('/problems/categories'),
+
+    get: (slug: string) =>
+      request<{ problem: ProblemDetail; submissionCount: number; mySolution: UserSolution | null }>(`/problems/${slug}`),
+
+    hints: (slug: string) =>
+      request<{ hints: string[] }>(`/problems/${slug}/hints`),
+
+    myStats: () =>
+      request<{ attempted: number; submitted: number; byDifficulty: { easy: number; medium: number; hard: number } }>('/problems/stats/me'),
+
+    mySolution: (slug: string) =>
+      request<{ solution: UserSolution | null }>(`/problems/${slug}/my-solution`),
+
+    start: (slug: string) =>
+      request<{ solution: UserSolution; diagramId: string }>(`/problems/${slug}/solutions`, { method: 'POST' }),
+
+    submit: (slug: string) =>
+      request<{ solution: UserSolution }>(`/problems/${slug}/solutions/submit`, { method: 'PATCH' }),
+
+    solutions: (slug: string, page = 1, sort: 'newest' | 'oldest' = 'newest') =>
+      request<{ solutions: CommunitySolution[]; total: number; page: number; totalPages: number }>(
+        `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
+      ),
   },
 }

@@ -7,7 +7,7 @@ import {
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, BookOpen,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -49,6 +49,8 @@ interface TopbarProps {
   diagramId: string | null
   readOnly?: boolean
   onOpenShare?: () => void
+  problemSlug?: string
+  onOpenProblem?: () => void
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -113,7 +115,7 @@ function SaveIndicator({ status, onRetry }: { status: SaveStatus; onRetry?: () =
 }
 
 // ─── Editable diagram title ───────────────────────────────────────────────────
-function EditableTitle({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function EditableTitle({ value, onChange, readOnly }: { value: string; onChange: (v: string) => void; readOnly?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -136,6 +138,14 @@ function EditableTitle({ value, onChange }: { value: string; onChange: (v: strin
     if (e.key === 'Enter') commit()
     if (e.key === 'Escape') { setDraft(value); setEditing(false) }
     e.stopPropagation()
+  }
+
+  if (readOnly) {
+    return (
+      <span className="max-w-[240px] truncate px-2 py-0.5 text-sm font-medium text-gray-800 dark:text-gray-200">
+        {value}
+      </span>
+    )
   }
 
   if (editing) {
@@ -344,6 +354,8 @@ export function Topbar({
   diagramId,
   readOnly,
   onOpenShare,
+  problemSlug,
+  onOpenProblem,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -357,7 +369,7 @@ export function Topbar({
           groups either side. A light indigo tint so it reads as a small
           highlighted touch, not another neutral icon button. */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
-        {!activeSession && (
+        {!activeSession && !readOnly && (
           <Tooltip>
             <TooltipTrigger
               onClick={onStartInterview}
@@ -399,7 +411,7 @@ export function Topbar({
       <div className="mx-2 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
       {/* Editable title */}
-      <EditableTitle value={title} onChange={onRename} />
+      <EditableTitle value={title} onChange={onRename} readOnly={readOnly} />
 
       {/* Save status */}
       <div className="ml-2">
@@ -445,31 +457,35 @@ export function Topbar({
           </Tooltip>
         </div>
 
-        <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+        {!readOnly && (
+          <>
+            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
-        <Tooltip>
-          <TooltipTrigger
-            className={cn(iconBtnBase, 'w-8')}
-            onClick={onUndo}
-            disabled={!canUndo}
-            aria-label="Undo"
-          >
-            <Undo2 className="h-4 w-4" />
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Undo (Ctrl+Z)</TooltipContent>
-        </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                className={cn(iconBtnBase, 'w-8')}
+                onClick={onUndo}
+                disabled={!canUndo}
+                aria-label="Undo"
+              >
+                <Undo2 className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Undo (Ctrl+Z)</TooltipContent>
+            </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger
-            className={cn(iconBtnBase, 'w-8')}
-            onClick={onRedo}
-            disabled={!canRedo}
-            aria-label="Redo"
-          >
-            <Redo2 className="h-4 w-4" />
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Redo (Ctrl+Shift+Z)</TooltipContent>
-        </Tooltip>
+            <Tooltip>
+              <TooltipTrigger
+                className={cn(iconBtnBase, 'w-8')}
+                onClick={onRedo}
+                disabled={!canRedo}
+                aria-label="Redo"
+              >
+                <Redo2 className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Redo (Ctrl+Shift+Z)</TooltipContent>
+            </Tooltip>
+          </>
+        )}
 
         <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
@@ -532,6 +548,26 @@ export function Topbar({
             </TooltipTrigger>
             <TooltipContent side="bottom">Share this diagram</TooltipContent>
           </Tooltip>
+        )}
+
+        {/* Problem chip — shown when opened from the problems library */}
+        {problemSlug && (
+          <>
+            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onOpenProblem}
+                className="flex h-8 items-center gap-1.5 rounded-full border border-brand/20
+                           bg-brand-tint px-3 text-xs font-medium text-brand transition-all
+                           hover:border-brand/40 hover:bg-brand/10"
+                aria-label="View problem"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:block">Problem</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">View problem requirements & hints</TooltipContent>
+            </Tooltip>
+          </>
         )}
       </div>
     </header>

@@ -6,7 +6,6 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  MiniMap,
   Panel,
   ConnectionMode,
   ConnectionLineType,
@@ -203,8 +202,6 @@ export function CanvasView({
     theme === 'dark' ? '#111111' : theme === 'whiteboard' ? '#FFFFFF' : '#F8F8F8'
   const gridColor =
     theme === 'dark' ? '#2A2A2A' : theme === 'whiteboard' ? '#E8E8E8' : '#E2E2E2'
-  const minimapBg =
-    theme === 'dark' ? '#1C1C1E' : theme === 'whiteboard' ? '#F5F5F5' : '#EEEEEE'
   const gridVariant =
     theme === 'whiteboard' ? BackgroundVariant.Lines : BackgroundVariant.Dots
 
@@ -282,14 +279,6 @@ export function CanvasView({
           position="bottom-right"
           showInteractive={false}
           className="canvas-controls"
-        />
-        <MiniMap
-          position="bottom-left"
-          pannable
-          zoomable
-          style={{ background: minimapBg }}
-          maskColor={theme === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)'}
-          className="canvas-minimap"
         />
         <ZoomTracker nodes={nodes} />
         <AlignmentGuideOverlay guides={guides} />
