@@ -177,6 +177,7 @@ interface CanvasViewProps {
   onDuplicate: () => void
   onDelete: () => void
   onClearSelection: () => void
+  readOnly?: boolean
 }
 
 export function CanvasView({
@@ -192,6 +193,7 @@ export function CanvasView({
   onDuplicate,
   onDelete,
   onClearSelection,
+  readOnly,
 }: CanvasViewProps) {
   const { theme } = useEditor()
   const [guides, setGuides] = useState<GuideLines>({})
@@ -262,6 +264,9 @@ export function CanvasView({
         onNodeDragStop={onNodeDragStop}
         style={{ background: canvasBg }}
         proOptions={{ hideAttribution: true }}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
         connectionLineType={ConnectionLineType.SmoothStep}

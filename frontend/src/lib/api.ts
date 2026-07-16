@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -38,8 +38,10 @@ export const api = {
       return request<{ diagrams: DiagramSummary[] }>(`/diagrams${qs}`)
     },
 
-    get: (id: string) =>
-      request<{ diagram: DiagramFull }>(`/diagrams/${id}`),
+    get: (id: string, shareToken?: string) =>
+      request<{ diagram: DiagramFull; sharePermission?: 'view' | 'edit' }>(
+        `/diagrams/${id}${shareToken ? `?shareToken=${shareToken}` : ''}`,
+      ),
 
     create: (payload?: { title?: string }) =>
       request<{ diagram: DiagramFull }>('/diagrams', {
@@ -50,8 +52,8 @@ export const api = {
     duplicate: (id: string) =>
       request<{ diagram: DiagramFull }>(`/diagrams/${id}/duplicate`, { method: 'POST' }),
 
-    save: (id: string, diagramData: DiagramData, thumbnail?: string) =>
-      request<{ ok: boolean }>(`/diagrams/${id}`, {
+    save: (id: string, diagramData: DiagramData, thumbnail?: string, shareToken?: string) =>
+      request<{ ok: boolean }>(`/diagrams/${id}${shareToken ? `?shareToken=${shareToken}` : ''}`, {
         method: 'PUT',
         body: JSON.stringify({ diagramData, thumbnail }),
       }),
@@ -89,6 +91,48 @@ export const api = {
 
     delete: (id: string) =>
       request<{ ok: boolean }>(`/interview/${id}`, { method: 'DELETE' }),
+  },
+
+  share: {
+    // Check if the current user has access via a share token (used on editor load)
+    check: (token: string) =>
+      request<{
+        canAccess: boolean
+        isOwner?: boolean
+        diagramId?: string
+        permission?: 'view' | 'edit'
+        visibility?: 'public' | 'private'
+        reason?: string
+      }>(`/share/${token}`),
+
+    // Owner: get current share settings for a diagram
+    get: (diagramId: string) =>
+      request<{ share: ShareSettings | null }>(`/diagrams/${diagramId}/share`),
+
+    // Owner: create / update share (visibility + permission)
+    upsert: (diagramId: string, payload: { visibility: 'public' | 'private'; permission: 'view' | 'edit' }) =>
+      request<{ share: ShareSettings }>(`/diagrams/${diagramId}/share`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    // Owner: turn off sharing entirely
+    remove: (diagramId: string) =>
+      request<{ ok: boolean }>(`/diagrams/${diagramId}/share`, { method: 'DELETE' }),
+
+    // Owner: invite an email (private share)
+    addInvite: (diagramId: string, email: string) =>
+      request<{ share: ShareSettings }>(`/diagrams/${diagramId}/share/invite`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+
+    // Owner: remove an invited email
+    removeInvite: (diagramId: string, email: string) =>
+      request<{ share: ShareSettings }>(`/diagrams/${diagramId}/share/invite`, {
+        method: 'DELETE',
+        body: JSON.stringify({ email }),
+      }),
   },
 
   stats: {
