@@ -82,7 +82,7 @@ export default function EditorPage() {
       })
       .catch(() => {
         toast.error('Could not load diagram')
-        setError('Diagram not found or access denied.')
+        setError('UML Diagram not found or access denied.')
       })
       .finally(() => setLoading(false))
   }, [id, access.kind, shareToken])
@@ -140,7 +140,7 @@ export default function EditorPage() {
         </div>
         <div className="text-center">
           <p className="text-base font-semibold text-gray-800">Could not load diagram</p>
-          <p className="mt-1 text-sm text-gray-400">{error ?? 'Diagram not found.'}</p>
+          <p className="mt-1 text-sm text-gray-400">{error ?? 'UML Diagram not found.'}</p>
         </div>
         <button
           onClick={() => router.push('/dashboard')}

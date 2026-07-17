@@ -31,6 +31,7 @@ import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawe
 import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { ShareModal } from '@/components/editor/ShareModal'
 import { ProblemPanel } from '@/components/editor/ProblemPanel'
+import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -40,6 +41,7 @@ import type { DiagramData, UMLNodeData, UMLEdgeData, RelationshipType, CanvasThe
 import { exportPNG, exportSVG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
 import { toMermaid } from '@/lib/export/toMermaid'
+import { serializeToDraft, renderToFlow, type DraftAST } from '@/lib/draft'
 
 interface EditorShellProps {
   diagramId: string | null
@@ -127,6 +129,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
     problemSlug ? 'open' : 'collapsed',
   )
+  const [importDraftOpen, setImportDraftOpen] = useState(false)
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
@@ -355,6 +358,41 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     [nodes, edges, history, setNodes, setEdges],
   )
 
+  // ── Import a Draft Notation snippet — one-shot, additive (not a live panel) ─
+  // The editor deliberately only supports importing already-written code, not
+  // authoring it live — that workflow lives in the standalone Playground.
+  const importDraft = useCallback(
+    (ast: DraftAST) => {
+      const { nodes: parsedNodes, edges: parsedEdges } = renderToFlow(ast)
+      if (parsedNodes.length === 0) return
+
+      const centre = rfInstance.current
+        ? rfInstance.current.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
+        : { x: 300, y: 200 }
+
+      // Re-centre the parsed layout (which starts at 0,0) on the viewport
+      const minX = Math.min(...parsedNodes.map(n => n.position.x))
+      const minY = Math.min(...parsedNodes.map(n => n.position.y))
+      const maxX = Math.max(...parsedNodes.map(n => n.position.x))
+      const maxY = Math.max(...parsedNodes.map(n => n.position.y))
+      const offsetX = centre.x - (minX + maxX) / 2
+      const offsetY = centre.y - (minY + maxY) / 2
+
+      const newNodes = parsedNodes.map(n => ({
+        ...n,
+        position: { x: n.position.x + offsetX, y: n.position.y + offsetY },
+      }))
+
+      history.push({ nodes, edges })
+      setNodes(prev => [...prev, ...newNodes as Node[]])
+      setEdges(prev => [...prev, ...parsedEdges as Edge[]])
+      setImportDraftOpen(false)
+      toast.success(`Imported ${parsedNodes.length} class${parsedNodes.length === 1 ? '' : 'es'}`)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nodes, edges, history, setNodes, setEdges],
+  )
+
   // ── Delete selected ───────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
     const allNodes = getNodes()
@@ -479,6 +517,18 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     navigator.clipboard.writeText(text).then(() => toast.success('Mermaid copied to clipboard'))
   }, [nodes, edges])
 
+  const handleExportDraft = useCallback(() => {
+    const text = serializeToDraft(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
+    const blob = new Blob([text], { type: 'text/plain' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.draft`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Exported as .draft file')
+  }, [nodes, edges, title])
+
   // ── Rename ────────────────────────────────────────────────────────────────
   const handleRename = useCallback(
     async (newTitle: string) => {
@@ -535,6 +585,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onExportSVG={handleExportSVG}
         onExportPlantUML={handleExportPlantUML}
         onExportMermaid={handleExportMermaid}
+        onExportDraft={handleExportDraft}
+        onOpenImportDraft={() => setImportDraftOpen(true)}
         saveStatus={saveStatus}
         onRetrySave={retrySave}
         selectedCount={selectedCount}
@@ -627,6 +679,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           onOpenChange={setShareModalOpen}
           diagramId={diagramId}
           diagramTitle={title}
+        />
+      )}
+
+      {!readOnly && (
+        <ImportDraftModal
+          open={importDraftOpen}
+          onOpenChange={setImportDraftOpen}
+          onImport={importDraft}
         />
       )}
     </div>

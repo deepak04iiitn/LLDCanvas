@@ -18,7 +18,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { label: 'My Diagrams', href: '/dashboard', Icon: FolderOpen, isActive: p => p === '/dashboard' },
+  { label: 'My UML Diagrams', href: '/dashboard', Icon: FolderOpen, isActive: p => p === '/dashboard' },
   { label: 'Interview Mode', href: '/dashboard/interview-mode', Icon: Mic, isActive: p => p.startsWith('/dashboard/interview-mode'), dividerBefore: true },
   { label: 'Practice Sessions', href: '/dashboard/sessions', Icon: Timer, isActive: p => p.startsWith('/dashboard/sessions') },
   { label: 'Stats', href: '/dashboard/stats', Icon: BarChart2, isActive: p => p.startsWith('/dashboard/stats') },

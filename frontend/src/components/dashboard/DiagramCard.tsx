@@ -59,7 +59,7 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
     try {
       const { diagram: copy } = await api.diagrams.duplicate(diagram._id)
       onDuplicated(copy as DiagramSummary)
-      toast.success('Diagram duplicated')
+      toast.success('UML Diagram duplicated')
     } catch {
       toast.error('Failed to duplicate diagram')
     }
@@ -69,7 +69,7 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
     try {
       await api.diagrams.delete(diagram._id)
       onDeleted(diagram._id)
-      toast.success('Diagram deleted')
+      toast.success('UML Diagram deleted')
     } catch {
       toast.error('Failed to delete diagram')
     }

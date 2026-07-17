@@ -182,9 +182,9 @@ export default function DashboardPage() {
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline px-5 py-5 sm:px-8">
           <div>
-            <h1 className="font-serif text-xl font-medium text-ink">My Diagrams</h1>
+            <h1 className="font-serif text-xl font-medium text-ink">My UML Diagrams</h1>
             <p className="mt-0.5 text-sm text-ink-faint">
-              {loading ? 'Loading…' : `${diagrams.length} diagram${diagrams.length !== 1 ? 's' : ''}`}
+              {loading ? 'Loading…' : `${diagrams.length} UML diagram${diagrams.length !== 1 ? 's' : ''}`}
             </p>
           </div>
           <Button
@@ -192,7 +192,7 @@ export default function DashboardPage() {
             className="gap-2 bg-brand text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
           >
             <Plus size={15} />
-            <span className="hidden sm:inline">New Diagram</span>
+            <span className="hidden sm:inline">New UML Diagram</span>
           </Button>
         </header>
 
@@ -206,7 +206,7 @@ export default function DashboardPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search diagrams…"
+              placeholder="Search UML diagrams…"
               className="h-9 rounded-md border-hairline-strong bg-paper-elevated pl-9 text-sm transition-all focus:border-brand focus:ring-brand/15"
             />
           </div>

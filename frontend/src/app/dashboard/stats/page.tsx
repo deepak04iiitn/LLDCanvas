@@ -104,9 +104,9 @@ export default function StatsPage() {
                   iconBg="bg-amber-50"
                 />
                 <StatCard
-                  label="Diagrams created"
+                  label="UML Diagrams created"
                   value={"—"}
-                  sub="See My Diagrams"
+                  sub="See My UML Diagrams"
                   Icon={LayoutDashboard}
                   accent="text-sky-600"
                   iconBg="bg-sky-50"

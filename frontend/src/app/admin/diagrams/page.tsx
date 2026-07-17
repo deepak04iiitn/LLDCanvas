@@ -54,7 +54,7 @@ export default function AdminDiagramsPage() {
   }
 
   async function handleDelete(d: AdminDiagram) {
-    if (!confirm(`Delete diagram "${d.title}"?`)) return
+    if (!confirm(`Delete UML diagram "${d.title}"?`)) return
     setActionId(d.id)
     try {
       await adminApi.diagrams.delete(d.id)
@@ -68,8 +68,8 @@ export default function AdminDiagramsPage() {
     <div className="p-6 space-y-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-serif text-2xl font-medium text-ink">Diagrams</h1>
-          <p className="mt-0.5 text-sm text-ink-faint">{total.toLocaleString()} total diagrams</p>
+          <h1 className="font-serif text-2xl font-medium text-ink">UML Diagrams</h1>
+          <p className="mt-0.5 text-sm text-ink-faint">{total.toLocaleString()} total UML diagrams</p>
         </div>
         <button onClick={() => load(page, q)} className="flex items-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline">
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -91,7 +91,7 @@ export default function AdminDiagramsPage() {
             <RefreshCw className="h-5 w-5 animate-spin text-ink-faint" />
           </div>
         ) : diagrams.length === 0 ? (
-          <div className="flex h-48 items-center justify-center text-sm text-ink-faint">No diagrams found.</div>
+          <div className="flex h-48 items-center justify-center text-sm text-ink-faint">No UML diagrams found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-sm">
