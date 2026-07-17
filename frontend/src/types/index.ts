@@ -168,6 +168,43 @@ export interface DiagramData {
   meta: DiagramMeta
 }
 
+// ─── Revision Notes ──────────────────────────────────────────────────────────
+
+export interface RevisionNoteSummary {
+  _id: string
+  slug: string
+  title: string
+  category: string
+  difficulty: 'basic' | 'intermediate' | 'advanced'
+  summary: string
+  tags: string[]
+  order: number
+  myStatus: 'unread' | 'revised' | null
+  bookmarked: boolean
+}
+
+export interface RevisionNoteDetail extends RevisionNoteSummary {
+  keyPoints: string[]
+  analogy: string
+  codeHint: string
+}
+
+export interface UserRevision {
+  _id: string
+  userId: string
+  noteId: string
+  status: 'unread' | 'revised'
+  bookmarked: boolean
+  revisedAt: string | null
+}
+
+export interface RevisionStats {
+  total: number
+  revised: number
+  bookmarked: number
+  byCategory: Record<string, { total: number; revised: number }>
+}
+
 // ─── API Shapes ───────────────────────────────────────────────────────────────
 
 export interface DiagramSummary {
