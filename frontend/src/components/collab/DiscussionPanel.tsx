@@ -221,7 +221,7 @@ function MessageBubble({
               exit={{ opacity: 0, height: 0 }}
               className="w-full overflow-hidden"
             >
-              <MentionTextarea
+              <MentionInput
                 value={replyText}
                 onChange={setReplyText}
                 onSubmit={sendReply}

@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Loader2, Users, CheckCircle, AlertCircle } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth-client'
 
-export default function CollabAcceptPage() {
+function CollabAcceptInner() {
   const searchParams = useSearchParams()
   const router       = useRouter()
   const { data: session, isPending } = useSession()
@@ -82,5 +82,17 @@ export default function CollabAcceptPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CollabAcceptPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-paper">
+        <Loader2 size={24} className="animate-spin text-brand" />
+      </div>
+    }>
+      <CollabAcceptInner />
+    </Suspense>
   )
 }
