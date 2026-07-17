@@ -42,7 +42,7 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
         <div className="p-6">
           <DialogHeader className="mb-6">
             <DialogTitle className="font-serif text-lg font-medium text-ink">
-              New Diagram
+              New UML Diagram
             </DialogTitle>
           </DialogHeader>
 
@@ -74,7 +74,7 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
               disabled={loading}
               className="bg-brand text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97]"
             >
-              {loading ? 'Creating…' : 'Create Diagram'}
+              {loading ? 'Creating…' : 'Create UML Diagram'}
             </Button>
           </DialogFooter>
         </div>

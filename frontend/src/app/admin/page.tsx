@@ -261,7 +261,7 @@ export default function AdminOverviewPage() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label="Total users"    value={stats.totalUsers.toLocaleString()}          Icon={Users}         sub={`${stats.newToday} joined today`} />
           <StatCard label="Active today"   value={stats.activeToday.toLocaleString()}         Icon={Activity}      sub={`${stats.newThisWeek} new this week`} />
-          <StatCard label="Total diagrams" value={stats.totalDiagrams.toLocaleString()}       Icon={FileText}      sub={`${stats.newDiagramsToday} created today`} />
+          <StatCard label="Total UML diagrams" value={stats.totalDiagrams.toLocaleString()}       Icon={FileText}      sub={`${stats.newDiagramsToday} created today`} />
           <StatCard label="Practice time"  value={fmtSeconds(stats.totalPracticeSeconds)}     Icon={Clock}         sub="all users" accent />
           <StatCard label="Total sessions" value={stats.totalSessions.toLocaleString()}       Icon={Timer}         sub={`${stats.completedSessions} completed`} />
           <StatCard label="Completed"      value={stats.completedSessions.toLocaleString()}   Icon={CheckCircle} />
@@ -290,7 +290,7 @@ export default function AdminOverviewPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Diagrams created — 30 days">
+        <ChartCard title="UML Diagrams created — 30 days">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={diagramData} barSize={14}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
@@ -346,7 +346,7 @@ export default function AdminOverviewPage() {
             </div>
           </ChartCard>
 
-          <ChartCard title="Top users by diagrams">
+          <ChartCard title="Top users by UML diagrams">
             <div className="space-y-2">
               {charts.topUsers.slice(0, 4).map((u, i) => (
                 <div key={u.id} className="flex items-center gap-2">

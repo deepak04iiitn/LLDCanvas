@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   Download, ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2, BookOpen,
+  Maximize2, Minimize2, BookOpen, Sparkles, FileInput, Code2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -36,6 +37,8 @@ interface TopbarProps {
   onExportSVG: () => void
   onExportPlantUML: () => void
   onExportMermaid: () => void
+  onExportDraft: () => void
+  onOpenImportDraft: () => void
   saveStatus: SaveStatus
   onRetrySave: () => void
   selectedCount: number
@@ -341,6 +344,8 @@ export function Topbar({
   onExportSVG,
   onExportPlantUML,
   onExportMermaid,
+  onExportDraft,
+  onOpenImportDraft,
   saveStatus,
   onRetrySave,
   selectedCount,
@@ -423,6 +428,47 @@ export function Topbar({
 
       {/* Action buttons */}
       <div className="flex items-center gap-1">
+
+        {/* Draft Notation — Playground (write code, live preview) + Import
+            (paste already-written code, drop it onto the canvas once).
+            The editor itself never hosts a live code panel — that workflow
+            lives in the standalone Playground so it doesn't compete with
+            manual editing for screen space. */}
+        {!readOnly && (
+          <>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onOpenImportDraft}
+                className={cn(iconBtnBase, 'w-8')}
+                aria-label="Import Draft Notation"
+              >
+                <FileInput className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Import from Draft Notation</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    href="/playground"
+                    target="_blank"
+                    className="flex h-8 items-center gap-1.5 rounded-full border border-indigo-200
+                               bg-indigo-50 px-3 mr-1 text-xs font-medium text-indigo-700 transition-all
+                               hover:border-indigo-300 hover:bg-indigo-100
+                               dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:text-indigo-300
+                               dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
+                  />
+                }
+                aria-label="Open Draft Notation Playground"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span className="hidden sm:block">Playground</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Write Draft Notation live in a separate tab</TooltipContent>
+            </Tooltip>
+          </>
+        )}
 
         {/* Pan / Select mode toggle */}
         <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-gray-200
@@ -509,7 +555,7 @@ export function Topbar({
             <span className="hidden sm:block">Export</span>
             <ChevronDown className="h-3 w-3 opacity-60" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem onClick={onExportPNG} className="gap-2">
               <Image className="h-4 w-4 text-indigo-500" />
               Export as PNG
@@ -517,6 +563,10 @@ export function Topbar({
             <DropdownMenuItem onClick={onExportSVG} className="gap-2">
               <FileCode2 className="h-4 w-4 text-emerald-500" />
               Export as SVG
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onExportDraft} className="gap-2">
+              <Code2 className="h-4 w-4 text-cyan-500" />
+              Export as .draft
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onExportPlantUML} className="gap-2">

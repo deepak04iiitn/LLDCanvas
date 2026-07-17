@@ -16,7 +16,7 @@ export default function LocalEditorPage() {
   const { activeSession } = useInterview()
 
   const [initialData, setInitialData] = useState<DiagramData | null>(null)
-  const [initialTitle, setInitialTitle] = useState('Untitled Diagram')
+  const [initialTitle, setInitialTitle] = useState('Untitled UML Diagram')
   const [ready, setReady] = useState(false)
 
   // ── Redirect authenticated users away from local mode ─────────────────────
@@ -34,7 +34,7 @@ export default function LocalEditorPage() {
   // ── Hydrate from localStorage (client-only) ───────────────────────────────
   useEffect(() => {
     const data = getLocalDiagramData()
-    const title = typeof window !== 'undefined' ? getLocalTitle() : 'Untitled Diagram'
+    const title = typeof window !== 'undefined' ? getLocalTitle() : 'Untitled UML Diagram'
     if (data) setInitialData(data)
     setInitialTitle(title)
     setReady(true)

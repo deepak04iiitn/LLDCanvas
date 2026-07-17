@@ -9,37 +9,11 @@ import {
   Clock, StickyNote, Flame, BarChart2, CalendarDays, Mic,
 } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
-import { Wordmark } from '@/components/Brand'
+import { SiteNavbar } from '@/components/marketing/SiteNavbar'
+import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { DiagramStage, DiagramNode, DiagramBox, type DiagramEdge } from '@/components/marketing/ConnectedDiagram'
-import { useSession } from '@/lib/auth-client'
+import { EASE, fadeUpProps, inViewProps } from '@/lib/motion'
 import { cn } from '@/lib/utils'
-
-const EASE = 'easeOut' as const
-
-// ─── Nav quick links ──────────────────────────────────────────────────────────
-const QUICK_LINKS = [
-  { label: 'Features',       href: '#features' },
-  { label: 'Interview Mode', href: '#interview-mode' },
-  { label: 'Patterns',       href: '#patterns' },
-  { label: 'FAQ',            href: '#faq' },
-]
-
-function fadeUpProps(delay = 0) {
-  return {
-    initial: { opacity: 0, y: 18 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.5, ease: EASE, delay },
-  }
-}
-
-function inViewProps(delay = 0) {
-  return {
-    initial: { opacity: 0, y: 12 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
-    transition: { duration: 0.4, ease: EASE, delay },
-  }
-}
 
 // ─── Full-page canvas backdrop ────────────────────────────────────────────────
 function CanvasBackdrop() {
@@ -55,20 +29,6 @@ function CanvasBackdrop() {
       </svg>
     </div>
   )
-}
-
-// Tracks whether the page has scrolled past a small threshold — drives the
-// nav's transition from "sitting on the canvas" (transparent, at rest) to a
-// solid, bordered bar once you actually start scrolling.
-function useScrolled(threshold = 8) {
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    function onScroll() { setScrolled(window.scrollY > threshold) }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [threshold])
-  return scrolled
 }
 
 function Eyebrow({ index, children }: { index: string; children: React.ReactNode }) {
@@ -604,9 +564,6 @@ function AuthRedirectListener({ onAuthRedirect }: { onAuthRedirect: () => void }
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
-  const { data: session } = useSession()
-  const scrolled = useScrolled()
-
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
   function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
 
@@ -618,46 +575,7 @@ export default function LandingPage() {
 
       <CanvasBackdrop />
 
-      {/* ─── Nav — sits on the canvas at rest, becomes a warm-tinted glass bar
-           once you scroll (not a flat white rectangle) so it still reads as
-           part of the same page, not something dropped on top of it ── */}
-      <nav
-        className={cn(
-          'sticky top-0 z-50 flex items-center justify-between px-5 py-3 transition-all duration-300 sm:px-8',
-          scrolled
-            ? 'border-b border-brand/15 bg-paper/75 shadow-[0_1px_0_rgba(35,78,63,0.06),0_12px_28px_-20px_rgba(32,31,28,0.35)] backdrop-blur-md'
-            : 'border-b border-transparent bg-transparent',
-        )}
-      >
-        <div className={cn('origin-left transition-transform duration-300', scrolled && 'scale-[0.85]')}>
-          <Wordmark height={58} priority />
-        </div>
-
-        <div className="hidden items-center gap-7 lg:flex">
-          {QUICK_LINKS.map(l => (
-            <a key={l.href} href={l.href} className="text-sm text-ink-muted transition-colors duration-150 hover:text-ink">
-              {l.label}
-            </a>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3">
-          {session ? (
-            <Link href="/dashboard" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
-              Dashboard
-            </Link>
-          ) : (
-            <>
-              <button onClick={openSignin} className="hidden px-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink sm:inline-block">
-                Sign in
-              </button>
-              <button onClick={openSignup} className="rounded-md border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
-                Get started
-              </button>
-            </>
-          )}
-        </div>
-      </nav>
+      <SiteNavbar />
 
       {/* ─── Hero ───────────────────────────────────────────────────────────── */}
       <section className="px-5 pt-2 pb-24 sm:px-8 lg:pt-4">
@@ -896,47 +814,7 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ─── Footer — a distinct band, not the same canvas backdrop as the rest
-           of the page, so the page has a clear close instead of trailing off ── */}
-      <footer className="border-t-2 border-brand/25 bg-brand-tint/60 px-5 pt-14 pb-8 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <Wordmark height={34} />
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-muted">
-                The fastest UML class diagram editor for Low-Level Design interviews and OOP design sessions.
-              </p>
-            </div>
-
-            <div className="flex gap-16">
-              <div>
-                <p className="mb-3 font-mono text-[10px] font-medium tracking-widest text-brand uppercase">Product</p>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="/editor/local" className="text-ink-muted transition-colors hover:text-ink">Open editor</Link></li>
-                  {session && (
-                    <li><Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink">Dashboard</Link></li>
-                  )}
-                </ul>
-              </div>
-
-              {!session && (
-                <div>
-                  <p className="mb-3 font-mono text-[10px] font-medium tracking-widest text-brand uppercase">Account</p>
-                  <ul className="space-y-2 text-sm">
-                    <li><button onClick={openSignin} className="text-ink-muted transition-colors hover:text-ink">Sign in</button></li>
-                    <li><button onClick={openSignup} className="text-ink-muted transition-colors hover:text-ink">Create account</button></li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-14 flex flex-col gap-3 border-t border-brand/20 pt-6 font-mono text-xs text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>© {new Date().getFullYear()} LLDCanvas — built for engineers, by engineers.</p>
-            <p>¶ v1.0</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </div>
