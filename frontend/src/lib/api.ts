@@ -181,6 +181,48 @@ export const api = {
       ),
   },
 
+  collab: {
+    myStats: () =>
+      request<{
+        sharedDiagrams: number
+        collaboratingOn: number
+        totalCollaborators: number
+        pendingInvites: number
+        totalComments: number
+      }>('/collab/my-stats'),
+
+    myDiagrams: () =>
+      request<{
+        owned: {
+          _id: string; title: string; thumbnail?: string; updatedAt: string
+          collaborators: { _id: string; email: string; role: string; status: string }[]
+        }[]
+        collaborating: {
+          _id: string; title: string; thumbnail?: string; updatedAt: string; myRole: string
+        }[]
+      }>('/collab/my-diagrams'),
+
+    activity: () =>
+      request<{
+        events: {
+          type: 'comment' | 'invite_accepted' | 'save'
+          diagramId: string
+          diagramTitle: string
+          actor: string
+          detail: string
+          timestamp: string
+        }[]
+      }>('/collab/activity'),
+
+    versions: (diagramId: string) =>
+      request<{
+        versions: {
+          _id: string; userId: string; userName: string
+          nodeCount: number; edgeCount: number; createdAt: string
+        }[]
+      }>(`/collab/versions/${diagramId}`),
+  },
+
   revision: {
     list: (params?: { q?: string; category?: string; difficulty?: string; bookmarked?: boolean }) => {
       const qs = new URLSearchParams()

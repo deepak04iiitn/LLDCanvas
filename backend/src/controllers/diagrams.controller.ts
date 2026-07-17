@@ -3,6 +3,7 @@ import { Diagram } from '../models/diagram.model'
 import { DiagramShare } from '../models/diagram-share.model'
 import { UserSolution } from '../models/user-solution.model'
 import { CollabInvite } from '../models/collab-invite.model'
+import { DiagramVersion } from '../models/diagram-version.model'
 import { createError } from '../middleware/error'
 
 // Express params can be `string | string[]` — this normalises to string
@@ -153,6 +154,17 @@ export const diagramsController = {
       if (thumbnail !== undefined) diagram.thumbnail = thumbnail
 
       await diagram.save()
+
+      // Log a lightweight version snapshot (fire-and-forget)
+      const data = diagramData as { nodes?: unknown[]; edges?: unknown[] } | undefined
+      DiagramVersion.create({
+        diagramId: diagramId,
+        userId,
+        userName: req.user!.name ?? 'Unknown',
+        nodeCount: data?.nodes?.length ?? 0,
+        edgeCount: data?.edges?.length ?? 0,
+      }).catch(() => {/* non-critical */})
+
       res.json({ ok: true })
     } catch (err) {
       next(err)

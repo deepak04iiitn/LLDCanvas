@@ -6,6 +6,12 @@ const router = Router()
 
 router.use(requireAuth)
 
+// Dashboard stats & activity
+router.get('/my-stats',                    collabController.myStats)
+router.get('/my-diagrams',                 collabController.myCollabDiagrams)
+router.get('/activity',                    collabController.activity)
+router.get('/versions/:diagramId',         collabController.versions)
+
 // Diagram-level invite management (owner only)
 router.get('/:diagramId/invites',          collabController.list)
 router.post('/:diagramId/invite',          collabController.invite)
