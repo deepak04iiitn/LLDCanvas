@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -179,5 +179,34 @@ export const api = {
       request<{ solutions: CommunitySolution[]; total: number; page: number; totalPages: number }>(
         `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
       ),
+  },
+
+  revision: {
+    list: (params?: { q?: string; category?: string; difficulty?: string; bookmarked?: boolean }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)          qs.set('q',          params.q)
+      if (params?.category)   qs.set('category',   params.category)
+      if (params?.difficulty) qs.set('difficulty', params.difficulty)
+      if (params?.bookmarked) qs.set('bookmarked', 'true')
+      const q = qs.toString()
+      return request<{ notes: RevisionNoteSummary[] }>(`/revision-notes${q ? `?${q}` : ''}`)
+    },
+
+    categories: () =>
+      request<{ categories: string[] }>('/revision-notes/categories'),
+
+    myStats: () =>
+      request<{ stats: RevisionStats }>('/revision-notes/stats/me'),
+
+    get: (slug: string) =>
+      request<{ note: RevisionNoteDetail; myRevision: { status: string; bookmarked: boolean } | null }>(
+        `/revision-notes/${slug}`,
+      ),
+
+    markRevised: (slug: string) =>
+      request<{ ok: boolean }>(`/revision-notes/${slug}/revised`, { method: 'POST' }),
+
+    toggleBookmark: (slug: string) =>
+      request<{ bookmarked: boolean }>(`/revision-notes/${slug}/bookmark`, { method: 'POST' }),
   },
 }
