@@ -35,9 +35,8 @@ export const revisionController = {
 
       let enriched = notes.map(n => ({
         ...n,
-        status:     revMap.get(n._id.toString())?.status     ?? 'unread',
+        myStatus:   revMap.get(n._id.toString())?.status     ?? null,
         bookmarked: revMap.get(n._id.toString())?.bookmarked ?? false,
-        revisedAt:  revMap.get(n._id.toString())?.revisedAt  ?? null,
       }))
 
       if (onlyBookmarked) {
@@ -68,7 +67,7 @@ export const revisionController = {
       const revised    = allRevisions.filter(r => r.status === 'revised').length
       const bookmarked = allRevisions.filter(r => r.bookmarked).length
 
-      res.json({ total, revised, bookmarked })
+      res.json({ stats: { total, revised, bookmarked } })
     } catch (err) { next(err) }
   },
 
@@ -83,14 +82,14 @@ export const revisionController = {
 
       res.json({
         note,
-        status:     userRevision?.status     ?? 'unread',
-        bookmarked: userRevision?.bookmarked ?? false,
-        revisedAt:  userRevision?.revisedAt  ?? null,
+        myRevision: userRevision
+          ? { status: userRevision.status, bookmarked: userRevision.bookmarked }
+          : null,
       })
     } catch (err) { next(err) }
   },
 
-  // PATCH /revision-notes/:slug/mark — toggle revised ↔ unread
+  // POST /revision-notes/:slug/revised — mark as revised (or toggle back)
   markRevised: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id
@@ -99,34 +98,39 @@ export const revisionController = {
 
       const existing = await UserRevision.findOne({ noteId: note._id, userId })
       if (!existing) {
-        const created = await UserRevision.create({
+        await UserRevision.create({
           userId, noteId: note._id, status: 'revised', revisedAt: new Date(),
         })
-        return res.json({ status: created.status, bookmarked: created.bookmarked })
+        return res.json({ ok: true })
       }
 
       const nextStatus = existing.status === 'revised' ? 'unread' : 'revised'
       existing.status    = nextStatus
       existing.revisedAt = nextStatus === 'revised' ? new Date() : null
       await existing.save()
-      res.json({ status: existing.status, bookmarked: existing.bookmarked })
+      res.json({ ok: true })
     } catch (err) { next(err) }
   },
 
-  // PATCH /revision-notes/:slug/bookmark — toggle bookmark
+  // POST /revision-notes/:slug/bookmark — toggle bookmark
   toggleBookmark: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = req.user!.id
       const note = await RevisionNote.findOne({ slug: req.params.slug }).select('_id').lean()
       if (!note) throw createError('Note not found', 404)
 
-      const revision = await UserRevision.findOneAndUpdate(
-        { noteId: note._id, userId },
-        [{ $set: { bookmarked: { $not: '$bookmarked' } } }],
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      )
+      // Find or create, then flip the bookmarked flag
+      let revision = await UserRevision.findOne({ noteId: note._id, userId })
+      if (!revision) {
+        revision = await UserRevision.create({
+          userId, noteId: note._id, status: 'unread', bookmarked: true,
+        })
+        return res.json({ bookmarked: revision.bookmarked })
+      }
 
-      res.json({ bookmarked: revision.bookmarked, status: revision.status })
+      revision.bookmarked = !revision.bookmarked
+      await revision.save()
+      res.json({ bookmarked: revision.bookmarked })
     } catch (err) { next(err) }
   },
 }
