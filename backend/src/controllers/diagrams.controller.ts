@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { Diagram } from '../models/diagram.model'
 import { DiagramShare } from '../models/diagram-share.model'
 import { UserSolution } from '../models/user-solution.model'
+import { CollabInvite } from '../models/collab-invite.model'
 import { createError } from '../middleware/error'
 
 // Express params can be `string | string[]` — this normalises to string
@@ -93,19 +94,22 @@ export const diagramsController = {
         return res.json({ diagram, sharePermission: 'view' })
       }
 
+      // Check if the user has an accepted collab invite for this diagram
+      const collabInvite = await CollabInvite.findOne({
+        diagramId,
+        userId,
+        status: 'accepted',
+      }).lean()
+      if (collabInvite) {
+        return res.json({ diagram, sharePermission: collabInvite.role === 'editor' ? 'edit' : 'view' })
+      }
+
       // Otherwise, check if a valid share token was provided
       const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
       if (!shareToken) throw createError('Forbidden', 403)
 
       const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
       if (!share) throw createError('Forbidden', 403)
-
-      // For private shares — verify caller is in the invited list (token alone isn't enough)
-      if (share.visibility === 'private') {
-        // The share/checkAccess endpoint already verified email; we trust the token here
-        // but still reject if the share record doesn't cover this user
-        // (frontend always calls checkAccess first, so this is a double-guard)
-      }
 
       res.json({ diagram, sharePermission: share.permission })
     } catch (err) {
@@ -124,11 +128,20 @@ export const diagramsController = {
       const isOwner = diagram.userId.toString() === userId
 
       if (!isOwner) {
-        // Allow if sharer has edit permission
-        const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
-        if (!shareToken) throw createError('Forbidden', 403)
-        const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
-        if (!share || share.permission !== 'edit') throw createError('Forbidden — view only', 403)
+        // Allow collab invitees with editor role
+        const collabInvite = await CollabInvite.findOne({
+          diagramId,
+          userId,
+          status: 'accepted',
+          role: 'editor',
+        }).lean()
+        if (!collabInvite) {
+          // Fall back to share token check
+          const shareToken = typeof req.query.shareToken === 'string' ? req.query.shareToken : null
+          if (!shareToken) throw createError('Forbidden', 403)
+          const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
+          if (!share || share.permission !== 'edit') throw createError('Forbidden — view only', 403)
+        }
       }
 
       const { diagramData, thumbnail } = req.body as {
