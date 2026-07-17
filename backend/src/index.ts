@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { createServer } from 'http'
 import express from 'express'
 import cors, { type CorsOptions } from 'cors'
 import helmet from 'helmet'
@@ -8,6 +9,7 @@ import { connectDB } from './config/db'
 import { getAuth, ensureAdminUser } from './config/auth'
 import { errorHandler } from './middleware/error'
 import { authRateLimit } from './middleware/rateLimit'
+import { initSocketServer } from './socket'
 import diagramsRouter from './routes/diagrams.route'
 import exportRouter from './routes/export.route'
 import accountRouter from './routes/account.route'
@@ -18,8 +20,10 @@ import analyticsRouter from './routes/analytics.route'
 import shareRouter from './routes/share.route'
 import problemsRouter  from './routes/problems.route'
 import revisionRouter  from './routes/revision.route'
+import collabRouter    from './routes/collab.route'
 
-const app = express()
+const app    = express()
+const httpServer = createServer(app)
 
 // ─── Allowed origins ───────────────────────────────────────────────────────────
 // Strip trailing slashes so "https://foo.com/" and "https://foo.com" both match
@@ -116,6 +120,7 @@ app.use('/analytics', analyticsRouter)
 app.use('/share',     shareRouter)
 app.use('/problems',        problemsRouter)
 app.use('/revision-notes',  revisionRouter)
+app.use('/collab',          collabRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
@@ -127,8 +132,9 @@ async function start() {
   await connectDB()
   await getAuth()
   await ensureAdminUser()
-  app.listen(PORT, () => {
-    console.log(`✓ API listening on http://localhost:${PORT}`)
+  initSocketServer(httpServer, allowedOrigins)
+  httpServer.listen(PORT, () => {
+    console.log(`✓ API + Socket.io listening on http://localhost:${PORT}`)
   })
 }
 

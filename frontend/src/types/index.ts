@@ -89,6 +89,48 @@ export interface PracticeStats {
   dailyActivity: DailyActivity[]
 }
 
+export interface WeeklyReport {
+  weekStart:      string
+  weekLabel:      string
+  sessions:       number
+  timeSeconds:    number
+  avgTimeSeconds: number
+  problemsSolved: number
+}
+
+export interface MonthlyReport {
+  month:          string
+  sessions:       number
+  timeSeconds:    number
+  avgTimeSeconds: number
+  problemsSolved: number
+}
+
+export interface TrendPoint {
+  weekLabel:  string
+  avgMinutes: number
+}
+
+export interface PersonalBests {
+  longestStreakDays: number
+  longestSession: { timeSeconds: number; title: string; date: string } | null
+  fastestSession: { timeSeconds: number; title: string; date: string } | null
+  bestDay:        { date: string; sessions: number; timeSeconds: number } | null
+  bestWeek:       { weekLabel: string; sessions: number; timeSeconds: number } | null
+  totalProblems:  number
+}
+
+export interface AdvancedStats {
+  avgTimePerSession:  number
+  avgTimeThisWeek:    number
+  avgTimeLastWeek:    number
+  improvementPercent: number | null
+  weeklyReports:      WeeklyReport[]
+  monthlyReports:     MonthlyReport[]
+  trendData:          TrendPoint[]
+  personalBests:      PersonalBests
+}
+
 // ─── Node Types ───────────────────────────────────────────────────────────────
 
 export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum' | 'note'
@@ -203,6 +245,50 @@ export interface RevisionStats {
   revised: number
   bookmarked: number
   byCategory: Record<string, { total: number; revised: number }>
+}
+
+// ─── Collaboration ────────────────────────────────────────────────────────────
+
+export interface CollabUser {
+  socketId: string
+  userId:   string
+  name:     string
+  email:    string
+  image?:   string
+  color:    string
+  role:     'owner' | 'editor' | 'viewer'
+}
+
+export interface CollabComment {
+  _id:         string
+  diagramId:   string
+  authorId:    string
+  authorName:  string
+  authorImage?: string
+  content:     string
+  nodeId?:     string
+  position:    { x: number; y: number }
+  resolved:    boolean
+  mentions:    string[]
+  replies: {
+    _id:        string
+    authorId:   string
+    authorName: string
+    authorImage?: string
+    content:    string
+    mentions:   string[]
+    createdAt:  string
+  }[]
+  createdAt:   string
+  updatedAt:   string
+}
+
+export interface CollabInvite {
+  _id:       string
+  email:     string
+  role:      'editor' | 'viewer'
+  status:    'pending' | 'accepted' | 'revoked'
+  createdAt: string
 }
 
 // ─── API Shapes ───────────────────────────────────────────────────────────────

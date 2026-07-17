@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -137,6 +137,7 @@ export const api = {
 
   stats: {
     get: () => request<PracticeStats>('/stats'),
+    getAdvanced: () => request<AdvancedStats>('/stats/advanced'),
     sync: (timeElapsed: number) =>
       request<{ ok: boolean; stats: PracticeStats }>('/stats/sync', {
         method: 'POST',
@@ -179,6 +180,48 @@ export const api = {
       request<{ solutions: CommunitySolution[]; total: number; page: number; totalPages: number }>(
         `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
       ),
+  },
+
+  collab: {
+    myStats: () =>
+      request<{
+        sharedDiagrams: number
+        collaboratingOn: number
+        totalCollaborators: number
+        pendingInvites: number
+        totalComments: number
+      }>('/collab/my-stats'),
+
+    myDiagrams: () =>
+      request<{
+        owned: {
+          _id: string; title: string; thumbnail?: string; updatedAt: string
+          collaborators: { _id: string; email: string; role: string; status: string }[]
+        }[]
+        collaborating: {
+          _id: string; title: string; thumbnail?: string; updatedAt: string; myRole: string
+        }[]
+      }>('/collab/my-diagrams'),
+
+    activity: () =>
+      request<{
+        events: {
+          type: 'comment' | 'invite_accepted' | 'save'
+          diagramId: string
+          diagramTitle: string
+          actor: string
+          detail: string
+          timestamp: string
+        }[]
+      }>('/collab/activity'),
+
+    versions: (diagramId: string) =>
+      request<{
+        versions: {
+          _id: string; userId: string; userName: string
+          nodeCount: number; edgeCount: number; createdAt: string
+        }[]
+      }>(`/collab/versions/${diagramId}`),
   },
 
   revision: {

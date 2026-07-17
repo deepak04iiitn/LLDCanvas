@@ -141,6 +141,16 @@ export const adminApi = {
       hourlyActiveUsers: { hour: string; users: number }[]
     }>('/analytics'),
 
+  featureStats: () =>
+    req<{
+      problems:  { total: number; active: number; inactive: number; problemsByDifficulty: { _id: string; count: number }[]; topProblems: { title: string; difficulty: string; attempts: number; submitted: number }[] }
+      solutions: { total: number; submitted: number; inProgress: number; recentMonth: number }
+      revision:  { totalNotes: number; activeNotes: number; totalRevisions: number; totalBookmarks: number; revisionByCategory: { _id: string; total: number }[] }
+      collab:    { totalInvites: number; accepted: number; pending: number; totalComments: number; resolvedComments: number; recentMonth: number; recentComments: number }
+      sharing:   { totalShared: number; public: number; private: number }
+      versions:  { total: number }
+    }>('/feature-stats'),
+
   sessions: {
     list: (params: { page?: number; limit?: number; q?: string; status?: string; userId?: string }) => {
       const qs = new URLSearchParams()
@@ -156,4 +166,101 @@ export const adminApi = {
     delete: (id: string) =>
       req<{ ok: boolean }>(`/sessions/${id}`, { method: 'DELETE' }),
   },
+
+  problems: {
+    list: (params: { page?: number; limit?: number; q?: string; difficulty?: string; category?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)       qs.set('page',       String(params.page))
+      if (params.limit)      qs.set('limit',      String(params.limit))
+      if (params.q)          qs.set('q',          params.q)
+      if (params.difficulty) qs.set('difficulty', params.difficulty)
+      if (params.category)   qs.set('category',   params.category)
+      return req<{ problems: AdminProblem[]; total: number; page: number; limit: number; totalPages: number }>(`/problems?${qs}`)
+    },
+    toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/problems/${id}/toggle`, { method: 'PATCH' }),
+  },
+
+  revision: {
+    list: (params: { page?: number; limit?: number; q?: string; category?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)     qs.set('page',     String(params.page))
+      if (params.limit)    qs.set('limit',    String(params.limit))
+      if (params.q)        qs.set('q',        params.q)
+      if (params.category) qs.set('category', params.category)
+      return req<{ notes: AdminRevisionNote[]; total: number; page: number; limit: number; totalPages: number }>(`/revision-notes?${qs}`)
+    },
+    toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/revision-notes/${id}/toggle`, { method: 'PATCH' }),
+  },
+
+  collab: {
+    listInvites: (params: { page?: number; limit?: number; status?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)   qs.set('page',   String(params.page))
+      if (params.limit)  qs.set('limit',  String(params.limit))
+      if (params.status) qs.set('status', params.status)
+      return req<{ invites: AdminCollabInvite[]; total: number; page: number; limit: number; totalPages: number }>(`/collab-invites?${qs}`)
+    },
+    revokeInvite: (id: string) => req<{ ok: boolean }>(`/collab-invites/${id}/revoke`, { method: 'PATCH' }),
+    listComments: (params: { page?: number; limit?: number; q?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)  qs.set('page',  String(params.page))
+      if (params.limit) qs.set('limit', String(params.limit))
+      if (params.q)     qs.set('q',     params.q)
+      return req<{ comments: AdminComment[]; total: number; page: number; limit: number; totalPages: number }>(`/comments?${qs}`)
+    },
+    deleteComment: (id: string) => req<{ ok: boolean }>(`/comments/${id}`, { method: 'DELETE' }),
+  },
+}
+
+// ─── New entity types ─────────────────────────────────────────────────────────
+
+export interface AdminProblem {
+  id: string
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  category: string
+  isActive: boolean
+  order: number
+  companies: string[]
+  tags: string[]
+  createdAt: string
+  solutions: number
+  submitted: number
+}
+
+export interface AdminRevisionNote {
+  id: string
+  slug: string
+  title: string
+  category: string
+  difficulty: string
+  isActive: boolean
+  order: number
+  tags: string[]
+  createdAt: string
+  revised: number
+  bookmarked: number
+}
+
+export interface AdminCollabInvite {
+  _id: string
+  diagramId: { _id: string; title: string } | string
+  email: string
+  role: 'editor' | 'viewer'
+  status: 'pending' | 'accepted' | 'revoked'
+  invitedBy: string
+  createdAt: string
+}
+
+export interface AdminComment {
+  _id: string
+  diagramId: { _id: string; title: string } | string
+  authorId: string
+  authorName: string
+  content: string
+  resolved: boolean
+  mentions: string[]
+  replies: { authorName: string; content: string }[]
+  createdAt: string
 }

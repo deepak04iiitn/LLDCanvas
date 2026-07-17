@@ -1,43 +1,49 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import React, { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Timer,
   LogOut, Menu, ShieldCheck, X,
+  BookOpen, Layers, MessageSquareText,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { signOut } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 
-const NAV = [
-  { label: 'Overview',     href: '/admin',          Icon: LayoutDashboard, isActive: (p: string) => p === '/admin' },
-  { label: 'Users',        href: '/admin/users',    Icon: Users,           isActive: (p: string) => p.startsWith('/admin/users') },
-  { label: 'Diagrams',     href: '/admin/diagrams', Icon: FileText,        isActive: (p: string) => p.startsWith('/admin/diagrams') },
-  { label: 'Sessions',     href: '/admin/sessions', Icon: Timer,           isActive: (p: string) => p.startsWith('/admin/sessions') },
+const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p: string) => boolean; divider?: boolean }[] = [
+  { label: 'Overview',     href: '/admin',           Icon: LayoutDashboard,   isActive: (p) => p === '/admin' },
+  { label: 'Users',        href: '/admin/users',     Icon: Users,             isActive: (p) => p.startsWith('/admin/users') },
+  { label: 'Diagrams',     href: '/admin/diagrams',  Icon: FileText,          isActive: (p) => p.startsWith('/admin/diagrams') },
+  { label: 'Sessions',     href: '/admin/sessions',  Icon: Timer,             isActive: (p) => p.startsWith('/admin/sessions') },
+  { label: 'Problems',     href: '/admin/problems',  Icon: BookOpen,          isActive: (p) => p.startsWith('/admin/problems'),  divider: true },
+  { label: 'Revision',     href: '/admin/revision',  Icon: Layers,            isActive: (p) => p.startsWith('/admin/revision') },
+  { label: 'Collab',       href: '/admin/collab',    Icon: MessageSquareText, isActive: (p) => p.startsWith('/admin/collab') },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex-1 space-y-0.5 p-3">
+    <nav className="flex-1 overflow-y-auto p-3">
       {NAV.map(item => {
         const active = item.isActive(pathname)
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            className={cn(
-              'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
-              active
-                ? 'bg-brand-tint text-brand'
-                : 'text-ink-muted hover:bg-hairline/60 hover:text-ink',
-            )}
-          >
-            <item.Icon className="h-4 w-4 shrink-0" />
-            {item.label}
-          </Link>
+          <div key={item.href}>
+            {item.divider && <div className="my-2 border-t border-hairline" />}
+            <Link
+              href={item.href}
+              onClick={onNavigate}
+              className={cn(
+                'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
+                active
+                  ? 'bg-brand-tint text-brand'
+                  : 'text-ink-muted hover:bg-hairline/60 hover:text-ink',
+              )}
+            >
+              <item.Icon className="h-4 w-4 shrink-0" />
+              {item.label}
+            </Link>
+          </div>
         )
       })}
     </nav>

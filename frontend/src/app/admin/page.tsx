@@ -8,8 +8,10 @@ import {
 import {
   Users, FileText, Timer, Clock, TrendingUp, Shield,
   Activity, CheckCircle, Radio, RefreshCw, ArrowUpRight,
-  RotateCcw, Eye,
+  RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
+  Share2, GitBranch, UserCheck, Trophy,
 } from 'lucide-react'
+import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 import { adminApi, type OverviewStats, type OverviewCharts } from '@/lib/admin-api'
 
@@ -73,21 +75,27 @@ function Skeleton({ className = '' }: { className?: string }) {
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-type LiveMetrics = Awaited<ReturnType<typeof adminApi.analytics>>
+type LiveMetrics    = Awaited<ReturnType<typeof adminApi.analytics>>
+type FeatureStats   = Awaited<ReturnType<typeof adminApi.featureStats>>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminOverviewPage() {
-  const [stats,   setStats]   = useState<OverviewStats | null>(null)
-  const [charts,  setCharts]  = useState<OverviewCharts | null>(null)
-  const [live,    setLive]    = useState<LiveMetrics | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [liveLoading, setLiveLoading] = useState(true)
+  const [stats,        setStats]        = useState<OverviewStats | null>(null)
+  const [charts,       setCharts]       = useState<OverviewCharts | null>(null)
+  const [live,         setLive]         = useState<LiveMetrics | null>(null)
+  const [featureStats, setFeatureStats] = useState<FeatureStats | null>(null)
+  const [loading,      setLoading]      = useState(true)
+  const [liveLoading,  setLiveLoading]  = useState(true)
 
   const loadOverview = useCallback(async () => {
     try {
-      const data = await adminApi.overview()
+      const [data, fs] = await Promise.all([
+        adminApi.overview(),
+        adminApi.featureStats(),
+      ])
       setStats(data.stats)
       setCharts(data.charts)
+      setFeatureStats(fs)
     } finally {
       setLoading(false)
     }
@@ -106,7 +114,6 @@ export default function AdminOverviewPage() {
   useEffect(() => {
     loadOverview()
     loadLive()
-    // Refresh live metrics every 30 seconds
     const timer = setInterval(loadLive, 30_000)
     return () => clearInterval(timer)
   }, [loadOverview, loadLive])
@@ -363,6 +370,126 @@ export default function AdminOverviewPage() {
           </ChartCard>
         </div>
       </div>
+
+      {/* ── Feature Modules ─────────────────────────────────────────────────── */}
+      {featureStats && (
+        <>
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
+                Feature Modules
+              </h2>
+            </div>
+
+            {/* Problems & Solutions */}
+            <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard label="Practice Problems"  value={featureStats.problems.active}               Icon={BookOpen}          sub={`${featureStats.problems.inactive} inactive`} />
+              <StatCard label="Total Solutions"    value={featureStats.solutions.total.toLocaleString()} Icon={Trophy}          sub={`${featureStats.solutions.submitted} submitted`} />
+              <StatCard label="Revision Notes"     value={featureStats.revision.activeNotes}          Icon={Layers}            sub={`${featureStats.revision.totalRevisions} revisions done`} />
+              <StatCard label="Bookmarked Notes"   value={featureStats.revision.totalBookmarks}       Icon={Layers}            sub="by all users" accent />
+            </div>
+
+            {/* Collaboration & Sharing */}
+            <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard label="Active Collabs"     value={featureStats.collab.accepted}               Icon={UserCheck}         sub={`${featureStats.collab.pending} pending invites`} />
+              <StatCard label="Discussions"        value={featureStats.collab.totalComments}          Icon={MessageSquareText} sub={`${featureStats.collab.resolvedComments} resolved`} />
+              <StatCard label="Shared Diagrams"    value={featureStats.sharing.totalShared}           Icon={Share2}            sub={`${featureStats.sharing.public} public`} />
+              <StatCard label="Version Snapshots"  value={featureStats.versions.total.toLocaleString()} Icon={GitBranch}       sub="diagram saves tracked" accent />
+            </div>
+
+            {/* Charts row */}
+            <div className="grid gap-4 lg:grid-cols-3">
+              {/* Problems by difficulty */}
+              <ChartCard title="Problems by difficulty">
+                <div className="flex flex-col items-center">
+                  <ResponsiveContainer width="100%" height={140}>
+                    <PieChart>
+                      <Pie
+                        data={featureStats.problems.problemsByDifficulty.map(d => ({ name: d._id, value: d.count }))}
+                        cx="50%" cy="50%" innerRadius={38} outerRadius={60} dataKey="value" paddingAngle={3}
+                      >
+                        {featureStats.problems.problemsByDifficulty.map((d, i) => (
+                          <Cell key={i} fill={d._id === 'easy' ? '#22c55e' : d._id === 'medium' ? GOLD : '#ef4444'} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #E5E7EB' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex gap-3">
+                    {featureStats.problems.problemsByDifficulty.map(d => (
+                      <div key={d._id} className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full" style={{ background: d._id === 'easy' ? '#22c55e' : d._id === 'medium' ? GOLD : '#ef4444' }} />
+                        <span className="text-[10px] capitalize text-ink-faint">{d._id} ({d.count})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ChartCard>
+
+              {/* Revision by category */}
+              <ChartCard title="Revision notes by category">
+                <div className="space-y-1.5">
+                  {featureStats.revision.revisionByCategory.slice(0, 6).map((c, i) => (
+                    <div key={c._id} className="flex items-center gap-2">
+                      <span className="w-4 shrink-0 font-mono text-[10px] font-bold text-ink-faint">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-ink capitalize">{c._id}</p>
+                        <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-hairline">
+                          <div
+                            className="h-full rounded-full bg-brand"
+                            style={{ width: `${Math.round((c.total / (featureStats.revision.totalNotes || 1)) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-brand-tint px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand">{c.total}</span>
+                    </div>
+                  ))}
+                </div>
+              </ChartCard>
+
+              {/* Top attempted problems */}
+              <ChartCard title="Most attempted problems">
+                <div className="space-y-2">
+                  {featureStats.problems.topProblems.slice(0, 5).map((p, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="w-4 shrink-0 font-mono text-[10px] font-bold text-ink-faint">{i + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-medium text-ink">{p.title}</p>
+                        <p className="text-[10px] text-ink-faint capitalize">{p.difficulty} · {p.submitted} submitted</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-brand-tint px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand">{p.attempts}</span>
+                    </div>
+                  ))}
+                </div>
+              </ChartCard>
+            </div>
+
+            {/* Quick-nav cards to management pages */}
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                { href: '/admin/problems',  Icon: BookOpen,          label: 'Manage Problems',        sub: `${featureStats.problems.total} total`,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { href: '/admin/revision',  Icon: Layers,            label: 'Manage Revision Notes',  sub: `${featureStats.revision.totalNotes} notes`, color: 'text-violet-600', bg: 'bg-violet-50' },
+                { href: '/admin/collab',    Icon: MessageSquareText, label: 'Collaboration Hub',      sub: `${featureStats.collab.totalComments} discussions`, color: 'text-blue-600', bg: 'bg-blue-50' },
+              ].map(nav => (
+                <Link
+                  key={nav.href}
+                  href={nav.href}
+                  className="flex items-center gap-3 rounded-xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)] transition hover:shadow-md hover:border-brand/20"
+                >
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${nav.bg}`}>
+                    <nav.Icon className={`h-4 w-4 ${nav.color}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-ink">{nav.label}</p>
+                    <p className="text-[10px] text-ink-faint">{nav.sub}</p>
+                  </div>
+                  <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 text-ink-faint" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

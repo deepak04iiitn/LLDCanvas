@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlowProvider,
   useNodesState,
@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 
 import { EditorProvider, useEditor } from '@/contexts/EditorContext'
 import { useInterview } from '@/contexts/InterviewContext'
+import { CollabProvider, useCollab } from '@/contexts/CollabContext'
 import { CanvasView } from '@/components/canvas/CanvasView'
 import { RelationshipPicker } from '@/components/canvas/RelationshipPicker'
 import { Topbar } from '@/components/editor/Topbar'
@@ -31,6 +32,13 @@ import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawe
 import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { ShareModal } from '@/components/editor/ShareModal'
 import { ProblemPanel } from '@/components/editor/ProblemPanel'
+import { CollabAvatarStack } from '@/components/collab/CollabAvatarStack'
+import { CollabCursors } from '@/components/collab/CollabCursors'
+import { DiscussionPanel } from '@/components/collab/DiscussionPanel'
+import { CollabPresenceDock } from '@/components/collab/CollabPresenceDock'
+import { CollabModal } from '@/components/collab/CollabModal'
+import { ViewerBanner } from '@/components/collab/ViewerBanner'
+import { useCollabCanvas } from '@/hooks/useCollabCanvas'
 import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
@@ -129,7 +137,29 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
     problemSlug ? 'open' : 'collapsed',
   )
-  const [importDraftOpen, setImportDraftOpen] = useState(false)
+  const [importDraftOpen,    setImportDraftOpen]    = useState(false)
+  const [collabModalOpen,    setCollabModalOpen]    = useState(false)
+  const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
+
+  // ── Collab ────────────────────────────────────────────────────────────────
+  const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions } = useCollab()
+
+  useEffect(() => {
+    if (!diagramId) return
+    joinRoom(diagramId)
+    return () => leaveRoom()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagramId])
+
+  useCollabCanvas(diagramId, nodes, edges, setNodes as never, setEdges as never)
+
+  // Cursor tracking on canvas pane
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!diagramId || !rfInstance.current) return
+    const pos = rfInstance.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+    moveCursor(diagramId, pos.x, pos.y)
+  }, [diagramId, moveCursor])
+
 
   // ── Clipboard ─────────────────────────────────────────────────────────────
   const clipboard = useRef<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] })
@@ -143,14 +173,16 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [pickerPos, setPickerPos] = useState({ x: 0, y: 0 })
 
   // ── Autosave ──────────────────────────────────────────────────────────────
-  const vp = rfInstance.current?.getViewport() ?? { x: 0, y: 0, zoom: 1 }
-  const diagramData: DiagramData = {
+  // Memoize so the object reference only changes when nodes/edges/theme actually change,
+  // not on every render. Viewport (pan/zoom) is captured lazily inside doSave.
+  const diagramData: DiagramData = useMemo(() => ({
     version: 1,
     nodes: nodes as unknown[],
     edges: edges as unknown[],
-    meta: { theme, zoom: vp.zoom, panX: vp.x, panY: vp.y },
-  }
-  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme, 1500, {
+    meta: { theme, zoom: 1, panX: 0, panY: 0 },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [nodes, edges, theme])
+  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme, 3000, {
     readOnly,
     shareToken,
   })
@@ -574,6 +606,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden" data-theme={theme}>
+      <ViewerBanner />
       <Topbar
         title={title}
         onRename={readOnly ? () => {} : handleRename}
@@ -602,6 +635,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onOpenShare={() => setShareModalOpen(true)}
         problemSlug={problemSlug}
         onOpenProblem={() => setProblemPanelState('open')}
+        onOpenCollab={() => setCollabModalOpen(true)}
+        onOpenDiscussion={diagramId ? () => setDiscussionPanelOpen(v => !v) : undefined}
+        unreadMentions={unreadMentions}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -617,7 +653,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           />
         )}
 
-        <main className="relative flex-1 overflow-hidden">
+        <main
+          className="relative flex-1 overflow-hidden"
+          onMouseMove={handleCanvasMouseMove}
+        >
           <CanvasView
             nodes={nodes}
             edges={edges}
@@ -633,6 +672,17 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onClearSelection={handleClearSelection}
             readOnly={readOnly}
           />
+
+          {/* Collab overlays */}
+          {diagramId && <CollabCursors />}
+          {diagramId && <CollabPresenceDock />}
+          {diagramId && (
+            <DiscussionPanel
+              open={discussionPanelOpen}
+              onClose={() => setDiscussionPanelOpen(false)}
+              diagramId={diagramId}
+            />
+          )}
 
           <RelationshipPicker
             open={pickerOpen}
@@ -689,6 +739,15 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           onImport={importDraft}
         />
       )}
+
+      {diagramId && (
+        <CollabModal
+          open={collabModalOpen}
+          onOpenChange={setCollabModalOpen}
+          diagramId={diagramId}
+          diagramTitle={title}
+        />
+      )}
     </div>
   )
 }
@@ -701,20 +760,22 @@ export function EditorShell({ diagramId, initialTitle, initialData, onRename, lo
   const initialEdges = (data.edges ?? []) as Edge[]
 
   return (
-    <EditorProvider initialTheme={initialTheme}>
-      <ReactFlowProvider>
-        <EditorInner
-          diagramId={diagramId}
-          initialTitle={initialTitle}
-          initialNodes={initialNodes}
-          initialEdges={initialEdges}
-          onRename={onRename}
-          localMode={localMode}
-          readOnly={readOnly}
-          shareToken={shareToken}
-          problemSlug={problemSlug}
-        />
-      </ReactFlowProvider>
-    </EditorProvider>
+    <CollabProvider diagramId={diagramId}>
+      <EditorProvider initialTheme={initialTheme}>
+        <ReactFlowProvider>
+          <EditorInner
+            diagramId={diagramId}
+            initialTitle={initialTitle}
+            initialNodes={initialNodes}
+            initialEdges={initialEdges}
+            onRename={onRename}
+            localMode={localMode}
+            readOnly={readOnly}
+            shareToken={shareToken}
+            problemSlug={problemSlug}
+          />
+        </ReactFlowProvider>
+      </EditorProvider>
+    </CollabProvider>
   )
 }

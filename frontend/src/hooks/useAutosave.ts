@@ -8,12 +8,16 @@ export function useAutosave(
   id: string | null,
   data: DiagramData,
   theme: CanvasTheme = 'light',
-  delay = 1500,
+  delay = 3000,
   options: { readOnly?: boolean; shareToken?: string } = {},
 ) {
   const [status, setStatus] = useState<SaveStatus>('idle')
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const thumbnailTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Track the last serialized content that was actually saved
+  const lastSavedContent = useRef<string>('')
   const latestData = useRef(data)
   const latestTheme = useRef(theme)
   const latestShareToken = useRef(options.shareToken)
@@ -22,13 +26,20 @@ export function useAutosave(
   useEffect(() => { latestTheme.current = theme }, [theme])
   useEffect(() => { latestShareToken.current = options.shareToken }, [options.shareToken])
 
-  const doSave = useCallback(async (saveId: string) => {
+  const doSave = useCallback(async (saveId: string, content: string) => {
     const tok = latestShareToken.current
+    setStatus('saving')
     try {
       await api.diagrams.save(saveId, latestData.current, undefined, tok)
+      lastSavedContent.current = content
       setStatus('saved')
 
-      // Non-blocking thumbnail generation after a successful save
+      // Revert to idle after 2 seconds so the indicator doesn't linger
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+      savedTimer.current = setTimeout(() => setStatus('idle'), 2000)
+
+      // Thumbnail generation — fire once, well after the save, non-blocking
+      if (thumbnailTimer.current) clearTimeout(thumbnailTimer.current)
       thumbnailTimer.current = setTimeout(async () => {
         try {
           const { generateThumbnail } = await import('@/lib/export/toPNG')
@@ -37,33 +48,39 @@ export function useAutosave(
             api.diagrams.save(saveId, latestData.current, thumbnail, tok).catch(() => undefined)
           }
         } catch {
-          // Thumbnail is non-critical
+          // non-critical
         }
-      }, 300)
+      }, 8000)
     } catch {
       setStatus('error')
     }
   }, [])
 
-  // Retry the most recent save immediately
   const retry = useCallback(() => {
     if (!id) return
-    setStatus('saving')
-    doSave(id)
+    doSave(id, JSON.stringify(latestData.current))
   }, [id, doSave])
 
   useEffect(() => {
     if (!id || options.readOnly) return
 
-    if (timer.current) clearTimeout(timer.current)
-    if (thumbnailTimer.current) clearTimeout(thumbnailTimer.current)
-    setStatus('saving')
+    // Serialize to detect real content changes (ignore object reference churn)
+    const content = JSON.stringify(data)
+    if (content === lastSavedContent.current) return
 
-    timer.current = setTimeout(() => doSave(id), delay)
+    // Clear any pending debounce — reset the countdown
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+
+    debounceTimer.current = setTimeout(() => {
+      // Double-check content hasn't been saved already in the meantime
+      const currentContent = JSON.stringify(latestData.current)
+      if (currentContent !== lastSavedContent.current) {
+        doSave(id, currentContent)
+      }
+    }, delay)
 
     return () => {
-      if (timer.current) clearTimeout(timer.current)
-      if (thumbnailTimer.current) clearTimeout(thumbnailTimer.current)
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, data, delay])

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  ExternalLink, Pencil, Copy, Download, Trash2,
+  ExternalLink, Pencil, Copy, Download, Trash2, Users,
 } from 'lucide-react'
 import {
   ContextMenu,
@@ -153,6 +153,13 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
       <ContextMenuContent className="w-48 rounded-lg border-hairline shadow-lg">
         <ContextMenuItem onClick={openEditor} className="cursor-pointer gap-2.5">
           <ExternalLink size={13} className="text-ink-faint" /> Open
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onClick={() => router.push(`/editor/${diagram._id}?collab=1`)}
+          className="cursor-pointer gap-2.5"
+        >
+          <Users size={13} className="text-brand" /> Collaborate
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={startRename} className="cursor-pointer gap-2.5">
