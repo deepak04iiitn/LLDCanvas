@@ -4,6 +4,14 @@ import mongoose from 'mongoose'
 import { getMongoClient } from '../config/auth'
 import { Diagram } from '../models/diagram.model'
 import { InterviewSession } from '../models/interview-session.model'
+import { Problem } from '../models/problem.model'
+import { UserSolution } from '../models/user-solution.model'
+import { RevisionNote } from '../models/revision-note.model'
+import { UserRevision } from '../models/user-revision.model'
+import { CollabInvite } from '../models/collab-invite.model'
+import { Comment } from '../models/comment.model'
+import { DiagramShare } from '../models/diagram-share.model'
+import { DiagramVersion } from '../models/diagram-version.model'
 import { getLiveMetrics } from './analytics.controller'
 import { createError } from '../middleware/error'
 
@@ -438,6 +446,285 @@ export const adminController = {
     try {
       const metrics = await getLiveMetrics()
       res.json(metrics)
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // ─── Enhanced overview (new platform features) ───────────────────────────────
+
+  getNewFeatureStats: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const monthStart = daysAgo(30)
+
+      const [
+        totalProblems, activeProblems,
+        totalSolutions, submittedSolutions,
+        totalRevisionNotes, activeRevisionNotes,
+        totalRevisions, totalBookmarks,
+        totalCollabInvites, acceptedInvites, pendingInvites,
+        totalComments, resolvedComments,
+        totalSharedDiagrams, publicSharedDiagrams,
+        totalVersions,
+        recentSolutions, recentInvites, recentComments,
+      ] = await Promise.all([
+        Problem.countDocuments(),
+        Problem.countDocuments({ isActive: true }),
+        UserSolution.countDocuments(),
+        UserSolution.countDocuments({ status: 'submitted' }),
+        RevisionNote.countDocuments(),
+        RevisionNote.countDocuments({ isActive: true }),
+        UserRevision.countDocuments({ status: 'revised' }),
+        UserRevision.countDocuments({ bookmarked: true }),
+        CollabInvite.countDocuments(),
+        CollabInvite.countDocuments({ status: 'accepted' }),
+        CollabInvite.countDocuments({ status: 'pending' }),
+        Comment.countDocuments(),
+        Comment.countDocuments({ resolved: true }),
+        DiagramShare.countDocuments(),
+        DiagramShare.countDocuments({ visibility: 'public' }),
+        DiagramVersion.countDocuments(),
+        UserSolution.countDocuments({ createdAt: { $gte: monthStart } }),
+        CollabInvite.countDocuments({ createdAt: { $gte: monthStart } }),
+        Comment.countDocuments({ createdAt: { $gte: monthStart } }),
+      ])
+
+      // Problems by difficulty
+      const problemsByDifficulty = await Problem.aggregate([
+        { $group: { _id: '$difficulty', count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ])
+
+      // Top attempted problems
+      const topProblems = await UserSolution.aggregate([
+        { $group: { _id: '$problemId', attempts: { $sum: 1 }, submitted: { $sum: { $cond: [{ $eq: ['$status', 'submitted'] }, 1, 0] } } } },
+        { $sort: { attempts: -1 } },
+        { $limit: 5 },
+      ])
+      const topProblemIds = topProblems.map(p => p._id)
+      const topProblemDocs = await Problem.find({ _id: { $in: topProblemIds } }).select('_id title difficulty').lean()
+      const topProblemsEnriched = topProblems.map(p => {
+        const doc = topProblemDocs.find(d => d._id.toString() === p._id?.toString())
+        return { title: doc?.title ?? 'Unknown', difficulty: doc?.difficulty ?? '?', attempts: p.attempts, submitted: p.submitted }
+      })
+
+      // Revision notes by category
+      const revisionByCategory = await RevisionNote.aggregate([
+        { $group: { _id: '$category', total: { $sum: 1 } } },
+        { $sort: { total: -1 } },
+        { $limit: 8 },
+      ])
+
+      // Collab activity last 30 days
+      const collabActivity = await CollabInvite.aggregate([
+        { $match: { createdAt: { $gte: monthStart } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ])
+
+      res.json({
+        problems: { total: totalProblems, active: activeProblems, inactive: totalProblems - activeProblems, problemsByDifficulty, topProblems: topProblemsEnriched },
+        solutions: { total: totalSolutions, submitted: submittedSolutions, inProgress: totalSolutions - submittedSolutions, recentMonth: recentSolutions },
+        revision: { totalNotes: totalRevisionNotes, activeNotes: activeRevisionNotes, totalRevisions, totalBookmarks, revisionByCategory },
+        collab: { totalInvites: totalCollabInvites, accepted: acceptedInvites, pending: pendingInvites, totalComments, resolvedComments, recentMonth: recentInvites, recentComments },
+        sharing: { totalShared: totalSharedDiagrams, public: publicSharedDiagrams, private: totalSharedDiagrams - publicSharedDiagrams },
+        versions: { total: totalVersions },
+      })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // ─── Problems management ─────────────────────────────────────────────────────
+
+  listProblems: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page) || 1)
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
+      const q          = typeof req.query.q          === 'string' ? req.query.q.trim()          : ''
+      const difficulty = typeof req.query.difficulty === 'string' ? req.query.difficulty        : ''
+      const category   = typeof req.query.category   === 'string' ? req.query.category          : ''
+
+      const match: Record<string, unknown> = {}
+      if (q) match.$or = [
+        { title: { $regex: q, $options: 'i' } },
+        { category: { $regex: q, $options: 'i' } },
+      ]
+      if (difficulty) match.difficulty = difficulty
+      if (category)   match.category   = category
+
+      const [total, problems] = await Promise.all([
+        Problem.countDocuments(match),
+        Problem.find(match)
+          .select('_id slug title difficulty category isActive order companies tags createdAt')
+          .sort({ order: 1, createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+      ])
+
+      // Attach solution counts
+      const problemIds = problems.map(p => p._id)
+      const solutionCounts = await UserSolution.aggregate([
+        { $match: { problemId: { $in: problemIds } } },
+        { $group: { _id: '$problemId', total: { $sum: 1 }, submitted: { $sum: { $cond: [{ $eq: ['$status', 'submitted'] }, 1, 0] } } } },
+      ])
+      const scMap = new Map(solutionCounts.map(s => [s._id.toString(), s]))
+
+      const enriched = problems.map(p => ({
+        ...p,
+        id: p._id.toString(),
+        solutions: scMap.get(p._id.toString())?.total ?? 0,
+        submitted: scMap.get(p._id.toString())?.submitted ?? 0,
+      }))
+
+      res.json({ problems: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  toggleProblem: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const problem = await Problem.findById(req.params.id)
+      if (!problem) throw createError('Problem not found', 404)
+      problem.isActive = !problem.isActive
+      await problem.save()
+      res.json({ ok: true, isActive: problem.isActive })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // ─── Revision notes management ───────────────────────────────────────────────
+
+  listRevisionNotes: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page) || 1)
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
+      const q        = typeof req.query.q        === 'string' ? req.query.q.trim()   : ''
+      const category = typeof req.query.category === 'string' ? req.query.category   : ''
+
+      const match: Record<string, unknown> = {}
+      if (q) match.$or = [
+        { title: { $regex: q, $options: 'i' } },
+        { category: { $regex: q, $options: 'i' } },
+      ]
+      if (category) match.category = category
+
+      const [total, notes] = await Promise.all([
+        RevisionNote.countDocuments(match),
+        RevisionNote.find(match)
+          .select('_id slug title category difficulty isActive order tags createdAt')
+          .sort({ order: 1, createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+      ])
+
+      // Attach revision counts
+      const noteIds = notes.map(n => n._id)
+      const revisionCounts = await UserRevision.aggregate([
+        { $match: { noteId: { $in: noteIds } } },
+        { $group: { _id: '$noteId', revised: { $sum: { $cond: [{ $eq: ['$status', 'revised'] }, 1, 0] } }, bookmarked: { $sum: { $cond: ['$bookmarked', 1, 0] } } } },
+      ])
+      const rcMap = new Map(revisionCounts.map(r => [r._id.toString(), r]))
+
+      const enriched = notes.map(n => ({
+        ...n,
+        id: n._id.toString(),
+        revised:    rcMap.get(n._id.toString())?.revised    ?? 0,
+        bookmarked: rcMap.get(n._id.toString())?.bookmarked ?? 0,
+      }))
+
+      res.json({ notes: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  toggleRevisionNote: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const note = await RevisionNote.findById(req.params.id)
+      if (!note) throw createError('Revision note not found', 404)
+      note.isActive = !note.isActive
+      await note.save()
+      res.json({ ok: true, isActive: note.isActive })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  // ─── Collaboration management ────────────────────────────────────────────────
+
+  listCollabInvites: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page   = Math.max(1, Number(req.query.page) || 1)
+      const limit  = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
+      const status = typeof req.query.status === 'string' ? req.query.status : 'all'
+
+      const match: Record<string, unknown> = {}
+      if (status !== 'all') match.status = status
+
+      const [total, invites] = await Promise.all([
+        CollabInvite.countDocuments(match),
+        CollabInvite.find(match)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .populate<{ diagramId: { _id: string; title: string } }>('diagramId', 'title')
+          .lean(),
+      ])
+
+      res.json({ invites, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  revokeCollabInvite: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const invite = await CollabInvite.findById(req.params.id)
+      if (!invite) throw createError('Invite not found', 404)
+      invite.status = 'revoked'
+      await invite.save()
+      res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  listComments: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page) || 1)
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+
+      const match: Record<string, unknown> = {}
+      if (q) match.content = { $regex: q, $options: 'i' }
+
+      const [total, comments] = await Promise.all([
+        Comment.countDocuments(match),
+        Comment.find(match)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .populate<{ diagramId: { _id: string; title: string } }>('diagramId', 'title')
+          .lean(),
+      ])
+
+      res.json({ comments, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  deleteComment: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const comment = await Comment.findById(req.params.id)
+      if (!comment) throw createError('Comment not found', 404)
+      await comment.deleteOne()
+      res.json({ ok: true })
     } catch (err) {
       next(err)
     }
