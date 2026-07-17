@@ -89,6 +89,48 @@ export interface PracticeStats {
   dailyActivity: DailyActivity[]
 }
 
+export interface WeeklyReport {
+  weekStart:      string
+  weekLabel:      string
+  sessions:       number
+  timeSeconds:    number
+  avgTimeSeconds: number
+  problemsSolved: number
+}
+
+export interface MonthlyReport {
+  month:          string
+  sessions:       number
+  timeSeconds:    number
+  avgTimeSeconds: number
+  problemsSolved: number
+}
+
+export interface TrendPoint {
+  weekLabel:  string
+  avgMinutes: number
+}
+
+export interface PersonalBests {
+  longestStreakDays: number
+  longestSession: { timeSeconds: number; title: string; date: string } | null
+  fastestSession: { timeSeconds: number; title: string; date: string } | null
+  bestDay:        { date: string; sessions: number; timeSeconds: number } | null
+  bestWeek:       { weekLabel: string; sessions: number; timeSeconds: number } | null
+  totalProblems:  number
+}
+
+export interface AdvancedStats {
+  avgTimePerSession:  number
+  avgTimeThisWeek:    number
+  avgTimeLastWeek:    number
+  improvementPercent: number | null
+  weeklyReports:      WeeklyReport[]
+  monthlyReports:     MonthlyReport[]
+  trendData:          TrendPoint[]
+  personalBests:      PersonalBests
+}
+
 // ─── Node Types ───────────────────────────────────────────────────────────────
 
 export type NodeType = 'class' | 'abstract-class' | 'interface' | 'enum' | 'note'

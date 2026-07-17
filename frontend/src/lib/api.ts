@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -137,6 +137,7 @@ export const api = {
 
   stats: {
     get: () => request<PracticeStats>('/stats'),
+    getAdvanced: () => request<AdvancedStats>('/stats/advanced'),
     sync: (timeElapsed: number) =>
       request<{ ok: boolean; stats: PracticeStats }>('/stats/sync', {
         method: 'POST',
