@@ -1,16 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   X, ChevronDown, ChevronUp, Lightbulb, Lock,
-  CheckCheck, ExternalLink, RefreshCw, BookOpen,
-  CheckCircle2,
+  ExternalLink, BookOpen,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
-import type { ProblemDetail, UserSolution } from '@/types'
+import type { ProblemDetail } from '@/types'
 import { cn } from '@/lib/utils'
 
 // ─── Hints helper ─────────────────────────────────────────────────────────────
@@ -145,9 +144,7 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
   const router = useRouter()
   const [problem,    setProblem]    = useState<ProblemDetail | null>(null)
   const [hints,      setHints]      = useState<string[]>([])
-  const [mySolution, setMySolution] = useState<UserSolution | null>(null)
-  const [loading,    setLoading]    = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
@@ -157,24 +154,11 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
     ])
       .then(([detail, { hints: h }]) => {
         setProblem(detail.problem)
-        setMySolution(detail.mySolution)
         setHints(h)
       })
       .catch(() => toast.error('Could not load problem'))
       .finally(() => setLoading(false))
   }, [slug])
-
-  const handleSubmit = useCallback(async () => {
-    setSubmitting(true)
-    try {
-      const { solution } = await api.problems.submit(slug)
-      setMySolution(solution)
-      toast.success('Solution marked as complete! 🎉', { description: 'It\'s now visible in the community.' })
-    } catch { toast.error('Could not submit solution') }
-    finally { setSubmitting(false) }
-  }, [slug])
-
-  const isSolved    = mySolution?.status === 'submitted'
 
   const diffMeta = problem ? DIFF_META[problem.difficulty] : null
 
@@ -257,36 +241,6 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
                 {problem.title}
               </h2>
               <p className="text-xs leading-relaxed text-ink-faint">{problem.description}</p>
-            </div>
-
-            {/* Status + actions */}
-            <div className={cn(
-              'rounded-xl border px-3 py-2.5',
-              isSolved ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50',
-            )}>
-              {isSolved ? (
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <p className="text-xs font-semibold text-emerald-700">Solution submitted!</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-[11px] text-amber-700">
-                    When you're done, mark your solution as complete to share it with the community.
-                  </p>
-                  <button
-                    onClick={handleSubmit} disabled={submitting}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600
-                               py-1.5 text-[11px] font-semibold text-white transition-all
-                               hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {submitting
-                      ? <RefreshCw className="h-3 w-3 animate-spin" />
-                      : <CheckCheck className="h-3 w-3" />}
-                    Mark as Complete
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Requirements */}

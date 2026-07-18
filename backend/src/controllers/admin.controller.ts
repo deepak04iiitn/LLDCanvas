@@ -598,6 +598,75 @@ export const adminController = {
     }
   },
 
+  createProblem: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const {
+        slug, title, difficulty, category, description,
+        companies, tags, functionalRequirements, nonFunctionalRequirements,
+        hints, order, isActive,
+      } = req.body
+
+      if (!title || !difficulty || !category || !description) {
+        throw createError('title, difficulty, category and description are required', 400)
+      }
+
+      const autoSlug = (slug as string || title as string)
+        .toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+      const existing = await Problem.findOne({ slug: autoSlug })
+      if (existing) throw createError('A problem with this slug already exists', 409)
+
+      const problem = await Problem.create({
+        slug: autoSlug, title, difficulty, category, description,
+        companies:  companies  || [],
+        tags:       tags       || [],
+        functionalRequirements:    functionalRequirements    || [],
+        nonFunctionalRequirements: nonFunctionalRequirements || [],
+        hints:   hints  || [],
+        order:   order  ?? 0,
+        isActive: isActive !== false,
+      })
+
+      res.status(201).json({ ok: true, problem })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  updateProblem: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const problem = await Problem.findById(req.params.id)
+      if (!problem) throw createError('Problem not found', 404)
+
+      const allowed = [
+        'title','difficulty','category','description','companies','tags',
+        'functionalRequirements','nonFunctionalRequirements','hints','order','isActive',
+      ]
+      for (const key of allowed) {
+        if (req.body[key] !== undefined) (problem as never as Record<string, unknown>)[key] = req.body[key]
+      }
+      // update slug if title changed and no explicit slug was given
+      if (req.body.slug) {
+        problem.slug = (req.body.slug as string).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      }
+      await problem.save()
+      res.json({ ok: true, problem })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  deleteProblem: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const problem = await Problem.findById(req.params.id)
+      if (!problem) throw createError('Problem not found', 404)
+      await problem.deleteOne()
+      res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   // ─── Revision notes management ───────────────────────────────────────────────
 
   listRevisionNotes: async (req: Request, res: Response, next: NextFunction) => {
@@ -652,6 +721,71 @@ export const adminController = {
       note.isActive = !note.isActive
       await note.save()
       res.json({ ok: true, isActive: note.isActive })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  createRevisionNote: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const {
+        slug, title, category, difficulty, summary,
+        keyPoints, analogy, codeHint, tags, order, isActive,
+      } = req.body
+
+      if (!title || !category || !summary) {
+        throw createError('title, category and summary are required', 400)
+      }
+
+      const autoSlug = (slug as string || title as string)
+        .toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+      const existing = await RevisionNote.findOne({ slug: autoSlug })
+      if (existing) throw createError('A revision note with this slug already exists', 409)
+
+      const note = await RevisionNote.create({
+        slug: autoSlug, title, category,
+        difficulty: difficulty || 'basic',
+        summary,
+        keyPoints: keyPoints || [],
+        analogy:   analogy   || '',
+        codeHint:  codeHint  || '',
+        tags:      tags      || [],
+        order:     order     ?? 0,
+        isActive:  isActive  !== false,
+      })
+
+      res.status(201).json({ ok: true, note })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  updateRevisionNote: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const note = await RevisionNote.findById(req.params.id)
+      if (!note) throw createError('Revision note not found', 404)
+
+      const allowed = ['title','category','difficulty','summary','keyPoints','analogy','codeHint','tags','order','isActive']
+      for (const key of allowed) {
+        if (req.body[key] !== undefined) (note as never as Record<string, unknown>)[key] = req.body[key]
+      }
+      if (req.body.slug) {
+        note.slug = (req.body.slug as string).toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      }
+      await note.save()
+      res.json({ ok: true, note })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  deleteRevisionNote: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const note = await RevisionNote.findById(req.params.id)
+      if (!note) throw createError('Revision note not found', 404)
+      await note.deleteOne()
+      res.json({ ok: true })
     } catch (err) {
       next(err)
     }

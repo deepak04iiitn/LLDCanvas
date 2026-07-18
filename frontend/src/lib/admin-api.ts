@@ -177,7 +177,12 @@ export const adminApi = {
       if (params.category)   qs.set('category',   params.category)
       return req<{ problems: AdminProblem[]; total: number; page: number; limit: number; totalPages: number }>(`/problems?${qs}`)
     },
+    create: (body: Partial<AdminProblem>) =>
+      req<{ ok: boolean; problem: AdminProblem }>('/problems', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: Partial<AdminProblem>) =>
+      req<{ ok: boolean; problem: AdminProblem }>(`/problems/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/problems/${id}/toggle`, { method: 'PATCH' }),
+    delete: (id: string) => req<{ ok: boolean }>(`/problems/${id}`, { method: 'DELETE' }),
   },
 
   revision: {
@@ -189,7 +194,12 @@ export const adminApi = {
       if (params.category) qs.set('category', params.category)
       return req<{ notes: AdminRevisionNote[]; total: number; page: number; limit: number; totalPages: number }>(`/revision-notes?${qs}`)
     },
+    create: (body: Partial<AdminRevisionNote>) =>
+      req<{ ok: boolean; note: AdminRevisionNote }>('/revision-notes', { method: 'POST', body: JSON.stringify(body) }),
+    update: (id: string, body: Partial<AdminRevisionNote>) =>
+      req<{ ok: boolean; note: AdminRevisionNote }>(`/revision-notes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/revision-notes/${id}/toggle`, { method: 'PATCH' }),
+    delete: (id: string) => req<{ ok: boolean }>(`/revision-notes/${id}`, { method: 'DELETE' }),
   },
 
   code: {
@@ -257,10 +267,14 @@ export interface AdminProblem {
   title: string
   difficulty: 'easy' | 'medium' | 'hard'
   category: string
+  description: string
   isActive: boolean
   order: number
   companies: string[]
   tags: string[]
+  functionalRequirements: string[]
+  nonFunctionalRequirements: string[]
+  hints: string[]
   createdAt: string
   solutions: number
   submitted: number
@@ -272,6 +286,10 @@ export interface AdminRevisionNote {
   title: string
   category: string
   difficulty: string
+  summary: string
+  keyPoints: string[]
+  analogy: string
+  codeHint: string
   isActive: boolean
   order: number
   tags: string[]

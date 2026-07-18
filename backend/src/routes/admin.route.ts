@@ -27,11 +27,17 @@ router.delete('/sessions/:id',                adminController.deleteSession)
 
 // Problems
 router.get('/problems',                       adminController.listProblems)
+router.post('/problems',                      adminController.createProblem)
+router.patch('/problems/:id',                 adminController.updateProblem)
 router.patch('/problems/:id/toggle',          adminController.toggleProblem)
+router.delete('/problems/:id',                adminController.deleteProblem)
 
 // Revision notes
 router.get('/revision-notes',                 adminController.listRevisionNotes)
+router.post('/revision-notes',                adminController.createRevisionNote)
+router.patch('/revision-notes/:id',           adminController.updateRevisionNote)
 router.patch('/revision-notes/:id/toggle',    adminController.toggleRevisionNote)
+router.delete('/revision-notes/:id',          adminController.deleteRevisionNote)
 
 // Collaboration
 router.get('/collab-invites',                 adminController.listCollabInvites)
