@@ -14,7 +14,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body?.error ?? `API error ${res.status}`)
+    const err  = new Error(body?.error ?? `API error ${res.status}`) as Error & { banned?: boolean; status?: number }
+    err.status = res.status
+    err.banned = body?.banned === true
+    throw err
   }
 
   return res.json() as Promise<T>

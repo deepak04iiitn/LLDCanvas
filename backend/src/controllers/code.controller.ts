@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { createError } from '../middleware/error'
+import { CodeExecutionLog } from '../models/code-execution-log.model'
+import { CodeBan } from '../models/code-ban.model'
 
 const COMPILER_API = 'https://api.onlinecompiler.io/api/run-code-sync/'
 
@@ -22,6 +24,19 @@ const VALID_COMPILERS = new Set(SUPPORTED_COMPILERS.map(c => c.value))
 
 export async function runCode(req: Request, res: Response, next: NextFunction) {
   try {
+    const userId = req.user!.id
+
+    // ── Check if user is banned from code execution ──────────────────────────
+    const ban = await CodeBan.findOne({ userId }).lean()
+    if (ban) {
+      return res.status(403).json({
+        banned: true,
+        error: ban.reason
+          ? `Your code execution access has been revoked by an administrator. Reason: ${ban.reason}`
+          : 'Your code execution access has been revoked by an administrator. Please contact support.',
+      })
+    }
+
     const apiKey = process.env.ONLINE_COMPILER_API_KEY
     if (!apiKey) throw createError('Code execution is not configured on this server.', 503)
 
@@ -31,7 +46,7 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
       input?: string
     }
 
-    if (!compiler || !VALID_COMPILERS.has(compiler)) {
+    if (!compiler || !VALID_COMPILERS.has(compiler as never)) {
       throw createError('Invalid compiler specified.', 400)
     }
     if (!code || typeof code !== 'string') {
@@ -62,7 +77,22 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
       throw createError(`Code execution service error: ${upstream.status} ${text}`, 502)
     }
 
-    const data = await upstream.json()
+    const data = await upstream.json() as {
+      status?: string; exit_code?: number; time?: string; total?: string; memory?: string
+    }
+
+    // ── Log execution ─────────────────────────────────────────────────────────
+    const isSuccess = (data.exit_code ?? 0) === 0
+    CodeExecutionLog.create({
+      userId,
+      language:    compiler,
+      status:      isSuccess ? 'success' : 'error',
+      exitCode:    data.exit_code ?? 0,
+      executionMs: Math.round(parseFloat(data.time ?? '0') * 1000),
+      memoryKb:    parseInt(data.memory ?? '0', 10),
+      codeLength:  code.length,
+    }).catch(() => { /* non-fatal — never block the response */ })
+
     res.json(data)
   } catch (err) {
     next(err)

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Timer,
   LogOut, Menu, ShieldCheck, X,
-  BookOpen, Layers, MessageSquareText,
+  BookOpen, Layers, MessageSquareText, Terminal,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { signOut } from '@/lib/auth-client'
@@ -20,11 +20,13 @@ const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p:
   { label: 'Problems',     href: '/admin/problems',  Icon: BookOpen,          isActive: (p) => p.startsWith('/admin/problems'),  divider: true },
   { label: 'Revision',     href: '/admin/revision',  Icon: Layers,            isActive: (p) => p.startsWith('/admin/revision') },
   { label: 'Collab',       href: '/admin/collab',    Icon: MessageSquareText, isActive: (p) => p.startsWith('/admin/collab') },
+  { label: 'Code Exec',   href: '/admin/code',      Icon: Terminal,          isActive: (p) => p.startsWith('/admin/code') },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex-1 overflow-y-auto p-3">
+    <nav className="flex-1 overflow-y-auto p-3 scrollbar-none"
+      style={{ scrollbarWidth: 'none' }}>
       {NAV.map(item => {
         const active = item.isActive(pathname)
         return (

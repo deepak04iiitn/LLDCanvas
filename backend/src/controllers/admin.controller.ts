@@ -12,6 +12,8 @@ import { CollabInvite } from '../models/collab-invite.model'
 import { Comment } from '../models/comment.model'
 import { DiagramShare } from '../models/diagram-share.model'
 import { DiagramVersion } from '../models/diagram-version.model'
+import { CodeExecutionLog } from '../models/code-execution-log.model'
+import { CodeBan } from '../models/code-ban.model'
 import { getLiveMetrics } from './analytics.controller'
 import { createError } from '../middleware/error'
 
@@ -728,5 +730,213 @@ export const adminController = {
     } catch (err) {
       next(err)
     }
+  },
+
+  // ── Code Execution Admin ──────────────────────────────────────────────────
+
+  // GET /admin/code/stats
+  getCodeStats: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const [
+        totalRuns,
+        successRuns,
+        todayRuns,
+        todaySuccess,
+        byLanguage,
+        dailyTrend,
+        topUsers,
+      ] = await Promise.all([
+        CodeExecutionLog.countDocuments(),
+        CodeExecutionLog.countDocuments({ status: 'success' }),
+        CodeExecutionLog.countDocuments({ createdAt: { $gte: daysAgo(0) } }),
+        CodeExecutionLog.countDocuments({ createdAt: { $gte: daysAgo(0) }, status: 'success' }),
+
+        // Runs per language
+        CodeExecutionLog.aggregate([
+          { $group: { _id: '$language', total: { $sum: 1 }, success: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } } } },
+          { $sort: { total: -1 } },
+        ]),
+
+        // Daily trend (last 30 days)
+        CodeExecutionLog.aggregate([
+          { $match: { createdAt: { $gte: daysAgo(30) } } },
+          {
+            $group: {
+              _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+              total:   { $sum: 1 },
+              success: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } },
+              error:   { $sum: { $cond: [{ $eq: ['$status', 'error'] }, 1, 0] } },
+            },
+          },
+          { $sort: { _id: 1 } },
+        ]),
+
+        // Top 10 users by run count
+        CodeExecutionLog.aggregate([
+          { $group: { _id: '$userId', total: { $sum: 1 }, success: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } }, lastRun: { $max: '$createdAt' } } },
+          { $sort: { total: -1 } },
+          { $limit: 10 },
+        ]),
+      ])
+
+      // Enrich top users with name/email
+      const userIds = topUsers.map((u: { _id: string }) => u._id)
+      const users   = await userCollection()
+      const userDocs = await users.find({ id: { $in: userIds } } as object).toArray()
+      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+
+      const enrichedTopUsers = topUsers.map((u: { _id: string; total: number; success: number; lastRun: Date }) => ({
+        ...u,
+        name:  userMap.get(u._id)?.name  ?? 'Unknown',
+        email: userMap.get(u._id)?.email ?? '',
+      }))
+
+      // Total banned users
+      const bannedCount = await CodeBan.countDocuments()
+
+      res.json({
+        totalRuns,
+        successRuns,
+        errorRuns: totalRuns - successRuns,
+        successRate: totalRuns > 0 ? Math.round((successRuns / totalRuns) * 100) : 0,
+        todayRuns,
+        todaySuccess,
+        bannedCount,
+        byLanguage,
+        dailyTrend,
+        topUsers: enrichedTopUsers,
+      })
+    } catch (err) { next(err) }
+  },
+
+  // GET /admin/code/executions  — paginated list
+  listCodeExecutions: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page)  || 1)
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20))
+
+      const userId   = typeof req.query.userId   === 'string' ? req.query.userId.trim()   : ''
+      const language = typeof req.query.language === 'string' ? req.query.language.trim() : ''
+      const status   = typeof req.query.status   === 'string' ? req.query.status.trim()   : ''
+      const from     = typeof req.query.from     === 'string' ? req.query.from.trim()     : ''
+      const to       = typeof req.query.to       === 'string' ? req.query.to.trim()       : ''
+
+      const match: Record<string, unknown> = {}
+      if (userId)   match.userId   = userId
+      if (language) match.language = language
+      if (status && ['success', 'error'].includes(status)) match.status = status
+      if (from || to) {
+        const range: Record<string, Date> = {}
+        if (from) range.$gte = new Date(from)
+        if (to)   range.$lte = new Date(to + 'T23:59:59Z')
+        match.createdAt = range
+      }
+
+      const [total, logs] = await Promise.all([
+        CodeExecutionLog.countDocuments(match),
+        CodeExecutionLog.find(match)
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+      ])
+
+      // Enrich with user info
+      const ids = [...new Set(logs.map(l => l.userId))]
+      const users = await userCollection()
+      const userDocs = await users.find({ id: { $in: ids } } as object).toArray()
+      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+
+      const enriched = logs.map(l => ({
+        ...l,
+        userName:  userMap.get(l.userId)?.name  ?? 'Unknown',
+        userEmail: userMap.get(l.userId)?.email ?? '',
+      }))
+
+      res.json({ executions: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
+
+  // GET /admin/code/executions/:userId/daily  — per-user daily breakdown
+  getUserCodeDaily: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.params
+      const days = Math.min(90, Math.max(1, Number(req.query.days) || 30))
+
+      const daily = await CodeExecutionLog.aggregate([
+        { $match: { userId, createdAt: { $gte: daysAgo(days) } } },
+        {
+          $group: {
+            _id:     { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            total:   { $sum: 1 },
+            success: { $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] } },
+            error:   { $sum: { $cond: [{ $eq: ['$status', 'error'] }, 1, 0] } },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ])
+
+      const users = await userCollection()
+      const userDoc = await users.findOne({ id: userId } as object)
+
+      res.json({
+        userId,
+        userName:  userDoc?.name  ?? 'Unknown',
+        userEmail: userDoc?.email ?? '',
+        daily,
+        totalRuns:    daily.reduce((s: number, d: { total: number }) => s + d.total, 0),
+        totalSuccess: daily.reduce((s: number, d: { success: number }) => s + d.success, 0),
+        totalError:   daily.reduce((s: number, d: { error: number }) => s + d.error, 0),
+      })
+    } catch (err) { next(err) }
+  },
+
+  // GET /admin/code/bans  — list all banned users
+  listCodeBans: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page  = Math.max(1, Number(req.query.page)  || 1)
+      const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20))
+
+      const [total, bans] = await Promise.all([
+        CodeBan.countDocuments(),
+        CodeBan.find()
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+      ])
+
+      // Enrich with user info
+      const ids = bans.map(b => b.userId)
+      const users = await userCollection()
+      const userDocs = await users.find({ id: { $in: ids } } as object).toArray()
+      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+
+      const enriched = bans.map(b => ({
+        ...b,
+        userName:  userMap.get(b.userId)?.name  ?? 'Unknown',
+        userEmail: userMap.get(b.userId)?.email ?? '',
+      }))
+
+      res.json({ bans: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
+
+  // PATCH /admin/code/bans/:userId  — toggle ban (ban/unban)
+  toggleCodeBan: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.params
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : null
+      const adminId = req.user!.id
+
+      const existing = await CodeBan.findOne({ userId })
+      if (existing) {
+        await existing.deleteOne()
+        res.json({ ok: true, banned: false, userId })
+      } else {
+        await CodeBan.create({ userId, reason, bannedBy: adminId })
+        res.json({ ok: true, banned: true, userId })
+      }
+    } catch (err) { next(err) }
   },
 }

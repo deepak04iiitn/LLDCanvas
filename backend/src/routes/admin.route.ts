@@ -39,4 +39,11 @@ router.patch('/collab-invites/:id/revoke',    adminController.revokeCollabInvite
 router.get('/comments',                       adminController.listComments)
 router.delete('/comments/:id',                adminController.deleteComment)
 
+// Code execution
+router.get('/code/stats',                     adminController.getCodeStats)
+router.get('/code/executions',                adminController.listCodeExecutions)
+router.get('/code/executions/:userId/daily',  adminController.getUserCodeDaily)
+router.get('/code/bans',                      adminController.listCodeBans)
+router.patch('/code/bans/:userId',            adminController.toggleCodeBan)
+
 export default router

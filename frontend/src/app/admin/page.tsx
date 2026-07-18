@@ -9,11 +9,11 @@ import {
   Users, FileText, Timer, Clock, TrendingUp, Shield,
   Activity, CheckCircle, Radio, RefreshCw, ArrowUpRight,
   RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
-  Share2, GitBranch, UserCheck, Trophy,
+  Share2, GitBranch, UserCheck, Trophy, Terminal, Ban,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
-import { adminApi, type OverviewStats, type OverviewCharts } from '@/lib/admin-api'
+import { adminApi, type OverviewStats, type OverviewCharts, type CodeStats } from '@/lib/admin-api'
 
 // ─── Brand palette ────────────────────────────────────────────────────────────
 const BRAND   = '#3D6A52'
@@ -84,18 +84,21 @@ export default function AdminOverviewPage() {
   const [charts,       setCharts]       = useState<OverviewCharts | null>(null)
   const [live,         setLive]         = useState<LiveMetrics | null>(null)
   const [featureStats, setFeatureStats] = useState<FeatureStats | null>(null)
+  const [codeStats,    setCodeStats]    = useState<CodeStats | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [liveLoading,  setLiveLoading]  = useState(true)
 
   const loadOverview = useCallback(async () => {
     try {
-      const [data, fs] = await Promise.all([
+      const [data, fs, cs] = await Promise.all([
         adminApi.overview(),
         adminApi.featureStats(),
+        adminApi.code.stats(),
       ])
       setStats(data.stats)
       setCharts(data.charts)
       setFeatureStats(fs)
+      setCodeStats(cs)
     } finally {
       setLoading(false)
     }
@@ -397,6 +400,16 @@ export default function AdminOverviewPage() {
               <StatCard label="Version Snapshots"  value={featureStats.versions.total.toLocaleString()} Icon={GitBranch}       sub="diagram saves tracked" accent />
             </div>
 
+            {/* Code Execution */}
+            {codeStats && (
+              <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <StatCard label="Total Code Runs"   value={codeStats.totalRuns.toLocaleString()}  Icon={Terminal}       sub="all time" />
+                <StatCard label="Today's Runs"      value={codeStats.todayRuns}                   Icon={TrendingUp}     sub={`${codeStats.todaySuccess} successful`} accent />
+                <StatCard label="Success Rate"      value={`${codeStats.successRate}%`}           Icon={CheckCircle}    sub={`${codeStats.errorRuns} errors total`} />
+                <StatCard label="Banned Users"      value={codeStats.bannedCount}                 Icon={Ban}            sub="execution revoked" />
+              </div>
+            )}
+
             {/* Charts row */}
             <div className="grid gap-4 lg:grid-cols-3">
               {/* Problems by difficulty */}
@@ -470,6 +483,7 @@ export default function AdminOverviewPage() {
                 { href: '/admin/problems',  Icon: BookOpen,          label: 'Manage Problems',        sub: `${featureStats.problems.total} total`,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 { href: '/admin/revision',  Icon: Layers,            label: 'Manage Revision Notes',  sub: `${featureStats.revision.totalNotes} notes`, color: 'text-violet-600', bg: 'bg-violet-50' },
                 { href: '/admin/collab',    Icon: MessageSquareText, label: 'Collaboration Hub',      sub: `${featureStats.collab.totalComments} discussions`, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { href: '/admin/code',      Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '—', color: 'text-amber-600', bg: 'bg-amber-50' },
               ].map(nav => (
                 <Link
                   key={nav.href}

@@ -14,7 +14,7 @@ import { EditorView } from '@codemirror/view'
 import {
   X, Play, ChevronDown, ChevronRight, GripVertical,
   Clock, MemoryStick, Terminal, Loader2, AlertTriangle,
-  CheckCircle2, Copy, Check, RotateCcw,
+  CheckCircle2, Copy, Check, RotateCcw, Ban,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -141,6 +141,7 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
   const [running,      setRunning]      = useState(false)
   const [result,       setResult]       = useState<CodeResult | null>(null)
   const [copied,       setCopied]       = useState(false)
+  const [banned,       setBanned]       = useState<string | null>(null)
   const [panelWidth,   setPanelWidth]   = useState(480)
   const [langOpen,     setLangOpen]     = useState(false)
   const [bottomHeight, setBottomHeight] = useState(120)
@@ -172,9 +173,14 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
       const data = await api.code.run({ compiler: lang, code, input: stdin })
       setResult(data as CodeResult)
     } catch (err: unknown) {
+      const apiErr = err as Error & { banned?: boolean }
+      if (apiErr.banned) {
+        setBanned(apiErr.message)
+        return
+      }
       setResult({
         output: '',
-        error: err instanceof Error ? err.message : 'Unknown error',
+        error: apiErr instanceof Error ? apiErr.message : 'Unknown error',
         status: 'error',
         exit_code: 1,
         signal: null,
@@ -288,6 +294,17 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
               </div>
             </div>
 
+            {/* ── Ban notice ───────────────────────────────────────────────── */}
+            {banned && (
+              <div className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2.5">
+                <Ban className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-red-700">Code execution revoked</p>
+                  <p className="mt-0.5 text-xs text-red-600 leading-relaxed">{banned}</p>
+                </div>
+              </div>
+            )}
+
             {/* ── Header ───────────────────────────────────────────────────── */}
             <div className="flex items-center gap-2 border-b border-hairline px-4 py-3 shrink-0">
               <Terminal className="h-4 w-4 text-brand shrink-0" />
@@ -342,9 +359,9 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
                 {/* Run */}
                 <button
                   onClick={run}
-                  disabled={running || !code.trim()}
+                  disabled={running || !code.trim() || !!banned}
                   className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
-                  title="Run (Ctrl+Enter)"
+                  title={banned ? 'Code execution revoked by admin' : 'Run (Ctrl+Enter)'}
                 >
                   {running
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />

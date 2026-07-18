@@ -192,6 +192,43 @@ export const adminApi = {
     toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/revision-notes/${id}/toggle`, { method: 'PATCH' }),
   },
 
+  code: {
+    stats: () =>
+      req<CodeStats>('/code/stats'),
+
+    executions: (params: { page?: number; limit?: number; userId?: string; language?: string; status?: string; from?: string; to?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)     qs.set('page',     String(params.page))
+      if (params.limit)    qs.set('limit',    String(params.limit))
+      if (params.userId)   qs.set('userId',   params.userId)
+      if (params.language) qs.set('language', params.language)
+      if (params.status)   qs.set('status',   params.status)
+      if (params.from)     qs.set('from',     params.from)
+      if (params.to)       qs.set('to',       params.to)
+      return req<{ executions: AdminCodeExecution[]; total: number; page: number; limit: number; totalPages: number }>(
+        `/code/executions?${qs}`,
+      )
+    },
+
+    userDaily: (userId: string, days?: number) =>
+      req<UserCodeDaily>(`/code/executions/${userId}/daily${days ? `?days=${days}` : ''}`),
+
+    bans: (params?: { page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params?.page)  qs.set('page',  String(params.page))
+      if (params?.limit) qs.set('limit', String(params.limit))
+      return req<{ bans: AdminCodeBan[]; total: number; page: number; limit: number; totalPages: number }>(
+        `/code/bans?${qs}`,
+      )
+    },
+
+    toggleBan: (userId: string, reason?: string) =>
+      req<{ ok: boolean; banned: boolean; userId: string }>(`/code/bans/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ reason }),
+      }),
+  },
+
   collab: {
     listInvites: (params: { page?: number; limit?: number; status?: string }) => {
       const qs = new URLSearchParams()
@@ -263,4 +300,51 @@ export interface AdminComment {
   mentions: string[]
   replies: { authorName: string; content: string }[]
   createdAt: string
+}
+
+export interface AdminCodeExecution {
+  _id: string
+  userId: string
+  userName: string
+  userEmail: string
+  language: string
+  status: 'success' | 'error'
+  exitCode: number
+  executionMs: number
+  memoryKb: number
+  codeLength: number
+  createdAt: string
+}
+
+export interface AdminCodeBan {
+  _id: string
+  userId: string
+  userName: string
+  userEmail: string
+  reason: string | null
+  bannedBy: string
+  createdAt: string
+}
+
+export interface CodeStats {
+  totalRuns: number
+  successRuns: number
+  errorRuns: number
+  successRate: number
+  todayRuns: number
+  todaySuccess: number
+  bannedCount: number
+  byLanguage: { _id: string; total: number; success: number }[]
+  dailyTrend: { _id: string; total: number; success: number; error: number }[]
+  topUsers: { _id: string; name: string; email: string; total: number; success: number; lastRun: string }[]
+}
+
+export interface UserCodeDaily {
+  userId: string
+  userName: string
+  userEmail: string
+  daily: { _id: string; total: number; success: number; error: number }[]
+  totalRuns: number
+  totalSuccess: number
+  totalError: number
 }
