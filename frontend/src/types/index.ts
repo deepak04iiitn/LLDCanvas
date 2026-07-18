@@ -42,6 +42,40 @@ export interface CommunitySolution {
   edgeCount: number
 }
 
+// ─── Problem community discussions ───────────────────────────────────────────
+
+export interface PostReply {
+  _id: string
+  authorId: string
+  authorName: string
+  authorImage: string | null
+  content: string
+  code: string | null
+  codeLanguage: string | null
+  createdAt: string
+}
+
+export interface ProblemPost {
+  _id: string
+  problemId: string
+  authorId: string
+  authorName: string
+  authorImage: string | null
+  title: string
+  content: string
+  code: string | null
+  codeLanguage: string | null
+  type: 'question' | 'discussion' | 'solution'
+  upvotes: string[]
+  upvoteCount: number
+  hasUpvoted: boolean
+  replies: PostReply[]
+  replyCount: number
+  isOwn: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Sharing ─────────────────────────────────────────────────────────────────
 
 export interface ShareSettings {

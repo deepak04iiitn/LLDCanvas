@@ -41,6 +41,7 @@ import { ViewerBanner } from '@/components/collab/ViewerBanner'
 import { useCollabCanvas } from '@/hooks/useCollabCanvas'
 import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
 import { CodePanel } from '@/components/editor/CodePanel'
+import { ProblemDiscussionPanel } from '@/components/editor/ProblemDiscussionPanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -141,7 +142,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [importDraftOpen,    setImportDraftOpen]    = useState(false)
   const [collabModalOpen,    setCollabModalOpen]    = useState(false)
   const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
-  const [codePanelOpen,       setCodePanelOpen]       = useState(false)
+  const [codePanelOpen,             setCodePanelOpen]             = useState(false)
+  const [problemDiscussionOpen,     setProblemDiscussionOpen]     = useState(false)
 
   // ── Collab ────────────────────────────────────────────────────────────────
   const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions, collaborators } = useCollab()
@@ -647,6 +649,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         unreadMentions={unreadMentions}
         onOpenCode={() => setCodePanelOpen(v => !v)}
         codePanelOpen={codePanelOpen}
+        problemSlug={problemSlug}
+        onOpenProblemDiscussion={problemSlug ? () => setProblemDiscussionOpen(v => !v) : undefined}
+        problemDiscussionOpen={problemDiscussionOpen}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -698,6 +703,15 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             open={codePanelOpen}
             onClose={() => setCodePanelOpen(false)}
           />
+
+          {/* Problem community discussion panel */}
+          {problemSlug && (
+            <ProblemDiscussionPanel
+              open={problemDiscussionOpen}
+              onClose={() => setProblemDiscussionOpen(false)}
+              slug={problemSlug}
+            />
+          )}
 
           <RelationshipPicker
             open={pickerOpen}

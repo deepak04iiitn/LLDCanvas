@@ -9,11 +9,10 @@ import { useScrolled } from '@/hooks/useScrolled'
 import { cn } from '@/lib/utils'
 
 const QUICK_LINKS = [
-  { label: 'Features',       href: '/#features' },
-  { label: 'Interview Mode', href: '/#interview-mode' },
-  { label: 'Patterns',       href: '/#patterns' },
-  { label: 'Docs',           href: '/docs' },
-  { label: 'FAQ',            href: '/#faq' },
+  { label: 'Features',   href: '/#features' },
+  { label: 'Playground', href: '/playground' },
+  { label: 'Docs',       href: '/docs' },
+  { label: 'FAQ',        href: '/#faq' },
 ]
 
 // ─── Site-wide nav ──────────────────────────────────────────────────────────────

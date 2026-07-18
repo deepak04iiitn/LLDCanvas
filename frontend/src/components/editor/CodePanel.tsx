@@ -143,11 +143,15 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
   const [copied,       setCopied]       = useState(false)
   const [panelWidth,   setPanelWidth]   = useState(480)
   const [langOpen,     setLangOpen]     = useState(false)
+  const [bottomHeight, setBottomHeight] = useState(120)
 
-  const panelRef    = useRef<HTMLElement>(null)
-  const resizingRef = useRef(false)
-  const startXRef   = useRef(0)
-  const startWRef   = useRef(480)
+  const panelRef        = useRef<HTMLElement>(null)
+  const resizingRef     = useRef(false)
+  const startXRef       = useRef(0)
+  const startWRef       = useRef(480)
+  const vResizingRef    = useRef(false)
+  const vStartYRef      = useRef(0)
+  const vStartHRef      = useRef(120)
 
   const currentLang = LANGUAGES.find(l => l.value === lang)!
 
@@ -217,6 +221,28 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
   }, [panelWidth])
+
+  // Vertical drag — resize bottom pane (stdin + output)
+  const startVerticalResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    vResizingRef.current = true
+    vStartYRef.current   = e.clientY
+    vStartHRef.current   = bottomHeight
+
+    function onMove(ev: MouseEvent) {
+      if (!vResizingRef.current) return
+      const delta = vStartYRef.current - ev.clientY
+      const next  = Math.min(600, Math.max(80, vStartHRef.current + delta))
+      setBottomHeight(next)
+    }
+    function onUp() {
+      vResizingRef.current = false
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [bottomHeight])
 
   // Copy output
   function copyOutput() {
@@ -359,47 +385,64 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
               />
             </div>
 
-            {/* ── Stdin accordion ──────────────────────────────────────────── */}
-            <div className="shrink-0 border-t border-hairline">
-              <button
-                onClick={() => setStdinOpen(v => !v)}
-                className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-ink-muted hover:bg-hairline/60 transition"
-              >
-                {stdinOpen
-                  ? <ChevronDown className="h-3.5 w-3.5" />
-                  : <ChevronRight className="h-3.5 w-3.5" />
-                }
-                Standard Input (stdin)
-                {stdin && (
-                  <span className="ml-auto rounded-full bg-brand-tint px-1.5 py-0.5 text-[9px] font-bold text-brand">
-                    {stdin.split('\n').length} line{stdin.split('\n').length > 1 ? 's' : ''}
-                  </span>
-                )}
-              </button>
-              <AnimatePresence>
-                {stdinOpen && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.18 }}
-                    className="overflow-hidden"
-                  >
-                    <textarea
-                      value={stdin}
-                      onChange={e => setStdin(e.target.value)}
-                      placeholder="Enter stdin input (one value per line)…"
-                      rows={4}
-                      className="w-full resize-none border-t border-hairline bg-paper px-4 py-2 font-mono text-xs text-ink placeholder:text-ink-faint outline-none focus:bg-paper-elevated"
-                      spellCheck={false}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* ── Vertical drag handle ─────────────────────────────────────── */}
+            <div
+              onMouseDown={startVerticalResize}
+              className="group relative flex h-2 w-full shrink-0 cursor-row-resize items-center justify-center border-t border-hairline bg-paper transition-colors hover:bg-brand/10"
+            >
+              <div className="flex h-1 w-10 items-center justify-center gap-0.5 rounded-full bg-hairline-strong transition-colors group-hover:bg-brand/30">
+                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
+                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
+                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
+                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
+                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
+              </div>
             </div>
 
-            {/* ── Output pane ──────────────────────────────────────────────── */}
-            <div className="shrink-0 border-t border-hairline bg-paper" style={{ minHeight: 160 }}>
+            {/* ── Bottom section: stdin + output ───────────────────────────── */}
+            <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: bottomHeight }}>
+
+              {/* Stdin accordion */}
+              <div className="shrink-0 border-t border-hairline">
+                <button
+                  onClick={() => setStdinOpen(v => !v)}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-ink-muted hover:bg-hairline/60 transition"
+                >
+                  {stdinOpen
+                    ? <ChevronDown className="h-3.5 w-3.5" />
+                    : <ChevronRight className="h-3.5 w-3.5" />
+                  }
+                  Standard Input (stdin)
+                  {stdin && (
+                    <span className="ml-auto rounded-full bg-brand-tint px-1.5 py-0.5 text-[9px] font-bold text-brand">
+                      {stdin.split('\n').length} line{stdin.split('\n').length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </button>
+                <AnimatePresence>
+                  {stdinOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="overflow-hidden"
+                    >
+                      <textarea
+                        value={stdin}
+                        onChange={e => setStdin(e.target.value)}
+                        placeholder="Enter stdin input (one value per line)…"
+                        rows={4}
+                        className="w-full resize-none border-t border-hairline bg-paper px-4 py-2 font-mono text-xs text-ink placeholder:text-ink-faint outline-none focus:bg-paper-elevated"
+                        spellCheck={false}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Output pane — fills remaining bottom space */}
+              <div className="flex flex-1 flex-col overflow-hidden border-t border-hairline bg-paper min-h-0">
               {/* Output header */}
               <div className="flex items-center gap-2 px-4 py-2 border-b border-hairline">
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
@@ -430,8 +473,8 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
                 )}
               </div>
 
-              {/* Output content */}
-              <div className="max-h-[200px] overflow-y-auto px-4 py-3">
+              {/* Output content — scrolls within remaining space */}
+              <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
                 {running && (
                   <div className="flex items-center gap-2 text-xs text-ink-faint">
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
@@ -489,8 +532,9 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
                     </span>
                   )}
                 </div>
-              )}
-            </div>
+                )}
+              </div>  {/* /output pane */}
+            </div>  {/* /bottom section */}
           </motion.aside>
         </>
       )}

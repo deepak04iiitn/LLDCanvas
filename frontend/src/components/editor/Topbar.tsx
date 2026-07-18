@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2, Terminal, FileInput, Code2,
+  Maximize2, Minimize2, FileInput, Code2,
   MessageSquareText, ArrowUpDown, Download, Upload, UserPlus,
 } from 'lucide-react'
 
@@ -59,6 +58,9 @@ interface TopbarProps {
   unreadMentions?: number
   onOpenCode?: () => void
   codePanelOpen?: boolean
+  problemSlug?: string
+  onOpenProblemDiscussion?: () => void
+  problemDiscussionOpen?: boolean
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -369,6 +371,9 @@ export function Topbar({
   unreadMentions = 0,
   onOpenCode,
   codePanelOpen = false,
+  problemSlug,
+  onOpenProblemDiscussion,
+  problemDiscussionOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -428,33 +433,6 @@ export function Topbar({
       {/* RIGHT — Action buttons */}
       <div className="flex items-center justify-end gap-1.5">
 
-        {/* Draft Notation — Playground (write code, live preview) + Import
-            (paste already-written code, drop it onto the canvas once).
-            The editor itself never hosts a live code panel — that workflow
-            lives in the standalone Playground so it doesn't compete with
-            manual editing for screen space. */}
-        {!readOnly && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Link
-                  href="/playground"
-                  target="_blank"
-                  className="flex h-8 items-center gap-1.5 rounded-full border border-indigo-200
-                             bg-indigo-50 px-3 text-xs font-medium text-indigo-700 transition-all
-                             hover:border-indigo-300 hover:bg-indigo-100
-                             dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:text-indigo-300
-                             dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
-                />
-              }
-              aria-label="Open Draft Notation Playground"
-            >
-              <Terminal className="h-3.5 w-3.5" />
-              <span className="hidden sm:block">Playground</span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Write Draft Notation live in a separate tab</TooltipContent>
-          </Tooltip>
-        )}
 
         {/* Divider before mode toggle */}
         {!readOnly && (
@@ -601,6 +579,25 @@ export function Topbar({
               <span className="hidden sm:inline">Code</span>
             </TooltipTrigger>
             <TooltipContent side="bottom">Write &amp; run code (Ctrl+Enter)</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Problem Discussions button — only shown when a problem is open */}
+        {problemSlug && onOpenProblemDiscussion && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenProblemDiscussion}
+              className={cn(
+                iconBtnBase,
+                'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                problemDiscussionOpen && 'bg-brand-tint text-brand',
+              )}
+              aria-label="Problem discussions"
+            >
+              <MessageSquareText className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Discussion</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Community discussions for this problem</TooltipContent>
           </Tooltip>
         )}
 

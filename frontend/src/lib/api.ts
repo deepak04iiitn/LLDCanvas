@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -180,6 +180,41 @@ export const api = {
       request<{ solutions: CommunitySolution[]; total: number; page: number; totalPages: number }>(
         `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
       ),
+
+    posts: {
+      list: (slug: string, params?: { page?: number; sort?: 'newest' | 'oldest'; type?: string }) => {
+        const qs = new URLSearchParams()
+        if (params?.page) qs.set('page', String(params.page))
+        if (params?.sort) qs.set('sort', params.sort)
+        if (params?.type) qs.set('type', params.type)
+        return request<{ posts: ProblemPost[]; total: number; page: number; totalPages: number }>(
+          `/problems/${slug}/posts?${qs}`,
+        )
+      },
+
+      create: (slug: string, payload: { title: string; content: string; code?: string; codeLanguage?: string; type?: string }) =>
+        request<{ post: ProblemPost }>(`/problems/${slug}/posts`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+
+      upvote: (slug: string, postId: string) =>
+        request<{ upvoteCount: number; hasUpvoted: boolean }>(
+          `/problems/${slug}/posts/${postId}/upvote`, { method: 'PATCH' },
+        ),
+
+      reply: (slug: string, postId: string, payload: { content: string; code?: string; codeLanguage?: string }) =>
+        request<{ reply: PostReply }>(`/problems/${slug}/posts/${postId}/replies`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+
+      deletePost: (slug: string, postId: string) =>
+        request<{ ok: boolean }>(`/problems/${slug}/posts/${postId}`, { method: 'DELETE' }),
+
+      deleteReply: (slug: string, postId: string, replyId: string) =>
+        request<{ ok: boolean }>(`/problems/${slug}/posts/${postId}/replies/${replyId}`, { method: 'DELETE' }),
+    },
   },
 
   collab: {
