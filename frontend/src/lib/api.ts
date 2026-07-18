@@ -252,4 +252,21 @@ export const api = {
     toggleBookmark: (slug: string) =>
       request<{ bookmarked: boolean }>(`/revision-notes/${slug}/bookmark`, { method: 'POST' }),
   },
+
+  code: {
+    run: (payload: { compiler: string; code: string; input?: string }) =>
+      request<{
+        output: string
+        error: string
+        status: 'success' | 'error'
+        exit_code: number
+        signal: number | null
+        time: string
+        total: string
+        memory: string
+      }>('/code/run', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
 }

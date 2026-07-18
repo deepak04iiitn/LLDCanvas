@@ -40,6 +40,7 @@ import { CollabModal } from '@/components/collab/CollabModal'
 import { ViewerBanner } from '@/components/collab/ViewerBanner'
 import { useCollabCanvas } from '@/hooks/useCollabCanvas'
 import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
+import { CodePanel } from '@/components/editor/CodePanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -140,9 +141,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [importDraftOpen,    setImportDraftOpen]    = useState(false)
   const [collabModalOpen,    setCollabModalOpen]    = useState(false)
   const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
+  const [codePanelOpen,       setCodePanelOpen]       = useState(false)
 
   // ── Collab ────────────────────────────────────────────────────────────────
-  const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions } = useCollab()
+  const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions, collaborators } = useCollab()
 
   useEffect(() => {
     if (!diagramId) return
@@ -152,6 +154,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   }, [diagramId])
 
   useCollabCanvas(diagramId, nodes, edges, setNodes as never, setEdges as never)
+
+  // Auto-close Discussion panel when no collaborators are present
+  useEffect(() => {
+    if (collaborators.length === 0) {
+      setDiscussionPanelOpen(false)
+    }
+  }, [collaborators.length])
 
   // Cursor tracking on canvas pane
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -633,11 +642,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         diagramId={diagramId}
         readOnly={readOnly}
         onOpenShare={() => setShareModalOpen(true)}
-        problemSlug={problemSlug}
-        onOpenProblem={() => setProblemPanelState('open')}
         onOpenCollab={() => setCollabModalOpen(true)}
-        onOpenDiscussion={diagramId ? () => setDiscussionPanelOpen(v => !v) : undefined}
+        onOpenDiscussion={diagramId && collaborators.length > 0 ? () => setDiscussionPanelOpen(v => !v) : undefined}
         unreadMentions={unreadMentions}
+        onOpenCode={() => setCodePanelOpen(v => !v)}
+        codePanelOpen={codePanelOpen}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -675,7 +684,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
           {/* Collab overlays */}
           {diagramId && <CollabCursors />}
-          {diagramId && <CollabPresenceDock />}
+          {diagramId && collaborators.length > 0 && <CollabPresenceDock />}
           {diagramId && (
             <DiscussionPanel
               open={discussionPanelOpen}
@@ -683,6 +692,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
               diagramId={diagramId}
             />
           )}
+
+          {/* Code execution panel */}
+          <CodePanel
+            open={codePanelOpen}
+            onClose={() => setCodePanelOpen(false)}
+          />
 
           <RelationshipPicker
             open={pickerOpen}

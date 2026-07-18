@@ -8,7 +8,7 @@ import {
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2, BookOpen, Terminal, FileInput, Code2,
+  Maximize2, Minimize2, Terminal, FileInput, Code2,
   MessageSquareText, ArrowUpDown, Download, Upload, UserPlus,
 } from 'lucide-react'
 
@@ -54,11 +54,11 @@ interface TopbarProps {
   diagramId: string | null
   readOnly?: boolean
   onOpenShare?: () => void
-  problemSlug?: string
-  onOpenProblem?: () => void
   onOpenCollab?: () => void
   onOpenDiscussion?: () => void
   unreadMentions?: number
+  onOpenCode?: () => void
+  codePanelOpen?: boolean
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -364,11 +364,11 @@ export function Topbar({
   diagramId,
   readOnly,
   onOpenShare,
-  problemSlug,
-  onOpenProblem,
   onOpenCollab,
   onOpenDiscussion,
   unreadMentions = 0,
+  onOpenCode,
+  codePanelOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -585,7 +585,26 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Discussion button — replaces old Comment + only shown in collab sessions */}
+        {/* Code execution panel */}
+        {onOpenCode && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenCode}
+              className={cn(
+                iconBtnBase,
+                'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                codePanelOpen && 'bg-brand-tint text-brand',
+              )}
+              aria-label="Open code editor"
+            >
+              <Code2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Code</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Write &amp; run code (Ctrl+Enter)</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Comments button — only shown in collab sessions */}
         {diagramId && onOpenDiscussion && (
           <Tooltip>
             <TooltipTrigger
@@ -594,17 +613,17 @@ export function Topbar({
                 iconBtnBase,
                 'relative w-auto gap-1.5 px-2.5 text-xs font-medium',
               )}
-              aria-label="Open discussion"
+              aria-label="Open comments"
             >
               <MessageSquareText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Discussion</span>
+              <span className="hidden sm:inline">Comments</span>
               {unreadMentions > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">
                   {unreadMentions > 9 ? '9+' : unreadMentions}
                 </span>
               )}
             </TooltipTrigger>
-            <TooltipContent side="bottom">Team discussion &amp; mentions</TooltipContent>
+            <TooltipContent side="bottom">Team comments &amp; mentions</TooltipContent>
           </Tooltip>
         )}
 
@@ -643,25 +662,6 @@ export function Topbar({
           </Tooltip>
         )}
 
-        {/* Problem chip — shown when opened from the problems library */}
-        {problemSlug && (
-          <>
-            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
-            <Tooltip>
-              <TooltipTrigger
-                onClick={onOpenProblem}
-                className="flex h-8 items-center gap-1.5 rounded-full border border-brand/20
-                           bg-brand-tint px-3 text-xs font-medium text-brand transition-all
-                           hover:border-brand/40 hover:bg-brand/10"
-                aria-label="View problem"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:block">Problem</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">View problem requirements & hints</TooltipContent>
-            </Tooltip>
-          </>
-        )}
       </div>
     </header>
   )

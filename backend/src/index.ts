@@ -21,6 +21,7 @@ import shareRouter from './routes/share.route'
 import problemsRouter  from './routes/problems.route'
 import revisionRouter  from './routes/revision.route'
 import collabRouter    from './routes/collab.route'
+import codeRouter      from './routes/code.route'
 
 const app    = express()
 const httpServer = createServer(app)
@@ -121,6 +122,7 @@ app.use('/share',     shareRouter)
 app.use('/problems',        problemsRouter)
 app.use('/revision-notes',  revisionRouter)
 app.use('/collab',          collabRouter)
+app.use('/code',            codeRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
