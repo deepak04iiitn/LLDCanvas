@@ -11,7 +11,7 @@ import {
   Check,
   AlertTriangle,
   Loader2,
-  Sparkles,
+  Rocket,
   Crown,
   ArrowRight,
   X,
@@ -315,7 +315,7 @@ export default function SettingsPage() {
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         {plan === 'ultimate' && <Crown className="h-4 w-4 text-amber-500" />}
-                        {plan === 'pro'      && <Sparkles className="h-4 w-4 text-brand" />}
+                        {plan === 'pro'      && <Rocket className="h-4 w-4 text-brand" />}
                         <p className="text-sm font-semibold text-ink capitalize">{plan} Plan</p>
                       </div>
                       {subscription ? (
@@ -337,7 +337,7 @@ export default function SettingsPage() {
                     <div className="flex gap-2 shrink-0">
                       {plan === 'free' ? (
                         <Link href="/pricing" className="flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors">
-                          <Sparkles className="h-3.5 w-3.5" /> Upgrade <ArrowRight className="h-3.5 w-3.5" />
+                          <Rocket className="h-3.5 w-3.5" /> Upgrade <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       ) : (
                         <div className="flex gap-2">

@@ -67,7 +67,9 @@ function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate
     <div className="flex h-full flex-col">
       {/* Logo + admin badge */}
       <div className="flex items-center gap-2 border-b border-hairline px-4 py-4">
-        <Wordmark height={40} />
+        <Link href="/">
+          <Wordmark height={40} />
+        </Link>
         <span className="ml-1 rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
           Admin
         </span>
@@ -149,7 +151,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
           >
             <Menu className="h-4 w-4" />
           </button>
-          <Wordmark height={32} />
+          <Link href="/">
+            <Wordmark height={32} />
+          </Link>
           <span className="rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
             Admin
           </span>

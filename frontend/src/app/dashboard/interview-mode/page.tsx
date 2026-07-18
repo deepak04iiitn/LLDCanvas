@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import {
   Timer, Clock, StickyNote, Maximize2,
   Flame, BarChart2, CheckCircle2, ArrowRight,
-  Pause, StopCircle, Infinity, Play, Lock, Sparkles,
+  Pause, StopCircle, Infinity, Play, Lock, Rocket,
 } from 'lucide-react'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { usePlan } from '@/hooks/usePlan'
@@ -134,7 +134,7 @@ export default function InterviewModePage() {
               <Lock className="h-8 w-8 text-brand" />
             </div>
             <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-              <Sparkles className="h-3 w-3" /> Pro Feature
+              <Rocket className="h-3 w-3" /> Pro Feature
             </span>
             <h2 className="mb-2 text-2xl font-bold text-ink">Interview Mode</h2>
             <p className="mb-2 max-w-sm text-sm text-ink-muted">

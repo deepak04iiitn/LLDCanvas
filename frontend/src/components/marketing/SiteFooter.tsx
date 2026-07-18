@@ -49,7 +49,9 @@ export function SiteFooter() {
 
             {/* Brand block */}
             <div className="max-w-xs">
-              <Wordmark height={36} />
+              <Link href="/" className="inline-block">
+                <Wordmark height={36} />
+              </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
                 The fastest UML class diagram editor for Low-Level Design interviews and OOP design sessions.
               </p>

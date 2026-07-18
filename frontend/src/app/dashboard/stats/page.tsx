@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Timer, CheckCircle2, Flame, LayoutDashboard, Clock, TrendingUp, Trophy, Lock, Sparkles, Crown, ArrowRight } from 'lucide-react'
+import { Timer, CheckCircle2, Flame, LayoutDashboard, Clock, TrendingUp, Trophy, Lock, Rocket, Crown, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { ActivityCalendar } from '@/components/stats/ActivityCalendar'
@@ -77,7 +77,7 @@ const TABS: { id: Tab; label: string; Icon: typeof Clock }[] = [
 function PlanLockedTab({ label, requiredPlan }: { label: string; requiredPlan: 'pro' | 'ultimate' }) {
   const badge = requiredPlan === 'ultimate'
     ? { icon: Crown, cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20', label: 'Ultimate' }
-    : { icon: Sparkles, cls: 'bg-brand/10 text-brand border-brand/20', label: 'Pro' }
+    : { icon: Rocket, cls: 'bg-brand/10 text-brand border-brand/20', label: 'Pro' }
   const BadgeIcon = badge.icon
   return (
     <motion.div

@@ -6,7 +6,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 import {
   Users, MessageSquareText, Share2, Clock, GitBranch,
   ChevronRight, CheckCircle2, UserCheck, Save, ArrowUpRight,
-  Layers, Hourglass, RefreshCw, Lock, Sparkles, ArrowRight,
+  Layers, Hourglass, RefreshCw, Lock, Rocket, ArrowRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/dashboard/AppShell'
@@ -277,7 +277,7 @@ export default function CollaborationsPage() {
               </div>
             </div>
             <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-              <Sparkles className="h-3 w-3" /> Pro Feature
+              <Rocket className="h-3 w-3" /> Pro Feature
             </span>
             <h2 className="mb-2 text-2xl font-bold text-ink">Collaborations</h2>
             <p className="mb-2 text-sm text-ink-muted">

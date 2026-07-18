@@ -10,7 +10,7 @@ import {
   Activity, CheckCircle, Radio, RefreshCw, ArrowUpRight,
   RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
   Share2, GitBranch, UserCheck, Trophy, Terminal, Ban,
-  IndianRupee, CreditCard, Sparkles,
+  IndianRupee, CreditCard, Rocket,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
@@ -419,7 +419,7 @@ export default function AdminOverviewPage() {
               <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard label="Active Subs"     value={billingOverview.activeSubscriptions}                               Icon={CreditCard}    sub="paying subscribers" accent />
                 <StatCard label="MRR (This Month)" value={`₹${billingOverview.mrr.toLocaleString('en-IN')}`}               Icon={IndianRupee}   sub="monthly recurring" />
-                <StatCard label="Pro Users"        value={billingOverview.planDistribution['pro']      ?? 0}                Icon={Sparkles}      sub="on Pro plan" />
+                <StatCard label="Pro Users"        value={billingOverview.planDistribution['pro']      ?? 0}                Icon={Rocket}      sub="on Pro plan" />
                 <StatCard label="Ultimate Users"   value={billingOverview.planDistribution['ultimate'] ?? 0}                Icon={TrendingUp}    sub="on Ultimate plan" />
               </div>
             )}

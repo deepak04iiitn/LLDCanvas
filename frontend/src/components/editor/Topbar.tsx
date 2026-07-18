@@ -391,9 +391,9 @@ export function Topbar({
     >
       {/* LEFT — Logo + title */}
       <div className="flex min-w-0 items-center">
-        <div className="flex shrink-0 items-center select-none">
+        <Link href="/" className="flex shrink-0 items-center select-none">
           <Wordmark height={22} priority />
-        </div>
+        </Link>
         <div className="mx-2 h-5 w-px shrink-0 bg-gray-200 dark:bg-[#3C3C3E]" />
         <EditableTitle value={title} onChange={onRename} readOnly={readOnly} />
         <div className="ml-2 shrink-0">

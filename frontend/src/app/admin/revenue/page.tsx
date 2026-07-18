@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import {
   BarChart3, TrendingUp, IndianRupee, Calendar,
-  Users, Sparkles, Crown, Zap,
+  Users, Rocket, Crown, Zap,
 } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -26,7 +26,7 @@ const PLAN_COLORS: Record<string, string> = {
   free:     '#94A3B8',
 }
 
-const PLAN_ICON = { free: Zap, pro: Sparkles, ultimate: Crown } as const
+const PLAN_ICON = { free: Zap, pro: Rocket, ultimate: Crown } as const
 
 interface RevenueData {
   daily:        { _id: string; revenue: number; count: number }[]
@@ -35,7 +35,16 @@ interface RevenueData {
   periodCount:  number
   allTimeTotal: number
   allTimeCount: number
+  mrr:          number
+  arr:          number
   range:        string
+  isMonth:      boolean
+}
+
+// Current calendar month as "YYYY-MM", for the <input type="month"> default.
+function currentMonthValue() {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 function StatCard({ label, value, sub, icon: Icon, cls }: { label: string; value: string | number; sub?: string; icon: React.ElementType; cls?: string }) {
@@ -59,19 +68,29 @@ function StatCard({ label, value, sub, icon: Icon, cls }: { label: string; value
 
 export default function AdminRevenuePage() {
   const [range,   setRange]   = useState('30d')
+  const [month,   setMonth]   = useState<string | null>(null)  // "YYYY-MM" — set = viewing a specific month instead of a relative range
   const [data,    setData]    = useState<RevenueData | null>(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const r = await adminApi.billing.revenue(range)
+      const r = await adminApi.billing.revenue(month ? { month } : { range })
       setData(r)
     } catch { /* ignore */ }
     setLoading(false)
-  }, [range])
+  }, [range, month])
 
   useEffect(() => { load() }, [load])
+
+  function selectRange(r: string) {
+    setMonth(null)
+    setRange(r)
+  }
+
+  function selectMonth(m: string) {
+    setMonth(m || null)
+  }
 
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 
@@ -85,24 +104,44 @@ export default function AdminRevenuePage() {
           </div>
           <div>
             <h1 className="text-lg font-semibold text-ink">Revenue</h1>
-            <p className="text-xs text-ink-muted">Subscription billing and MRR</p>
+            <p className="text-xs text-ink-muted">Subscription billing, MRR & ARR</p>
           </div>
         </div>
 
-        {/* Range picker */}
-        <div className="flex rounded-xl border border-hairline bg-paper-elevated p-1 gap-1">
-          {RANGE_OPTIONS.map(r => (
-            <button
-              key={r.value}
-              onClick={() => setRange(r.value)}
-              className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
-                range === r.value ? 'bg-paper shadow-sm text-ink' : 'text-ink-muted hover:text-ink',
-              )}
-            >
-              {r.label}
-            </button>
-          ))}
+        {/* Range picker + specific-month picker */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex rounded-xl border border-hairline bg-paper-elevated p-1 gap-1">
+            {RANGE_OPTIONS.map(r => (
+              <button
+                key={r.value}
+                onClick={() => selectRange(r.value)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  !month && range === r.value ? 'bg-paper shadow-sm text-ink' : 'text-ink-muted hover:text-ink',
+                )}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <div className={cn(
+            'flex items-center gap-1.5 rounded-xl border bg-paper-elevated px-2 py-1',
+            month ? 'border-brand/30 ring-1 ring-brand/20' : 'border-hairline',
+          )}>
+            <Calendar className="h-3.5 w-3.5 text-ink-muted" />
+            <input
+              type="month"
+              value={month ?? ''}
+              max={currentMonthValue()}
+              onChange={e => selectMonth(e.target.value)}
+              className="bg-transparent text-xs text-ink outline-none"
+            />
+            {month && (
+              <button onClick={() => setMonth(null)} className="text-xs text-ink-faint hover:text-ink-muted">
+                clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -110,11 +149,29 @@ export default function AdminRevenuePage() {
         <div className="flex h-48 items-center justify-center text-sm text-ink-muted">Loading...</div>
       ) : (
         <>
-          {/* Stat cards */}
+          {/* Recurring revenue — "right now", independent of the range/month picker above */}
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              icon={TrendingUp}
+              label="MRR"
+              value={fmt(data.mrr)}
+              sub="Monthly recurring revenue"
+              cls="border-brand/20 bg-brand/5"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="ARR"
+              value={fmt(data.arr)}
+              sub="Annualized (MRR × 12)"
+              cls="border-brand/20 bg-brand/5"
+            />
+          </div>
+
+          {/* Stat cards for the selected range/month */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard
               icon={IndianRupee}
-              label="Period Revenue"
+              label={data.isMonth ? 'Revenue This Month' : 'Period Revenue'}
               value={fmt(data.periodTotal)}
               sub={`${data.periodCount} payments`}
             />
@@ -129,7 +186,7 @@ export default function AdminRevenuePage() {
               icon={Calendar}
               label="Avg per Payment"
               value={data.periodCount > 0 ? fmt(Math.round(data.periodTotal / data.periodCount)) : '₹0'}
-              sub="This period"
+              sub={data.isMonth ? 'This month' : 'This period'}
               cls="border-violet-200 bg-violet-50"
             />
             <StatCard

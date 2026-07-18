@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Lock, ArrowRight } from 'lucide-react'
+import { Rocket, Crown, Lock, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -28,6 +28,14 @@ const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
   ultimate: { label: 'Ultimate', cls: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
 }
 
+// Distinct per tier — a gate for a Pro-only feature shouldn't show the same
+// icon as one gating an Ultimate-only feature.
+const PLAN_ICON = { pro: Rocket, ultimate: Crown } as const
+const PLAN_ICON_BOX_CLS: Record<string, string> = {
+  pro:      'border-brand/20 bg-brand/10 text-brand',
+  ultimate: 'border-amber-500/20 bg-amber-500/10 text-amber-600',
+}
+
 export function UpgradeGate({
   feature,
   requiredPlan = 'pro',
@@ -37,6 +45,7 @@ export function UpgradeGate({
 }: UpgradeGateProps) {
   const badge  = PLAN_BADGE[requiredPlan]
   const colors = PLAN_COLORS[requiredPlan]
+  const PlanIcon = PLAN_ICON[requiredPlan]
 
   if (variant === 'banner') {
     return (
@@ -65,9 +74,9 @@ export function UpgradeGate({
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10"
+          className={cn('mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border', PLAN_ICON_BOX_CLS[requiredPlan])}
         >
-          <Sparkles className="h-7 w-7 text-brand" />
+          <PlanIcon className="h-7 w-7" />
         </motion.div>
 
         <span className={cn('mb-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold', badge.cls)}>

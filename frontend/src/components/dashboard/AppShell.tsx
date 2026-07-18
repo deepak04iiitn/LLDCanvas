@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic, BookOpen, Layers, Users, Sparkles, Crown, Zap, Lock } from 'lucide-react'
+import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic, BookOpen, Layers, Users, Rocket, Crown, Zap, Lock } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { useSession, signOut } from '@/lib/auth-client'
@@ -76,7 +76,7 @@ function NavLinks({ pathname, onNavigate, plan }: { pathname: string; onNavigate
   )
 }
 
-const PLAN_ICON = { free: Zap, pro: Sparkles, ultimate: Crown } as const
+const PLAN_ICON = { free: Zap, pro: Rocket, ultimate: Crown } as const
 const PLAN_BADGE = {
   free:     'bg-paper-elevated border border-hairline text-ink-muted',
   pro:      'bg-brand/10 border border-brand/20 text-brand',
@@ -157,7 +157,9 @@ export function AppShell({ children, mobileBanner }: AppShellProps) {
     <div className="flex h-screen flex-col overflow-hidden bg-paper">
       {/* ─── Mobile top bar ─────────────────────────────────────────────── */}
       <header className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-4 py-3 md:hidden">
-        <Wordmark />
+        <Link href="/">
+          <Wordmark />
+        </Link>
         <button
           onClick={() => setMobileOpen(true)}
           className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-hairline/50 hover:text-ink"
@@ -172,7 +174,9 @@ export function AppShell({ children, mobileBanner }: AppShellProps) {
         <SheetContent side="left" className="flex w-72 flex-col gap-0 p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <div className="border-b border-hairline px-5 py-5">
-            <Wordmark />
+            <Link href="/">
+              <Wordmark />
+            </Link>
           </div>
           <NavLinks pathname={pathname} onNavigate={() => setMobileOpen(false)} plan={plan} />
           <UserFooter />
@@ -183,7 +187,9 @@ export function AppShell({ children, mobileBanner }: AppShellProps) {
         {/* ─── Desktop sidebar ────────────────────────────────────────────── */}
         <aside className="hidden w-60 shrink-0 flex-col border-r border-hairline bg-paper-elevated md:flex">
           <div className="border-b border-hairline px-5 py-5">
-            <Wordmark />
+            <Link href="/">
+              <Wordmark />
+            </Link>
           </div>
           <NavLinks pathname={pathname} plan={plan} />
           <UserFooter />

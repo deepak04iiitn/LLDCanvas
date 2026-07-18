@@ -264,6 +264,7 @@ export const adminApi = {
         totalSubscriptions: number
         activeSubscriptions: number
         mrr: number
+        arr: number
         planDistribution: Record<string, number>
         recentSubscriptions: AdminSubscription[]
       }>('/billing/overview'),
@@ -277,16 +278,25 @@ export const adminApi = {
       return req<{ subscriptions: AdminSubscription[]; total: number; page: number; totalPages: number }>(`/billing/subscriptions?${qs}`)
     },
 
-    revenue: (range?: string) =>
-      req<{
+    // Pass either a relative range (7d/30d/90d/1y) or an explicit month
+    // (YYYY-MM) to pull up any specific calendar month's revenue.
+    revenue: (params: { range?: string; month?: string } = {}) => {
+      const qs = new URLSearchParams()
+      if (params.month) qs.set('month', params.month)
+      else if (params.range) qs.set('range', params.range)
+      return req<{
         daily: { _id: string; revenue: number; count: number }[]
         byPlan: { _id: string; revenue: number; count: number }[]
         periodTotal: number
         periodCount: number
         allTimeTotal: number
         allTimeCount: number
+        mrr: number
+        arr: number
         range: string
-      }>(`/billing/revenue${range ? `?range=${range}` : ''}`),
+        isMonth: boolean
+      }>(`/billing/revenue?${qs}`)
+    },
 
     overridePlan: (id: string, plan: string) =>
       req<{ ok: boolean }>(`/billing/subscriptions/${id}/plan`, {
@@ -416,6 +426,7 @@ export interface AdminSubscription {
   razorpaySubId: string
   status: string
   billingInterval: 'monthly' | 'yearly'
+  currentPeriodStart: string | null
   currentPeriodEnd: string | null
   cancelAtPeriodEnd: boolean
   cancelledAt: string | null

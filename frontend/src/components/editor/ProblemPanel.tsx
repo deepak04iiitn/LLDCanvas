@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   X, ChevronDown, ChevronUp, Lightbulb, Lock,
-  ExternalLink, BookOpen,
+  ExternalLink, BookOpen, ListChecks, ShieldCheck,
+  Building2, Rocket, ArrowRight, Check,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -13,7 +14,6 @@ import type { ProblemDetail } from '@/types'
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 
 // ─── Hints helper ─────────────────────────────────────────────────────────────
 
@@ -35,30 +35,43 @@ function HintsSection({ slug, hints }: { slug: string; hints: string[] }) {
 
   return (
     <div className="space-y-2">
-      <p className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
-        <Lightbulb className="h-3 w-3 text-amber-500" /> Hints · {revealed.length}/3 revealed
-      </p>
-      <div className="divide-y divide-hairline overflow-hidden rounded-xl border border-hairline bg-paper">
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+          <Lightbulb className="h-3 w-3 text-brand" /> Hints
+        </p>
+        <div className="flex items-center gap-1">
+          {[0, 1, 2].map(i => (
+            <span key={i} className={cn(
+              'h-1 w-4 rounded-full transition-colors',
+              revealed.includes(i) ? 'bg-brand' : 'bg-hairline',
+            )} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-1.5">
         {hints.map((hint, i) => {
           const isRevealed = revealed.includes(i)
           return (
-            <div key={i} className="px-3 py-2.5">
-              <div className="flex items-start gap-2">
+            <div key={i} className={cn(
+              'rounded-lg border px-3 py-2.5 transition-colors',
+              isRevealed ? 'border-brand/20 bg-brand-tint' : 'border-hairline bg-paper',
+            )}>
+              <div className="flex items-start gap-2.5">
                 <span className={cn(
-                  'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold',
-                  isRevealed ? 'bg-amber-100 text-amber-700' : 'bg-hairline text-ink-faint',
+                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-mono text-[9px] font-bold',
+                  isRevealed ? 'bg-brand text-brand-foreground' : 'bg-hairline text-ink-faint',
                 )}>
-                  {i + 1}
+                  {isRevealed ? <Check className="h-2.5 w-2.5" /> : i + 1}
                 </span>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 pt-0.5">
                   {isRevealed ? (
-                    <p className="text-[12px] leading-relaxed text-ink-muted">{hint}</p>
+                    <p className="text-[12px] leading-relaxed text-ink">{hint}</p>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {confirmIdx === i ? (
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => revealHint(i)}
-                            className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-semibold text-white hover:bg-amber-600">
+                            className="rounded-md bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground hover:bg-brand-hover">
                             Reveal
                           </button>
                           <button onClick={() => setConfirmIdx(null)}
@@ -68,7 +81,7 @@ function HintsSection({ slug, hints }: { slug: string; hints: string[] }) {
                         </div>
                       ) : (
                         <button onClick={() => setConfirmIdx(i)}
-                          className="flex items-center gap-1 text-[11px] text-amber-600 hover:text-amber-700">
+                          className="flex items-center gap-1.5 text-[11px] font-medium text-ink-muted hover:text-brand">
                           <Lock className="h-2.5 w-2.5" /> Reveal hint {i + 1}
                         </button>
                       )}
@@ -86,16 +99,20 @@ function HintsSection({ slug, hints }: { slug: string; hints: string[] }) {
 
 // ─── Requirements section ─────────────────────────────────────────────────────
 
-function ReqSection({ title, items, accent }: { title: string; items: string[]; accent: string }) {
+function ReqSection({
+  title, items, accent, icon: Icon,
+}: { title: string; items: string[]; accent: string; icon: React.ElementType }) {
   const [open, setOpen] = useState(true)
   return (
-    <div className="space-y-1.5">
+    <div className="overflow-hidden rounded-lg border border-hairline bg-paper">
       <button onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between text-left">
-        <div className="flex items-center gap-1.5">
-          <div className={cn('h-1.5 w-1.5 rounded-full', accent)} />
+        className="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors hover:bg-hairline/40">
+        <div className="flex items-center gap-2">
+          <div className={cn('flex h-5 w-5 items-center justify-center rounded-md', accent)}>
+            <Icon className="h-3 w-3" />
+          </div>
           <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
-            {title} ({items.length})
+            {title} <span className="text-ink-faint/70">({items.length})</span>
           </span>
         </div>
         {open
@@ -109,14 +126,11 @@ function ReqSection({ title, items, accent }: { title: string; items: string[]; 
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="overflow-hidden space-y-1.5 pl-3"
+            className="overflow-hidden space-y-2 border-t border-hairline px-3 py-2.5"
           >
             {items.map((req, i) => (
               <li key={i} className="flex items-start gap-2">
-                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full
-                                 bg-hairline font-mono text-[9px] font-bold text-ink-faint">
-                  {i + 1}
-                </span>
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-ink-faint" />
                 <span className="text-[12px] leading-relaxed text-ink-muted">{req}</span>
               </li>
             ))}
@@ -175,13 +189,15 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
         animate={{ opacity: 1 }}
         onClick={onExpand}
         title="Open problem panel"
-        className="flex h-full w-9 shrink-0 flex-col items-center justify-center gap-2
-                   border-l border-hairline bg-paper-elevated transition-colors
-                   hover:bg-hairline/60"
+        className="relative flex h-full w-9 shrink-0 flex-col items-center justify-center gap-2.5
+                   rounded-l-2xl border-l border-y border-hairline bg-paper-elevated shadow-sm transition-colors
+                   hover:bg-hairline/50"
       >
-        {/* Rotated label */}
-        <div className="flex flex-col items-center gap-2">
-          <BookOpen className="h-4 w-4 text-ink-faint" />
+        {diffMeta && <span className={cn('absolute top-3 h-1.5 w-1.5 rounded-full', diffMeta.dot)} />}
+        <div className="flex flex-col items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint">
+            <BookOpen className="h-3.5 w-3.5 text-brand" />
+          </div>
           <span
             className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint"
             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
@@ -200,15 +216,17 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
       animate={{ width: 320 }}
       exit={{ width: 36 }}
       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-      className="flex h-full flex-col border-l border-hairline bg-paper-elevated shadow-lg overflow-hidden"
+      className="relative flex h-full flex-col overflow-hidden rounded-l-2xl border-l border-y border-hairline bg-paper-elevated shadow-xl"
       style={{ minWidth: 320 }}
     >
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-hairline px-4 py-3">
         <div className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-ink-faint" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint">
+            <BookOpen className="h-3.5 w-3.5 text-brand" />
+          </div>
           <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
-            Problem
+            Problem Brief
           </span>
         </div>
         <button onClick={onCollapse}
@@ -252,29 +270,33 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
               <ReqSection
                 title="Functional"
                 items={problem.functionalRequirements}
-                accent="bg-brand"
+                accent="bg-brand/10 text-brand"
+                icon={ListChecks}
               />
             )}
             {problem.nonFunctionalRequirements.length > 0 && (
               <ReqSection
                 title="Non-Functional"
                 items={problem.nonFunctionalRequirements}
-                accent="bg-indigo-400"
+                accent="bg-indigo-400/10 text-indigo-500"
+                icon={ShieldCheck}
               />
             )}
 
             {/* Hints */}
             {hints.length > 0 && (
               isFree ? (
-                <div className="flex flex-col items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
-                  <Lock className="h-4 w-4 text-amber-500" />
+                <div className="flex flex-col items-center gap-2.5 rounded-xl border border-brand/20 bg-brand-tint px-4 py-5 text-center">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand/10">
+                    <Rocket className="h-4 w-4 text-brand" />
+                  </div>
                   <div>
-                    <p className="text-[12px] font-semibold text-amber-800">Hints require Pro</p>
-                    <p className="mt-0.5 text-[11px] text-amber-700">Upgrade to unlock all hints.</p>
+                    <p className="text-[12px] font-semibold text-ink">Hints require Pro</p>
+                    <p className="mt-0.5 text-[11px] text-ink-muted">Upgrade to unlock all hints.</p>
                   </div>
                   <Link
                     href="/pricing"
-                    className="flex items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-amber-600 transition-colors"
+                    className="flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-brand-foreground hover:bg-brand-hover transition-colors"
                   >
                     Upgrade <ArrowRight className="h-3 w-3" />
                   </Link>
@@ -290,11 +312,12 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
                 <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
                   Asked by
                 </p>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {problem.companies.map(c => (
                     <span key={c}
-                      className="rounded-md border border-hairline bg-paper px-1.5 py-0.5
-                                 font-mono text-[10px] text-ink-faint">
+                      className="flex items-center gap-1 rounded-md border border-hairline bg-paper px-1.5 py-0.5
+                                 font-mono text-[10px] text-ink-muted">
+                      <Building2 className="h-2.5 w-2.5 text-ink-faint" />
                       {c}
                     </span>
                   ))}
@@ -305,8 +328,8 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
             {/* View on problems page */}
             <button
               onClick={() => router.push(`/dashboard/problems/${slug}`)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-hairline-strong
-                         py-2 text-xs font-medium text-ink-muted transition-all hover:border-brand/40 hover:text-brand"
+              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand
+                         py-2 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand-hover"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               View Full Problem + Community

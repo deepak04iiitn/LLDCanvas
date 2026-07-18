@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, Search, ChevronLeft, ChevronRight, Users, Sparkles, Crown, Zap, AlertTriangle, X, Check } from 'lucide-react'
+import { CreditCard, Search, ChevronLeft, ChevronRight, Users, Rocket, Crown, Zap, AlertTriangle, X, Check } from 'lucide-react'
 import { adminApi, type AdminSubscription } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,14 @@ const STATUS_BADGE: Record<string, string> = {
   expired:       'bg-paper border border-hairline text-ink-muted',
 }
 
-const PLAN_ICON = { free: Zap, pro: Sparkles, ultimate: Crown } as const
+const PLAN_ICON = { free: Zap, pro: Rocket, ultimate: Crown } as const
+
+// Statuses where there's nothing left to cancel — Razorpay has already
+// closed the subscription out one way or another. Anything else (active,
+// created, authenticated, pending, halted) is still a live subscription an
+// admin might need to force-cancel, e.g. one stuck "halted" after failed
+// retries with no way for the user to fix it themselves.
+const TERMINAL_STATUSES = new Set(['cancelled', 'completed', 'expired'])
 
 interface OverrideModal {
   sub: AdminSubscription
@@ -131,15 +138,16 @@ export default function AdminSubscriptionsPage() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Plan</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Billing</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Started</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Period End</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
+              <tr><td colSpan={7} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
             ) : subs.length === 0 ? (
-              <tr><td colSpan={6} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
+              <tr><td colSpan={7} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
             ) : subs.map((s, i) => {
               const PIcon = PLAN_ICON[s.plan as keyof typeof PLAN_ICON] ?? Zap
               return (
@@ -165,6 +173,14 @@ export default function AdminSubscriptionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-ink-muted capitalize">{s.billingInterval}</td>
+                  <td className="px-4 py-3 text-xs text-ink-muted" title={new Date(s.createdAt).toLocaleString()}>
+                    {new Date(s.createdAt).toLocaleDateString()}
+                    {s.currentPeriodStart && (
+                      <p className="text-[11px] text-ink-faint">
+                        billing since {new Date(s.currentPeriodStart).toLocaleDateString()}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-ink-muted">
                     {s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString() : '-'}
                     {s.cancelAtPeriodEnd && <span className="ml-1 text-amber-500">(cancelling)</span>}
@@ -177,7 +193,7 @@ export default function AdminSubscriptionsPage() {
                       >
                         Override plan
                       </button>
-                      {s.status === 'active' && (
+                      {!TERMINAL_STATUSES.has(s.status) && (
                         <button
                           onClick={() => setCancelConfirm(s)}
                           className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"

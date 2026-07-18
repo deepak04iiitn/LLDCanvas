@@ -19,7 +19,7 @@ import { createError } from '../middleware/error'
 import { Subscription } from '../models/subscription.model'
 import { RevenueEvent } from '../models/revenue-event.model'
 import { User } from '../models/user.model'
-import type { PlanName } from '../config/plans'
+import { PRICING, type PlanName } from '../config/plans'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,25 @@ function daysAgo(n: number) {
   d.setUTCHours(0, 0, 0, 0)
   d.setUTCDate(d.getUTCDate() - n)
   return d
+}
+
+// True MRR — the normalized monthly value of every currently-active paid
+// subscription (yearly plans divided by 12), not "cash collected this
+// calendar month" (which spikes on yearly renewals and says nothing about
+// the recurring run-rate). ARR is just this figure annualized.
+async function computeMRR(): Promise<number> {
+  const activeSubs = await Subscription
+    .find({ status: 'active', plan: { $in: ['pro', 'ultimate'] } })
+    .select('plan billingInterval')
+    .lean()
+
+  let mrr = 0
+  for (const s of activeSubs) {
+    const pricing = PRICING[s.plan as 'pro' | 'ultimate']
+    if (!pricing) continue
+    mrr += s.billingInterval === 'yearly' ? pricing.yearly.INR / 12 : pricing.monthly.INR
+  }
+  return Math.round(mrr)
 }
 
 async function userCollection() {
@@ -1083,16 +1102,10 @@ export const adminController = {
   // GET /admin/billing/overview
   getBillingOverview: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const now = new Date()
-      const monthStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1)
-
-      const [totalSubs, activeSubs, mrrEvents, planDist, recentSubs] = await Promise.all([
+      const [totalSubs, activeSubs, mrr, planDist, recentSubs] = await Promise.all([
         Subscription.countDocuments(),
         Subscription.countDocuments({ status: 'active' }),
-        RevenueEvent.aggregate([
-          { $match: { createdAt: { $gte: monthStart } } },
-          { $group: { _id: null, total: { $sum: '$amountPaid' } } },
-        ]),
+        computeMRR(),
         // plan distribution from User collection
         User.aggregate([
           { $group: { _id: '$plan', count: { $sum: 1 } } },
@@ -1100,7 +1113,6 @@ export const adminController = {
         Subscription.find({ status: 'active' }).sort({ createdAt: -1 }).limit(5).lean(),
       ])
 
-      const mrr = mrrEvents[0]?.total ?? 0
       const planMap: Record<string, number> = {}
       for (const d of planDist) planMap[d._id as string] = d.count
 
@@ -1108,6 +1120,7 @@ export const adminController = {
         totalSubscriptions:  totalSubs,
         activeSubscriptions: activeSubs,
         mrr,
+        arr: mrr * 12,
         planDistribution: planMap,
         recentSubscriptions: recentSubs,
       })
@@ -1147,17 +1160,38 @@ export const adminController = {
   },
 
   // GET /admin/billing/revenue
+  // Accepts either a relative `range` (7d/30d/90d/1y, default 30d) or an
+  // explicit `month` (YYYY-MM) so an admin can pull up any specific calendar
+  // month's revenue, not just a rolling window ending today.
   getRevenueStats: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const range = (req.query.range as string) || '30d'
-      const days  = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30
-      const since = new Date()
-      since.setDate(since.getDate() - days)
+      const monthParam = req.query.month as string | undefined
+      const isMonth = !!monthParam && /^\d{4}-\d{2}$/.test(monthParam)
 
-      const [daily, byPlan, total, allTime] = await Promise.all([
+      let since: Date
+      let until: Date | null = null
+      let range: string
+
+      if (isMonth) {
+        const [y, m] = monthParam!.split('-').map(Number)
+        since = new Date(Date.UTC(y, m - 1, 1))
+        until = new Date(Date.UTC(y, m, 1))
+        range = monthParam!
+      } else {
+        range = (req.query.range as string) || '30d'
+        const days = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30
+        since = new Date()
+        since.setDate(since.getDate() - days)
+      }
+
+      const dateMatch: Record<string, unknown> = until
+        ? { createdAt: { $gte: since, $lt: until } }
+        : { createdAt: { $gte: since } }
+
+      const [daily, byPlan, total, allTime, mrr] = await Promise.all([
         // Daily revenue series
         RevenueEvent.aggregate([
-          { $match: { createdAt: { $gte: since } } },
+          { $match: dateMatch },
           { $group: {
             _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
             revenue: { $sum: '$amountPaid' },
@@ -1167,18 +1201,21 @@ export const adminController = {
         ]),
         // Revenue by plan
         RevenueEvent.aggregate([
-          { $match: { createdAt: { $gte: since } } },
+          { $match: dateMatch },
           { $group: { _id: '$plan', revenue: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
         ]),
-        // Period total
+        // Period total (for the selected range/month)
         RevenueEvent.aggregate([
-          { $match: { createdAt: { $gte: since } } },
+          { $match: dateMatch },
           { $group: { _id: null, total: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
         ]),
         // All-time total
         RevenueEvent.aggregate([
           { $group: { _id: null, total: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
         ]),
+        // Current recurring run-rate — independent of the selected range/month,
+        // since MRR/ARR describe "right now", not a historical window.
+        computeMRR(),
       ])
 
       res.json({
@@ -1188,7 +1225,10 @@ export const adminController = {
         periodCount:  total[0]?.count  ?? 0,
         allTimeTotal: allTime[0]?.total ?? 0,
         allTimeCount: allTime[0]?.count ?? 0,
+        mrr,
+        arr: mrr * 12,
         range,
+        isMonth,
       })
     } catch (err) { next(err) }
   },
