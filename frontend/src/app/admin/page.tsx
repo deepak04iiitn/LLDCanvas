@@ -10,6 +10,7 @@ import {
   Activity, CheckCircle, Radio, RefreshCw, ArrowUpRight,
   RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
   Share2, GitBranch, UserCheck, Trophy, Terminal, Ban,
+  IndianRupee, CreditCard, Sparkles,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
@@ -85,20 +86,23 @@ export default function AdminOverviewPage() {
   const [live,         setLive]         = useState<LiveMetrics | null>(null)
   const [featureStats, setFeatureStats] = useState<FeatureStats | null>(null)
   const [codeStats,    setCodeStats]    = useState<CodeStats | null>(null)
+  const [billingOverview, setBillingOverview] = useState<{ totalSubscriptions: number; activeSubscriptions: number; mrr: number; planDistribution: Record<string, number> } | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [liveLoading,  setLiveLoading]  = useState(true)
 
   const loadOverview = useCallback(async () => {
     try {
-      const [data, fs, cs] = await Promise.all([
+      const [data, fs, cs, billing] = await Promise.all([
         adminApi.overview(),
         adminApi.featureStats(),
         adminApi.code.stats(),
+        adminApi.billing.overview().catch(() => null),
       ])
       setStats(data.stats)
       setCharts(data.charts)
       setFeatureStats(fs)
       setCodeStats(cs)
+      if (billing) setBillingOverview(billing)
     } finally {
       setLoading(false)
     }
@@ -410,6 +414,16 @@ export default function AdminOverviewPage() {
               </div>
             )}
 
+            {/* Billing & Subscriptions */}
+            {billingOverview && (
+              <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <StatCard label="Active Subs"     value={billingOverview.activeSubscriptions}                               Icon={CreditCard}    sub="paying subscribers" accent />
+                <StatCard label="MRR (This Month)" value={`₹${billingOverview.mrr.toLocaleString('en-IN')}`}               Icon={IndianRupee}   sub="monthly recurring" />
+                <StatCard label="Pro Users"        value={billingOverview.planDistribution['pro']      ?? 0}                Icon={Sparkles}      sub="on Pro plan" />
+                <StatCard label="Ultimate Users"   value={billingOverview.planDistribution['ultimate'] ?? 0}                Icon={TrendingUp}    sub="on Ultimate plan" />
+              </div>
+            )}
+
             {/* Charts row */}
             <div className="grid gap-4 lg:grid-cols-3">
               {/* Problems by difficulty */}
@@ -480,10 +494,12 @@ export default function AdminOverviewPage() {
             {/* Quick-nav cards to management pages */}
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {[
-                { href: '/admin/problems',  Icon: BookOpen,          label: 'Manage Problems',        sub: `${featureStats.problems.total} total`,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { href: '/admin/revision',  Icon: Layers,            label: 'Manage Revision Notes',  sub: `${featureStats.revision.totalNotes} notes`, color: 'text-violet-600', bg: 'bg-violet-50' },
-                { href: '/admin/collab',    Icon: MessageSquareText, label: 'Collaboration Hub',      sub: `${featureStats.collab.totalComments} discussions`, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { href: '/admin/code',      Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '—', color: 'text-amber-600', bg: 'bg-amber-50' },
+                { href: '/admin/problems',      Icon: BookOpen,          label: 'Manage Problems',        sub: `${featureStats.problems.total} total`,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { href: '/admin/revision',      Icon: Layers,            label: 'Manage Revision Notes',  sub: `${featureStats.revision.totalNotes} notes`, color: 'text-violet-600', bg: 'bg-violet-50' },
+                { href: '/admin/collab',        Icon: MessageSquareText, label: 'Collaboration Hub',      sub: `${featureStats.collab.totalComments} discussions`, color: 'text-blue-600', bg: 'bg-blue-50' },
+                { href: '/admin/code',          Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '—', color: 'text-amber-600', bg: 'bg-amber-50' },
+                { href: '/admin/subscriptions', Icon: CreditCard,        label: 'Subscriptions',          sub: billingOverview ? `${billingOverview.activeSubscriptions} active` : '—', color: 'text-brand', bg: 'bg-brand/10' },
+                { href: '/admin/revenue',       Icon: IndianRupee,       label: 'Revenue',                sub: billingOverview ? `₹${billingOverview.mrr.toLocaleString('en-IN')} MRR` : '—', color: 'text-emerald-600', bg: 'bg-emerald-50' },
               ].map(nav => (
                 <Link
                   key={nav.href}

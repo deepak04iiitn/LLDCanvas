@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { createError } from '../middleware/error'
 import { CodeExecutionLog } from '../models/code-execution-log.model'
 import { CodeBan } from '../models/code-ban.model'
+import { getLimits } from '../config/plans'
 
 const COMPILER_API = 'https://api.onlinecompiler.io/api/run-code-sync/'
 
@@ -25,6 +26,23 @@ const VALID_COMPILERS = new Set(SUPPORTED_COMPILERS.map(c => c.value))
 export async function runCode(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.id
+
+    // ── Check plan daily limit ────────────────────────────────────────────────
+    const userPlan = req.user!.plan
+    const dailyLimit = getLimits(userPlan).codeExecutionsPerDay
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const todayCount = await CodeExecutionLog.countDocuments({
+      userId, status: 'success', createdAt: { $gte: todayStart },
+    })
+    if (todayCount >= dailyLimit) {
+      return res.status(429).json({
+        error: 'DAILY_LIMIT_REACHED',
+        limit: dailyLimit,
+        used: todayCount,
+        plan: userPlan,
+        message: `You've used all ${dailyLimit} code executions for today. Upgrade your plan to get more.`,
+      })
+    }
 
     // ── Check if user is banned from code execution ──────────────────────────
     const ban = await CodeBan.findOne({ userId }).lean()

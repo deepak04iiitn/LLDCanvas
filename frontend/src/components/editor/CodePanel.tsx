@@ -14,7 +14,7 @@ import { EditorView } from '@codemirror/view'
 import {
   X, Play, ChevronDown, ChevronRight, GripVertical,
   Clock, MemoryStick, Terminal, Loader2, AlertTriangle,
-  CheckCircle2, Copy, Check, RotateCcw, Ban,
+  CheckCircle2, Copy, Check, RotateCcw, Ban, Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -142,6 +142,7 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
   const [result,       setResult]       = useState<CodeResult | null>(null)
   const [copied,       setCopied]       = useState(false)
   const [banned,       setBanned]       = useState<string | null>(null)
+  const [dailyLimitHit, setDailyLimitHit] = useState(false)
   const [panelWidth,   setPanelWidth]   = useState(480)
   const [langOpen,     setLangOpen]     = useState(false)
   const [bottomHeight, setBottomHeight] = useState(120)
@@ -173,9 +174,14 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
       const data = await api.code.run({ compiler: lang, code, input: stdin })
       setResult(data as CodeResult)
     } catch (err: unknown) {
-      const apiErr = err as Error & { banned?: boolean }
+      const apiErr = err as Error & { banned?: boolean; status?: number }
       if (apiErr.banned) {
         setBanned(apiErr.message)
+        return
+      }
+      // Daily plan limit reached
+      if (apiErr.status === 429) {
+        setDailyLimitHit(true)
         return
       }
       setResult({
@@ -305,6 +311,23 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
               </div>
             )}
 
+            {/* ── Daily limit notice ────────────────────────────────────────── */}
+            {dailyLimitHit && !banned && (
+              <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-2.5">
+                <Zap className="h-4 w-4 shrink-0 text-amber-600" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-amber-800">Daily limit reached</p>
+                  <p className="text-xs text-amber-700">You&apos;ve used all your executions for today.</p>
+                </div>
+                <a
+                  href="/pricing"
+                  className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90 transition-colors"
+                >
+                  Upgrade
+                </a>
+              </div>
+            )}
+
             {/* ── Header ───────────────────────────────────────────────────── */}
             <div className="flex items-center gap-2 border-b border-hairline px-4 py-3 shrink-0">
               <Terminal className="h-4 w-4 text-brand shrink-0" />
@@ -359,7 +382,7 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
                 {/* Run */}
                 <button
                   onClick={run}
-                  disabled={running || !code.trim() || !!banned}
+                  disabled={running || !code.trim() || !!banned || dailyLimitHit}
                   className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
                   title={banned ? 'Code execution revoked by admin' : 'Run (Ctrl+Enter)'}
                 >

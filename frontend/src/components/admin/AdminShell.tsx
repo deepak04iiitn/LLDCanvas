@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, FileText, Timer,
   LogOut, Menu, ShieldCheck, X,
   BookOpen, Layers, MessageSquareText, Terminal,
+  CreditCard, BarChart3,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { signOut } from '@/lib/auth-client'
@@ -20,7 +21,9 @@ const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p:
   { label: 'Problems',     href: '/admin/problems',  Icon: BookOpen,          isActive: (p) => p.startsWith('/admin/problems'),  divider: true },
   { label: 'Revision',     href: '/admin/revision',  Icon: Layers,            isActive: (p) => p.startsWith('/admin/revision') },
   { label: 'Collab',       href: '/admin/collab',    Icon: MessageSquareText, isActive: (p) => p.startsWith('/admin/collab') },
-  { label: 'Code Exec',   href: '/admin/code',      Icon: Terminal,          isActive: (p) => p.startsWith('/admin/code') },
+  { label: 'Code Exec',    href: '/admin/code',          Icon: Terminal,          isActive: (p) => p.startsWith('/admin/code'), divider: true },
+  { label: 'Subscriptions', href: '/admin/subscriptions', Icon: CreditCard,        isActive: (p) => p.startsWith('/admin/subscriptions') },
+  { label: 'Revenue',      href: '/admin/revenue',       Icon: BarChart3,         isActive: (p) => p.startsWith('/admin/revenue') },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

@@ -16,6 +16,10 @@ import { CodeExecutionLog } from '../models/code-execution-log.model'
 import { CodeBan } from '../models/code-ban.model'
 import { getLiveMetrics } from './analytics.controller'
 import { createError } from '../middleware/error'
+import { Subscription } from '../models/subscription.model'
+import { RevenueEvent } from '../models/revenue-event.model'
+import { User } from '../models/user.model'
+import type { PlanName } from '../config/plans'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1071,6 +1075,169 @@ export const adminController = {
         await CodeBan.create({ userId, reason, bannedBy: adminId })
         res.json({ ok: true, banned: true, userId })
       }
+    } catch (err) { next(err) }
+  },
+
+  // ── Billing admin ────────────────────────────────────────────────────────────
+
+  // GET /admin/billing/overview
+  getBillingOverview: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const now = new Date()
+      const monthStart = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1)
+
+      const [totalSubs, activeSubs, mrrEvents, planDist, recentSubs] = await Promise.all([
+        Subscription.countDocuments(),
+        Subscription.countDocuments({ status: 'active' }),
+        RevenueEvent.aggregate([
+          { $match: { createdAt: { $gte: monthStart } } },
+          { $group: { _id: null, total: { $sum: '$amountPaid' } } },
+        ]),
+        // plan distribution from User collection
+        User.aggregate([
+          { $group: { _id: '$plan', count: { $sum: 1 } } },
+        ]),
+        Subscription.find({ status: 'active' }).sort({ createdAt: -1 }).limit(5).lean(),
+      ])
+
+      const mrr = mrrEvents[0]?.total ?? 0
+      const planMap: Record<string, number> = {}
+      for (const d of planDist) planMap[d._id as string] = d.count
+
+      res.json({
+        totalSubscriptions:  totalSubs,
+        activeSubscriptions: activeSubs,
+        mrr,
+        planDistribution: planMap,
+        recentSubscriptions: recentSubs,
+      })
+    } catch (err) { next(err) }
+  },
+
+  // GET /admin/billing/subscriptions
+  listSubscriptions: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const page   = Math.max(1, Number(req.query.page)  || 1)
+      const limit  = Math.min(50, Math.max(1, Number(req.query.limit) || 20))
+      const status = req.query.status as string | undefined
+      const plan   = req.query.plan   as string | undefined
+
+      const filter: Record<string, unknown> = {}
+      if (status) filter.status = status
+      if (plan)   filter.plan   = plan
+
+      const [total, subs] = await Promise.all([
+        Subscription.countDocuments(filter),
+        Subscription.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      ])
+
+      // Enrich with user info
+      const userIds = [...new Set(subs.map(s => s.userId))]
+      const users = await User.find({ _id: { $in: userIds } }).select('name email plan').lean()
+      const userMap = new Map(users.map(u => [u._id.toString(), u]))
+
+      const enriched = subs.map(s => ({
+        ...s,
+        userName:  userMap.get(s.userId)?.name  ?? 'Unknown',
+        userEmail: userMap.get(s.userId)?.email ?? '',
+      }))
+
+      res.json({ subscriptions: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
+
+  // GET /admin/billing/revenue
+  getRevenueStats: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const range = (req.query.range as string) || '30d'
+      const days  = range === '7d' ? 7 : range === '90d' ? 90 : range === '1y' ? 365 : 30
+      const since = new Date()
+      since.setDate(since.getDate() - days)
+
+      const [daily, byPlan, total, allTime] = await Promise.all([
+        // Daily revenue series
+        RevenueEvent.aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          { $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            revenue: { $sum: '$amountPaid' },
+            count:   { $sum: 1 },
+          }},
+          { $sort: { _id: 1 } },
+        ]),
+        // Revenue by plan
+        RevenueEvent.aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          { $group: { _id: '$plan', revenue: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
+        ]),
+        // Period total
+        RevenueEvent.aggregate([
+          { $match: { createdAt: { $gte: since } } },
+          { $group: { _id: null, total: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
+        ]),
+        // All-time total
+        RevenueEvent.aggregate([
+          { $group: { _id: null, total: { $sum: '$amountPaid' }, count: { $sum: 1 } } },
+        ]),
+      ])
+
+      res.json({
+        daily,
+        byPlan,
+        periodTotal:  total[0]?.total  ?? 0,
+        periodCount:  total[0]?.count  ?? 0,
+        allTimeTotal: allTime[0]?.total ?? 0,
+        allTimeCount: allTime[0]?.count ?? 0,
+        range,
+      })
+    } catch (err) { next(err) }
+  },
+
+  // PATCH /admin/billing/subscriptions/:id/plan — override user's plan (free upgrade/downgrade)
+  overridePlan: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params
+      const { plan } = req.body as { plan: PlanName }
+
+      if (!['free', 'pro', 'ultimate'].includes(plan)) {
+        throw createError('Invalid plan', 400)
+      }
+
+      const sub = await Subscription.findById(id)
+      if (!sub) throw createError('Subscription not found', 404)
+
+      await User.findByIdAndUpdate(sub.userId, { plan })
+      res.json({ ok: true, plan, userId: sub.userId })
+    } catch (err) { next(err) }
+  },
+
+  // POST /admin/billing/subscriptions/:id/cancel — force cancel a subscription
+  adminCancelSubscription: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params
+
+      const sub = await Subscription.findById(id)
+      if (!sub) throw createError('Subscription not found', 404)
+
+      // Try to cancel in Razorpay
+      try {
+        const Razorpay = (await import('razorpay')).default
+        const rzp = new Razorpay({
+          key_id:     process.env.RAZORPAY_KEY_ID!,
+          key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        })
+        await rzp.subscriptions.cancel(sub.razorpaySubId, false)
+      } catch { /* non-fatal */ }
+
+      sub.status = 'cancelled'
+      sub.cancelledAt = new Date()
+      sub.cancelAtPeriodEnd = false
+      await sub.save()
+
+      // Downgrade user to free
+      await User.findByIdAndUpdate(sub.userId, { plan: 'free' })
+
+      res.json({ ok: true, userId: sub.userId })
     } catch (err) { next(err) }
   },
 }

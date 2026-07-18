@@ -307,4 +307,43 @@ export const api = {
         body: JSON.stringify(payload),
       }),
   },
+
+  billing: {
+    geo: () =>
+      request<{ country: string; currency: 'INR' | 'USD' }>('/billing/geo'),
+
+    pricing: () =>
+      request<{ pricing: Record<string, Record<string, Record<string, number>>> }>('/billing/pricing'),
+
+    plan: () =>
+      request<{
+        plan: string
+        limits: Record<string, unknown>
+        subscription: {
+          id: string
+          razorpaySubId: string
+          status: string
+          billingInterval: string
+          currentPeriodEnd: string | null
+          cancelAtPeriodEnd: boolean
+        } | null
+      }>('/billing/plan'),
+
+    subscribe: (payload: { tier: 'pro' | 'ultimate'; yearly: boolean }) =>
+      request<{ subscriptionId: string; keyId: string; userName: string; userEmail: string }>('/billing/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    verify: (payload: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) =>
+      request<{ success: boolean; plan: string }>('/billing/verify', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    cancel: () =>
+      request<{ success: boolean; cancelAtPeriodEnd: boolean; currentPeriodEnd: string | null }>('/billing/cancel', {
+        method: 'POST',
+      }),
+  },
 }

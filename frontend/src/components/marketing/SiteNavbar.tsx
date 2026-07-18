@@ -152,6 +152,7 @@ function FeaturesDropdown() {
 
 const OTHER_LINKS = [
   { label: 'Playground', href: '/playground' },
+  { label: 'Pricing',    href: '/pricing' },
   { label: 'Docs',       href: '/docs' },
   { label: 'FAQ',        href: '/#faq' },
 ]

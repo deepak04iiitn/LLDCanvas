@@ -11,6 +11,9 @@ import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import type { ProblemDetail } from '@/types'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 
 // ─── Hints helper ─────────────────────────────────────────────────────────────
 
@@ -142,6 +145,7 @@ const DIFF_META = {
 
 export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId }: ProblemPanelProps) {
   const router = useRouter()
+  const { isFree } = usePlan()
   const [problem,    setProblem]    = useState<ProblemDetail | null>(null)
   const [hints,      setHints]      = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -260,7 +264,25 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
             )}
 
             {/* Hints */}
-            {hints.length > 0 && <HintsSection slug={slug} hints={hints} />}
+            {hints.length > 0 && (
+              isFree ? (
+                <div className="flex flex-col items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-center">
+                  <Lock className="h-4 w-4 text-amber-500" />
+                  <div>
+                    <p className="text-[12px] font-semibold text-amber-800">Hints require Pro</p>
+                    <p className="mt-0.5 text-[11px] text-amber-700">Upgrade to unlock all hints.</p>
+                  </div>
+                  <Link
+                    href="/pricing"
+                    className="flex items-center gap-1 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-amber-600 transition-colors"
+                  >
+                    Upgrade <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              ) : (
+                <HintsSection slug={slug} hints={hints} />
+              )
+            )}
 
             {/* Companies */}
             {problem.companies.length > 0 && (

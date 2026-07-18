@@ -11,6 +11,10 @@ import {
   Check,
   AlertTriangle,
   Loader2,
+  Sparkles,
+  Crown,
+  ArrowRight,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +28,8 @@ import {
 import { AppShell } from '@/components/dashboard/AppShell'
 import { useSession, signOut } from '@/lib/auth-client'
 import { api } from '@/lib/api'
+import { usePlan } from '@/hooks/usePlan'
+import Link from 'next/link'
 
 // ─── Card wrapper ─────────────────────────────────────────────────────────────
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -113,6 +119,7 @@ function DeleteAccountDialog({
 export default function SettingsPage() {
   const router = useRouter()
   const { data: session, isPending } = useSession()
+  const { plan, subscription, loading: planLoading, refresh: refreshPlan } = usePlan()
 
   // Name editing
   const [name, setName] = useState('')
@@ -123,6 +130,9 @@ export default function SettingsPage() {
   // Delete account
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  // Subscription cancel
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   // Page title
   useEffect(() => { document.title = 'Settings — LLDCanvas' }, [])
@@ -154,6 +164,20 @@ export default function SettingsPage() {
   async function handleSignOut() {
     await signOut()
     router.push('/')
+  }
+
+  async function handleCancelSubscription() {
+    if (!confirm('Cancel your subscription? You will keep access until the end of the current billing period.')) return
+    setCancelLoading(true)
+    try {
+      await api.billing.cancel()
+      toast.success('Subscription cancelled. Access continues until period end.')
+      refreshPlan()
+    } catch (err) {
+      toast.error((err as Error).message ?? 'Failed to cancel subscription')
+    } finally {
+      setCancelLoading(false)
+    }
   }
 
   async function handleDeleteAccount() {
@@ -275,6 +299,65 @@ export default function SettingsPage() {
                     Sign out
                   </Button>
                 </div>
+              </Card>
+            </motion.div>
+
+            {/* ── Subscription ─────────────────────────────────────────────── */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <Card>
+                <SectionTitle>Subscription</SectionTitle>
+                {planLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-ink-muted">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading plan...
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {plan === 'ultimate' && <Crown className="h-4 w-4 text-amber-500" />}
+                        {plan === 'pro'      && <Sparkles className="h-4 w-4 text-brand" />}
+                        <p className="text-sm font-semibold text-ink capitalize">{plan} Plan</p>
+                      </div>
+                      {subscription ? (
+                        <div className="text-xs text-ink-muted space-y-0.5">
+                          <p>Billing: {subscription.billingInterval}</p>
+                          {subscription.currentPeriodEnd && (
+                            <p>{subscription.cancelAtPeriodEnd ? 'Access until' : 'Renews'}: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}</p>
+                          )}
+                          {subscription.cancelAtPeriodEnd && (
+                            <p className="text-amber-600 font-medium flex items-center gap-1">
+                              <X className="h-3 w-3" /> Cancellation scheduled
+                            </p>
+                          )}
+                        </div>
+                      ) : plan === 'free' ? (
+                        <p className="text-xs text-ink-muted">Free plan - no billing</p>
+                      ) : null}
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      {plan === 'free' ? (
+                        <Link href="/pricing" className="flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors">
+                          <Sparkles className="h-3.5 w-3.5" /> Upgrade <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Link href="/pricing" className="rounded-lg border border-hairline px-3 py-2 text-xs font-medium text-ink-muted hover:bg-paper-elevated transition-colors">
+                            Change plan
+                          </Link>
+                          {subscription && !subscription.cancelAtPeriodEnd && (
+                            <button
+                              onClick={handleCancelSubscription}
+                              disabled={cancelLoading}
+                              className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            >
+                              {cancelLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Cancel'}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </Card>
             </motion.div>
 

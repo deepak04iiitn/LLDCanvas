@@ -257,6 +257,46 @@ export const adminApi = {
     },
     deleteComment: (id: string) => req<{ ok: boolean }>(`/comments/${id}`, { method: 'DELETE' }),
   },
+
+  billing: {
+    overview: () =>
+      req<{
+        totalSubscriptions: number
+        activeSubscriptions: number
+        mrr: number
+        planDistribution: Record<string, number>
+        recentSubscriptions: AdminSubscription[]
+      }>('/billing/overview'),
+
+    subscriptions: (params: { page?: number; limit?: number; status?: string; plan?: string }) => {
+      const qs = new URLSearchParams()
+      if (params.page)   qs.set('page',   String(params.page))
+      if (params.limit)  qs.set('limit',  String(params.limit))
+      if (params.status) qs.set('status', params.status)
+      if (params.plan)   qs.set('plan',   params.plan)
+      return req<{ subscriptions: AdminSubscription[]; total: number; page: number; totalPages: number }>(`/billing/subscriptions?${qs}`)
+    },
+
+    revenue: (range?: string) =>
+      req<{
+        daily: { _id: string; revenue: number; count: number }[]
+        byPlan: { _id: string; revenue: number; count: number }[]
+        periodTotal: number
+        periodCount: number
+        allTimeTotal: number
+        allTimeCount: number
+        range: string
+      }>(`/billing/revenue${range ? `?range=${range}` : ''}`),
+
+    overridePlan: (id: string, plan: string) =>
+      req<{ ok: boolean }>(`/billing/subscriptions/${id}/plan`, {
+        method: 'PATCH',
+        body: JSON.stringify({ plan }),
+      }),
+
+    cancelSubscription: (id: string) =>
+      req<{ ok: boolean }>(`/billing/subscriptions/${id}/cancel`, { method: 'POST' }),
+  },
 }
 
 // ─── New entity types ─────────────────────────────────────────────────────────
@@ -365,4 +405,19 @@ export interface UserCodeDaily {
   totalRuns: number
   totalSuccess: number
   totalError: number
+}
+
+export interface AdminSubscription {
+  _id: string
+  userId: string
+  userName: string
+  userEmail: string
+  plan: string
+  razorpaySubId: string
+  status: string
+  billingInterval: 'monthly' | 'yearly'
+  currentPeriodEnd: string | null
+  cancelAtPeriodEnd: boolean
+  cancelledAt: string | null
+  createdAt: string
 }

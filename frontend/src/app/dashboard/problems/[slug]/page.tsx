@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  ArrowLeft, CheckCircle2, Clock, Play, ExternalLink,
+  ArrowLeft, ArrowRight, CheckCircle2, Clock, Play, ExternalLink,
   Lightbulb, Lock, ChevronDown, ChevronUp, RefreshCw,
   Users, CheckCheck, AlertTriangle, MessageSquare, ThumbsUp,
   ChevronRight, HelpCircle, Layers, Code2, Plus, Trash2, Send, Loader2,
 } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow, parseISO } from 'date-fns'
@@ -16,6 +17,7 @@ import { AppShell } from '@/components/dashboard/AppShell'
 import { api } from '@/lib/api'
 import type { ProblemDetail, UserSolution, ProblemPost, PostReply } from '@/types'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -423,6 +425,7 @@ export default function ProblemDetailPage() {
   const router      = useRouter()
   const { data: session } = useSession()
   const currentUserId     = session?.user?.id ?? ''
+  const { isFree } = usePlan()
 
   const [problem,         setProblem]         = useState<ProblemDetail | null>(null)
   const [hints,           setHints]           = useState<string[]>([])
@@ -636,12 +639,42 @@ export default function ProblemDetailPage() {
             <motion.div key="requirements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <RequirementsSection title="Functional Requirements" items={problem.functionalRequirements} accent="bg-brand" />
               <RequirementsSection title="Non-Functional Requirements" items={problem.nonFunctionalRequirements} accent="bg-indigo-400" />
-              {hints.length > 0 && <HintsPanel slug={slug} hints={hints} />}
+              {hints.length > 0 && (
+                isFree ? (
+                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
+                    <Lock className="h-6 w-6 text-amber-500" />
+                    <div>
+                      <p className="font-semibold text-amber-800">Hints require Pro</p>
+                      <p className="mt-0.5 text-xs text-amber-700">Upgrade to unlock hints for this problem.</p>
+                    </div>
+                    <Link href="/pricing" className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+                      Upgrade to Pro <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                ) : (
+                  <HintsPanel slug={slug} hints={hints} />
+                )
+              )}
             </motion.div>
           )}
 
           {/* Community Discussion tab */}
-          {tab === 'community' && (
+          {tab === 'community' && isFree && (
+            <motion.div key="community-locked" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-4 rounded-2xl border border-brand/20 bg-brand/5 px-8 py-14 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10">
+                <Lock className="h-7 w-7 text-brand" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-ink">Community Discussions</p>
+                <p className="mt-1 text-sm text-ink-muted">View and participate in community Q&amp;A and solution discussions. Requires Pro or higher.</p>
+              </div>
+              <Link href="/pricing" className="flex items-center gap-2 rounded-xl bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand/90 transition-colors">
+                Upgrade to Pro <ArrowRight className="h-4 w-4" />
+              </Link>
+            </motion.div>
+          )}
+          {tab === 'community' && !isFree && (
             <motion.div key="community" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
 
               {/* Toolbar */}
@@ -720,7 +753,7 @@ export default function ProblemDetailPage() {
                 </div>
               )}
             </motion.div>
-          )}
+          )} {/* end !isFree community */}
 
         </div>
       </div>

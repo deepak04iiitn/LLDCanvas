@@ -52,4 +52,11 @@ router.get('/code/executions/:userId/daily',  adminController.getUserCodeDaily)
 router.get('/code/bans',                      adminController.listCodeBans)
 router.patch('/code/bans/:userId',            adminController.toggleCodeBan)
 
+// Billing & subscriptions
+router.get('/billing/overview',               adminController.getBillingOverview)
+router.get('/billing/subscriptions',          adminController.listSubscriptions)
+router.get('/billing/revenue',                adminController.getRevenueStats)
+router.patch('/billing/subscriptions/:id/plan', adminController.overridePlan)
+router.post('/billing/subscriptions/:id/cancel', adminController.adminCancelSubscription)
+
 export default router
