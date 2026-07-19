@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb'
+import { dynamicImport } from '../utils/dynamic-import'
 
 // Native MongoDB client — used exclusively by Better Auth for its own
 // collections (users, sessions, accounts, verifications).
@@ -15,8 +16,8 @@ export async function getMongoClient(): Promise<MongoClient> {
 
 export async function createAuth() {
   const [{ betterAuth }, { mongodbAdapter }] = await Promise.all([
-    import('better-auth'),
-    import('better-auth/adapters/mongodb'),
+    dynamicImport<typeof import('better-auth')>('better-auth'),
+    dynamicImport<typeof import('better-auth/adapters/mongodb')>('better-auth/adapters/mongodb'),
   ])
 
   const mongoClient = await getMongoClient()
