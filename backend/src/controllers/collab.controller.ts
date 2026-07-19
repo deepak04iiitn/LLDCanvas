@@ -8,10 +8,12 @@ import { createError } from '../middleware/error'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function assertDiagramOwner(diagramId: string, userId: string) {
-  const diagram = await Diagram.findById(diagramId)
+async function assertDiagramOwner(diagramId: string | string[], userId: string | string[]) {
+  const id  = Array.isArray(diagramId) ? diagramId[0] : diagramId
+  const uid = Array.isArray(userId)    ? userId[0]    : userId
+  const diagram = await Diagram.findById(id)
   if (!diagram) throw createError('Diagram not found', 404)
-  if (diagram.userId.toString() !== userId) throw createError('Forbidden', 403)
+  if (diagram.userId.toString() !== uid) throw createError('Forbidden', 403)
   return diagram
 }
 
