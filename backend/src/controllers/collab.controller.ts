@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { nanoid } from 'nanoid'
+import { randomBytes } from 'crypto'
 import { Diagram } from '../models/diagram.model'
 import { CollabInvite } from '../models/collab-invite.model'
 import { Comment } from '../models/comment.model'
@@ -54,7 +54,7 @@ export const collabController = {
         return res.json({ invite: existing, updated: true })
       }
 
-      const token = nanoid(32)
+      const token = randomBytes(24).toString('base64url')
       const invite = await CollabInvite.create({
         diagramId: req.params.diagramId,
         email: email.toLowerCase(),
