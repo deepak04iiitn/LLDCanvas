@@ -22,4 +22,5 @@ if (process.env.__NEVER_TRUE__) {
   require('better-auth')
   require('better-auth/node')
   require('better-auth/adapters/mongodb')
+  require('better-auth/plugins')
 }

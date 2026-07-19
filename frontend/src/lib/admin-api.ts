@@ -1,10 +1,17 @@
+import { getAuthToken } from './auth-token'
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken()
   const res = await fetch(`${BASE}/admin${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
