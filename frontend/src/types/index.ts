@@ -12,6 +12,7 @@ export interface ProblemSummary {
   order: number
   submissionCount: number
   myStatus: 'in_progress' | 'submitted' | null
+  locked: boolean
 }
 
 export interface ProblemDetail extends ProblemSummary {
@@ -102,10 +103,22 @@ export interface InterviewSession {
   timeElapsed: number
   notes: string
   canvasSnapshot: unknown
+  problemId: string | null
+  problemSlug: string | null
+  problemDifficulty: 'easy' | 'medium' | 'hard' | null
   startedAt: string
   completedAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface InterviewAssignedProblem {
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  description: string
+  functionalRequirements: string[]
+  nonFunctionalRequirements: string[]
 }
 
 export interface DailyActivity {

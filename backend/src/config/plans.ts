@@ -77,6 +77,32 @@ export const FREE_PATTERN_KEYS = [
   'memento',
 ] as const
 
+/**
+ * All easy problems are free. All hard problems require Pro+. Medium is the
+ * one tier that's partially gated — only this curated, less-commonly-asked
+ * handful stay free; the rest of medium requires Pro+.
+ */
+export const FREE_MEDIUM_PROBLEM_SLUGS = [
+  'coupon-system',
+  'cricket-scoreboard',
+  'recipe-meal-planning',
+  'loyalty-points-rewards-program',
+  'social-event-planning-app',
+  'podcast-platform',
+  'online-survey-form-builder',
+] as const
+
+export function isProblemAccessible(
+  plan: PlanName,
+  difficulty: 'easy' | 'medium' | 'hard',
+  slug: string,
+): boolean {
+  if (plan !== 'free') return true
+  if (difficulty === 'easy') return true
+  if (difficulty === 'medium') return (FREE_MEDIUM_PROBLEM_SLUGS as readonly string[]).includes(slug)
+  return false
+}
+
 /** Razorpay plan IDs from env — resolves correct plan based on tier + billing interval */
 export function getRazorpayPlanId(tier: 'pro' | 'ultimate', yearly: boolean): string {
   if (tier === 'pro') {

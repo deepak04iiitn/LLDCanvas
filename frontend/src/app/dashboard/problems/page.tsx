@@ -375,12 +375,13 @@ export default function ProblemsPage() {
               </div>
             )}
 
-            {/* Free plan notice for hard problems */}
+            {/* Free plan notice */}
             {isFree && (
               <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                 <Lock className="h-4 w-4 shrink-0 text-amber-500" />
                 <p className="text-xs text-amber-800">
-                  <span className="font-semibold">Free plan:</span> Easy & Medium problems are available. Hard problems require Pro or Ultimate.
+                  <span className="font-semibold">Free plan:</span> all Easy problems plus a small selection of Medium
+                  problems are available. Full Medium access and all Hard problems require Pro or Ultimate.
                 </p>
                 <Link href="/pricing" className="ml-auto shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
                   Upgrade
@@ -398,7 +399,7 @@ export default function ProblemsPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map(p =>
-                  isFree && p.difficulty === 'hard'
+                  p.locked
                     ? <LockedProblemCard key={p._id} problem={p} />
                     : <ProblemCard key={p._id} problem={p} />
                 )}

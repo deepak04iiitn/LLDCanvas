@@ -1,32 +1,24 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Timer, Clock, StickyNote, Maximize2,
-  Flame, BarChart2, CheckCircle2, ArrowRight,
+  Flame, BarChart2, ArrowRight,
   Pause, StopCircle, Infinity, Play, Lock, Rocket,
 } from 'lucide-react'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { usePlan } from '@/hooks/usePlan'
+import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const HOW_IT_WORKS = [
   {
-    title: 'Open any diagram',
-    desc: 'Go to My Diagrams and open an existing diagram, or create a new blank one.',
-    icon: CheckCircle2,
-  },
-  {
-    title: 'Flip the Interview Mode toggle',
-    desc: 'Switch on Interview Mode in the top navigation bar of the editor.',
+    title: 'Click Start Interview',
+    desc: 'Pick your timer duration and you’re straight into a fresh design problem.',
     icon: Timer,
-  },
-  {
-    title: 'Set your timer & question',
-    desc: 'Choose a duration — 30, 45, 60, 90 minutes, custom, or no limit — and name your design question.',
-    icon: Clock,
   },
   {
     title: 'Design under the clock',
@@ -35,7 +27,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: 'End & review',
-    desc: 'Click the stop button to save your session. Your time and diagram are recorded automatically.',
+    desc: 'Click the stop button to save your session. Your time and canvas are recorded automatically.',
     icon: BarChart2,
   },
 ]
@@ -118,10 +110,12 @@ function TimerPreview() {
 
 export default function InterviewModePage() {
   const { isFree } = usePlan()
+  const [setupOpen, setSetupOpen] = useState(false)
 
   return (
     <AppShell>
       <div className="no-scrollbar h-full overflow-y-auto bg-paper">
+        <InterviewSetupModal open={setupOpen} onClose={() => setSetupOpen(false)} />
 
         {/* ── Plan gate overlay ──────────────────────────────────────────────── */}
         {isFree && (
@@ -162,13 +156,13 @@ export default function InterviewModePage() {
               Timed practice sessions, right inside the editor.
             </p>
           </div>
-          <Link
-            href="/dashboard"
+          <button
+            onClick={() => setSetupOpen(true)}
             className="inline-flex items-center gap-2 rounded-lg bg-brand px-2.5 py-2 text-sm font-medium text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
           >
             <Timer size={15} />
-            <span className="hidden sm:inline">Start practicing</span>
-          </Link>
+            <span className="hidden sm:inline">Start Interview</span>
+          </button>
         </header>
 
         {/* ── Hero ──────────────────────────────────────────────────────────── */}
@@ -215,13 +209,13 @@ export default function InterviewModePage() {
               </div>
             </div>
 
-            <Link
-              href="/dashboard"
+            <button
+              onClick={() => setSetupOpen(true)}
               className="inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-medium text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
             >
-              Open My Diagrams
+              Start Interview
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </button>
           </motion.div>
         </section>
 
@@ -330,15 +324,15 @@ export default function InterviewModePage() {
                 </div>
                 <h3 className="mb-2 font-serif text-xl font-medium text-brand-foreground">Ready to start?</h3>
                 <p className="mb-6 text-sm text-brand-foreground/75">
-                  Open any diagram in the editor — the Interview Mode toggle is waiting in the top nav.
+                  Pick a duration and start designing under the clock.
                 </p>
-                <Link
-                  href="/dashboard"
+                <button
+                  onClick={() => setSetupOpen(true)}
                   className="inline-flex items-center gap-2 rounded-lg bg-brand-foreground px-6 py-3 text-sm font-medium text-brand shadow-sm transition-all duration-150 hover:bg-brand-foreground/90 active:scale-[0.97]"
                 >
-                  Go to My Diagrams
+                  Start Interview
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </button>
               </div>
             </motion.div>
           </section>

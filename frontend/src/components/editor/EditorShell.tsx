@@ -17,6 +17,7 @@ import {
 } from '@xyflow/react'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 import { EditorProvider, useEditor } from '@/contexts/EditorContext'
 import { useInterview } from '@/contexts/InterviewContext'
@@ -29,7 +30,6 @@ import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
 import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawer'
-import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { ShareModal } from '@/components/editor/ShareModal'
 import { ProblemPanel } from '@/components/editor/ProblemPanel'
 import { CollabAvatarStack } from '@/components/collab/CollabAvatarStack'
@@ -128,12 +128,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const { theme, togglePanel } = useEditor()
   const { activeSession, endSession } = useInterview()
   const { getNodes, fitView, flowToScreenPosition, getEdges } = useReactFlow()
+  const router = useRouter()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
-  const [interviewSetupOpen, setInterviewSetupOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
@@ -637,7 +637,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClearSelection={handleClearSelection}
         canvasMode={canvasMode}
         onCanvasModeChange={setCanvasMode}
-        onStartInterview={() => setInterviewSetupOpen(true)}
+        onStartInterview={() => router.push('/dashboard/interview-mode')}
         onEndInterview={handleEndSession}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
@@ -744,12 +744,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         actions={paletteActions}
-      />
-
-      <InterviewSetupModal
-        open={interviewSetupOpen}
-        onClose={() => setInterviewSetupOpen(false)}
-        currentDiagramId={diagramId}
       />
 
       {diagramId && !readOnly && (

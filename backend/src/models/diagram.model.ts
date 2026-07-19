@@ -19,6 +19,9 @@ export interface IDiagram extends Document {
   title: string
   thumbnail?: string
   isTemplate: boolean
+  // 'interview' diagrams are one-shot scratch canvases created per interview
+  // attempt — excluded from the normal "My UML Diagrams" dashboard grid.
+  origin: 'manual' | 'interview'
   diagramData: DiagramData
   createdAt: Date
   updatedAt: Date
@@ -30,6 +33,7 @@ const diagramSchema = new Schema<IDiagram>(
     title: { type: String, default: 'Untitled Diagram' },
     thumbnail: { type: String },
     isTemplate: { type: Boolean, default: false },
+    origin: { type: String, enum: ['manual', 'interview'], default: 'manual' },
     diagramData: {
       version: { type: Number, default: 1 },
       nodes: { type: Array, default: [] },

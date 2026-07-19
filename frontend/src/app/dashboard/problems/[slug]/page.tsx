@@ -18,6 +18,7 @@ import { api } from '@/lib/api'
 import type { ProblemDetail, UserSolution, ProblemPost, PostReply } from '@/types'
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
+import { UpgradeGate } from '@/components/billing/UpgradeGate'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -580,7 +581,12 @@ export default function ProblemDetailPage() {
 
                 {/* Action */}
                 <div className="flex shrink-0 flex-col items-end gap-2">
-                  {!mySolution && (
+                  {problem.locked ? (
+                    <Link href="/pricing"
+                      className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90">
+                      <Lock className="h-4 w-4" /> Upgrade to Practice
+                    </Link>
+                  ) : !mySolution && (
                     <button onClick={handleStart} disabled={starting}
                       className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90 disabled:opacity-50">
                       {starting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
@@ -635,7 +641,15 @@ export default function ProblemDetailPage() {
           </div>
 
           {/* Requirements tab */}
-          {tab === 'requirements' && (
+          {tab === 'requirements' && problem.locked ? (
+            <motion.div key="requirements-locked" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <UpgradeGate
+                feature="This problem's requirements"
+                description="Upgrade to unlock the full functional & non-functional requirements, hints, and practice for this problem."
+                variant="overlay"
+              />
+            </motion.div>
+          ) : tab === 'requirements' && (
             <motion.div key="requirements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
               <RequirementsSection title="Functional Requirements" items={problem.functionalRequirements} accent="bg-brand" />
               <RequirementsSection title="Non-Functional Requirements" items={problem.nonFunctionalRequirements} accent="bg-indigo-400" />

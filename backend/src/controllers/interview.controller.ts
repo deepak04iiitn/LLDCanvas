@@ -1,23 +1,75 @@
 import { Request, Response, NextFunction } from 'express'
 import { InterviewSession } from '../models/interview-session.model'
+import { Problem } from '../models/problem.model'
+import { Diagram } from '../models/diagram.model'
+import { getLimits } from '../config/plans'
 import { createError } from '../middleware/error'
 
-// POST /interview/sessions
+// POST /interview/sessions — assigns a random practice problem and creates a
+// brand-new, blank Diagram for it (never reused, even if this exact problem
+// already has a normal-practice UserSolution or a prior interview attempt).
 export async function createSession(req: Request, res: Response, next: NextFunction) {
   try {
-    const { title, diagramId, durationLimit } = req.body as {
-      title?: string
-      diagramId?: string | null
-      durationLimit?: number | null
+    const userId = req.user!.id
+    const plan   = req.user!.plan
+    const limits = getLimits(plan)
+
+    if (limits.interviewSessionsPerMonth <= 0) {
+      throw createError('Interview Mode requires a Pro plan or higher.', 403)
     }
-    const session = await InterviewSession.create({
-      userId:        req.user!.id,
-      title:         title ?? 'Practice Session',
-      diagramId:     diagramId ?? null,
-      durationLimit: durationLimit ?? null,
-      status:        'active',
+
+    if (Number.isFinite(limits.interviewSessionsPerMonth)) {
+      const monthStart = new Date()
+      monthStart.setDate(1)
+      monthStart.setHours(0, 0, 0, 0)
+      const usedThisMonth = await InterviewSession.countDocuments({
+        userId, createdAt: { $gte: monthStart },
+      })
+      if (usedThisMonth >= limits.interviewSessionsPerMonth) {
+        throw createError(
+          `You've used all ${limits.interviewSessionsPerMonth} interview sessions this month. Upgrade your plan for more.`,
+          429,
+        )
+      }
+    }
+
+    const { durationLimit } = req.body as { durationLimit?: number | null }
+
+    const [problem] = await Problem.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: 1 } },
+    ])
+    if (!problem) throw createError('No practice problems are available right now.', 503)
+
+    const diagram = await Diagram.create({
+      userId,
+      title:  `${problem.title} — Interview Attempt`,
+      origin: 'interview',
     })
-    res.status(201).json({ session })
+
+    const session = await InterviewSession.create({
+      userId,
+      title:             problem.title,
+      diagramId:         diagram._id.toString(),
+      durationLimit:     durationLimit ?? null,
+      status:            'active',
+      problemId:         problem._id,
+      problemSlug:       problem.slug,
+      problemDifficulty: problem.difficulty,
+    })
+
+    res.status(201).json({
+      session,
+      diagramId: diagram._id.toString(),
+      problem: {
+        slug:                      problem.slug,
+        title:                     problem.title,
+        difficulty:                problem.difficulty,
+        description:               problem.description,
+        functionalRequirements:    problem.functionalRequirements,
+        nonFunctionalRequirements: problem.nonFunctionalRequirements,
+      },
+    })
   } catch (err) {
     next(err)
   }

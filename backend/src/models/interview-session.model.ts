@@ -9,6 +9,9 @@ export interface IInterviewSession extends Document {
   timeElapsed: number           // seconds actually spent
   notes: string
   canvasSnapshot: unknown       // { nodes, edges } saved at session end
+  problemId: Types.ObjectId | null
+  problemSlug: string | null
+  problemDifficulty: 'easy' | 'medium' | 'hard' | null
   startedAt: Date
   completedAt: Date | null
   createdAt: Date
@@ -17,16 +20,19 @@ export interface IInterviewSession extends Document {
 
 const schema = new Schema<IInterviewSession>(
   {
-    userId:          { type: String, required: true, index: true },
-    diagramId:       { type: String, default: null },
-    title:           { type: String, default: 'Practice Session' },
-    status:          { type: String, enum: ['active', 'completed', 'abandoned'], default: 'active' },
-    durationLimit:   { type: Number, default: null },
-    timeElapsed:     { type: Number, default: 0 },
-    notes:           { type: String, default: '' },
-    canvasSnapshot:  { type: Schema.Types.Mixed, default: null },
-    startedAt:       { type: Date, default: Date.now },
-    completedAt:     { type: Date, default: null },
+    userId:            { type: String, required: true, index: true },
+    diagramId:         { type: String, default: null },
+    title:             { type: String, default: 'Practice Session' },
+    status:            { type: String, enum: ['active', 'completed', 'abandoned'], default: 'active' },
+    durationLimit:     { type: Number, default: null },
+    timeElapsed:       { type: Number, default: 0 },
+    notes:             { type: String, default: '' },
+    canvasSnapshot:    { type: Schema.Types.Mixed, default: null },
+    problemId:         { type: Schema.Types.ObjectId, ref: 'Problem', default: null },
+    problemSlug:       { type: String, default: null },
+    problemDifficulty: { type: String, enum: ['easy', 'medium', 'hard', null], default: null },
+    startedAt:         { type: Date, default: Date.now },
+    completedAt:       { type: Date, default: null },
   },
   { timestamps: true },
 )

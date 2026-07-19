@@ -811,7 +811,7 @@ function ProblemsCommunitySection() {
         >
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Problem Library</p>
-            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">50+ problems</span>
+            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">100+ problems</span>
           </div>
           <div className="space-y-1.5">
             {BENTO_PROBLEMS.map((p, i) => (

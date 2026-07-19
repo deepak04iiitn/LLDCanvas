@@ -28,7 +28,10 @@ export const diagramsController = {
       const userId = req.user!.id
       const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
 
-      const filter: Record<string, unknown> = { userId }
+      // Interview-attempt diagrams are one-shot scratch canvases — keep them
+      // out of the normal dashboard grid (they're reachable via Interview
+      // Sessions history instead).
+      const filter: Record<string, unknown> = { userId, origin: { $ne: 'interview' } }
       if (q) filter.title = { $regex: q, $options: 'i' }
 
       const diagrams = await Diagram.find(filter)

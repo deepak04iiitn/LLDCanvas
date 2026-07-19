@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, InterviewAssignedProblem, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -72,8 +72,8 @@ export const api = {
   },
 
   interview: {
-    create: (payload: { title?: string; diagramId?: string | null; durationLimit?: number | null }) =>
-      request<{ session: InterviewSession }>('/interview', {
+    create: (payload: { durationLimit?: number | null }) =>
+      request<{ session: InterviewSession; diagramId: string; problem: InterviewAssignedProblem }>('/interview', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),

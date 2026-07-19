@@ -41,7 +41,7 @@ const PLANS = [
     features: [
       'Unlimited UML canvas & playground',
       '5 design pattern templates',
-      'Easy + Medium practice problems',
+      'Easy problems + a few Medium problems',
       '15 code executions / day',
       'Revision notes',
     ],
@@ -104,7 +104,7 @@ const FEATURES: FeatureRow[] = [
   { label: 'Design Pattern Templates', icon: BookOpen,    free: '5 templates', pro: 'Full access',  ultimate: 'Full access', highlight: false },
   { label: 'Export',                   icon: ArrowRight,  free: false,         pro: 'PlantUML, Mermaid, Draft', ultimate: 'Full access', highlight: false },
   { label: 'Import',                   icon: ArrowRight,  free: true,          pro: true,           ultimate: true,         highlight: false },
-  { label: 'Practice Problems',        icon: Code2,       free: 'Easy + Medium', pro: 'Full access', ultimate: 'Full access', highlight: false },
+  { label: 'Practice Problems',        icon: Code2,       free: 'Easy + a few Medium', pro: 'Full access', ultimate: 'Full access', highlight: false },
   { label: 'Hints',                    icon: Zap,         free: false,         pro: true,           ultimate: true,         highlight: false },
   { label: 'Community Discussion',     icon: Users,       free: false,         pro: true,           ultimate: true,         highlight: false },
   { label: 'Code Executions / day',    icon: Terminal,    free: '15',          pro: '25',           ultimate: '50',          highlight: true  },
