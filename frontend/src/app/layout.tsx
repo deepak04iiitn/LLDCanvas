@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { InterviewProvider } from '@/contexts/InterviewContext'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
+import { OAuthTokenBridge } from '@/components/OAuthTokenBridge'
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import './globals.css'
 
@@ -63,6 +64,7 @@ export default function RootLayout({
         <InterviewProvider>
           <TooltipProvider>
             <AnalyticsProvider />
+            <OAuthTokenBridge />
             {children}
             <FeedbackWidget />
           </TooltipProvider>
