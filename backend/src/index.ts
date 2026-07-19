@@ -10,6 +10,7 @@ import { getAuth, ensureAdminUser } from './config/auth'
 import { errorHandler } from './middleware/error'
 import { authRateLimit } from './middleware/rateLimit'
 import { initSocketServer } from './socket'
+import { dynamicImport } from './utils/dynamic-import'
 import diagramsRouter from './routes/diagrams.route'
 import exportRouter from './routes/export.route'
 import accountRouter from './routes/account.route'
@@ -107,7 +108,7 @@ app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
     }
 
     const auth = await getAuth()
-    const { toNodeHandler } = await import('better-auth/node')
+    const { toNodeHandler } = await dynamicImport<typeof import('better-auth/node')>('better-auth/node')
     return toNodeHandler(auth)(req, res)
   } catch (err) {
     next(err)

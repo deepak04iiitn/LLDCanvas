@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import { getAuth } from '../config/auth'
+import { dynamicImport } from '../utils/dynamic-import'
 
 async function getFromNodeHeaders() {
-  const { fromNodeHeaders } = await import('better-auth/node')
+  const { fromNodeHeaders } = await dynamicImport<typeof import('better-auth/node')>('better-auth/node')
   return fromNodeHeaders
 }
 import { createError } from './error'
