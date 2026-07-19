@@ -1,13 +1,16 @@
 import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, InterviewAssignedProblem, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
+import { getAuthToken } from './auth-token'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getAuthToken()
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
   })

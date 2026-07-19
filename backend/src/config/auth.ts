@@ -15,9 +15,10 @@ export async function getMongoClient(): Promise<MongoClient> {
 }
 
 export async function createAuth() {
-  const [{ betterAuth }, { mongodbAdapter }] = await Promise.all([
+  const [{ betterAuth }, { mongodbAdapter }, { bearer }] = await Promise.all([
     dynamicImport<typeof import('better-auth')>('better-auth'),
     dynamicImport<typeof import('better-auth/adapters/mongodb')>('better-auth/adapters/mongodb'),
+    dynamicImport<typeof import('better-auth/plugins')>('better-auth/plugins'),
   ])
 
   const mongoClient = await getMongoClient()
@@ -84,6 +85,13 @@ export async function createAuth() {
       .split(',')
       .map(normalizeUrl)
       .filter(Boolean),
+
+    // Frontend and backend live on different *.vercel.app subdomains, which
+    // browsers treat as separate sites — third-party cookie blocking drops
+    // the session cookie on cross-site requests. The bearer plugin lets the
+    // client authenticate via an `Authorization: Bearer <token>` header
+    // instead, sidestepping cookies entirely.
+    plugins: [bearer()],
   })
 }
 

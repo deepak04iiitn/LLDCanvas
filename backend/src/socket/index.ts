@@ -17,8 +17,14 @@ export function initSocketServer(httpServer: HttpServer, allowedOrigins: string[
   // ── Auth middleware ──────────────────────────────────────────────────────
   io.use(async (socket, next) => {
     try {
-      // Build node-compatible headers from the socket handshake
-      const rawHeaders = socket.handshake.headers as Record<string, string | string[] | undefined>
+      // Build node-compatible headers from the socket handshake. Browsers
+      // can't set custom headers on a WebSocket handshake, so the client
+      // sends its bearer token via `auth: { token }` instead — fold it into
+      // an Authorization header the bearer plugin recognizes.
+      const rawHeaders = { ...socket.handshake.headers } as Record<string, string | string[] | undefined>
+      const token = socket.handshake.auth?.token as string | undefined
+      if (token) rawHeaders.authorization = `Bearer ${token}`
+
       const [auth, { fromNodeHeaders }] = await Promise.all([
         getAuth(),
         dynamicImport<typeof import('better-auth/node')>('better-auth/node'),
