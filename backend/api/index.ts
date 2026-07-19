@@ -36,6 +36,10 @@ import { startSubscriptionExpiryJob } from '../src/jobs/expire-subscriptions'
 const app        = express()
 const httpServer = createServer(app)
 
+// Vercel runs behind a proxy and sets X-Forwarded-For; without this,
+// express-rate-limit throws on every request instead of rate-limiting by IP.
+app.set('trust proxy', 1)
+
 const allowedOrigins: string[] = (
   process.env.CORS_ORIGINS ?? process.env.CLIENT_URL ?? 'http://localhost:3000'
 )
