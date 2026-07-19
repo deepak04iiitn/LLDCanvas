@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Wordmark } from '@/components/Brand'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 
 function CollabAcceptInner() {
   const searchParams = useSearchParams()

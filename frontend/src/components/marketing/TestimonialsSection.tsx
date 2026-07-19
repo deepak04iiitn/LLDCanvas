@@ -9,7 +9,7 @@ import {
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import { toast } from 'sonner'
 
 // ─── Types ────────────────────────────────────────────────────────────────────

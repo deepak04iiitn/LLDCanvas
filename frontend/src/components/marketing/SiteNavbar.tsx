@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import { useScrolled } from '@/hooks/useScrolled'
 import { cn } from '@/lib/utils'
 import {

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { EditorShell } from '@/components/editor/EditorShell'
 import { MobileEditorGuard } from '@/components/editor/MobileBanner'
 import { api } from '@/lib/api'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import type { DiagramFull } from '@/types'
 
 // ─── Share access states ──────────────────────────────────────────────────────

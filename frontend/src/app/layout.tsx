@@ -3,8 +3,8 @@ import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { InterviewProvider } from '@/contexts/InterviewContext'
+import { AuthProvider } from '@/lib/auth'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
-import { OAuthTokenBridge } from '@/components/OAuthTokenBridge'
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import './globals.css'
 
@@ -61,14 +61,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full overflow-x-hidden bg-paper text-ink">
-        <InterviewProvider>
-          <TooltipProvider>
-            <AnalyticsProvider />
-            <OAuthTokenBridge />
-            {children}
-            <FeedbackWidget />
-          </TooltipProvider>
-        </InterviewProvider>
+        <AuthProvider>
+          <InterviewProvider>
+            <TooltipProvider>
+              <AnalyticsProvider />
+              {children}
+              <FeedbackWidget />
+            </TooltipProvider>
+          </InterviewProvider>
+        </AuthProvider>
         {/* Forced light: there's no dark-mode toggle anywhere in the app shell,
             so the Toaster must not fall back to next-themes' "system" default
             (which silently renders dark-styled toasts under a dark OS setting). */}

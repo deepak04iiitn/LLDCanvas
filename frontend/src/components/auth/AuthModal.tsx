@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signIn, signUp } from '@/lib/auth-client'
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, useAuth } from '@/lib/auth'
 
 interface AuthModalProps {
   open: boolean
@@ -17,6 +17,7 @@ interface AuthModalProps {
 
 export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthModalProps) {
   const router = useRouter()
+  const { refetch } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>(defaultMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -38,20 +39,34 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
     setLoading(false); setGoogleLoading(false)
   }
 
-  function handleGoogle() {
-    setGoogleLoading(true)
+  function postLoginNavigate() {
+    onOpenChange(false); reset()
+    // If the user was redirected here from a share link, send them back there
     const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
-    const redirectPath = postLoginRedirect ?? '/dashboard'
-    if (postLoginRedirect) sessionStorage.removeItem('postLoginRedirect')
-    // Deliberately NOT using authClient.signIn.social() — it does a
-    // cross-origin fetch() first to mint Google's OAuth "state" cookie,
-    // then redirects. That fetch response is cross-site (frontend calling
-    // backend), so third-party cookie blocking silently drops the state
-    // cookie, breaking the flow with "state_mismatch" on Google's callback.
-    // A direct top-level navigation instead makes the state-minting request
-    // itself same-origin to the backend — see backend `/auth/google/start`.
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    window.location.href = `${apiBase}/auth/google/start?redirect=${encodeURIComponent(redirectPath)}`
+    if (postLoginRedirect) {
+      sessionStorage.removeItem('postLoginRedirect')
+      router.push(postLoginRedirect)
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
+  async function handleGoogle() {
+    setGoogleLoading(true)
+    try {
+      await signInWithGoogle()
+      await refetch()
+      toast.success('Signed in!')
+      postLoginNavigate()
+    } catch (err: unknown) {
+      // Popup closed by the user isn't a real error — don't show a toast for it.
+      const code = (err as { code?: string })?.code
+      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+        toast.error('Google sign-in failed. Please try again.')
+      }
+    } finally {
+      setGoogleLoading(false)
+    }
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {
@@ -61,21 +76,14 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
     try {
       if (mode === 'signup') {
         if (!name) { toast.error('Name is required'); setLoading(false); return }
-        await signUp.email({ email, password, name, callbackURL: '/dashboard' })
+        await signUpWithEmail({ email, password, name })
         toast.success('Account created! Redirecting…')
       } else {
-        await signIn.email({ email, password, callbackURL: '/dashboard' })
+        await signInWithEmail({ email, password })
         toast.success('Signed in!')
       }
-      onOpenChange(false); reset()
-      // If the user was redirected here from a share link, send them back there
-      const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
-      if (postLoginRedirect) {
-        sessionStorage.removeItem('postLoginRedirect')
-        router.push(postLoginRedirect)
-      } else {
-        router.push('/dashboard')
-      }
+      await refetch()
+      postLoginNavigate()
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Something went wrong.')
       setLoading(false)
