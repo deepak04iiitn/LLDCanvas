@@ -23,6 +23,7 @@ import revisionRouter  from './routes/revision.route'
 import collabRouter    from './routes/collab.route'
 import codeRouter      from './routes/code.route'
 import billingRouter   from './routes/billing.route'
+import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 
 const app    = express()
 const httpServer = createServer(app)
@@ -137,6 +138,7 @@ async function start() {
   await getAuth()
   await ensureAdminUser()
   initSocketServer(httpServer, allowedOrigins)
+  startSubscriptionExpiryJob()
   httpServer.listen(PORT, () => {
     console.log(`✓ API + Socket.io listening on http://localhost:${PORT}`)
   })

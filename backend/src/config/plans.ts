@@ -106,11 +106,11 @@ export function planFromRazorpayId(planId: string): PlanName {
 
 export const PRICING = {
   pro: {
-    monthly: { INR: 199, USD: 2.39 },
-    yearly:  { INR: 1999, USD: 23.99 },
+    monthly: { INR: 199, USD: 6 },
+    yearly:  { INR: 1999, USD: 60 },
   },
   ultimate: {
-    monthly: { INR: 299, USD: 3.59 },
-    yearly:  { INR: 2999, USD: 35.99 },
+    monthly: { INR: 299, USD: 10 },
+    yearly:  { INR: 2999, USD: 100 },
   },
 } as const

@@ -6,9 +6,10 @@ export interface IRevenueEvent extends Document {
   razorpaySubId:   string        // subscription_XXXX
   razorpayPaymentId: string      // pay_XXXX
   plan:            string
-  currency:        'INR'
-  amountPaid:      number        // in rupees (not paise)
+  currency:        'INR' | 'USD'
+  amountPaid:      number        // in rupees, or dollars when currency is 'USD'
   billingInterval: 'monthly' | 'yearly'
+  paymentSource:   'razorpay' | 'manual'
   createdAt:       Date
 }
 
@@ -19,9 +20,10 @@ const schema = new Schema<IRevenueEvent>(
     razorpaySubId:     { type: String, required: true },
     razorpayPaymentId: { type: String, required: true, unique: true },
     plan:              { type: String, required: true },
-    currency:          { type: String, default: 'INR' },
+    currency:          { type: String, enum: ['INR', 'USD'], default: 'INR' },
     amountPaid:        { type: Number, required: true },
     billingInterval:   { type: String, enum: ['monthly', 'yearly'], required: true },
+    paymentSource:     { type: String, enum: ['razorpay', 'manual'], default: 'razorpay' },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 )

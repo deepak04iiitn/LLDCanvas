@@ -14,6 +14,7 @@ import { usePlan } from '@/hooks/usePlan'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
+import { InternationalUpgradeModal } from '@/components/pricing/InternationalUpgradeModal'
 import { fadeUpProps, inViewProps } from '@/lib/motion'
 
 declare global {
@@ -37,6 +38,13 @@ const PLANS = [
     priceUSD:    { monthly: 0, yearly: 0 },
     tagline:     'Perfect for exploring LLD concepts',
     highlight:   false,
+    features: [
+      'Unlimited UML canvas & playground',
+      '5 design pattern templates',
+      'Easy + Medium practice problems',
+      '15 code executions / day',
+      'Revision notes',
+    ],
   },
   {
     id:          'pro' as const,
@@ -46,9 +54,17 @@ const PLANS = [
     badgeCls:    'bg-brand text-brand-foreground',
     btnCls:      'bg-brand text-brand-foreground hover:bg-brand-hover',
     priceINR:    { monthly: 199,  yearly: 1999  },
-    priceUSD:    { monthly: 5.99, yearly: 59.99 },
+    priceUSD:    { monthly: 6, yearly: 60 },
     tagline:     'For serious engineers leveling up',
     highlight:   true,
+    features: [
+      'Everything in Free',
+      'Full templates & practice problems',
+      'Staged hints + community discussion',
+      '25 code executions / day',
+      '10 interview mode sessions / mo',
+      'Collaboration — up to 3 people',
+    ],
   },
   {
     id:          'ultimate' as const,
@@ -58,9 +74,17 @@ const PLANS = [
     badgeCls:    'bg-amber-500 text-white',
     btnCls:      'bg-amber-500 text-white hover:bg-amber-600',
     priceINR:    { monthly: 299,  yearly: 2999  },
-    priceUSD:    { monthly: 9.99, yearly: 99.99 },
+    priceUSD:    { monthly: 10, yearly: 100 },
     tagline:     'For teams and power users',
     highlight:   false,
+    features: [
+      'Everything in Pro',
+      'Unlimited interview mode sessions',
+      'Unlimited collaboration',
+      'Version history + activity timeline',
+      'Full analytics & priority support',
+      '50 code executions / day',
+    ],
   },
 ]
 
@@ -128,7 +152,7 @@ function PlanCard({
     <motion.div
       {...inViewProps(delay)}
       className={cn(
-        'relative flex flex-col rounded-md border p-6 transition-all duration-200',
+        'relative flex h-full flex-col rounded-md border p-6 transition-all duration-200',
         plan.highlight
           ? 'border-brand/40 bg-brand-tint/40 shadow-md'
           : 'border-hairline bg-paper-elevated hover:border-hairline-strong',
@@ -173,6 +197,16 @@ function PlanCard({
         )}
       </div>
 
+      {/* Features */}
+      <ul className="mb-6 flex-1 space-y-2.5">
+        {plan.features.map((f) => (
+          <li key={f} className="flex items-start gap-2 text-sm text-ink-muted">
+            <Check className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', plan.highlight ? 'text-brand' : 'text-ink-faint')} />
+            <span>{f}</span>
+          </li>
+        ))}
+      </ul>
+
       {/* CTA */}
       {isCurrentPlan ? (
         <div className="flex items-center justify-center rounded-md border border-hairline bg-paper py-2.5 text-sm font-medium text-ink-muted">
@@ -208,6 +242,7 @@ export default function PricingPage() {
   const [yearly,   setYearly]   = useState(false)
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR')
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
+  const [intlModal, setIntlModal] = useState<{ open: boolean; planName: string }>({ open: false, planName: '' })
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
 
   // Detect currency from IP on mount
@@ -225,6 +260,12 @@ export default function PricingPage() {
   }, [])
 
   async function handleUpgrade(tier: 'pro' | 'ultimate', isYearly: boolean) {
+    if (currency === 'USD') {
+      const plan = PLANS.find(p => p.id === tier)
+      setIntlModal({ open: true, planName: plan?.name ?? tier })
+      return
+    }
+
     setLoadingTier(tier)
     try {
       const { subscriptionId, keyId, userName, userEmail } = await api.billing.subscribe({ tier, yearly: isYearly })
@@ -399,6 +440,12 @@ export default function PricingPage() {
       </main>
 
       <SiteFooter />
+
+      <InternationalUpgradeModal
+        open={intlModal.open}
+        onOpenChange={(o) => setIntlModal(s => ({ ...s, open: o }))}
+        planName={intlModal.planName}
+      />
     </div>
   )
 }

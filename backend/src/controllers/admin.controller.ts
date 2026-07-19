@@ -1259,15 +1259,18 @@ export const adminController = {
       const sub = await Subscription.findById(id)
       if (!sub) throw createError('Subscription not found', 404)
 
-      // Try to cancel in Razorpay
-      try {
-        const Razorpay = (await import('razorpay')).default
-        const rzp = new Razorpay({
-          key_id:     process.env.RAZORPAY_KEY_ID!,
-          key_secret: process.env.RAZORPAY_KEY_SECRET!,
-        })
-        await rzp.subscriptions.cancel(sub.razorpaySubId, false)
-      } catch { /* non-fatal */ }
+      // Try to cancel in Razorpay — skip entirely for manually-onboarded subs,
+      // which were never registered with Razorpay in the first place.
+      if (sub.paymentSource !== 'manual') {
+        try {
+          const Razorpay = (await import('razorpay')).default
+          const rzp = new Razorpay({
+            key_id:     process.env.RAZORPAY_KEY_ID!,
+            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+          })
+          await rzp.subscriptions.cancel(sub.razorpaySubId, false)
+        } catch { /* non-fatal */ }
+      }
 
       sub.status = 'cancelled'
       sub.cancelledAt = new Date()
@@ -1278,6 +1281,114 @@ export const adminController = {
       await User.findByIdAndUpdate(sub.userId, { plan: 'free' })
 
       res.json({ ok: true, userId: sub.userId })
+    } catch (err) { next(err) }
+  },
+
+  // POST /admin/billing/subscriptions/manual — manually onboard an international
+  // (or otherwise gateway-unreachable) customer. Replicates exactly what a
+  // successful Razorpay upgrade does — activates the plan on the User doc,
+  // creates an `active` Subscription record, and logs a RevenueEvent — just
+  // tagged with paymentSource: 'manual' so it's distinguishable in reporting.
+  createManualSubscription: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const {
+        userId, plan, months, currency, amountPaid, note,
+      } = req.body as {
+        userId: string
+        plan: 'pro' | 'ultimate'
+        months: number
+        currency: 'INR' | 'USD'
+        amountPaid: number
+        note?: string
+      }
+
+      if (!userId) throw createError('userId is required', 400)
+      if (!['pro', 'ultimate'].includes(plan)) throw createError('Invalid plan', 400)
+      if (!['INR', 'USD'].includes(currency)) throw createError('Invalid currency', 400)
+      if (typeof amountPaid !== 'number' || amountPaid < 0) throw createError('Invalid amountPaid', 400)
+      if (!Number.isInteger(months) || months < 1 || months > 60) {
+        throw createError('months must be an integer between 1 and 60', 400)
+      }
+
+      const users = await userCollection()
+      const user = await users.findOne({ _id: new ObjectId(userId) })
+      if (!user) throw createError('User not found', 404)
+
+      // billingInterval only distinguishes monthly/yearly for display purposes
+      // elsewhere in the app — the actual access window paid for is `months`,
+      // reflected in currentPeriodEnd below (covers any prepaid duration, e.g.
+      // a customer paying for 3 or 6 months upfront, not just 1 or 12).
+      const billingInterval: 'monthly' | 'yearly' = months % 12 === 0 ? 'yearly' : 'monthly'
+
+      // Best-effort cancel of any existing live subscription for this user,
+      // mirroring createSubscription's existing-sub cleanup in billing.controller.ts.
+      const existing = await Subscription.findOne({
+        userId,
+        status: { $in: ['created', 'authenticated', 'active', 'pending', 'halted'] },
+      })
+      if (existing) {
+        if (existing.paymentSource !== 'manual') {
+          try {
+            const Razorpay = (await import('razorpay')).default
+            const rzp = new Razorpay({
+              key_id:     process.env.RAZORPAY_KEY_ID!,
+              key_secret: process.env.RAZORPAY_KEY_SECRET!,
+            })
+            await rzp.subscriptions.cancel(existing.razorpaySubId, false)
+          } catch { /* non-fatal */ }
+        }
+        existing.status = 'cancelled'
+        existing.cancelledAt = new Date()
+        existing.cancelAtPeriodEnd = false
+        await existing.save()
+      }
+
+      const now = new Date()
+      const periodEnd = new Date(now)
+      periodEnd.setMonth(periodEnd.getMonth() + months)
+
+      const syntheticId = `manual_${new ObjectId().toString()}`
+
+      const sub = await Subscription.create({
+        userId,
+        plan,
+        razorpaySubId:      syntheticId,
+        razorpayCustomerId: '',
+        status:             'active',
+        billingInterval,
+        currentPeriodStart: now,
+        currentPeriodEnd:   periodEnd,
+        cancelAtPeriodEnd:  false,
+        cancelledAt:        null,
+        paymentSource:      'manual',
+        currency,
+        paidMonths:         months,
+        onboardingNote:     note ?? '',
+      })
+
+      // Grant access — upsert since a brand-new payer may not have a Mongoose
+      // `User` doc yet (only ever created lazily by a real/manual upgrade).
+      // `name`/`email` are required fields on that schema, so they must be
+      // supplied here in case this upsert is the doc's first insert.
+      await User.findOneAndUpdate(
+        { _id: userId },
+        { plan, name: user.name, email: user.email },
+        { upsert: true, setDefaultsOnInsert: true },
+      )
+
+      await RevenueEvent.create({
+        userId,
+        subscriptionId:     sub._id.toString(),
+        razorpaySubId:      syntheticId,
+        razorpayPaymentId:  `manual_${new ObjectId().toString()}`,
+        plan,
+        currency,
+        amountPaid,
+        billingInterval,
+        paymentSource:      'manual',
+      })
+
+      res.json({ ok: true, subscriptionId: sub._id.toString(), userId, plan })
     } catch (err) { next(err) }
   },
 }

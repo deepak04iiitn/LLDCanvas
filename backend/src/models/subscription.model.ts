@@ -4,7 +4,7 @@ import type { PlanName } from '../config/plans'
 export interface ISubscription extends Document {
   userId:              string
   plan:                PlanName
-  razorpaySubId:       string         // subscription_XXXX
+  razorpaySubId:       string         // subscription_XXXX (or a synthetic "manual_..." id for manually-onboarded subs)
   razorpayCustomerId:  string         // customer_XXXX (if created)
   status:              'created' | 'authenticated' | 'active' | 'pending' | 'halted' | 'cancelled' | 'completed' | 'expired'
   billingInterval:     'monthly' | 'yearly'
@@ -12,6 +12,10 @@ export interface ISubscription extends Document {
   currentPeriodEnd:    Date | null
   cancelAtPeriodEnd:   boolean
   cancelledAt:         Date | null
+  paymentSource:       'razorpay' | 'manual'
+  currency:            'INR' | 'USD'
+  paidMonths:          number | null   // exact prepaid duration for manual onboarding (e.g. 3, 6) — null for razorpay subs
+  onboardingNote:      string
   createdAt:           Date
   updatedAt:           Date
 }
@@ -32,6 +36,10 @@ const subscriptionSchema = new Schema<ISubscription>(
     currentPeriodEnd:    { type: Date, default: null },
     cancelAtPeriodEnd:   { type: Boolean, default: false },
     cancelledAt:         { type: Date, default: null },
+    paymentSource:       { type: String, enum: ['razorpay', 'manual'], default: 'razorpay' },
+    currency:            { type: String, enum: ['INR', 'USD'], default: 'INR' },
+    paidMonths:          { type: Number, default: null },
+    onboardingNote:      { type: String, default: '' },
   },
   { timestamps: true },
 )

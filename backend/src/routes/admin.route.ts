@@ -58,5 +58,6 @@ router.get('/billing/subscriptions',          adminController.listSubscriptions)
 router.get('/billing/revenue',                adminController.getRevenueStats)
 router.patch('/billing/subscriptions/:id/plan', adminController.overridePlan)
 router.post('/billing/subscriptions/:id/cancel', adminController.adminCancelSubscription)
+router.post('/billing/subscriptions/manual',  adminController.createManualSubscription)
 
 export default router

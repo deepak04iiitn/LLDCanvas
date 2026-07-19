@@ -306,6 +306,19 @@ export const adminApi = {
 
     cancelSubscription: (id: string) =>
       req<{ ok: boolean }>(`/billing/subscriptions/${id}/cancel`, { method: 'POST' }),
+
+    createManualSubscription: (payload: {
+      userId: string
+      plan: 'pro' | 'ultimate'
+      months: number
+      currency: 'INR' | 'USD'
+      amountPaid: number
+      note?: string
+    }) =>
+      req<{ ok: boolean; subscriptionId: string; userId: string; plan: string }>(
+        '/billing/subscriptions/manual',
+        { method: 'POST', body: JSON.stringify(payload) },
+      ),
   },
 }
 
@@ -430,5 +443,9 @@ export interface AdminSubscription {
   currentPeriodEnd: string | null
   cancelAtPeriodEnd: boolean
   cancelledAt: string | null
+  paymentSource: 'razorpay' | 'manual'
+  currency: 'INR' | 'USD'
+  paidMonths: number | null
+  onboardingNote: string
   createdAt: string
 }
