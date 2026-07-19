@@ -14,6 +14,7 @@ import {
 import { AuthModal } from '@/components/auth/AuthModal'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
+import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { DiagramStage, DiagramNode, DiagramBox, type DiagramEdge } from '@/components/marketing/ConnectedDiagram'
 import { EASE, fadeUpProps, inViewProps } from '@/lib/motion'
@@ -1877,6 +1878,9 @@ export function LandingPageClient() {
           <CollaborationSection />
         </div>
       </section>
+
+      {/* ─── Testimonials ────────────────────────────────────────────────────── */}
+      <TestimonialsSection />
 
       {/* ─── FAQ ────────────────────────────────────────────────────────────── */}
       <section id="faq" className="scroll-mt-20 px-5 py-16 sm:px-8">

@@ -8,6 +8,12 @@ import {
   deleteFeedback,
   feedbackStats,
 } from '../controllers/feedback.controller'
+import {
+  listTestimonials,
+  updateTestimonial,
+  deleteTestimonial,
+  testimonialStats,
+} from '../controllers/testimonial.controller'
 
 const router = Router()
 
@@ -73,5 +79,11 @@ router.get   ('/feedback',       listFeedback)
 router.get   ('/feedback/:id',   getFeedback)
 router.patch ('/feedback/:id',   updateFeedback)
 router.delete('/feedback/:id',   deleteFeedback)
+
+// Testimonials
+router.get   ('/testimonials/stats', testimonialStats)
+router.get   ('/testimonials',       listTestimonials)
+router.patch ('/testimonials/:id',   updateTestimonial)
+router.delete('/testimonials/:id',   deleteTestimonial)
 
 export default router

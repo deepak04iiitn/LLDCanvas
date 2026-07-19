@@ -241,6 +241,7 @@ export default function DashboardPage() {
         onOpenChange={setNewModalOpen}
         onCreated={handleCreated}
       />
+
     </AppShell>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { X, Bookmark, BookmarkCheck, CheckCircle2, ChevronRight, Lightbulb, Code2, BookOpen, Maximize2 } from 'lucide-react'
+import { X, Bookmark, BookmarkCheck, CheckCircle2, ChevronRight, Lightbulb, Code2, BookOpen, Maximize2, Lock } from 'lucide-react'
 import { RevisionNoteDetail } from '@/types'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ interface Props {
   onClose: () => void
   onRevised?: (slug: string) => void
   onBookmarkToggle?: (slug: string, bookmarked: boolean) => void
+  canBookmark?: boolean
 }
 
 const DIFF_META = {
@@ -21,7 +22,7 @@ const DIFF_META = {
   advanced:     { label: 'Advanced',     dot: 'bg-red-400',     color: 'text-red-600',     bg: 'bg-red-50',      ring: 'ring-red-200'     },
 }
 
-export function NoteDrawer({ slug, onClose, onRevised, onBookmarkToggle }: Props) {
+export function NoteDrawer({ slug, onClose, onRevised, onBookmarkToggle, canBookmark = true }: Props) {
   const [note, setNote]               = useState<RevisionNoteDetail | null>(null)
   const [bookmarked, setBookmarked]   = useState(false)
   const [isRevised, setIsRevised]     = useState(false)
@@ -136,19 +137,30 @@ export function NoteDrawer({ slug, onClose, onRevised, onBookmarkToggle }: Props
                 >
                   <Maximize2 size={15} />
                 </button>
-                <button
-                  onClick={handleBookmark}
-                  disabled={bookmarking}
-                  className={cn(
-                    'p-2 rounded-lg transition-colors',
-                    bookmarked
-                      ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50'
-                      : 'text-ink-faint hover:text-amber-500 hover:bg-amber-50',
-                  )}
-                  title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
-                >
-                  {bookmarked ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
-                </button>
+                {canBookmark ? (
+                  <button
+                    onClick={handleBookmark}
+                    disabled={bookmarking}
+                    className={cn(
+                      'p-2 rounded-lg transition-colors',
+                      bookmarked
+                        ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50'
+                        : 'text-ink-faint hover:text-amber-500 hover:bg-amber-50',
+                    )}
+                    title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+                  >
+                    {bookmarked ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
+                  </button>
+                ) : (
+                  <a
+                    href="/pricing"
+                    title="Upgrade to Pro to bookmark notes"
+                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-amber-500 transition-colors hover:bg-amber-50"
+                  >
+                    <Lock size={13} />
+                    <span className="text-[10px] font-semibold">Pro</span>
+                  </a>
+                )}
               </>
             )}
             <button

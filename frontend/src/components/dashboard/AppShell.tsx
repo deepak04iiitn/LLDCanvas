@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { FolderOpen, Settings, LogOut, Menu, Timer, BarChart2, Mic, BookOpen, Layers, Users, Rocket, Crown, Zap, Lock } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { FolderOpen, Settings, Menu, Timer, BarChart2, Mic, BookOpen, Layers, Users, Rocket, Crown, Zap, Lock, Star, PenLine } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { useSession, signOut } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth-client'
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
 import type { PlanName } from '@/hooks/usePlan'
@@ -85,13 +85,7 @@ const PLAN_BADGE = {
 
 function UserFooter() {
   const { data: session } = useSession()
-  const router = useRouter()
   const { plan, isFree } = usePlan()
-
-  async function handleSignOut() {
-    await signOut()
-    router.push('/')
-  }
 
   if (!session) return null
 
@@ -99,6 +93,31 @@ function UserFooter() {
 
   return (
     <div className="shrink-0 border-t border-hairline p-3">
+      {/* Testimonial nudge */}
+      <Link
+        href="/#testimonials"
+        className="group mb-2 flex items-center gap-2.5 rounded-xl border border-amber-200/60 bg-amber-50/60 px-3 py-2 transition-all hover:border-amber-300 hover:bg-amber-50"
+      >
+        <div className="flex shrink-0 flex-col gap-0.5">
+          {[0, 1].map(row => (
+            <div key={row} className="flex gap-0.5">
+              {[0, 1, 2].map(i => (
+                <Star
+                  key={i}
+                  className="h-2 w-2 fill-amber-400 text-amber-400"
+                  style={{ opacity: 0.6 + (row * 3 + i) * 0.06 }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[11px] font-semibold text-amber-800">Loving LLDCanvas?</p>
+          <p className="text-[10px] text-amber-600/80">Share your experience</p>
+        </div>
+        <PenLine className="h-3 w-3 shrink-0 text-amber-500 transition-transform group-hover:scale-110" />
+      </Link>
+
       {/* Plan badge */}
       <Link
         href="/pricing"
@@ -111,33 +130,6 @@ function UserFooter() {
         {isFree && <span className="text-brand text-[10px] font-semibold">Upgrade</span>}
       </Link>
 
-      <div className="flex items-center gap-3 rounded-md px-3 py-2">
-        {session.user.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={session.user.image}
-            alt={session.user.name}
-            className="h-7 w-7 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-tint">
-            <span className="text-xs font-semibold text-brand">
-              {session.user.name?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-ink">{session.user.name}</p>
-          <p className="truncate text-[10px] text-ink-faint">{session.user.email}</p>
-        </div>
-      </div>
-      <button
-        onClick={handleSignOut}
-        className="mt-0.5 flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-xs text-ink-faint transition-colors duration-150 hover:bg-hairline/50 hover:text-ink"
-      >
-        <LogOut size={13} />
-        Sign out
-      </button>
     </div>
   )
 }

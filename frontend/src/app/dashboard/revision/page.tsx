@@ -98,22 +98,20 @@ function NoteCard({
               <CheckCircle2 className="h-3 w-3" /> Revised
             </span>
           )}
-          <button
-            onClick={handleBookmark}
-            title={canBookmark ? (bookmarked ? 'Remove bookmark' : 'Bookmark') : 'Upgrade to Pro to bookmark'}
-            className={cn(
-              'rounded-md p-1 transition-colors',
-              !canBookmark
-                ? 'text-amber-400 opacity-0 group-hover:opacity-70'
-                : bookmarked
+          {canBookmark && (
+            <button
+              onClick={handleBookmark}
+              title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+              className={cn(
+                'rounded-md p-1 transition-colors',
+                bookmarked
                   ? 'text-amber-500 hover:text-amber-600'
                   : 'text-ink-faint opacity-0 group-hover:opacity-100 hover:text-amber-500',
-            )}
-          >
-            {canBookmark
-              ? <Bookmark size={13} className={bookmarked ? 'fill-current' : ''} />
-              : <Lock size={13} />}
-          </button>
+              )}
+            >
+              <Bookmark size={13} className={bookmarked ? 'fill-current' : ''} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -483,6 +481,7 @@ export default function RevisionPage() {
         onClose={() => setOpenSlug(null)}
         onRevised={handleRevised}
         onBookmarkToggle={handleBookmarkToggle}
+        canBookmark={!isFree}
       />
     </AppShell>
   )

@@ -354,4 +354,15 @@ export const api = {
         body: JSON.stringify(payload),
       }),
   },
+
+  testimonials: {
+    getApproved: () =>
+      request<{ _id: string; name: string; role: string; content: string; rating: number; avatar: string; featured: boolean; createdAt: string }[]>('/testimonials'),
+
+    submit: (payload: { role: string; content: string; rating: number }) =>
+      request<{ ok: boolean; id: string }>('/testimonials', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
 }

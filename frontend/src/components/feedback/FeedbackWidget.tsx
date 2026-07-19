@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageSquarePlus, X, Bug, Lightbulb, TrendingUp, Wrench,
@@ -24,7 +25,9 @@ const FB_TYPES: { id: FbType; label: string; Icon: typeof Bug; color: string; bg
 // ─── Main Widget ──────────────────────────────────────────────────────────────
 
 export function FeedbackWidget() {
+  const pathname = usePathname()
   const { data: session } = useSession()
+
   const [open,     setOpen]     = useState(false)
   const [step,     setStep]     = useState<'type' | 'form' | 'done'>('type')
   const [fbType,   setFbType]   = useState<FbType | null>(null)
@@ -92,6 +95,9 @@ export function FeedbackWidget() {
   }
 
   const selectedType = FB_TYPES.find(t => t.id === fbType)
+
+  // Only show on the home/landing page
+  if (pathname !== '/') return null
 
   return (
     <div className="fixed bottom-6 right-6 z-50" ref={panelRef}>

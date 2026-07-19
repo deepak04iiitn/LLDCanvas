@@ -347,6 +347,42 @@ export const adminApi = {
     delete: (id: string) =>
       req<{ ok: boolean }>(`/feedback/${id}`, { method: 'DELETE' }),
   },
+
+  testimonials: {
+    stats: () =>
+      req<{ total: number; byStatus: Record<string, number>; avgRating: number }>('/testimonials/stats'),
+
+    list: (params?: { status?: string; page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => v != null && qs.set(k, String(v)))
+      return req<{ items: AdminTestimonial[]; total: number; page: number; pages: number }>(
+        `/testimonials${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+
+    update: (id: string, payload: { status?: string; featured?: boolean; adminNote?: string }) =>
+      req<AdminTestimonial>(`/testimonials/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+
+    delete: (id: string) =>
+      req<{ ok: boolean }>(`/testimonials/${id}`, { method: 'DELETE' }),
+  },
+}
+
+// ─── Admin testimonial type ───────────────────────────────────────────────────
+
+export interface AdminTestimonial {
+  _id:       string
+  userId:    string
+  name:      string
+  email:     string
+  role:      string
+  content:   string
+  rating:    number
+  avatar:    string
+  status:    'pending' | 'approved' | 'rejected'
+  featured:  boolean
+  adminNote: string
+  createdAt: string
 }
 
 // ─── New entity types ─────────────────────────────────────────────────────────
