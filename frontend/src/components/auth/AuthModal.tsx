@@ -38,24 +38,20 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
     setLoading(false); setGoogleLoading(false)
   }
 
-  async function handleGoogle() {
+  function handleGoogle() {
     setGoogleLoading(true)
-    try {
-      const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
-      const redirectPath = postLoginRedirect ?? '/dashboard'
-      if (postLoginRedirect) sessionStorage.removeItem('postLoginRedirect')
-      // Google sign-in is a full-page redirect, so it never passes through
-      // authClient's fetch-based bearer-token capture. Route the final
-      // callback through our backend bridge instead, which mints the token
-      // while the session cookie is still first-party and hands it back to
-      // us via a query param — see backend `/auth/bridge`.
-      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-      const callbackURL = `${apiBase}/auth/bridge?redirect=${encodeURIComponent(redirectPath)}`
-      await signIn.social({ provider: 'google', callbackURL })
-    } catch {
-      toast.error('Google sign-in failed. Please try again.')
-      setGoogleLoading(false)
-    }
+    const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
+    const redirectPath = postLoginRedirect ?? '/dashboard'
+    if (postLoginRedirect) sessionStorage.removeItem('postLoginRedirect')
+    // Deliberately NOT using authClient.signIn.social() — it does a
+    // cross-origin fetch() first to mint Google's OAuth "state" cookie,
+    // then redirects. That fetch response is cross-site (frontend calling
+    // backend), so third-party cookie blocking silently drops the state
+    // cookie, breaking the flow with "state_mismatch" on Google's callback.
+    // A direct top-level navigation instead makes the state-minting request
+    // itself same-origin to the backend — see backend `/auth/google/start`.
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+    window.location.href = `${apiBase}/auth/google/start?redirect=${encodeURIComponent(redirectPath)}`
   }
 
   async function handleEmailSubmit(e: React.FormEvent) {

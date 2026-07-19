@@ -104,6 +104,41 @@ app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
   }
 })
 
+// better-auth's signIn.social() normally does a cross-origin fetch() POST
+// to mint the OAuth "state" cookie, then redirects the browser to Google —
+// but that fetch() response is cross-site (frontend calling backend), so
+// third-party cookie blocking silently drops the state cookie, causing
+// Google's callback to fail with "state_mismatch". Fix: mint that cookie
+// during a same-origin top-level navigation instead, by having the browser
+// hit this GET route directly (no preceding fetch) which calls
+// signInSocial server-side, forwards whatever cookie(s) it sets, and
+// redirects straight to Google.
+app.get('/auth/google/start', async (req, res, next) => {
+  try {
+    const redirectPath = typeof req.query.redirect === 'string' ? req.query.redirect : '/dashboard'
+    const auth = await getAuth()
+    const { fromNodeHeaders } = await dynamicImport<typeof import('better-auth/node')>('better-auth/node')
+    const backendOrigin = (process.env.BETTER_AUTH_URL ?? 'http://localhost:4000').trim().replace(/\/+$/, '')
+    const bridgeCallback = `${backendOrigin}/auth/bridge?redirect=${encodeURIComponent(redirectPath)}`
+
+    const result = (await auth.api.signInSocial({
+      body: { provider: 'google', callbackURL: bridgeCallback },
+      headers: fromNodeHeaders(req.headers),
+      returnHeaders: true,
+    })) as { headers?: Headers; response?: { url?: string } }
+
+    const setCookies = (result.headers as Headers & { getSetCookie?: () => string[] })?.getSetCookie?.()
+      ?? (result.headers?.get('set-cookie') ? [result.headers.get('set-cookie')!] : [])
+    if (setCookies.length) res.setHeader('Set-Cookie', setCookies)
+
+    const url = result.response?.url
+    if (!url) throw new Error('signInSocial did not return an authorization URL')
+    res.redirect(url)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // Google OAuth is a full-page redirect, so signIn.social's callbackURL
 // never passes through the frontend's fetch-based bearer-token capture.
 // Point that callbackURL at this same-origin bridge instead: the just-set
