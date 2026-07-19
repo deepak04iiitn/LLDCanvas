@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { ObjectId } from 'mongodb'
 import mongoose from 'mongoose'
-import { getMongoClient } from '../config/auth'
 import { Diagram } from '../models/diagram.model'
 import { InterviewSession } from '../models/interview-session.model'
 import { Problem } from '../models/problem.model'
@@ -53,25 +51,12 @@ async function computeMRR(): Promise<number> {
   return Math.round(mrr)
 }
 
-async function userCollection() {
-  const client = await getMongoClient()
-  return client.db().collection('user')
-}
-
-async function authSessionCollection() {
-  const client = await getMongoClient()
-  return client.db().collection('session')
-}
-
 // ─── Overview / Stats ─────────────────────────────────────────────────────────
 
 export const adminController = {
 
   getOverview: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userCollection()
-      const authSessions = await authSessionCollection()
-
       const now = new Date()
       const todayStart = startOfDay(now)
       const weekStart = daysAgo(7)
@@ -90,30 +75,30 @@ export const adminController = {
         practiceTimeAgg,
         activeToday,
       ] = await Promise.all([
-        users.countDocuments(),
-        users.countDocuments({ createdAt: { $gte: todayStart } }),
-        users.countDocuments({ createdAt: { $gte: weekStart } }),
-        users.countDocuments({ blocked: true }),
+        User.countDocuments(),
+        User.countDocuments({ createdAt: { $gte: todayStart } }),
+        User.countDocuments({ createdAt: { $gte: weekStart } }),
+        User.countDocuments({ blocked: true }),
         Diagram.countDocuments({ isTemplate: false }),
         Diagram.countDocuments({ isTemplate: false, createdAt: { $gte: todayStart } }),
         InterviewSession.countDocuments(),
         InterviewSession.countDocuments({ status: 'completed' }),
         InterviewSession.countDocuments({ status: 'active' }),
         InterviewSession.aggregate([{ $group: { _id: null, total: { $sum: '$timeElapsed' } } }]),
-        authSessions.distinct('userId', { createdAt: { $gte: todayStart } }),
+        User.countDocuments({ lastLoginAt: { $gte: todayStart } }),
       ])
 
       const totalPracticeSeconds = practiceTimeAgg[0]?.total ?? 0
 
       // ── 30-day user growth (one bucket per day) ────────────────────
-      const userGrowth = await users.aggregate([
+      const userGrowth = await User.aggregate([
         { $match: { createdAt: { $gte: monthStart } } },
         { $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           count: { $sum: 1 },
         }},
         { $sort: { _id: 1 } },
-      ]).toArray()
+      ])
 
       // ── 30-day diagram activity ────────────────────────────────────
       const diagramActivity = await Diagram.aggregate([
@@ -144,10 +129,7 @@ export const adminController = {
       ])
 
       const topUserIds = topUsersByDiagrams.map(u => u._id.toString())
-      const topUsersInfo = await users.find(
-        { _id: { $in: topUserIds.map(id => new ObjectId(id)) } },
-        { projection: { _id: 1, name: 1, email: 1 } }
-      ).toArray()
+      const topUsersInfo = await User.find({ _id: { $in: topUserIds } }).select('name email').lean()
 
       const topUsers = topUsersByDiagrams.map(u => {
         const info = topUsersInfo.find(i => i._id.toString() === u._id.toString())
@@ -163,7 +145,7 @@ export const adminController = {
           newToday,
           newThisWeek,
           blockedCount,
-          activeToday: activeToday.length,
+          activeToday,
           totalDiagrams,
           newDiagramsToday,
           totalSessions,
@@ -193,7 +175,6 @@ export const adminController = {
 
   listUsers: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userCollection()
       const page  = Math.max(1, Number(req.query.page)  || 1)
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20))
       const q      = typeof req.query.q      === 'string' ? req.query.q.trim()      : ''
@@ -223,14 +204,13 @@ export const adminController = {
       }
 
       const [total, rawUsers] = await Promise.all([
-        users.countDocuments(match),
-        users.find(match, {
-          projection: { _id: 1, name: 1, email: 1, image: 1, isAdmin: 1, blocked: 1, createdAt: 1, updatedAt: 1 },
-        })
+        User.countDocuments(match),
+        User.find(match)
+          .select('name email image isAdmin blocked createdAt updatedAt')
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
           .limit(limit)
-          .toArray(),
+          .lean(),
       ])
 
       // Attach diagram + session counts per user
@@ -270,8 +250,7 @@ export const adminController = {
 
   getUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
+      const user = await User.findById(req.params.id)
       if (!user) throw createError('User not found', 404)
 
       const userId = user._id.toString()
@@ -308,14 +287,13 @@ export const adminController = {
 
   toggleBlock: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
+      const user = await User.findById(req.params.id)
       if (!user) throw createError('User not found', 404)
       if (user.isAdmin) throw createError('Cannot block an admin user', 400)
 
-      const newBlocked = !user.blocked
-      await users.updateOne({ _id: new ObjectId(req.params.id as string) }, { $set: { blocked: newBlocked } })
-      res.json({ ok: true, blocked: newBlocked })
+      user.blocked = !user.blocked
+      await user.save()
+      res.json({ ok: true, blocked: user.blocked })
     } catch (err) {
       next(err)
     }
@@ -323,14 +301,13 @@ export const adminController = {
 
   deleteUser: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(req.params.id as string) })
+      const user = await User.findById(req.params.id)
       if (!user) throw createError('User not found', 404)
       if (user.isAdmin) throw createError('Cannot delete an admin user', 400)
 
       const userId = user._id.toString()
       await Promise.all([
-        users.deleteOne({ _id: new ObjectId(req.params.id as string) }),
+        user.deleteOne(),
         Diagram.deleteMany({ userId }),
         InterviewSession.deleteMany({ userId }),
       ])
@@ -365,11 +342,7 @@ export const adminController = {
 
       // Attach owner info
       const userIds = [...new Set(diagrams.map(d => d.userId.toString()))]
-      const users = await userCollection()
-      const owners = await users.find(
-        { _id: { $in: userIds.map(id => new ObjectId(id)) } },
-        { projection: { _id: 1, name: 1, email: 1 } }
-      ).toArray()
+      const owners = await User.find({ _id: { $in: userIds } }).select('name email').lean()
       const ownerMap = new Map(owners.map(o => [o._id.toString(), { name: o.name, email: o.email }]))
 
       const enriched = diagrams.map(d => ({
@@ -428,11 +401,7 @@ export const adminController = {
 
       // Attach user info
       const userIds = [...new Set(sessions.map(s => s.userId))]
-      const users = await userCollection()
-      const sessionUsers = await users.find(
-        { _id: { $in: userIds.map(id => new ObjectId(id)) } },
-        { projection: { _id: 1, name: 1, email: 1 } }
-      ).toArray()
+      const sessionUsers = await User.find({ _id: { $in: userIds } }).select('name email').lean()
       const userMap = new Map(sessionUsers.map(u => [u._id.toString(), { name: u.name, email: u.email }]))
 
       const enriched = sessions.map(s => ({
@@ -938,9 +907,8 @@ export const adminController = {
 
       // Enrich top users with name/email
       const userIds = topUsers.map((u: { _id: string }) => u._id)
-      const users   = await userCollection()
-      const userDocs = await users.find({ id: { $in: userIds } } as object).toArray()
-      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+      const userDocs = await User.find({ _id: { $in: userIds } }).select('name email').lean()
+      const userMap  = new Map(userDocs.map(u => [u._id.toString(), { name: u.name, email: u.email }]))
 
       const enrichedTopUsers = topUsers.map((u: { _id: string; total: number; success: number; lastRun: Date }) => ({
         ...u,
@@ -1000,9 +968,8 @@ export const adminController = {
 
       // Enrich with user info
       const ids = [...new Set(logs.map(l => l.userId))]
-      const users = await userCollection()
-      const userDocs = await users.find({ id: { $in: ids } } as object).toArray()
-      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+      const userDocs = await User.find({ _id: { $in: ids } }).select('name email').lean()
+      const userMap  = new Map(userDocs.map(u => [u._id.toString(), { name: u.name, email: u.email }]))
 
       const enriched = logs.map(l => ({
         ...l,
@@ -1033,8 +1000,7 @@ export const adminController = {
         { $sort: { _id: 1 } },
       ])
 
-      const users = await userCollection()
-      const userDoc = await users.findOne({ id: userId } as object)
+      const userDoc = await User.findById(userId).select('name email').lean()
 
       res.json({
         userId,
@@ -1065,9 +1031,8 @@ export const adminController = {
 
       // Enrich with user info
       const ids = bans.map(b => b.userId)
-      const users = await userCollection()
-      const userDocs = await users.find({ id: { $in: ids } } as object).toArray()
-      const userMap  = new Map(userDocs.map(u => [u.id as string, { name: u.name as string, email: u.email as string }]))
+      const userDocs = await User.find({ _id: { $in: ids } }).select('name email').lean()
+      const userMap  = new Map(userDocs.map(u => [u._id.toString(), { name: u.name, email: u.email }]))
 
       const enriched = bans.map(b => ({
         ...b,
@@ -1310,8 +1275,7 @@ export const adminController = {
         throw createError('months must be an integer between 1 and 60', 400)
       }
 
-      const users = await userCollection()
-      const user = await users.findOne({ _id: new ObjectId(userId) })
+      const user = await User.findById(userId)
       if (!user) throw createError('User not found', 404)
 
       // billingInterval only distinguishes monthly/yearly for display purposes
@@ -1347,7 +1311,7 @@ export const adminController = {
       const periodEnd = new Date(now)
       periodEnd.setMonth(periodEnd.getMonth() + months)
 
-      const syntheticId = `manual_${new ObjectId().toString()}`
+      const syntheticId = `manual_${new mongoose.Types.ObjectId().toString()}`
 
       const sub = await Subscription.create({
         userId,
@@ -1366,21 +1330,15 @@ export const adminController = {
         onboardingNote:     note ?? '',
       })
 
-      // Grant access — upsert since a brand-new payer may not have a Mongoose
-      // `User` doc yet (only ever created lazily by a real/manual upgrade).
-      // `name`/`email` are required fields on that schema, so they must be
-      // supplied here in case this upsert is the doc's first insert.
-      await User.findOneAndUpdate(
-        { _id: userId },
-        { plan, name: user.name, email: user.email },
-        { upsert: true, setDefaultsOnInsert: true },
-      )
+      // Grant access
+      user.plan = plan
+      await user.save()
 
       await RevenueEvent.create({
         userId,
         subscriptionId:     sub._id.toString(),
         razorpaySubId:      syntheticId,
-        razorpayPaymentId:  `manual_${new ObjectId().toString()}`,
+        razorpayPaymentId:  `manual_${new mongoose.Types.ObjectId().toString()}`,
         plan,
         currency,
         amountPaid,

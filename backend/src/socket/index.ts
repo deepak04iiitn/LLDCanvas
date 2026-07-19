@@ -1,8 +1,8 @@
 import { Server as HttpServer } from 'http'
 import { Server } from 'socket.io'
-import { getAuth } from '../config/auth'
+import { verifyAuthToken } from '../utils/jwt'
+import { User } from '../models/user.model'
 import { registerCollabHandlers } from './collab.handler'
-import { dynamicImport } from '../utils/dynamic-import'
 
 export function initSocketServer(httpServer: HttpServer, allowedOrigins: string[]) {
   const io = new Server(httpServer, {
@@ -17,33 +17,19 @@ export function initSocketServer(httpServer: HttpServer, allowedOrigins: string[
   // ── Auth middleware ──────────────────────────────────────────────────────
   io.use(async (socket, next) => {
     try {
-      // Build node-compatible headers from the socket handshake. Browsers
-      // can't set custom headers on a WebSocket handshake, so the client
-      // sends its bearer token via `auth: { token }` instead — fold it into
-      // an Authorization header the bearer plugin recognizes.
-      const rawHeaders = { ...socket.handshake.headers } as Record<string, string | string[] | undefined>
       const token = socket.handshake.auth?.token as string | undefined
-      if (token) rawHeaders.authorization = `Bearer ${token}`
+      if (!token) return next(new Error('Unauthorized'))
 
-      const [auth, { fromNodeHeaders }] = await Promise.all([
-        getAuth(),
-        dynamicImport<typeof import('better-auth/node')>('better-auth/node'),
-      ])
-      const session = await auth.api.getSession({ headers: fromNodeHeaders(rawHeaders) })
-
-      if (!session?.user) {
-        return next(new Error('Unauthorized'))
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const u = session.user as any
-      if (u.blocked) return next(new Error('Account blocked'))
+      const payload = verifyAuthToken(token)
+      const user = await User.findById(payload.id)
+      if (!user) return next(new Error('Unauthorized'))
+      if (user.blocked) return next(new Error('Account blocked'))
 
       socket.data.user = {
-        id:    session.user.id,
-        email: session.user.email,
-        name:  session.user.name,
-        image: session.user.image ?? undefined,
+        id:    user.id,
+        email: user.email,
+        name:  user.name,
+        image: user.image ?? undefined,
       }
 
       next()

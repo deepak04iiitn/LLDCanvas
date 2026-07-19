@@ -8,7 +8,7 @@ import {
   HelpCircle, Lightbulb, Layers, Clock,
 } from 'lucide-react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import { api } from '@/lib/api'
 import type { ProblemPost, PostReply } from '@/types'
 import { cn } from '@/lib/utils'

@@ -10,7 +10,7 @@ import {
   CreditCard, BarChart3, Bug, Quote,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
-import { signOut } from '@/lib/auth-client'
+import { signOut } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 
 const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p: string) => boolean; divider?: boolean }[] = [

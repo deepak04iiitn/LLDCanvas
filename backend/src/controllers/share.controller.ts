@@ -2,16 +2,13 @@ import { Request, Response, NextFunction } from 'express'
 import { DiagramShare } from '../models/diagram-share.model'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
-import { getMongoClient } from '../config/auth'
+import { User } from '../models/user.model'
 
-// Helper: fetch user email from the auth `user` collection by userId
+// Helper: fetch user email by userId
 async function getUserEmail(userId: string): Promise<string | null> {
   try {
-    const client = await getMongoClient()
-    const doc = await client.db().collection('user').findOne({ id: userId } as object)
-    // Better Auth stores users with both _id (ObjectId) and id (string)
-    if (doc?.email) return doc.email as string
-    return null
+    const doc = await User.findById(userId).select('email').lean()
+    return doc?.email ?? null
   } catch {
     return null
   }

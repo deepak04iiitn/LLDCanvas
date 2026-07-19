@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

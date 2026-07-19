@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { AppShell } from '@/components/dashboard/AppShell'
-import { useSession, signOut } from '@/lib/auth-client'
+import { useSession, signOut } from '@/lib/auth'
 import { api } from '@/lib/api'
 import { usePlan } from '@/hooks/usePlan'
 import Link from 'next/link'

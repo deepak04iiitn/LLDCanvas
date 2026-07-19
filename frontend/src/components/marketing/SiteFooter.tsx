@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 
 export function SiteFooter() {
   const [authOpen, setAuthOpen] = useState(false)

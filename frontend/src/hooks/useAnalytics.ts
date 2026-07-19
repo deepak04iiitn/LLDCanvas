@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 const HEARTBEAT_INTERVAL_MS = 30_000   // ping every 30 s

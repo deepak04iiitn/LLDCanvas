@@ -3,18 +3,17 @@ import { Problem } from '../models/problem.model'
 import { UserSolution } from '../models/user-solution.model'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
-import { getMongoClient } from '../config/auth'
+import { User } from '../models/user.model'
 import { isProblemAccessible } from '../config/plans'
 
-// Fetch user display info (name + image) in bulk from the auth user collection
+// Fetch user display info (name + image) in bulk
 async function fetchUserInfo(userIds: string[]): Promise<Map<string, { name: string; image: string | null }>> {
   const map = new Map<string, { name: string; image: string | null }>()
   if (!userIds.length) return map
   try {
-    const client = await getMongoClient()
-    const docs = await client.db().collection('user').find({ id: { $in: userIds } } as object).toArray()
+    const docs = await User.find({ _id: { $in: userIds } }).select('name image').lean()
     for (const d of docs) {
-      map.set(d.id as string, { name: (d.name as string) ?? 'Anonymous', image: (d.image as string | null) ?? null })
+      map.set(d._id.toString(), { name: d.name ?? 'Anonymous', image: d.image ?? null })
     }
   } catch { /* non-fatal */ }
   return map

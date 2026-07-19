@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { useCollab } from '@/contexts/CollabContext'
 import { MentionInput } from './MentionInput'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import type { CollabComment } from '@/types'
 
 interface CommentThreadProps {

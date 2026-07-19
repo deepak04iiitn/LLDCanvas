@@ -2,7 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from '@/lib/auth-client'
+import { useSession } from '@/lib/auth'
 import { AdminShell } from '@/components/admin/AdminShell'
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
