@@ -5,8 +5,8 @@
  */
 import 'dotenv/config'
 import { createServer } from 'http'
-import express, { type CorsOptions } from 'express'
-import cors from 'cors'
+import express from 'express'
+import cors, { type CorsOptions } from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'

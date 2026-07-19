@@ -1,6 +1,5 @@
 import { Server as HttpServer } from 'http'
 import { Server } from 'socket.io'
-import { fromNodeHeaders } from 'better-auth/node'
 import { getAuth } from '../config/auth'
 import { registerCollabHandlers } from './collab.handler'
 
@@ -19,7 +18,7 @@ export function initSocketServer(httpServer: HttpServer, allowedOrigins: string[
     try {
       // Build node-compatible headers from the socket handshake
       const rawHeaders = socket.handshake.headers as Record<string, string | string[] | undefined>
-      const auth = await getAuth()
+      const [auth, { fromNodeHeaders }] = await Promise.all([getAuth(), import('better-auth/node')])
       const session = await auth.api.getSession({ headers: fromNodeHeaders(rawHeaders) })
 
       if (!session?.user) {
