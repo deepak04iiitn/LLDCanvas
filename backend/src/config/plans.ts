@@ -90,6 +90,13 @@ export const FREE_MEDIUM_PROBLEM_SLUGS = [
   'social-event-planning-app',
   'podcast-platform',
   'online-survey-form-builder',
+  'restaurant-pos-kitchen-display',
+  'ebook-lending-platform',
+  'gym-membership-class-booking',
+  'fitness-tracker-app',
+  'multiplayer-tictactoe-matchmaking',
+  'warehouse-order-fulfillment',
+  'airline-boarding-seat-assignment',
 ] as const
 
 export function isProblemAccessible(

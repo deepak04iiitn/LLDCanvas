@@ -198,57 +198,57 @@ function Skeleton() {
 
 export default function ProblemsPage() {
   const { isFree } = usePlan()
-  const [problems,   setProblems]   = useState<ProblemSummary[]>([])
-  const [categories, setCategories] = useState<string[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [diff,       setDiff]       = useState<Diff>('all')
-  const [category,   setCategory]   = useState('')
-  const [q,          setQ]          = useState('')
+  const [allProblems, setAllProblems] = useState<ProblemSummary[]>([])
+  const [categories,  setCategories]  = useState<string[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [diff,        setDiff]        = useState<Diff>('all')
+  const [category,    setCategory]    = useState('')
+  const [q,           setQ]           = useState('')
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Fetch ALL problems once for accurate counts
   useEffect(() => {
     api.problems.categories().then(r => setCategories(r.categories)).catch(() => {})
+    api.problems.list({}).then(r => setAllProblems(r.problems)).catch(() => {})
   }, [])
+
+  // problems shown = allProblems filtered client-side
+  const problems = useMemo(() => {
+    let list = allProblems
+    if (diff !== 'all') list = list.filter(p => p.difficulty === diff)
+    if (category)       list = list.filter(p => p.category === category)
+    if (q.trim())       list = list.filter(p => p.title.toLowerCase().includes(q.toLowerCase()))
+    return list
+  }, [allProblems, diff, category, q])
 
   useEffect(() => {
     setLoading(true)
-    api.problems.list({
-      difficulty: diff === 'all' ? undefined : diff,
-      category:   category || undefined,
-    })
-      .then(r => setProblems(r.problems))
+    api.problems.list({})
+      .then(r => { setAllProblems(r.problems) })
       .catch(() => toast.error('Could not load problems'))
       .finally(() => setLoading(false))
-  }, [diff, category])
+  }, [])
 
   function handleSearch(v: string) {
     setQ(v)
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => {
-      api.problems.list({ q: v || undefined, difficulty: diff === 'all' ? undefined : diff, category: category || undefined })
-        .then(r => setProblems(r.problems))
-        .catch(() => {})
-    }, 300)
   }
 
-  const filtered = useMemo(() => {
-    if (!q.trim()) return problems
-    return problems.filter(p => p.title.toLowerCase().includes(q.toLowerCase()))
-  }, [problems, q])
+  const filtered = problems
 
-  // Stats
-  const total     = problems.length
-  const solved    = problems.filter(p => p.myStatus === 'submitted').length
-  const inProg    = problems.filter(p => p.myStatus === 'in_progress').length
-  const easy      = problems.filter(p => p.difficulty === 'easy'   && p.myStatus === 'submitted').length
-  const medium    = problems.filter(p => p.difficulty === 'medium' && p.myStatus === 'submitted').length
-  const hard      = problems.filter(p => p.difficulty === 'hard'   && p.myStatus === 'submitted').length
+  // Stats — always from full list
+  const total     = allProblems.length
+  const solved    = allProblems.filter(p => p.myStatus === 'submitted').length
+  const inProg    = allProblems.filter(p => p.myStatus === 'in_progress').length
+  const easy      = allProblems.filter(p => p.difficulty === 'easy'   && p.myStatus === 'submitted').length
+  const medium    = allProblems.filter(p => p.difficulty === 'medium' && p.myStatus === 'submitted').length
+  const hard      = allProblems.filter(p => p.difficulty === 'hard'   && p.myStatus === 'submitted').length
 
   const counts: Record<Diff, number> = {
-    all:    problems.length,
-    easy:   problems.filter(p => p.difficulty === 'easy').length,
-    medium: problems.filter(p => p.difficulty === 'medium').length,
-    hard:   problems.filter(p => p.difficulty === 'hard').length,
+    all:    allProblems.length,
+    easy:   allProblems.filter(p => p.difficulty === 'easy').length,
+    medium: allProblems.filter(p => p.difficulty === 'medium').length,
+    hard:   allProblems.filter(p => p.difficulty === 'hard').length,
   }
 
   return (
@@ -284,7 +284,7 @@ export default function ProblemsPage() {
                 Solved
               </span>
               {(['easy', 'medium', 'hard'] as const).map(d => {
-                const total = problems.filter(p => p.difficulty === d).length
+                const total = allProblems.filter(p => p.difficulty === d).length
                 const done  = d === 'easy' ? easy : d === 'medium' ? medium : hard
                 const m = DIFF_META[d]
                 return (
@@ -299,7 +299,7 @@ export default function ProblemsPage() {
               <div className="ml-auto flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5 text-ink-faint" />
                 <span className="font-mono text-[11px] text-ink-faint">
-                  {problems.reduce((a, p) => a + p.submissionCount, 0).toLocaleString()} total community solutions
+                  {allProblems.reduce((a, p) => a + p.submissionCount, 0).toLocaleString()} total community solutions
                 </span>
               </div>
             </div>

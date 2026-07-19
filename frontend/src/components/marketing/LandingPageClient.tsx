@@ -321,12 +321,12 @@ function FeatureChain() {
 
 // ─── Spec strip ───────────────────────────────────────────────────────────────
 const SPECS = [
-  { n: '23', label: 'Design patterns' },
-  { n: '13', label: 'Class roles' },
-  { n: '7',  label: 'Relationship types' },
-  { n: '11', label: 'Runnable languages' },
-  { n: '5',  label: 'Export formats' },
-  { n: '3',  label: 'Canvas themes' },
+  { n: '100+', label: 'Practice problems' },
+  { n: '23',  label: 'Design patterns' },
+  { n: '13',  label: 'Class roles' },
+  { n: '7',   label: 'Relationship types' },
+  { n: '11',  label: 'Runnable languages' },
+  { n: '5',   label: 'Export formats' },
 ]
 function SpecStrip() {
   return (
