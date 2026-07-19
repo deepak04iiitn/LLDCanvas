@@ -42,10 +42,15 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
     setGoogleLoading(true)
     try {
       const postLoginRedirect = sessionStorage.getItem('postLoginRedirect')
-      const callbackURL = postLoginRedirect
-        ? `${window.location.origin}${postLoginRedirect}`
-        : `${window.location.origin}/dashboard`
+      const redirectPath = postLoginRedirect ?? '/dashboard'
       if (postLoginRedirect) sessionStorage.removeItem('postLoginRedirect')
+      // Google sign-in is a full-page redirect, so it never passes through
+      // authClient's fetch-based bearer-token capture. Route the final
+      // callback through our backend bridge instead, which mints the token
+      // while the session cookie is still first-party and hands it back to
+      // us via a query param — see backend `/auth/bridge`.
+      const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+      const callbackURL = `${apiBase}/auth/bridge?redirect=${encodeURIComponent(redirectPath)}`
       await signIn.social({ provider: 'google', callbackURL })
     } catch {
       toast.error('Google sign-in failed. Please try again.')

@@ -104,6 +104,32 @@ app.all('/api/auth/*', cors(corsOptions), async (req, res, next) => {
   }
 })
 
+// Google OAuth is a full-page redirect, so signIn.social's callbackURL
+// never passes through the frontend's fetch-based bearer-token capture.
+// Point that callbackURL at this same-origin bridge instead: the just-set
+// session cookie is still first-party here (browser navigating directly
+// to the backend), so we can mint the bearer token and hand it to the
+// frontend via a query param on the final redirect.
+app.get('/auth/bridge', async (req, res) => {
+  const redirectPath = typeof req.query.redirect === 'string' ? req.query.redirect : '/dashboard'
+  const frontendOrigin = allowedOrigins[0] ?? 'http://localhost:3000'
+  const target = new URL(redirectPath, frontendOrigin)
+  try {
+    const auth = await getAuth()
+    const { fromNodeHeaders } = await dynamicImport<typeof import('better-auth/node')>('better-auth/node')
+    const result = (await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+      returnHeaders: true,
+    })) as { headers?: Headers }
+    const token = result.headers?.get('set-auth-token')
+    if (token) target.searchParams.set('bearer_token', token)
+  } catch {
+    // Fall through to redirecting without a token — the frontend simply
+    // stays signed out, same as if this bridge didn't exist.
+  }
+  res.redirect(target.toString())
+})
+
 app.use('/diagrams',       diagramsRouter)
 app.use('/diagrams',       exportRouter)
 app.use('/account',        accountRouter)
