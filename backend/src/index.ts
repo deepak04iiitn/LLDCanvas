@@ -31,6 +31,11 @@ import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 const app    = express()
 const httpServer = createServer(app)
 
+// Trust the platform proxy (Vercel/Railway) so X-Forwarded-For is honored;
+// without this, express-rate-limit throws on every request instead of
+// rate-limiting by IP.
+app.set('trust proxy', 1)
+
 // ─── Allowed origins ───────────────────────────────────────────────────────────
 // Strip trailing slashes so "https://foo.com/" and "https://foo.com" both match
 // the Origin header the browser sends (which never has a trailing slash).
