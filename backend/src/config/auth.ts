@@ -1,5 +1,3 @@
-import { betterAuth } from 'better-auth'
-import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { MongoClient } from 'mongodb'
 
 // Native MongoDB client — used exclusively by Better Auth for its own
@@ -16,6 +14,11 @@ export async function getMongoClient(): Promise<MongoClient> {
 }
 
 export async function createAuth() {
+  const [{ betterAuth }, { mongodbAdapter }] = await Promise.all([
+    import('better-auth'),
+    import('better-auth/adapters/mongodb'),
+  ])
+
   const mongoClient = await getMongoClient()
   const db = mongoClient.db()
 

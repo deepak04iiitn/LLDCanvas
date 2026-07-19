@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from 'express'
-import { fromNodeHeaders } from 'better-auth/node'
 import { getAuth } from '../config/auth'
+
+async function getFromNodeHeaders() {
+  const { fromNodeHeaders } = await import('better-auth/node')
+  return fromNodeHeaders
+}
 import { createError } from './error'
 import { User } from '../models/user.model'
 import type { PlanName } from '../config/plans'
@@ -24,7 +28,7 @@ declare global {
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const auth = await getAuth()
+    const [auth, fromNodeHeaders] = await Promise.all([getAuth(), getFromNodeHeaders()])
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
     if (!session?.user) {
       res.status(401).json({ error: 'Unauthorized' })
@@ -63,7 +67,7 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
 
 export async function optionalAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
   try {
-    const auth = await getAuth()
+    const [auth, fromNodeHeaders] = await Promise.all([getAuth(), getFromNodeHeaders()])
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) })
     if (session?.user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
