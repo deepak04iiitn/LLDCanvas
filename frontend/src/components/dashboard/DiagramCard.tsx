@@ -15,6 +15,11 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogFooter,
+} from '@/components/ui/dialog'
 import { DiagramSummary } from '@/types'
 import { api } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils'
@@ -31,6 +36,8 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(diagram.title)
   const [hovered, setHovered] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   function openEditor() {
@@ -66,12 +73,16 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
   }
 
   async function handleDelete() {
+    setDeleting(true)
     try {
       await api.diagrams.delete(diagram._id)
       onDeleted(diagram._id)
       toast.success('UML Diagram deleted')
+      setConfirmOpen(false)
     } catch {
       toast.error('Failed to delete diagram')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -117,6 +128,19 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
               <ExternalLink size={14} className="text-paper-elevated" />
               <span className="text-sm font-semibold tracking-wide text-paper-elevated">Open</span>
             </motion.div>
+
+            {/* Delete button */}
+            <motion.button
+              type="button"
+              title="Delete diagram"
+              onClick={(e) => { e.stopPropagation(); setConfirmOpen(true) }}
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-ink/70 text-paper-elevated transition-colors hover:bg-red-600"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: hovered ? 1 : 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <Trash2 size={13} />
+            </motion.button>
           </div>
 
           {/* Card footer */}
@@ -173,12 +197,44 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem
-          onClick={handleDelete}
+          onClick={() => setConfirmOpen(true)}
           className="cursor-pointer gap-2.5 text-red-700 focus:bg-red-50 focus:text-red-700"
         >
           <Trash2 size={13} className="text-red-500" /> Delete
         </ContextMenuItem>
       </ContextMenuContent>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-0 shadow-xl sm:max-w-sm">
+          <div className="p-6">
+            <DialogHeader className="mb-2">
+              <DialogTitle className="font-serif text-lg font-medium text-ink">
+                Delete UML diagram?
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-ink-muted">
+              <span className="font-medium text-ink">&ldquo;{diagram.title}&rdquo;</span> will be
+              permanently deleted. This cannot be undone.
+            </p>
+            <DialogFooter className="pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmOpen(false)}
+                className="border-hairline-strong transition-all active:scale-[0.97]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-red-600 text-white transition-all hover:bg-red-700 active:scale-[0.97]"
+              >
+                {deleting ? 'Deleting…' : 'Delete Diagram'}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ContextMenu>
   )
 }

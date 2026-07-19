@@ -101,6 +101,12 @@ const STATUS_META = {
   abandoned: { label: 'Abandoned', color: 'text-amber-600',   dot: 'bg-amber-500'   },
 }
 
+const DIFFICULTY_META = {
+  easy:   { label: 'Easy',   color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  medium: { label: 'Medium', color: 'text-amber-600',   bg: 'bg-amber-50'   },
+  hard:   { label: 'Hard',   color: 'text-red-600',     bg: 'bg-red-50'     },
+}
+
 function TimelineEntry({ session, onDelete }: { session: InterviewSession; onDelete: (id: string) => void }) {
   const router = useRouter()
   const meta   = STATUS_META[session.status]
@@ -126,6 +132,14 @@ function TimelineEntry({ session, onDelete }: { session: InterviewSession; onDel
         <h3 className="min-w-0 max-w-[320px] truncate font-serif text-lg text-ink">
           {session.title}
         </h3>
+        {session.problemDifficulty && (
+          <span className={cn(
+            'rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider',
+            DIFFICULTY_META[session.problemDifficulty].bg, DIFFICULTY_META[session.problemDifficulty].color,
+          )}>
+            {DIFFICULTY_META[session.problemDifficulty].label}
+          </span>
+        )}
         <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-widest', meta.color)}>
           {meta.label}
         </span>
@@ -133,7 +147,11 @@ function TimelineEntry({ session, onDelete }: { session: InterviewSession; onDel
         <div className="ml-auto flex shrink-0 items-center gap-4 opacity-0 transition-opacity group-hover:opacity-100">
           {session.diagramId && (
             <button
-              onClick={() => router.push(`/editor/${session.diagramId}`)}
+              onClick={() => router.push(
+                session.problemSlug
+                  ? `/editor/${session.diagramId}?problem=${session.problemSlug}`
+                  : `/editor/${session.diagramId}`,
+              )}
               className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider
                          text-ink-faint transition-colors hover:text-brand"
             >
@@ -191,12 +209,12 @@ function EmptyState() {
       <BookOpen className="mb-6 h-8 w-8 text-ink-faint/50" strokeWidth={1.5} />
       <h3 className="mb-2 font-serif text-2xl text-ink">Your log is empty</h3>
       <p className="max-w-sm text-[15px] leading-relaxed text-ink-faint">
-        Open any diagram in the editor and toggle{' '}
+        Head to{' '}
         <span className="inline-flex items-center gap-1 rounded-md border border-hairline-strong
                          bg-paper px-1.5 py-0.5 font-mono text-[11px] font-medium text-ink-muted">
           <Timer className="h-3 w-3" /> Interview Mode
         </span>{' '}
-        in the top bar to start a timed session. Every session you finish gets a page in this log.
+        to start a timed practice session. Every session you finish gets a page in this log.
       </p>
     </motion.div>
   )

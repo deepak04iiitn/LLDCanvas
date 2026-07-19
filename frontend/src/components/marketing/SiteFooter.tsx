@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
@@ -10,7 +10,11 @@ import { useSession } from '@/lib/auth-client'
 export function SiteFooter() {
   const [authOpen, setAuthOpen] = useState(false)
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+  const [mounted,  setMounted]  = useState(false)
   const { data: session } = useSession()
+
+  // Only reveal session-dependent links after hydration to avoid SSR mismatch
+  useEffect(() => { setMounted(true) }, [])
 
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
   function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
@@ -45,7 +49,9 @@ export function SiteFooter() {
 
             {/* Brand block */}
             <div className="max-w-xs">
-              <Wordmark height={36} />
+              <Link href="/" className="inline-block">
+                <Wordmark height={36} />
+              </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
                 The fastest UML class diagram editor for Low-Level Design interviews and OOP design sessions.
               </p>
@@ -65,7 +71,7 @@ export function SiteFooter() {
                     { label: 'Open Editor',  href: '/editor/local', Icon: Pencil },
                     { label: 'Playground',   href: '/playground',   Icon: ArrowUpRight },
                     { label: 'Docs',         href: '/docs',         Icon: BookOpen },
-                    ...(session ? [{ label: 'Dashboard', href: '/dashboard', Icon: LayoutDashboard }] : []),
+                    ...(mounted && session ? [{ label: 'Dashboard', href: '/dashboard', Icon: LayoutDashboard }] : []),
                   ].map(({ label, href, Icon }) => (
                     <li key={label}>
                       <Link
@@ -80,7 +86,7 @@ export function SiteFooter() {
                 </ul>
               </div>
 
-              {!session && (
+              {mounted && !session && (
                 <div>
                   <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
                     Account
@@ -116,7 +122,7 @@ export function SiteFooter() {
           {/* Bottom bar */}
           <div className="flex flex-col gap-2 py-5 pr-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-[11px] text-ink-faint">
-              © {new Date().getFullYear()} LLDCanvas — built for engineers, by engineers.
+              © <span suppressHydrationWarning>{new Date().getFullYear()}</span> LLDCanvas — built for engineers, by engineers.
             </p>
             <p className="shrink-0 font-mono text-[11px] text-ink-faint">
               Crafted with precision · India

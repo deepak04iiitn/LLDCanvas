@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express'
 import { fromNodeHeaders } from 'better-auth/node'
 import { getAuth } from '../config/auth'
 import { createError } from './error'
+import { User } from '../models/user.model'
+import type { PlanName } from '../config/plans'
 
 // Augment Express Request to carry the authenticated user
 declare global {
@@ -14,6 +16,7 @@ declare global {
         image?: string
         isAdmin: boolean
         blocked: boolean
+        plan: PlanName
       }
     }
   }
@@ -33,6 +36,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       res.status(403).json({ error: 'Account has been blocked. Contact support.' })
       return
     }
+    // Fetch plan from our User collection (single source of truth)
+    const dbUser = await User.findById(session.user.id).select('plan').lean()
     req.user = {
       id: session.user.id,
       email: session.user.email,
@@ -40,6 +45,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       image: session.user.image ?? undefined,
       isAdmin: u.isAdmin ?? false,
       blocked: u.blocked ?? false,
+      plan: (dbUser?.plan ?? 'free') as PlanName,
     }
     next()
   } catch {
@@ -62,6 +68,7 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
     if (session?.user) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const u = session.user as any
+      const dbUser = await User.findById(session.user.id).select('plan').lean()
       req.user = {
         id: session.user.id,
         email: session.user.email,
@@ -69,6 +76,7 @@ export async function optionalAuth(req: Request, _res: Response, next: NextFunct
         image: session.user.image ?? undefined,
         isAdmin: u.isAdmin ?? false,
         blocked: u.blocked ?? false,
+        plan: (dbUser?.plan ?? 'free') as PlanName,
       }
     }
   } catch {

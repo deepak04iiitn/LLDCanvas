@@ -22,11 +22,12 @@ export default function EditorPage() {
   const router           = useRouter()
   const searchParams     = useSearchParams()
   const shareToken       = searchParams.get('share') ?? undefined
-  const problemSlug      = searchParams.get('problem') ?? undefined
+  const urlProblemSlug   = searchParams.get('problem') ?? undefined
 
   const { data: session, isPending: sessionLoading } = useSession()
 
   const [diagram,    setDiagram]    = useState<DiagramFull | null>(null)
+  const [linkedProblemSlug, setLinkedProblemSlug] = useState<string | null>(null)
   const [permission, setPermission] = useState<'view' | 'edit'>('edit')
   const [loading,    setLoading]    = useState(true)
   const [error,      setError]      = useState<string | null>(null)
@@ -76,6 +77,7 @@ export default function EditorPage() {
     api.diagrams.get(id, shareToken)
       .then(res => {
         setDiagram(res.diagram)
+        setLinkedProblemSlug(res.problemSlug)
         // Owner requests carry no sharePermission — default to edit.
         // Shared / community-solution requests carry it explicitly.
         if (!shareToken) setPermission(res.sharePermission ?? 'edit')
@@ -169,7 +171,7 @@ export default function EditorPage() {
         onRename={handleRename}
         readOnly={isReadOnly}
         shareToken={shareToken}
-        problemSlug={problemSlug}
+        problemSlug={urlProblemSlug ?? linkedProblemSlug ?? undefined}
       />
     </MobileEditorGuard>
   )

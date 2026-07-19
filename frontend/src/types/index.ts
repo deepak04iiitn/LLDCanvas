@@ -12,6 +12,7 @@ export interface ProblemSummary {
   order: number
   submissionCount: number
   myStatus: 'in_progress' | 'submitted' | null
+  locked: boolean
 }
 
 export interface ProblemDetail extends ProblemSummary {
@@ -42,6 +43,40 @@ export interface CommunitySolution {
   edgeCount: number
 }
 
+// ─── Problem community discussions ───────────────────────────────────────────
+
+export interface PostReply {
+  _id: string
+  authorId: string
+  authorName: string
+  authorImage: string | null
+  content: string
+  code: string | null
+  codeLanguage: string | null
+  createdAt: string
+}
+
+export interface ProblemPost {
+  _id: string
+  problemId: string
+  authorId: string
+  authorName: string
+  authorImage: string | null
+  title: string
+  content: string
+  code: string | null
+  codeLanguage: string | null
+  type: 'question' | 'discussion' | 'solution'
+  upvotes: string[]
+  upvoteCount: number
+  hasUpvoted: boolean
+  replies: PostReply[]
+  replyCount: number
+  isOwn: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 // ─── Sharing ─────────────────────────────────────────────────────────────────
 
 export interface ShareSettings {
@@ -68,10 +103,22 @@ export interface InterviewSession {
   timeElapsed: number
   notes: string
   canvasSnapshot: unknown
+  problemId: string | null
+  problemSlug: string | null
+  problemDifficulty: 'easy' | 'medium' | 'hard' | null
   startedAt: string
   completedAt: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface InterviewAssignedProblem {
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  description: string
+  functionalRequirements: string[]
+  nonFunctionalRequirements: string[]
 }
 
 export interface DailyActivity {

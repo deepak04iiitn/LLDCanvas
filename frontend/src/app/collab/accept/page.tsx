@@ -49,7 +49,9 @@ function CollabAcceptInner() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-paper px-4">
-      <Wordmark height={36} />
+      <Link href="/">
+        <Wordmark height={36} />
+      </Link>
 
       <div className="w-full max-w-sm rounded-xl border border-hairline bg-paper-elevated p-8 shadow-sm text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-hairline bg-paper">

@@ -10,16 +10,7 @@ import { parse, renderToFlow, STEPS, EXAMPLES, KEYWORDS, VISIBILITY, RELATIONS, 
 import type { ParseError } from '@/lib/draft'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-
-// ── Small shared bits, matching the landing page's own visual language ────────
-
-function Eyebrow({ index, children }: { index: string; children: React.ReactNode }) {
-  return (
-    <p className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-      <span className="text-gold">¶{index}</span> — {children}
-    </p>
-  )
-}
+import { Eyebrow } from '@/components/marketing/Eyebrow'
 
 // ── Table of contents ─────────────────────────────────────────────────────────
 

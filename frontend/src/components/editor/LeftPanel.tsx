@@ -14,12 +14,16 @@ import {
   StickyNote,
   Layers,
   Tag,
+  Lock,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
 import { STEREOTYPES } from '@/components/editor/CommandPalette'
 import { ALL_PATTERNS, type PatternData } from '@/data/patterns'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
+import { FREE_PATTERN_KEYS } from '@/lib/plans'
+import Link from 'next/link'
 
 interface NodeInsertItem {
   icon: React.ReactNode
@@ -100,7 +104,26 @@ function StereotypeChip({ label, onClick }: { label: string; onClick: () => void
   )
 }
 
-function PatternChip({ pattern, onClick }: { pattern: PatternData; onClick: () => void }) {
+function PatternChip({ pattern, onClick, locked }: { pattern: PatternData; onClick: () => void; locked?: boolean }) {
+  if (locked) {
+    return (
+      <Tooltip>
+        <TooltipTrigger className="w-full text-left">
+          <Link
+            href="/pricing"
+            className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5
+                       text-[11px] text-ink-faint/50 cursor-pointer select-none
+                       hover:bg-amber-50 hover:text-amber-700 transition-colors"
+          >
+            <Lock className="h-3 w-3 shrink-0 text-amber-400" />
+            <span className="truncate">{pattern.name}</span>
+            <span className="ml-auto text-[9px] font-semibold text-amber-500 uppercase tracking-wide">Pro</span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">Upgrade to Pro to unlock {pattern.name}</TooltipContent>
+      </Tooltip>
+    )
+  }
   return (
     <button
       onClick={onClick}
@@ -125,6 +148,7 @@ export function LeftPanel({
   onInsertPattern,
 }: LeftPanelProps) {
   const { panelOpen, togglePanel } = useEditor()
+  const { isFree } = usePlan()
   const [patternsOpen,     setPatternsOpen]     = useState(false)
   const [stereotypesOpen,  setStereotypesOpen]  = useState(false)
 
@@ -202,6 +226,7 @@ export function LeftPanel({
                                     key={p.key}
                                     pattern={p}
                                     onClick={() => onInsertPattern(p.key)}
+                                    locked={isFree && !FREE_PATTERN_KEYS.has(p.key)}
                                   />
                                 ))}
                               </div>

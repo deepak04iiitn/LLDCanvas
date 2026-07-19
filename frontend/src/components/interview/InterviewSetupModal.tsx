@@ -16,8 +16,6 @@ import { cn } from '@/lib/utils'
 interface Props {
   open: boolean
   onClose: () => void
-  /** If opened from inside the editor, pass the current diagram id */
-  currentDiagramId?: string | null
 }
 
 const PRESETS = [
@@ -35,18 +33,17 @@ const PRESETS = [
 const RING_RADIUS = 42
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-export function InterviewSetupModal({ open, onClose, currentDiagramId }: Props) {
+export function InterviewSetupModal({ open, onClose }: Props) {
   const router = useRouter()
   const { startSession } = useInterview()
 
-  const [title,        setTitle]        = useState('')
   const [presetIdx,    setPresetIdx]    = useState(0)
   const [customMins,   setCustomMins]   = useState(45)
   const [loading,      setLoading]      = useState(false)
 
   // Reset state when modal opens
   useEffect(() => {
-    if (open) { setTitle(''); setPresetIdx(0); setCustomMins(45); setLoading(false) }
+    if (open) { setPresetIdx(0); setCustomMins(45); setLoading(false) }
   }, [open])
 
   const selectedPreset = PRESETS[presetIdx]
@@ -61,20 +58,15 @@ export function InterviewSetupModal({ open, onClose, currentDiagramId }: Props) 
     if (loading) return
     setLoading(true)
     try {
-      const { session } = await api.interview.create({
-        title:         title.trim() || 'Practice Session',
-        diagramId:     currentDiagramId ?? null,
+      const { session, diagramId, problem } = await api.interview.create({
         durationLimit: durationSeconds === 0 ? null : durationSeconds,
       })
       startSession(session)
       onClose()
-      // If no linked diagram, open local editor in practice mode
-      if (!currentDiagramId) {
-        router.push('/editor/local')
-      }
-      toast.success('Session started — good luck!')
-    } catch {
-      toast.error('Could not start session')
+      router.push(`/editor/${diagramId}?problem=${problem.slug}&interview=1`)
+      toast.success(`You're up: ${problem.title} — good luck!`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not start session')
     } finally {
       setLoading(false)
     }
@@ -119,22 +111,6 @@ export function InterviewSetupModal({ open, onClose, currentDiagramId }: Props) 
             <p className="relative mt-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
               Practice duration
             </p>
-          </div>
-
-          {/* ── Question ─────────────────────────────────────────────────────── */}
-          <div className="relative mb-5">
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
-              What will you design?
-            </label>
-            <input
-              value={title}
-              onChange={e => setTitle(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleBegin() }}
-              placeholder="e.g. Design a URL Shortener"
-              className="w-full rounded-2xl border border-hairline-strong bg-paper px-4 py-3 text-sm
-                         text-ink outline-none transition-all placeholder:text-ink-faint
-                         focus:border-brand focus:bg-paper-elevated focus:ring-4 focus:ring-brand/10"
-            />
           </div>
 
           {/* ── Duration pills ───────────────────────────────────────────────── */}

@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { Search, Bookmark, CheckCircle2, BookOpen, BarChart3, X, Layers } from 'lucide-react'
+import { Search, Bookmark, CheckCircle2, BookOpen, BarChart3, X, Layers, Lock, ArrowRight } from 'lucide-react'
 import { RevisionNoteSummary, RevisionStats } from '@/types'
 import { api } from '@/lib/api'
 import { NoteDrawer } from '@/components/revision/NoteDrawer'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
+import Link from 'next/link'
+import { toast } from 'sonner'
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -37,16 +40,22 @@ function NoteCard({
   note,
   onClick,
   onBookmarkToggle,
+  canBookmark = true,
 }: {
   note: RevisionNoteSummary
   onClick: () => void
   onBookmarkToggle: (slug: string, bookmarked: boolean) => void
+  canBookmark?: boolean
 }) {
   const [bookmarked, setBookmarked] = useState(note.bookmarked)
   const [toggling, setToggling]     = useState(false)
 
   async function handleBookmark(e: React.MouseEvent) {
     e.stopPropagation()
+    if (!canBookmark) {
+      toast.error('Bookmarks require a Pro plan', { description: 'Upgrade to save your favourites.' })
+      return
+    }
     if (toggling) return
     setToggling(true)
     try {
@@ -89,17 +98,20 @@ function NoteCard({
               <CheckCircle2 className="h-3 w-3" /> Revised
             </span>
           )}
-          <button
-            onClick={handleBookmark}
-            className={cn(
-              'rounded-md p-1 transition-colors',
-              bookmarked
-                ? 'text-amber-500 hover:text-amber-600'
-                : 'text-ink-faint opacity-0 group-hover:opacity-100 hover:text-amber-500',
-            )}
-          >
-            <Bookmark size={13} className={bookmarked ? 'fill-current' : ''} />
-          </button>
+          {canBookmark && (
+            <button
+              onClick={handleBookmark}
+              title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+              className={cn(
+                'rounded-md p-1 transition-colors',
+                bookmarked
+                  ? 'text-amber-500 hover:text-amber-600'
+                  : 'text-ink-faint opacity-0 group-hover:opacity-100 hover:text-amber-500',
+              )}
+            >
+              <Bookmark size={13} className={bookmarked ? 'fill-current' : ''} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -176,6 +188,7 @@ function Skeleton() {
 // ── page ──────────────────────────────────────────────────────────────────────
 
 export default function RevisionPage() {
+  const { isFree } = usePlan()
   const [notes, setNotes]           = useState<RevisionNoteSummary[]>([])
   const [stats, setStats]           = useState<RevisionStats | null>(null)
   const [categories, setCategories] = useState<string[]>([])
@@ -343,18 +356,30 @@ export default function RevisionPage() {
                       ))}
                     </div>
 
-                    <button
-                      onClick={() => setBookOnly(v => !v)}
-                      className={cn(
-                        'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
-                        bookmarkedOnly
-                          ? 'border-amber-300 bg-amber-50 text-amber-700'
-                          : 'border-hairline bg-paper text-ink-faint hover:border-hairline-strong hover:text-ink',
-                      )}
-                    >
-                      <Bookmark size={12} className={bookmarkedOnly ? 'fill-current' : ''} />
-                      Bookmarks
-                    </button>
+                    {isFree ? (
+                      <Link
+                        href="/pricing"
+                        className="flex items-center gap-1.5 rounded-xl border border-hairline bg-paper px-3 py-1.5 text-xs font-medium text-ink-faint/60 hover:border-amber-300 hover:text-amber-600 transition-all"
+                        title="Bookmarks require Pro"
+                      >
+                        <Lock size={12} className="text-amber-400" />
+                        Bookmarks
+                        <span className="text-[9px] font-bold text-amber-500 uppercase">Pro</span>
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => setBookOnly(v => !v)}
+                        className={cn(
+                          'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
+                          bookmarkedOnly
+                            ? 'border-amber-300 bg-amber-50 text-amber-700'
+                            : 'border-hairline bg-paper text-ink-faint hover:border-hairline-strong hover:text-ink',
+                        )}
+                      >
+                        <Bookmark size={12} className={bookmarkedOnly ? 'fill-current' : ''} />
+                        Bookmarks
+                      </button>
+                    )}
                   </div>
 
                   {/* Category chips */}
@@ -436,6 +461,7 @@ export default function RevisionPage() {
                               note={note}
                               onClick={() => setOpenSlug(note.slug)}
                               onBookmarkToggle={handleBookmarkToggle}
+                              canBookmark={!isFree}
                             />
                           ))}
                         </div>
@@ -455,6 +481,7 @@ export default function RevisionPage() {
         onClose={() => setOpenSlug(null)}
         onRevised={handleRevised}
         onBookmarkToggle={handleBookmarkToggle}
+        canBookmark={!isFree}
       />
     </AppShell>
   )

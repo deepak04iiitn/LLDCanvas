@@ -1,4 +1,4 @@
-import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats } from '@/types'
+import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, InterviewAssignedProblem, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -14,7 +14,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body?.error ?? `API error ${res.status}`)
+    const err  = new Error(body?.error ?? `API error ${res.status}`) as Error & { banned?: boolean; status?: number }
+    err.status = res.status
+    err.banned = body?.banned === true
+    throw err
   }
 
   return res.json() as Promise<T>
@@ -39,7 +42,7 @@ export const api = {
     },
 
     get: (id: string, shareToken?: string) =>
-      request<{ diagram: DiagramFull; sharePermission?: 'view' | 'edit' }>(
+      request<{ diagram: DiagramFull; sharePermission?: 'view' | 'edit'; problemSlug: string | null }>(
         `/diagrams/${id}${shareToken ? `?shareToken=${shareToken}` : ''}`,
       ),
 
@@ -69,8 +72,8 @@ export const api = {
   },
 
   interview: {
-    create: (payload: { title?: string; diagramId?: string | null; durationLimit?: number | null }) =>
-      request<{ session: InterviewSession }>('/interview', {
+    create: (payload: { durationLimit?: number | null }) =>
+      request<{ session: InterviewSession; diagramId: string; problem: InterviewAssignedProblem }>('/interview', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
@@ -180,6 +183,41 @@ export const api = {
       request<{ solutions: CommunitySolution[]; total: number; page: number; totalPages: number }>(
         `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
       ),
+
+    posts: {
+      list: (slug: string, params?: { page?: number; sort?: 'newest' | 'oldest'; type?: string }) => {
+        const qs = new URLSearchParams()
+        if (params?.page) qs.set('page', String(params.page))
+        if (params?.sort) qs.set('sort', params.sort)
+        if (params?.type) qs.set('type', params.type)
+        return request<{ posts: ProblemPost[]; total: number; page: number; totalPages: number }>(
+          `/problems/${slug}/posts?${qs}`,
+        )
+      },
+
+      create: (slug: string, payload: { title: string; content: string; code?: string; codeLanguage?: string; type?: string }) =>
+        request<{ post: ProblemPost }>(`/problems/${slug}/posts`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+
+      upvote: (slug: string, postId: string) =>
+        request<{ upvoteCount: number; hasUpvoted: boolean }>(
+          `/problems/${slug}/posts/${postId}/upvote`, { method: 'PATCH' },
+        ),
+
+      reply: (slug: string, postId: string, payload: { content: string; code?: string; codeLanguage?: string }) =>
+        request<{ reply: PostReply }>(`/problems/${slug}/posts/${postId}/replies`, {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+
+      deletePost: (slug: string, postId: string) =>
+        request<{ ok: boolean }>(`/problems/${slug}/posts/${postId}`, { method: 'DELETE' }),
+
+      deleteReply: (slug: string, postId: string, replyId: string) =>
+        request<{ ok: boolean }>(`/problems/${slug}/posts/${postId}/replies/${replyId}`, { method: 'DELETE' }),
+    },
   },
 
   collab: {
@@ -251,5 +289,80 @@ export const api = {
 
     toggleBookmark: (slug: string) =>
       request<{ bookmarked: boolean }>(`/revision-notes/${slug}/bookmark`, { method: 'POST' }),
+  },
+
+  code: {
+    run: (payload: { compiler: string; code: string; input?: string }) =>
+      request<{
+        output: string
+        error: string
+        status: 'success' | 'error'
+        exit_code: number
+        signal: number | null
+        time: string
+        total: string
+        memory: string
+      }>('/code/run', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
+
+  billing: {
+    geo: () =>
+      request<{ country: string; currency: 'INR' | 'USD' }>('/billing/geo'),
+
+    pricing: () =>
+      request<{ pricing: Record<string, Record<string, Record<string, number>>> }>('/billing/pricing'),
+
+    plan: () =>
+      request<{
+        plan: string
+        limits: Record<string, unknown>
+        subscription: {
+          id: string
+          razorpaySubId: string
+          status: string
+          billingInterval: string
+          currentPeriodEnd: string | null
+          cancelAtPeriodEnd: boolean
+        } | null
+      }>('/billing/plan'),
+
+    subscribe: (payload: { tier: 'pro' | 'ultimate'; yearly: boolean }) =>
+      request<{ subscriptionId: string; keyId: string; userName: string; userEmail: string }>('/billing/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    verify: (payload: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) =>
+      request<{ success: boolean; plan: string }>('/billing/verify', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    cancel: () =>
+      request<{ success: boolean; cancelAtPeriodEnd: boolean; currentPeriodEnd: string | null }>('/billing/cancel', {
+        method: 'POST',
+      }),
+  },
+
+  feedback: {
+    submit: (payload: { type: string; title: string; description: string; name?: string; email?: string; pageUrl?: string }) =>
+      request<{ ok: boolean; id: string }>('/feedback', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
+
+  testimonials: {
+    getApproved: () =>
+      request<{ _id: string; name: string; role: string; content: string; rating: number; avatar: string; featured: boolean; createdAt: string }[]>('/testimonials'),
+
+    submit: (payload: { role: string; content: string; rating: number }) =>
+      request<{ ok: boolean; id: string }>('/testimonials', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
   },
 }

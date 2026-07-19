@@ -4,6 +4,7 @@ import { UserSolution } from '../models/user-solution.model'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 import { getMongoClient } from '../config/auth'
+import { isProblemAccessible } from '../config/plans'
 
 // Fetch user display info (name + image) in bulk from the auth user collection
 async function fetchUserInfo(userIds: string[]): Promise<Map<string, { name: string; image: string | null }>> {
@@ -53,10 +54,13 @@ export const problemsController = {
       const countMap    = new Map(submissionCounts.map((s: { _id: { toString(): string }; count: number }) => [s._id.toString(), s.count]))
       const solutionMap = new Map(userSolutions.map(s => [s.problemId.toString(), s]))
 
+      const plan = req.user!.plan
+
       const enriched = problems.map(p => ({
         ...p,
         submissionCount: countMap.get(p._id.toString()) ?? 0,
         myStatus: solutionMap.get(p._id.toString())?.status ?? null,
+        locked: !isProblemAccessible(plan, p.difficulty, p.slug),
       }))
 
       res.json({ problems: enriched })
@@ -70,13 +74,24 @@ export const problemsController = {
       const problem = await Problem.findOne({ slug: req.params.slug, isActive: true }).lean()
       if (!problem) throw createError('Problem not found', 404)
 
+      const locked = !isProblemAccessible(req.user!.plan, problem.difficulty, problem.slug)
+
       const [submissionCount, mySolution] = await Promise.all([
         UserSolution.countDocuments({ problemId: problem._id, status: 'submitted' }),
         UserSolution.findOne({ problemId: problem._id, userId }).lean(),
       ])
 
       res.json({
-        problem: { ...problem, hints: undefined },
+        problem: {
+          ...problem,
+          hints: undefined,
+          // Requirements are the paid content on a locked problem — title/
+          // description stay visible (same as the list view) but the real
+          // substance is withheld server-side, not just hidden with CSS.
+          functionalRequirements: locked ? [] : problem.functionalRequirements,
+          nonFunctionalRequirements: locked ? [] : problem.nonFunctionalRequirements,
+          locked,
+        },
         submissionCount,
         mySolution: mySolution ?? null,
       })
@@ -121,6 +136,10 @@ export const problemsController = {
       const userId  = req.user!.id
       const problem = await Problem.findOne({ slug: req.params.slug, isActive: true }).lean()
       if (!problem) throw createError('Problem not found', 404)
+
+      if (!isProblemAccessible(req.user!.plan, problem.difficulty, problem.slug)) {
+        throw createError('This problem requires a Pro plan or higher.', 403)
+      }
 
       // Return existing solution if already started
       const existing = await UserSolution.findOne({ problemId: problem._id, userId })

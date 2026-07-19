@@ -1,15 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
 import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
-  Maximize2, Minimize2, BookOpen, Terminal, FileInput, Code2,
-  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus,
+  Maximize2, Minimize2, FileInput, Code2,
+  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock,
 } from 'lucide-react'
 
 import { motion, AnimatePresence } from 'framer-motion'
@@ -24,9 +23,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useEditor } from '@/contexts/EditorContext'
 import { useInterview } from '@/contexts/InterviewContext'
 import { useInterviewTimer } from '@/hooks/useInterviewTimer'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Wordmark } from '@/components/Brand'
 import type { SaveStatus } from '@/hooks/useAutosave'
+import { usePlan } from '@/hooks/usePlan'
+import { canExport } from '@/lib/plans'
+import Link from 'next/link'
 
 interface TopbarProps {
   title: string
@@ -54,11 +57,14 @@ interface TopbarProps {
   diagramId: string | null
   readOnly?: boolean
   onOpenShare?: () => void
-  problemSlug?: string
-  onOpenProblem?: () => void
   onOpenCollab?: () => void
   onOpenDiscussion?: () => void
   unreadMentions?: number
+  onOpenCode?: () => void
+  codePanelOpen?: boolean
+  problemSlug?: string
+  onOpenProblemDiscussion?: () => void
+  problemDiscussionOpen?: boolean
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -364,14 +370,19 @@ export function Topbar({
   diagramId,
   readOnly,
   onOpenShare,
-  problemSlug,
-  onOpenProblem,
   onOpenCollab,
   onOpenDiscussion,
   unreadMentions = 0,
+  onOpenCode,
+  codePanelOpen = false,
+  problemSlug,
+  onOpenProblemDiscussion,
+  problemDiscussionOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
+  const { plan, isFree } = usePlan()
+  const router = useRouter()
 
   return (
     <header
@@ -380,9 +391,9 @@ export function Topbar({
     >
       {/* LEFT — Logo + title */}
       <div className="flex min-w-0 items-center">
-        <div className="flex shrink-0 items-center select-none">
+        <Link href="/" className="flex shrink-0 items-center select-none">
           <Wordmark height={22} priority />
-        </div>
+        </Link>
         <div className="mx-2 h-5 w-px shrink-0 bg-gray-200 dark:bg-[#3C3C3E]" />
         <EditableTitle value={title} onChange={onRename} readOnly={readOnly} />
         <div className="ml-2 shrink-0">
@@ -393,27 +404,53 @@ export function Topbar({
       {/* CENTER — Interview Mode (takes only as much space as needed) */}
       <div className="flex items-center justify-center px-4">
         {!activeSession && !readOnly && (
-          <Tooltip>
-            <TooltipTrigger
-              onClick={onStartInterview}
-              className="group flex h-8 items-center gap-2 rounded-full border border-indigo-200
-                         bg-indigo-50 py-1 pr-3.5 pl-1 transition-all duration-150
-                         hover:border-indigo-300 hover:bg-indigo-100
-                         dark:border-indigo-500/25 dark:bg-indigo-500/10
-                         dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
-              aria-label="Turn on Interview Mode"
-            >
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
-                               shadow-sm ring-1 ring-indigo-200
-                               dark:bg-[#1C1C1E] dark:ring-indigo-500/30">
-                <Mic className="h-3.5 w-3.5 text-indigo-500" />
-              </span>
-              <span className="hidden text-xs font-medium text-indigo-700 sm:block dark:text-indigo-300">
-                Interview Mode
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
-          </Tooltip>
+          isFree ? (
+            <Tooltip>
+              <TooltipTrigger>
+                <Link
+                  href="/pricing"
+                  className="group flex h-8 items-center gap-2 rounded-full border border-gray-200
+                             bg-gray-50 py-1 pr-3.5 pl-1 transition-all duration-150
+                             hover:border-amber-300 hover:bg-amber-50
+                             dark:border-[#3C3C3E] dark:bg-[#2C2C2E]"
+                  aria-label="Interview Mode - Pro feature"
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
+                                   shadow-sm ring-1 ring-gray-200
+                                   dark:bg-[#1C1C1E] dark:ring-[#3C3C3E]">
+                    <Lock className="h-3.5 w-3.5 text-amber-500" />
+                  </span>
+                  <span className="hidden text-xs font-medium text-gray-400 sm:flex items-center gap-1 dark:text-gray-500">
+                    Interview Mode
+                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">Pro</span>
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Interview Mode requires a Pro plan - click to upgrade</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onStartInterview}
+                className="group flex h-8 items-center gap-2 rounded-full border border-indigo-200
+                           bg-indigo-50 py-1 pr-3.5 pl-1 transition-all duration-150
+                           hover:border-indigo-300 hover:bg-indigo-100
+                           dark:border-indigo-500/25 dark:bg-indigo-500/10
+                           dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
+                aria-label="Turn on Interview Mode"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
+                                 shadow-sm ring-1 ring-indigo-200
+                                 dark:bg-[#1C1C1E] dark:ring-indigo-500/30">
+                  <Mic className="h-3.5 w-3.5 text-indigo-500" />
+                </span>
+                <span className="hidden text-xs font-medium text-indigo-700 sm:block dark:text-indigo-300">
+                  Interview Mode
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
+            </Tooltip>
+          )
         )}
 
         {activeSession && (
@@ -428,33 +465,6 @@ export function Topbar({
       {/* RIGHT — Action buttons */}
       <div className="flex items-center justify-end gap-1.5">
 
-        {/* Draft Notation — Playground (write code, live preview) + Import
-            (paste already-written code, drop it onto the canvas once).
-            The editor itself never hosts a live code panel — that workflow
-            lives in the standalone Playground so it doesn't compete with
-            manual editing for screen space. */}
-        {!readOnly && (
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Link
-                  href="/playground"
-                  target="_blank"
-                  className="flex h-8 items-center gap-1.5 rounded-full border border-indigo-200
-                             bg-indigo-50 px-3 text-xs font-medium text-indigo-700 transition-all
-                             hover:border-indigo-300 hover:bg-indigo-100
-                             dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:text-indigo-300
-                             dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
-                />
-              }
-              aria-label="Open Draft Notation Playground"
-            >
-              <Terminal className="h-3.5 w-3.5" />
-              <span className="hidden sm:block">Playground</span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Write Draft Notation live in a separate tab</TooltipContent>
-          </Tooltip>
-        )}
 
         {/* Divider before mode toggle */}
         {!readOnly && (
@@ -546,30 +556,80 @@ export function Topbar({
             <span className="hidden sm:block">Transfer</span>
             <ChevronDown className="h-3 w-3 opacity-60" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuContent align="end" className="w-56">
             <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Export
             </div>
-            <DropdownMenuItem onClick={onExportPNG} className="gap-2">
-              <Image className="h-4 w-4 text-indigo-500" />
-              Export as PNG
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportSVG} className="gap-2">
-              <FileCode2 className="h-4 w-4 text-emerald-500" />
-              Export as SVG
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportDraft} className="gap-2">
-              <Code2 className="h-4 w-4 text-cyan-500" />
-              Export as .draft
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportPlantUML} className="gap-2">
-              <Download className="h-4 w-4 text-amber-500" />
-              Copy PlantUML
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportMermaid} className="gap-2">
-              <Download className="h-4 w-4 text-violet-500" />
-              Copy Mermaid
-            </DropdownMenuItem>
+            {/* PNG — Ultimate only */}
+            {canExport(plan, 'png') ? (
+              <DropdownMenuItem onClick={onExportPNG} className="gap-2">
+                <Image className="h-4 w-4 text-indigo-500" />
+                Export as PNG
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push('/pricing')} className="gap-2 opacity-60">
+                <Image className="h-4 w-4 text-indigo-300" />
+                <span>Export as PNG</span>
+                <Lock className="ml-auto h-3 w-3 text-amber-400" />
+                <span className="text-[9px] font-bold uppercase text-amber-500">Ult.</span>
+              </DropdownMenuItem>
+            )}
+            {/* SVG — Ultimate only */}
+            {canExport(plan, 'svg') ? (
+              <DropdownMenuItem onClick={onExportSVG} className="gap-2">
+                <FileCode2 className="h-4 w-4 text-emerald-500" />
+                Export as SVG
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push('/pricing')} className="gap-2 opacity-60">
+                <FileCode2 className="h-4 w-4 text-emerald-300" />
+                <span>Export as SVG</span>
+                <Lock className="ml-auto h-3 w-3 text-amber-400" />
+                <span className="text-[9px] font-bold uppercase text-amber-500">Ult.</span>
+              </DropdownMenuItem>
+            )}
+            {/* Draft — Pro+ */}
+            {canExport(plan, 'draft') ? (
+              <DropdownMenuItem onClick={onExportDraft} className="gap-2">
+                <Code2 className="h-4 w-4 text-cyan-500" />
+                Export as .draft
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push('/pricing')} className="gap-2 opacity-60">
+                <Code2 className="h-4 w-4 text-cyan-300" />
+                <span>Export as .draft</span>
+                <Lock className="ml-auto h-3 w-3 text-amber-400" />
+                <span className="text-[9px] font-bold uppercase text-amber-500">Pro</span>
+              </DropdownMenuItem>
+            )}
+            {/* PlantUML — Pro+ */}
+            {canExport(plan, 'plantuml') ? (
+              <DropdownMenuItem onClick={onExportPlantUML} className="gap-2">
+                <Download className="h-4 w-4 text-amber-500" />
+                Copy PlantUML
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push('/pricing')} className="gap-2 opacity-60">
+                <Download className="h-4 w-4 text-amber-300" />
+                <span>Copy PlantUML</span>
+                <Lock className="ml-auto h-3 w-3 text-amber-400" />
+                <span className="text-[9px] font-bold uppercase text-amber-500">Pro</span>
+              </DropdownMenuItem>
+            )}
+            {/* Mermaid — Pro+ */}
+            {canExport(plan, 'mermaid') ? (
+              <DropdownMenuItem onClick={onExportMermaid} className="gap-2">
+                <Download className="h-4 w-4 text-violet-500" />
+                Copy Mermaid
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => router.push('/pricing')} className="gap-2 opacity-60">
+                <Download className="h-4 w-4 text-violet-300" />
+                <span>Copy Mermaid</span>
+                <Lock className="ml-auto h-3 w-3 text-amber-400" />
+                <span className="text-[9px] font-bold uppercase text-amber-500">Pro</span>
+              </DropdownMenuItem>
+            )}
             {!readOnly && (
               <>
                 <DropdownMenuSeparator />
@@ -585,7 +645,64 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Discussion button — replaces old Comment + only shown in collab sessions */}
+        {/* Code execution panel */}
+        {onOpenCode && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenCode}
+              className={cn(
+                iconBtnBase,
+                'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                codePanelOpen && 'bg-brand-tint text-brand',
+              )}
+              aria-label="Open code editor"
+            >
+              <Code2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Code</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Write &amp; run code (Ctrl+Enter)</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Problem Discussions button — only shown when a problem is open */}
+        {problemSlug && onOpenProblemDiscussion && (
+          isFree ? (
+            <Tooltip>
+              <TooltipTrigger>
+                <Link
+                  href="/pricing"
+                  className={cn(iconBtnBase, 'w-auto gap-1.5 px-2.5 text-xs font-medium opacity-50 hover:opacity-80')}
+                  aria-label="Discussion - Pro feature"
+                >
+                  <MessageSquareText className="h-3.5 w-3.5" />
+                  <span className="hidden sm:flex items-center gap-1">
+                    Discussion
+                    <Lock className="h-3 w-3 text-amber-400" />
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Community discussions require a Pro plan</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onOpenProblemDiscussion}
+                className={cn(
+                  iconBtnBase,
+                  'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                  problemDiscussionOpen && 'bg-brand-tint text-brand',
+                )}
+                aria-label="Problem discussions"
+              >
+                <MessageSquareText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Discussion</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Community discussions for this problem</TooltipContent>
+            </Tooltip>
+          )
+        )}
+
+        {/* Comments button — only shown in collab sessions */}
         {diagramId && onOpenDiscussion && (
           <Tooltip>
             <TooltipTrigger
@@ -594,33 +711,48 @@ export function Topbar({
                 iconBtnBase,
                 'relative w-auto gap-1.5 px-2.5 text-xs font-medium',
               )}
-              aria-label="Open discussion"
+              aria-label="Open comments"
             >
               <MessageSquareText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Discussion</span>
+              <span className="hidden sm:inline">Comments</span>
               {unreadMentions > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-0.5 text-[8px] font-bold text-white">
                   {unreadMentions > 9 ? '9+' : unreadMentions}
                 </span>
               )}
             </TooltipTrigger>
-            <TooltipContent side="bottom">Team discussion &amp; mentions</TooltipContent>
+            <TooltipContent side="bottom">Team comments &amp; mentions</TooltipContent>
           </Tooltip>
         )}
 
         {/* Invite collaborators */}
         {diagramId && !readOnly && onOpenCollab && (
-          <Tooltip>
-            <TooltipTrigger
-              onClick={onOpenCollab}
-              className={cn(iconBtnBase, 'w-auto gap-1.5 px-2.5 text-xs font-medium')}
-              aria-label="Invite collaborators"
-            >
-              <UserPlus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Invite</span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Invite collaborators</TooltipContent>
-          </Tooltip>
+          isFree ? (
+            <Tooltip>
+              <TooltipTrigger>
+                <Link href="/pricing" className={cn(iconBtnBase, 'w-auto gap-1.5 px-2.5 text-xs font-medium opacity-50 hover:opacity-80')} aria-label="Collaboration - Pro feature">
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span className="hidden sm:flex items-center gap-1">
+                    Invite
+                    <Lock className="h-3 w-3 text-amber-400" />
+                  </span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Collaboration requires a Pro plan</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                onClick={onOpenCollab}
+                className={cn(iconBtnBase, 'w-auto gap-1.5 px-2.5 text-xs font-medium')}
+                aria-label="Invite collaborators"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Invite</span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Invite collaborators</TooltipContent>
+            </Tooltip>
+          )
         )}
 
         {readOnly ? (
@@ -643,25 +775,6 @@ export function Topbar({
           </Tooltip>
         )}
 
-        {/* Problem chip — shown when opened from the problems library */}
-        {problemSlug && (
-          <>
-            <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
-            <Tooltip>
-              <TooltipTrigger
-                onClick={onOpenProblem}
-                className="flex h-8 items-center gap-1.5 rounded-full border border-brand/20
-                           bg-brand-tint px-3 text-xs font-medium text-brand transition-all
-                           hover:border-brand/40 hover:bg-brand/10"
-                aria-label="View problem"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:block">Problem</span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">View problem requirements & hints</TooltipContent>
-            </Tooltip>
-          </>
-        )}
       </div>
     </header>
   )

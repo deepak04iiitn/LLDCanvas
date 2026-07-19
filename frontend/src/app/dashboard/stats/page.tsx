@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Timer, CheckCircle2, Flame, LayoutDashboard, Clock, TrendingUp, Trophy } from 'lucide-react'
+import { Timer, CheckCircle2, Flame, LayoutDashboard, Clock, TrendingUp, Trophy, Lock, Rocket, Crown, ArrowRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { ActivityCalendar } from '@/components/stats/ActivityCalendar'
@@ -15,6 +15,8 @@ import { PersonalBests } from '@/components/stats/PersonalBests'
 import { api } from '@/lib/api'
 import type { PracticeStats, AdvancedStats } from '@/types'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
+import Link from 'next/link'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -71,12 +73,45 @@ const TABS: { id: Tab; label: string; Icon: typeof Clock }[] = [
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
+// ─── Plan gate wrapper ────────────────────────────────────────────────────────
+function PlanLockedTab({ label, requiredPlan }: { label: string; requiredPlan: 'pro' | 'ultimate' }) {
+  const badge = requiredPlan === 'ultimate'
+    ? { icon: Crown, cls: 'bg-amber-500/10 text-amber-600 border-amber-500/20', label: 'Ultimate' }
+    : { icon: Rocket, cls: 'bg-brand/10 text-brand border-brand/20', label: 'Pro' }
+  const BadgeIcon = badge.icon
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-24 text-center"
+    >
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50">
+        <Lock className="h-7 w-7 text-amber-500" />
+      </div>
+      <span className={cn('mb-3 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold', badge.cls)}>
+        <BadgeIcon className="h-3 w-3" /> {badge.label} Feature
+      </span>
+      <h3 className="mb-2 text-lg font-semibold text-ink">{label}</h3>
+      <p className="mb-6 max-w-xs text-sm text-ink-muted">
+        Upgrade your plan to unlock {label.toLowerCase()} and other advanced analytics.
+      </p>
+      <Link
+        href="/pricing"
+        className="flex items-center gap-2 rounded-xl bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand/90 transition-colors"
+      >
+        Upgrade to {badge.label} <ArrowRight className="h-4 w-4" />
+      </Link>
+    </motion.div>
+  )
+}
+
 export default function StatsPage() {
   const [stats,    setStats]    = useState<PracticeStats | null>(null)
   const [advanced, setAdvanced] = useState<AdvancedStats | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [advLoad,  setAdvLoad]  = useState(true)
   const [tab,      setTab]      = useState<Tab>('overview')
+  const { plan, isFree, isUltimate } = usePlan()
 
   useEffect(() => {
     api.stats.get()
@@ -84,11 +119,15 @@ export default function StatsPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
 
-    api.stats.getAdvanced()
-      .then(setAdvanced)
-      .catch(() => {})
-      .finally(() => setAdvLoad(false))
-  }, [])
+    if (!isFree) {
+      api.stats.getAdvanced()
+        .then(setAdvanced)
+        .catch(() => {})
+        .finally(() => setAdvLoad(false))
+    } else {
+      setAdvLoad(false)
+    }
+  }, [isFree])
 
   return (
     <AppShell>
@@ -103,21 +142,28 @@ export default function StatsPage() {
 
           {/* Tab bar */}
           <div className="flex items-center gap-0.5">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-t-lg px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
-                  tab === t.id
-                    ? 'border-brand text-brand bg-brand/5'
-                    : 'border-transparent text-ink-faint hover:text-ink hover:bg-hairline/60',
-                )}
-              >
-                <t.Icon size={13} />
-                {t.label}
-              </button>
-            ))}
+            {TABS.map(t => {
+              // Lock advanced tabs based on plan
+              const requiresPro = t.id === 'avg-time'
+              const requiresUlt = t.id === 'reports' || t.id === 'bests'
+              const locked = (requiresPro && isFree) || (requiresUlt && !isUltimate)
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-t-lg px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px',
+                    tab === t.id
+                      ? 'border-brand text-brand bg-brand/5'
+                      : 'border-transparent text-ink-faint hover:text-ink hover:bg-hairline/60',
+                  )}
+                >
+                  <t.Icon size={13} />
+                  {t.label}
+                  {locked && <Lock className="h-3 w-3 text-amber-400" />}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -200,75 +246,87 @@ export default function StatsPage() {
 
             {/* ── Avg Time tab ────────────────────────────────────────────── */}
             {tab === 'avg-time' && (
-              <motion.div
-                key="avg-time"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-5 max-w-5xl"
-              >
-                {advLoad ? (
-                  <>
-                    <div className="grid grid-cols-3 gap-4">
-                      <SkeletonBlock /> <SkeletonBlock /> <SkeletonBlock />
-                    </div>
-                    <SkeletonBlock h="h-56" />
-                  </>
-                ) : advanced ? (
-                  <>
-                    <AvgTimePanel data={advanced} />
-                    <ImprovementTrend trendData={advanced.trendData} />
-                  </>
-                ) : (
-                  <p className="text-sm text-ink-faint">Could not load analytics.</p>
-                )}
-              </motion.div>
+              isFree ? (
+                <PlanLockedTab key="avg-time-locked" label="Average Time Analytics" requiredPlan="pro" />
+              ) : (
+                <motion.div
+                  key="avg-time"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-5 max-w-5xl"
+                >
+                  {advLoad ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-4">
+                        <SkeletonBlock /> <SkeletonBlock /> <SkeletonBlock />
+                      </div>
+                      <SkeletonBlock h="h-56" />
+                    </>
+                  ) : advanced ? (
+                    <>
+                      <AvgTimePanel data={advanced} />
+                      <ImprovementTrend trendData={advanced.trendData} />
+                    </>
+                  ) : (
+                    <p className="text-sm text-ink-faint">Could not load analytics.</p>
+                  )}
+                </motion.div>
+              )
             )}
 
             {/* ── Reports tab ─────────────────────────────────────────────── */}
             {tab === 'reports' && (
-              <motion.div
-                key="reports"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-5 max-w-5xl"
-              >
-                {advLoad ? (
-                  <><SkeletonBlock h="h-72" /><SkeletonBlock h="h-72" /></>
-                ) : advanced ? (
-                  <>
-                    <WeeklyReport  reports={advanced.weeklyReports} />
-                    <MonthlyReport reports={advanced.monthlyReports} />
-                  </>
-                ) : (
-                  <p className="text-sm text-ink-faint">Could not load reports.</p>
-                )}
-              </motion.div>
+              !isUltimate ? (
+                <PlanLockedTab key="reports-locked" label="Weekly & Monthly Reports" requiredPlan="ultimate" />
+              ) : (
+                <motion.div
+                  key="reports"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-5 max-w-5xl"
+                >
+                  {advLoad ? (
+                    <><SkeletonBlock h="h-72" /><SkeletonBlock h="h-72" /></>
+                  ) : advanced ? (
+                    <>
+                      <WeeklyReport  reports={advanced.weeklyReports} />
+                      <MonthlyReport reports={advanced.monthlyReports} />
+                    </>
+                  ) : (
+                    <p className="text-sm text-ink-faint">Could not load reports.</p>
+                  )}
+                </motion.div>
+              )
             )}
 
             {/* ── Personal Bests tab ──────────────────────────────────────── */}
             {tab === 'bests' && (
-              <motion.div
-                key="bests"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-                className="max-w-5xl"
-              >
-                {advLoad ? (
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                    {[...Array(6)].map((_, i) => <SkeletonBlock key={i} h="h-32" />)}
-                  </div>
-                ) : advanced ? (
-                  <PersonalBests bests={advanced.personalBests} />
-                ) : (
-                  <p className="text-sm text-ink-faint">Could not load records.</p>
-                )}
-              </motion.div>
+              !isUltimate ? (
+                <PlanLockedTab key="bests-locked" label="Personal Best Records" requiredPlan="ultimate" />
+              ) : (
+                <motion.div
+                  key="bests"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="max-w-5xl"
+                >
+                  {advLoad ? (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                      {[...Array(6)].map((_, i) => <SkeletonBlock key={i} h="h-32" />)}
+                    </div>
+                  ) : advanced ? (
+                    <PersonalBests bests={advanced.personalBests} />
+                  ) : (
+                    <p className="text-sm text-ink-faint">Could not load records.</p>
+                  )}
+                </motion.div>
+              )
             )}
 
           </AnimatePresence>

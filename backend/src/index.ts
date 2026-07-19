@@ -21,6 +21,11 @@ import shareRouter from './routes/share.route'
 import problemsRouter  from './routes/problems.route'
 import revisionRouter  from './routes/revision.route'
 import collabRouter    from './routes/collab.route'
+import codeRouter      from './routes/code.route'
+import billingRouter   from './routes/billing.route'
+import feedbackRouter      from './routes/feedback.route'
+import testimonialRouter   from './routes/testimonial.route'
+import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 
 const app    = express()
 const httpServer = createServer(app)
@@ -121,6 +126,10 @@ app.use('/share',     shareRouter)
 app.use('/problems',        problemsRouter)
 app.use('/revision-notes',  revisionRouter)
 app.use('/collab',          collabRouter)
+app.use('/code',            codeRouter)
+app.use('/billing',         billingRouter)
+app.use('/feedback',        feedbackRouter)
+app.use('/testimonials',    testimonialRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
@@ -133,6 +142,7 @@ async function start() {
   await getAuth()
   await ensureAdminUser()
   initSocketServer(httpServer, allowedOrigins)
+  startSubscriptionExpiryJob()
   httpServer.listen(PORT, () => {
     console.log(`✓ API + Socket.io listening on http://localhost:${PORT}`)
   })

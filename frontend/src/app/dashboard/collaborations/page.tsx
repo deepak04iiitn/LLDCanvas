@@ -6,12 +6,13 @@ import { formatDistanceToNow, format } from 'date-fns'
 import {
   Users, MessageSquareText, Share2, Clock, GitBranch,
   ChevronRight, CheckCircle2, UserCheck, Save, ArrowUpRight,
-  Layers, Hourglass, RefreshCw,
+  Layers, Hourglass, RefreshCw, Lock, Rocket, ArrowRight,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -218,6 +219,7 @@ function VersionHistoryDrawer({
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CollaborationsPage() {
+  const { isFree, plan } = usePlan()
   const [stats,      setStats]      = useState<Stats | null>(null)
   const [diagrams,   setDiagrams]   = useState<Diagrams | null>(null)
   const [events,     setEvents]     = useState<ActivityEvent[]>([])
@@ -259,6 +261,44 @@ export default function CollaborationsPage() {
 
   const ownedList       = diagrams?.owned ?? []
   const collaboratingList = diagrams?.collaborating ?? []
+
+  if (isFree) {
+    return (
+      <AppShell>
+        <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md"
+          >
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10">
+                <Lock className="h-8 w-8 text-brand" />
+              </div>
+            </div>
+            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
+              <Rocket className="h-3 w-3" /> Pro Feature
+            </span>
+            <h2 className="mb-2 text-2xl font-bold text-ink">Collaborations</h2>
+            <p className="mb-2 text-sm text-ink-muted">
+              Invite teammates to edit your diagrams in real-time, with live cursors, @mentions, and discussion threads.
+            </p>
+            <p className="mb-8 text-sm text-ink-muted">
+              <span className="font-medium text-ink">Pro</span>: Up to 3 collaborators per diagram
+              &nbsp;·&nbsp;
+              <span className="font-medium text-ink">Ultimate</span>: Unlimited + activity timeline + version history
+            </p>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-white hover:bg-brand/90 transition-colors shadow-lg shadow-brand/25"
+            >
+              Upgrade to Pro <ArrowRight className="h-4 w-4" />
+            </Link>
+          </motion.div>
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
     <AppShell>

@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Timer,
   LogOut, Menu, ShieldCheck, X,
-  BookOpen, Layers, MessageSquareText,
+  BookOpen, Layers, MessageSquareText, Terminal,
+  CreditCard, BarChart3, Bug, Quote,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { signOut } from '@/lib/auth-client'
@@ -20,11 +21,17 @@ const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p:
   { label: 'Problems',     href: '/admin/problems',  Icon: BookOpen,          isActive: (p) => p.startsWith('/admin/problems'),  divider: true },
   { label: 'Revision',     href: '/admin/revision',  Icon: Layers,            isActive: (p) => p.startsWith('/admin/revision') },
   { label: 'Collab',       href: '/admin/collab',    Icon: MessageSquareText, isActive: (p) => p.startsWith('/admin/collab') },
+  { label: 'Code Exec',    href: '/admin/code',          Icon: Terminal,          isActive: (p) => p.startsWith('/admin/code'), divider: true },
+  { label: 'Subscriptions', href: '/admin/subscriptions', Icon: CreditCard,        isActive: (p) => p.startsWith('/admin/subscriptions') },
+  { label: 'Revenue',      href: '/admin/revenue',       Icon: BarChart3,         isActive: (p) => p.startsWith('/admin/revenue') },
+  { label: 'Feedback',      href: '/admin/feedback',      Icon: Bug,               isActive: (p) => p.startsWith('/admin/feedback'), divider: true },
+  { label: 'Testimonials',  href: '/admin/testimonials',  Icon: Quote,             isActive: (p) => p.startsWith('/admin/testimonials') },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <nav className="flex-1 overflow-y-auto p-3">
+    <nav className="flex-1 overflow-y-auto p-3 scrollbar-none"
+      style={{ scrollbarWidth: 'none' }}>
       {NAV.map(item => {
         const active = item.isActive(pathname)
         return (
@@ -62,7 +69,9 @@ function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate
     <div className="flex h-full flex-col">
       {/* Logo + admin badge */}
       <div className="flex items-center gap-2 border-b border-hairline px-4 py-4">
-        <Wordmark height={40} />
+        <Link href="/">
+          <Wordmark height={40} />
+        </Link>
         <span className="ml-1 rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
           Admin
         </span>
@@ -144,7 +153,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
           >
             <Menu className="h-4 w-4" />
           </button>
-          <Wordmark height={32} />
+          <Link href="/">
+            <Wordmark height={32} />
+          </Link>
           <span className="rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
             Admin
           </span>

@@ -17,6 +17,7 @@ import {
 } from '@xyflow/react'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 import { EditorProvider, useEditor } from '@/contexts/EditorContext'
 import { useInterview } from '@/contexts/InterviewContext'
@@ -29,7 +30,6 @@ import { Statusbar } from '@/components/editor/Statusbar'
 import { CommandPalette, type CommandPaletteActions } from '@/components/editor/CommandPalette'
 import { DismissableLocalBanner } from '@/components/editor/LocalEditorBanner'
 import { InterviewNotesDrawer } from '@/components/interview/InterviewNotesDrawer'
-import { InterviewSetupModal } from '@/components/interview/InterviewSetupModal'
 import { ShareModal } from '@/components/editor/ShareModal'
 import { ProblemPanel } from '@/components/editor/ProblemPanel'
 import { CollabAvatarStack } from '@/components/collab/CollabAvatarStack'
@@ -40,6 +40,8 @@ import { CollabModal } from '@/components/collab/CollabModal'
 import { ViewerBanner } from '@/components/collab/ViewerBanner'
 import { useCollabCanvas } from '@/hooks/useCollabCanvas'
 import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
+import { CodePanel } from '@/components/editor/CodePanel'
+import { ProblemDiscussionPanel } from '@/components/editor/ProblemDiscussionPanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -126,12 +128,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const { theme, togglePanel } = useEditor()
   const { activeSession, endSession } = useInterview()
   const { getNodes, fitView, flowToScreenPosition, getEdges } = useReactFlow()
+  const router = useRouter()
   const [title, setTitle] = useState(initialTitle)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
-  const [interviewSetupOpen, setInterviewSetupOpen] = useState(false)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
@@ -140,9 +142,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [importDraftOpen,    setImportDraftOpen]    = useState(false)
   const [collabModalOpen,    setCollabModalOpen]    = useState(false)
   const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
+  const [codePanelOpen,             setCodePanelOpen]             = useState(false)
+  const [problemDiscussionOpen,     setProblemDiscussionOpen]     = useState(false)
 
   // ── Collab ────────────────────────────────────────────────────────────────
-  const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions } = useCollab()
+  const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions, collaborators } = useCollab()
 
   useEffect(() => {
     if (!diagramId) return
@@ -152,6 +156,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   }, [diagramId])
 
   useCollabCanvas(diagramId, nodes, edges, setNodes as never, setEdges as never)
+
+  // Auto-close Discussion panel when no collaborators are present
+  useEffect(() => {
+    if (collaborators.length === 0) {
+      setDiscussionPanelOpen(false)
+    }
+  }, [collaborators.length])
 
   // Cursor tracking on canvas pane
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -626,18 +637,21 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         onClearSelection={handleClearSelection}
         canvasMode={canvasMode}
         onCanvasModeChange={setCanvasMode}
-        onStartInterview={() => setInterviewSetupOpen(true)}
+        onStartInterview={() => router.push('/dashboard/interview-mode')}
         onEndInterview={handleEndSession}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
         diagramId={diagramId}
         readOnly={readOnly}
         onOpenShare={() => setShareModalOpen(true)}
-        problemSlug={problemSlug}
-        onOpenProblem={() => setProblemPanelState('open')}
         onOpenCollab={() => setCollabModalOpen(true)}
-        onOpenDiscussion={diagramId ? () => setDiscussionPanelOpen(v => !v) : undefined}
+        onOpenDiscussion={diagramId && collaborators.length > 0 ? () => setDiscussionPanelOpen(v => !v) : undefined}
         unreadMentions={unreadMentions}
+        onOpenCode={() => setCodePanelOpen(v => !v)}
+        codePanelOpen={codePanelOpen}
+        problemSlug={problemSlug}
+        onOpenProblemDiscussion={problemSlug ? () => setProblemDiscussionOpen(v => !v) : undefined}
+        problemDiscussionOpen={problemDiscussionOpen}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -675,12 +689,27 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
           {/* Collab overlays */}
           {diagramId && <CollabCursors />}
-          {diagramId && <CollabPresenceDock />}
+          {diagramId && collaborators.length > 0 && <CollabPresenceDock />}
           {diagramId && (
             <DiscussionPanel
               open={discussionPanelOpen}
               onClose={() => setDiscussionPanelOpen(false)}
               diagramId={diagramId}
+            />
+          )}
+
+          {/* Code execution panel */}
+          <CodePanel
+            open={codePanelOpen}
+            onClose={() => setCodePanelOpen(false)}
+          />
+
+          {/* Problem community discussion panel */}
+          {problemSlug && (
+            <ProblemDiscussionPanel
+              open={problemDiscussionOpen}
+              onClose={() => setProblemDiscussionOpen(false)}
+              slug={problemSlug}
             />
           )}
 
@@ -715,12 +744,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
         actions={paletteActions}
-      />
-
-      <InterviewSetupModal
-        open={interviewSetupOpen}
-        onClose={() => setInterviewSetupOpen(false)}
-        currentDiagramId={diagramId}
       />
 
       {diagramId && !readOnly && (

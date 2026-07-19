@@ -4,13 +4,14 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import {
   Search, BookOpen, CheckCircle2, Clock, ChevronRight,
-  RefreshCw, Target, TrendingUp, Zap,
+  RefreshCw, Target, TrendingUp, Zap, Lock, ArrowRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppShell } from '@/components/dashboard/AppShell'
 import { api } from '@/lib/api'
 import type { ProblemSummary } from '@/types'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -151,6 +152,29 @@ function StatCard({ label, value, icon: Icon, accent }: {
   )
 }
 
+// ─── Locked Problem Card ──────────────────────────────────────────────────────
+
+function LockedProblemCard({ problem }: { problem: ProblemSummary }) {
+  const m = DIFF_META[problem.difficulty as keyof typeof DIFF_META]
+  return (
+    <div className="relative flex flex-col gap-3 rounded-2xl border border-hairline bg-paper-elevated/60 p-5 opacity-70 select-none">
+      {/* Lock overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-paper/60 backdrop-blur-[2px]">
+        <Lock className="mb-1.5 h-5 w-5 text-ink-muted" />
+        <p className="text-xs font-medium text-ink-muted">Pro required</p>
+        <Link href="/pricing" className="mt-2 flex items-center gap-1 rounded-lg bg-brand/10 px-3 py-1 text-xs font-semibold text-brand hover:bg-brand/20 transition-colors">
+          Upgrade <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+      <div className="flex items-start justify-between gap-2">
+        {m && <DifficultyBadge difficulty={problem.difficulty as 'easy' | 'medium' | 'hard'} />}
+      </div>
+      <h3 className="text-[15px] font-semibold leading-snug text-ink blur-[3px]">{problem.title}</h3>
+      <p className="text-xs text-ink-faint line-clamp-2 blur-[2px]">{problem.description}</p>
+    </div>
+  )
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
 function Skeleton() {
@@ -173,57 +197,58 @@ function Skeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProblemsPage() {
-  const [problems,   setProblems]   = useState<ProblemSummary[]>([])
-  const [categories, setCategories] = useState<string[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [diff,       setDiff]       = useState<Diff>('all')
-  const [category,   setCategory]   = useState('')
-  const [q,          setQ]          = useState('')
+  const { isFree } = usePlan()
+  const [allProblems, setAllProblems] = useState<ProblemSummary[]>([])
+  const [categories,  setCategories]  = useState<string[]>([])
+  const [loading,     setLoading]     = useState(true)
+  const [diff,        setDiff]        = useState<Diff>('all')
+  const [category,    setCategory]    = useState('')
+  const [q,           setQ]           = useState('')
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Fetch ALL problems once for accurate counts
   useEffect(() => {
     api.problems.categories().then(r => setCategories(r.categories)).catch(() => {})
+    api.problems.list({}).then(r => setAllProblems(r.problems)).catch(() => {})
   }, [])
+
+  // problems shown = allProblems filtered client-side
+  const problems = useMemo(() => {
+    let list = allProblems
+    if (diff !== 'all') list = list.filter(p => p.difficulty === diff)
+    if (category)       list = list.filter(p => p.category === category)
+    if (q.trim())       list = list.filter(p => p.title.toLowerCase().includes(q.toLowerCase()))
+    return list
+  }, [allProblems, diff, category, q])
 
   useEffect(() => {
     setLoading(true)
-    api.problems.list({
-      difficulty: diff === 'all' ? undefined : diff,
-      category:   category || undefined,
-    })
-      .then(r => setProblems(r.problems))
+    api.problems.list({})
+      .then(r => { setAllProblems(r.problems) })
       .catch(() => toast.error('Could not load problems'))
       .finally(() => setLoading(false))
-  }, [diff, category])
+  }, [])
 
   function handleSearch(v: string) {
     setQ(v)
     if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => {
-      api.problems.list({ q: v || undefined, difficulty: diff === 'all' ? undefined : diff, category: category || undefined })
-        .then(r => setProblems(r.problems))
-        .catch(() => {})
-    }, 300)
   }
 
-  const filtered = useMemo(() => {
-    if (!q.trim()) return problems
-    return problems.filter(p => p.title.toLowerCase().includes(q.toLowerCase()))
-  }, [problems, q])
+  const filtered = problems
 
-  // Stats
-  const total     = problems.length
-  const solved    = problems.filter(p => p.myStatus === 'submitted').length
-  const inProg    = problems.filter(p => p.myStatus === 'in_progress').length
-  const easy      = problems.filter(p => p.difficulty === 'easy'   && p.myStatus === 'submitted').length
-  const medium    = problems.filter(p => p.difficulty === 'medium' && p.myStatus === 'submitted').length
-  const hard      = problems.filter(p => p.difficulty === 'hard'   && p.myStatus === 'submitted').length
+  // Stats — always from full list
+  const total     = allProblems.length
+  const solved    = allProblems.filter(p => p.myStatus === 'submitted').length
+  const inProg    = allProblems.filter(p => p.myStatus === 'in_progress').length
+  const easy      = allProblems.filter(p => p.difficulty === 'easy'   && p.myStatus === 'submitted').length
+  const medium    = allProblems.filter(p => p.difficulty === 'medium' && p.myStatus === 'submitted').length
+  const hard      = allProblems.filter(p => p.difficulty === 'hard'   && p.myStatus === 'submitted').length
 
   const counts: Record<Diff, number> = {
-    all:    problems.length,
-    easy:   problems.filter(p => p.difficulty === 'easy').length,
-    medium: problems.filter(p => p.difficulty === 'medium').length,
-    hard:   problems.filter(p => p.difficulty === 'hard').length,
+    all:    allProblems.length,
+    easy:   allProblems.filter(p => p.difficulty === 'easy').length,
+    medium: allProblems.filter(p => p.difficulty === 'medium').length,
+    hard:   allProblems.filter(p => p.difficulty === 'hard').length,
   }
 
   return (
@@ -259,7 +284,7 @@ export default function ProblemsPage() {
                 Solved
               </span>
               {(['easy', 'medium', 'hard'] as const).map(d => {
-                const total = problems.filter(p => p.difficulty === d).length
+                const total = allProblems.filter(p => p.difficulty === d).length
                 const done  = d === 'easy' ? easy : d === 'medium' ? medium : hard
                 const m = DIFF_META[d]
                 return (
@@ -274,7 +299,7 @@ export default function ProblemsPage() {
               <div className="ml-auto flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5 text-ink-faint" />
                 <span className="font-mono text-[11px] text-ink-faint">
-                  {problems.reduce((a, p) => a + p.submissionCount, 0).toLocaleString()} total community solutions
+                  {allProblems.reduce((a, p) => a + p.submissionCount, 0).toLocaleString()} total community solutions
                 </span>
               </div>
             </div>
@@ -294,23 +319,28 @@ export default function ProblemsPage() {
 
               {/* Difficulty pills */}
               <div className="flex gap-1 rounded-xl border border-hairline bg-paper p-1">
-                {DIFFICULTIES.map(d => (
-                  <button key={d} onClick={() => setDiff(d)}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-[11px] font-medium capitalize transition-all',
-                      diff === d ? 'bg-brand text-brand-foreground shadow-sm' : 'text-ink-muted hover:text-ink',
-                    )}
-                  >
-                    {d !== 'all' && <span className={cn('h-1.5 w-1.5 rounded-full', DIFF_META[d as keyof typeof DIFF_META].dot)} />}
-                    {d}
-                    <span className={cn(
-                      'rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold',
-                      diff === d ? 'bg-white/20 text-white' : 'bg-hairline text-ink-faint',
-                    )}>
-                      {counts[d]}
-                    </span>
-                  </button>
-                ))}
+                {DIFFICULTIES.map(d => {
+                  const isLocked = isFree && d === 'hard'
+                  return (
+                    <button key={d} onClick={() => !isLocked && setDiff(d)}
+                      className={cn(
+                        'flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-[11px] font-medium capitalize transition-all',
+                        isLocked ? 'cursor-not-allowed opacity-50' : '',
+                        diff === d ? 'bg-brand text-brand-foreground shadow-sm' : 'text-ink-muted hover:text-ink',
+                      )}
+                    >
+                      {d !== 'all' && <span className={cn('h-1.5 w-1.5 rounded-full', DIFF_META[d as keyof typeof DIFF_META].dot)} />}
+                      {d}
+                      {isLocked && <Lock className="h-3 w-3 text-amber-400" />}
+                      {!isLocked && <span className={cn(
+                        'rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold',
+                        diff === d ? 'bg-white/20 text-white' : 'bg-hairline text-ink-faint',
+                      )}>
+                        {counts[d]}
+                      </span>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -345,6 +375,20 @@ export default function ProblemsPage() {
               </div>
             )}
 
+            {/* Free plan notice */}
+            {isFree && (
+              <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <Lock className="h-4 w-4 shrink-0 text-amber-500" />
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Free plan:</span> all Easy problems plus a small selection of Medium
+                  problems are available. Full Medium access and all Hard problems require Pro or Ultimate.
+                </p>
+                <Link href="/pricing" className="ml-auto shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+                  Upgrade
+                </Link>
+              </div>
+            )}
+
             {/* Problem grid */}
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline
@@ -354,7 +398,11 @@ export default function ProblemsPage() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map(p => <ProblemCard key={p._id} problem={p} />)}
+                {filtered.map(p =>
+                  p.locked
+                    ? <LockedProblemCard key={p._id} problem={p} />
+                    : <ProblemCard key={p._id} problem={p} />
+                )}
               </div>
             )}
 

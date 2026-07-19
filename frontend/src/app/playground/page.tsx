@@ -15,7 +15,7 @@ import {
   type OnEdgesChange,
 } from '@xyflow/react'
 import { nanoid } from 'nanoid'
-import { AlertCircle, ArrowLeftRight, BookOpen, Check, Copy, Download, FileInput, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowLeftRight, BookOpen, Check, Code2, Copy, Download, FileInput, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Wordmark } from '@/components/Brand'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
@@ -26,6 +26,7 @@ import { parse, renderToFlow, serializeToDraft } from '@/lib/draft'
 import type { ParseError } from '@/lib/draft'
 import type { UMLNodeData, UMLEdgeData } from '@/types'
 import { cn } from '@/lib/utils'
+import { CodePanel } from '@/components/editor/CodePanel'
 
 const PLACEHOLDER = `# Draft Notation — write a design, watch it render
 # Docs: lldcanvas.com/docs
@@ -333,11 +334,12 @@ function MiniCodePreview({ code }: { code: string }) {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PlaygroundPage() {
-  const [view, setView]       = useState<View>('code')
-  const [code, setCode]       = useState(PLACEHOLDER)
-  const [errors, setErrors]   = useState<ParseError[]>([])
-  const [parsing, setParsing] = useState(false)
+  const [view, setView]           = useState<View>('code')
+  const [code, setCode]           = useState(PLACEHOLDER)
+  const [errors, setErrors]       = useState<ParseError[]>([])
+  const [parsing, setParsing]     = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [codeOpen, setCodeOpen]   = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -378,17 +380,27 @@ export default function PlaygroundPage() {
           <Link href="/" className="shrink-0">
             <Wordmark height={40} priority />
           </Link>
-          <div className="h-6 w-px shrink-0 bg-hairline-strong" />
 
-          {/* Centered label */}
+          {/* Centered: Playground label + divider + Code toggle */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <p className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-brand">
-              Playground
-            </p>
+            <div className="pointer-events-auto flex items-center gap-3">
+              <p className="font-mono text-sm font-semibold uppercase tracking-[0.2em] text-brand">
+                Playground
+              </p>
+              <div className="h-4 w-px bg-hairline-strong" />
+              <button
+                onClick={() => setCodeOpen(v => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 font-mono text-sm font-semibold uppercase tracking-[0.2em] transition-colors',
+                  codeOpen ? 'text-brand/60' : 'text-brand hover:text-brand/70',
+                )}
+              >
+                <Code2 size={13} /> Code
+              </button>
+            </div>
           </div>
 
           <div className="flex-1" />
-
           <button
             onClick={() => setGuideOpen(true)}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium
@@ -432,6 +444,8 @@ export default function PlaygroundPage() {
               ? <MiniDiagramPreview nodes={nodes} edges={edges} />
               : <MiniCodePreview code={code} />}
           </PipThumbnail>
+
+          <CodePanel open={codeOpen} onClose={() => setCodeOpen(false)} />
         </div>
 
         <div className="mt-16 border-t border-hairline-strong" />
