@@ -42,7 +42,7 @@ export const api = {
     },
 
     get: (id: string, shareToken?: string) =>
-      request<{ diagram: DiagramFull; sharePermission?: 'view' | 'edit' }>(
+      request<{ diagram: DiagramFull; sharePermission?: 'view' | 'edit'; problemSlug: string | null }>(
         `/diagrams/${id}${shareToken ? `?shareToken=${shareToken}` : ''}`,
       ),
 

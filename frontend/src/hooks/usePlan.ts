@@ -37,7 +37,7 @@ interface PlanState {
 
 const DEFAULT_FREE_LIMITS: PlanLimits = {
   codeExecutionsPerDay: 15,
-  patternTemplates: 5,
+  patternTemplates: 10,
   exportFormats: [],
   problemAccess: 'easy_medium',
   hintsAccess: false,

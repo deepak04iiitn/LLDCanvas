@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { Diagram } from '../models/diagram.model'
 import { DiagramShare } from '../models/diagram-share.model'
 import { UserSolution } from '../models/user-solution.model'
+import { Problem } from '../models/problem.model'
 import { CollabInvite } from '../models/collab-invite.model'
 import { DiagramVersion } from '../models/diagram-version.model'
 import { createError } from '../middleware/error'
@@ -89,13 +90,22 @@ export const diagramsController = {
       const diagram   = await Diagram.findById(diagramId)
       if (!diagram) throw createError('Diagram not found', 404)
 
+      // If this diagram was created via the "practice a problem" flow, resolve
+      // its linked problem slug so the editor can show the requirements/
+      // discussion panel even when opened from somewhere that doesn't pass
+      // ?problem= in the URL (e.g. the "My UML Diagrams" dashboard grid).
+      const linkedSolution = await UserSolution.findOne({ diagramId }).select('problemId').lean()
+      const problemSlug = linkedSolution
+        ? (await Problem.findById(linkedSolution.problemId).select('slug').lean())?.slug ?? null
+        : null
+
       // Owner — always allowed
-      if (diagram.userId.toString() === userId) return res.json({ diagram })
+      if (diagram.userId.toString() === userId) return res.json({ diagram, problemSlug })
 
       // Non-owner — a submitted community solution is publicly viewable, view-only
       const isCommunitySolution = await UserSolution.exists({ diagramId, status: 'submitted' })
       if (isCommunitySolution) {
-        return res.json({ diagram, sharePermission: 'view' })
+        return res.json({ diagram, sharePermission: 'view', problemSlug })
       }
 
       // Check if the user has an accepted collab invite for this diagram
@@ -105,7 +115,7 @@ export const diagramsController = {
         status: 'accepted',
       }).lean()
       if (collabInvite) {
-        return res.json({ diagram, sharePermission: collabInvite.role === 'editor' ? 'edit' : 'view' })
+        return res.json({ diagram, sharePermission: collabInvite.role === 'editor' ? 'edit' : 'view', problemSlug })
       }
 
       // Otherwise, check if a valid share token was provided
@@ -115,7 +125,7 @@ export const diagramsController = {
       const share = await DiagramShare.findOne({ diagramId, token: shareToken }).lean()
       if (!share) throw createError('Forbidden', 403)
 
-      res.json({ diagram, sharePermission: share.permission })
+      res.json({ diagram, sharePermission: share.permission, problemSlug })
     } catch (err) {
       next(err)
     }

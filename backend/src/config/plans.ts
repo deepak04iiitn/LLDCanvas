@@ -19,7 +19,7 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
   free: {
     codeExecutionsPerDay: 15,
-    patternTemplates: 5,
+    patternTemplates: 10,
     exportFormats: [],
     problemAccess: 'easy_medium',
     hintsAccess: false,
@@ -68,13 +68,18 @@ export function getLimits(plan: PlanName): PlanLimits {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 }
 
-/** The 5 patterns available on the free tier (most uncommon / least used GoF patterns) */
+/** The 10 patterns available on the free tier (most uncommon / least used GoF patterns) */
 export const FREE_PATTERN_KEYS = [
   'flyweight',
   'visitor',
   'interpreter',
   'mediator',
   'memento',
+  'prototype',
+  'bridge',
+  'chain-of-responsibility',
+  'iterator',
+  'template-method',
 ] as const
 
 /**

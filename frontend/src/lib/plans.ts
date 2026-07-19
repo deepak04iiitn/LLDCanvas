@@ -2,13 +2,18 @@
 
 export type PlanName = 'free' | 'pro' | 'ultimate'
 
-/** The 5 design patterns available on the free tier (most uncommon / least used) */
+/** The 10 design patterns available on the free tier (most uncommon / least used) */
 export const FREE_PATTERN_KEYS = new Set([
   'flyweight',
   'visitor',
   'interpreter',
   'mediator',
   'memento',
+  'prototype',
+  'bridge',
+  'chain-of-responsibility',
+  'iterator',
+  'template-method',
 ])
 
 /** Export formats allowed per plan */
