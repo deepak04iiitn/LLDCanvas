@@ -320,6 +320,33 @@ export const adminApi = {
         { method: 'POST', body: JSON.stringify(payload) },
       ),
   },
+
+  feedback: {
+    stats: () =>
+      req<{
+        total: number
+        byStatus:   Record<string, number>
+        byType:     Record<string, number>
+        byPriority: Record<string, number>
+        recentItems: AdminFeedback[]
+      }>('/feedback/stats'),
+
+    list: (params?: { status?: string; type?: string; priority?: string; q?: string; page?: number; limit?: number; sort?: string; order?: string }) => {
+      const qs = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => v != null && qs.set(k, String(v)))
+      return req<{ items: AdminFeedback[]; total: number; page: number; pages: number }>(
+        `/feedback${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+
+    get: (id: string) => req<AdminFeedback>(`/feedback/${id}`),
+
+    update: (id: string, payload: { status?: string; priority?: string; adminNote?: string; tags?: string[] }) =>
+      req<AdminFeedback>(`/feedback/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+
+    delete: (id: string) =>
+      req<{ ok: boolean }>(`/feedback/${id}`, { method: 'DELETE' }),
+  },
 }
 
 // ─── New entity types ─────────────────────────────────────────────────────────
@@ -448,4 +475,28 @@ export interface AdminSubscription {
   paidMonths: number | null
   onboardingNote: string
   createdAt: string
+}
+
+// ─── Feedback types ───────────────────────────────────────────────────────────
+
+export type FeedbackType     = 'bug' | 'feature' | 'improvement' | 'other'
+export type FeedbackStatus   = 'open' | 'in_progress' | 'resolved' | 'closed' | 'duplicate'
+export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical'
+
+export interface AdminFeedback {
+  _id:         string
+  type:        FeedbackType
+  title:       string
+  description: string
+  status:      FeedbackStatus
+  priority:    FeedbackPriority
+  userId:      string | null
+  name:        string
+  email:       string
+  adminNote:   string
+  tags:        string[]
+  upvotes:     number
+  pageUrl:     string
+  createdAt:   string
+  updatedAt:   string
 }

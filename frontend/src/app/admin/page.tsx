@@ -10,7 +10,7 @@ import {
   Activity, CheckCircle, Radio, RefreshCw, ArrowUpRight,
   RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
   Share2, GitBranch, UserCheck, Trophy, Terminal, Ban,
-  IndianRupee, CreditCard, Rocket,
+  IndianRupee, CreditCard, Rocket, Bug,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
@@ -87,22 +87,25 @@ export default function AdminOverviewPage() {
   const [featureStats, setFeatureStats] = useState<FeatureStats | null>(null)
   const [codeStats,    setCodeStats]    = useState<CodeStats | null>(null)
   const [billingOverview, setBillingOverview] = useState<{ totalSubscriptions: number; activeSubscriptions: number; mrr: number; planDistribution: Record<string, number> } | null>(null)
+  const [feedbackStats, setFeedbackStats] = useState<{ total: number; byStatus: Record<string, number> } | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [liveLoading,  setLiveLoading]  = useState(true)
 
   const loadOverview = useCallback(async () => {
     try {
-      const [data, fs, cs, billing] = await Promise.all([
+      const [data, fs, cs, billing, fb] = await Promise.all([
         adminApi.overview(),
         adminApi.featureStats(),
         adminApi.code.stats(),
         adminApi.billing.overview().catch(() => null),
+        adminApi.feedback.stats().catch(() => null),
       ])
       setStats(data.stats)
       setCharts(data.charts)
       setFeatureStats(fs)
       setCodeStats(cs)
       if (billing) setBillingOverview(billing)
+      if (fb) setFeedbackStats(fb)
     } finally {
       setLoading(false)
     }
@@ -500,6 +503,7 @@ export default function AdminOverviewPage() {
                 { href: '/admin/code',          Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '—', color: 'text-amber-600', bg: 'bg-amber-50' },
                 { href: '/admin/subscriptions', Icon: CreditCard,        label: 'Subscriptions',          sub: billingOverview ? `${billingOverview.activeSubscriptions} active` : '—', color: 'text-brand', bg: 'bg-brand/10' },
                 { href: '/admin/revenue',       Icon: IndianRupee,       label: 'Revenue',                sub: billingOverview ? `₹${billingOverview.mrr.toLocaleString('en-IN')} MRR` : '—', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { href: '/admin/feedback',      Icon: Bug,               label: 'Feedback & Reports',     sub: feedbackStats ? `${feedbackStats.byStatus.open ?? 0} open · ${feedbackStats.total} total` : '—', color: 'text-red-600', bg: 'bg-red-50' },
               ].map(nav => (
                 <Link
                   key={nav.href}

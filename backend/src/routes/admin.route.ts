@@ -1,6 +1,13 @@
 import { Router } from 'express'
 import { requireAuth, requireAdmin } from '../middleware/auth'
 import { adminController } from '../controllers/admin.controller'
+import {
+  listFeedback,
+  getFeedback,
+  updateFeedback,
+  deleteFeedback,
+  feedbackStats,
+} from '../controllers/feedback.controller'
 
 const router = Router()
 
@@ -59,5 +66,12 @@ router.get('/billing/revenue',                adminController.getRevenueStats)
 router.patch('/billing/subscriptions/:id/plan', adminController.overridePlan)
 router.post('/billing/subscriptions/:id/cancel', adminController.adminCancelSubscription)
 router.post('/billing/subscriptions/manual',  adminController.createManualSubscription)
+
+// Feedback & bug reports
+router.get   ('/feedback/stats', feedbackStats)
+router.get   ('/feedback',       listFeedback)
+router.get   ('/feedback/:id',   getFeedback)
+router.patch ('/feedback/:id',   updateFeedback)
+router.delete('/feedback/:id',   deleteFeedback)
 
 export default router

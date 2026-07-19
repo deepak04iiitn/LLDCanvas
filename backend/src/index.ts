@@ -23,6 +23,7 @@ import revisionRouter  from './routes/revision.route'
 import collabRouter    from './routes/collab.route'
 import codeRouter      from './routes/code.route'
 import billingRouter   from './routes/billing.route'
+import feedbackRouter  from './routes/feedback.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 
 const app    = express()
@@ -126,6 +127,7 @@ app.use('/revision-notes',  revisionRouter)
 app.use('/collab',          collabRouter)
 app.use('/code',            codeRouter)
 app.use('/billing',         billingRouter)
+app.use('/feedback',        feedbackRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)

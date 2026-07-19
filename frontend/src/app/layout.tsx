@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { InterviewProvider } from '@/contexts/InterviewContext'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import './globals.css'
 
 const geistSans = Geist({
@@ -63,6 +64,7 @@ export default function RootLayout({
           <TooltipProvider>
             <AnalyticsProvider />
             {children}
+            <FeedbackWidget />
           </TooltipProvider>
         </InterviewProvider>
         {/* Forced light: there's no dark-mode toggle anywhere in the app shell,

@@ -346,4 +346,12 @@ export const api = {
         method: 'POST',
       }),
   },
+
+  feedback: {
+    submit: (payload: { type: string; title: string; description: string; name?: string; email?: string; pageUrl?: string }) =>
+      request<{ ok: boolean; id: string }>('/feedback', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+  },
 }
