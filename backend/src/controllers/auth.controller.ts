@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 import { User } from '../models/user.model'
 import { signAuthToken } from '../utils/jwt'
-import { verifyFirebaseIdToken } from '../config/firebase-admin'
+import { verifyFirebaseIdToken } from '../config/firebase-verify'
 import { createError } from '../middleware/error'
 
 const BCRYPT_ROUNDS = 12
