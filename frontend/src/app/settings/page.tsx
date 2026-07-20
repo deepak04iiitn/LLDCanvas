@@ -172,7 +172,7 @@ export default function SettingsPage() {
     try {
       await api.billing.cancel()
       toast.success('Subscription cancelled. Access continues until period end.')
-      refreshPlan()
+      await refreshPlan()
     } catch (err) {
       toast.error((err as Error).message ?? 'Failed to cancel subscription')
     } finally {

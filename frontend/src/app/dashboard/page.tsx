@@ -41,6 +41,16 @@ export default function DashboardPage() {
   // ─── Page title ─────────────────────────────────────────────────────────────
   useEffect(() => { document.title = 'Dashboard — LLDCanvas' }, [])
 
+  // ─── Upgrade success toast ────────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgraded') === '1') {
+      toast.success('Plan upgraded! Enjoy your new features.', { duration: 5000 })
+      router.replace('/dashboard')
+    }
+  }, [router])
+
   // ─── Auth + admin guard ──────────────────────────────────────────────────────
   useEffect(() => {
     if (sessionLoading) return
