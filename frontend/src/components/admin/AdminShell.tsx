@@ -2,7 +2,7 @@
 
 import React, { useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Users, FileText, Timer,
   LogOut, Menu, ShieldCheck, X,
@@ -10,7 +10,7 @@ import {
   CreditCard, BarChart3, Bug, Quote,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
-import { signOut } from '@/lib/auth'
+import { useSignOut } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 
 const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p: string) => boolean; divider?: boolean }[] = [
@@ -58,11 +58,10 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 }
 
 function SidebarContent({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
-  const router = useRouter()
+  const doSignOut = useSignOut()
 
   async function handleSignOut() {
-    await signOut()
-    router.push('/')
+    await doSignOut()
   }
 
   return (

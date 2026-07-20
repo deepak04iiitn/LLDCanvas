@@ -123,3 +123,18 @@ export async function signOut(): Promise<void> {
     // Best-effort — our own token is already cleared regardless.
   }
 }
+
+// Hook version: clears token, wipes context user, and hard-redirects to home.
+// Use this everywhere instead of calling signOut() directly so React state
+// doesn't linger after the session ends.
+export function useSignOut() {
+  const { refetch } = useAuth()
+  return async function doSignOut() {
+    clearAuthToken()
+    try { await firebaseSignOut(getFirebaseAuth()) } catch {}
+    // Reset auth context so no page sees a stale user
+    await refetch()
+    // Hard redirect — clears all in-memory state
+    window.location.href = '/'
+  }
+}
