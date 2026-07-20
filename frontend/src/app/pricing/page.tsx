@@ -281,7 +281,7 @@ export default function PricingPage() {
         handler: async (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) => {
           try {
             await api.billing.verify(response)
-            refresh()
+            await refresh()
             window.location.href = '/dashboard?upgraded=1'
           } catch {
             alert('Payment verification failed. Contact support.')
