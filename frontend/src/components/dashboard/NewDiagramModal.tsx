@@ -62,20 +62,22 @@ export function NewDiagramModal({ open, onOpenChange, onCreated }: NewDiagramMod
           </div>
 
           <DialogFooter className="pt-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-hairline-strong transition-all active:scale-[0.97]"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={loading}
-              className="bg-brand text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97]"
-            >
-              {loading ? 'Creating…' : 'Create UML Diagram'}
-            </Button>
+            <div className="flex w-full gap-3">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="flex-1 border-hairline-strong transition-all active:scale-[0.97]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreate}
+                disabled={loading}
+                className="flex-1 bg-brand text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97]"
+              >
+                {loading ? 'Creating…' : 'Create UML Diagram'}
+              </Button>
+            </div>
           </DialogFooter>
         </div>
       </DialogContent>

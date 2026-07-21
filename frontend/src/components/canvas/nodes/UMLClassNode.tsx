@@ -285,11 +285,22 @@ interface AttrRowProps {
   onUpdate: (id: string, updates: Partial<UMLAttribute>) => void
   onDelete: (id: string) => void
   autoOpen?: boolean
+  onConsumedAutoOpen?: () => void
 }
 
-function AttrRow({ attr, onUpdate, onDelete, autoOpen = false }: AttrRowProps) {
+function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen }: AttrRowProps) {
   const [editing, setEditing] = useState(autoOpen)
   const [draft, setDraft]     = useState<UMLAttribute>(attr)
+
+  // Tell the parent we've consumed the auto-open request only AFTER this row
+  // has actually mounted with editing=true baked into its initial state —
+  // not in response to the parent's pendingAttrId simply changing value.
+  // Clearing pendingAttrId that way raced the attribute's own data arriving
+  // (which flows through React Flow's separate node-store update), so the
+  // "new" row's mount would sometimes land AFTER pendingAttrId had already
+  // been cleared back to null, and it mounted with autoOpen=false.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoOpen) onConsumedAutoOpen?.() }, [])
 
   function open()   { setDraft({ ...attr }); setEditing(true) }
   function cancel() { setDraft({ ...attr }); setEditing(false) }
@@ -388,11 +399,16 @@ interface MethodRowProps {
   onUpdate: (id: string, updates: Partial<UMLMethod>) => void
   onDelete: (id: string) => void
   autoOpen?: boolean
+  onConsumedAutoOpen?: () => void
 }
 
-function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoOpen = false }: MethodRowProps) {
+function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen }: MethodRowProps) {
   const [editing, setEditing] = useState(autoOpen)
   const [draft, setDraft]     = useState<UMLMethod>(method)
+
+  // See the matching comment in AttrRow — same fix, same reason.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (autoOpen) onConsumedAutoOpen?.() }, [])
 
   function open()   { setDraft({ ...method }); setEditing(true) }
   function cancel() { setDraft({ ...method }); setEditing(false) }
@@ -580,22 +596,19 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft]     = useState(data.name)
 
-  // Which just-added row should mount already open for editing. State, not a
-  // ref mutated inline during render — React (in dev, under StrictMode)
-  // double-invokes render bodies to catch impure renders, and a ref cleared
-  // mid-render gets nulled out before the row that needed it ever mounts,
-  // which is exactly why "add attribute" stopped auto-opening. Clearing it in
-  // an effect (after commit) instead is pure and safe to double-invoke.
+  // Which just-added row should mount already open for editing. Cleared by
+  // the row itself (via onConsumedAutoOpen) once it has actually mounted
+  // with editing=true — NOT by an effect keyed on this value changing.
+  // data.attributes/data.methods arrive via React Flow's own node-store
+  // update (a separate write path from this component's local state), so a
+  // clear-on-value-change effect could fire and null this out BEFORE the
+  // new row's own render (with the new attribute finally present in
+  // data.attributes) ever happens — the row would then mount with
+  // autoOpen=false, silently. Letting the row confirm consumption itself
+  // guarantees the ordering regardless of how many render passes it takes
+  // for the new data to arrive.
   const [pendingAttrId, setPendingAttrId]     = useState<string | null>(null)
   const [pendingMethodId, setPendingMethodId] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (pendingAttrId !== null) setPendingAttrId(null)
-  }, [pendingAttrId])
-
-  useEffect(() => {
-    if (pendingMethodId !== null) setPendingMethodId(null)
-  }, [pendingMethodId])
 
   useEffect(() => {
     let raf: number
@@ -755,7 +768,14 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
             {data.attributes.map(attr => {
               const isNew = attr.id === pendingAttrId
               return (
-                <AttrRow key={attr.id} attr={attr} onUpdate={updateAttribute} onDelete={deleteAttribute} autoOpen={isNew} />
+                <AttrRow
+                  key={attr.id}
+                  attr={attr}
+                  onUpdate={updateAttribute}
+                  onDelete={deleteAttribute}
+                  autoOpen={isNew}
+                  onConsumedAutoOpen={isNew ? () => setPendingAttrId(null) : undefined}
+                />
               )
             })}
             <button
@@ -780,7 +800,15 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                 {data.methods.map(method => {
                   const isNew = method.id === pendingMethodId
                   return (
-                    <MethodRow key={method.id} method={method} className={data.name} onUpdate={updateMethod} onDelete={deleteMethod} autoOpen={isNew} />
+                    <MethodRow
+                      key={method.id}
+                      method={method}
+                      className={data.name}
+                      onUpdate={updateMethod}
+                      onDelete={deleteMethod}
+                      autoOpen={isNew}
+                      onConsumedAutoOpen={isNew ? () => setPendingMethodId(null) : undefined}
+                    />
                   )
                 })}
                 <div
