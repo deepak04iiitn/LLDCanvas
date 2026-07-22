@@ -618,11 +618,15 @@ function PlaygroundContent() {
                   className="relative flex flex-col items-center text-center"
                 >
                   <div
-                    style={{ transform: `rotate(${step.tilt}deg)` }}
                     className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full
                                border-2 border-hairline-strong bg-paper shadow-[0_6px_16px_-6px_rgba(0,0,0,0.15)]"
                   >
-                    <step.icon size={26} className="text-brand" strokeWidth={1.75} />
+                    <step.icon
+                      size={26}
+                      className="text-brand"
+                      strokeWidth={1.75}
+                      style={{ transform: `rotate(${step.tilt}deg)` }}
+                    />
                     <span
                       className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full
                                  border border-hairline-strong bg-paper-elevated font-mono text-[10px] font-bold text-ink-faint shadow-sm"

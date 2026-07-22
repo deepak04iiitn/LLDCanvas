@@ -13,6 +13,13 @@ export interface IProblem extends Document {
   hints:      string[]   // exactly 3
   order:      number     // sort within difficulty
   isActive:   boolean
+
+  // SEO/public-page copy — narrative content for the public preview pages,
+  // distinct from functionalRequirements/hints which stay gated behind auth.
+  realWorldApplications: string[]   // 3-4 short bullets
+  learningObjectives:    string[]   // 3-4 short bullets
+  whyAsked:              string     // 1-2 sentence paragraph
+
   createdAt:  Date
   updatedAt:  Date
 }
@@ -31,6 +38,10 @@ const schema = new Schema<IProblem>(
     hints:      { type: [String], default: [] },
     order:      { type: Number, default: 0 },
     isActive:   { type: Boolean, default: true },
+
+    realWorldApplications: { type: [String], default: [] },
+    learningObjectives:    { type: [String], default: [] },
+    whyAsked:               { type: String, default: '' },
   },
   { timestamps: true },
 )
