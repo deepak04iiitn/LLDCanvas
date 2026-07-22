@@ -25,19 +25,46 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-async function fetchMe(): Promise<SessionUser | null> {
-  const token = getAuthToken()
-  if (!token) return null
+// A real 401 means the token itself is invalid/expired — that's a genuine
+// "log the user out" signal. Anything else (a transient 5xx from a cold
+// serverless start, a network blip) must NOT be treated the same way, or a
+// momentary backend hiccup looks identical to being signed out even though
+// the token (valid for 30 days) was never actually invalid.
+type FetchMeResult =
+  | { kind: 'ok'; user: SessionUser }
+  | { kind: 'unauthenticated' }
+  | { kind: 'error' }
+
+async function fetchMeOnce(token: string): Promise<FetchMeResult> {
   try {
     const res = await fetch(`${BASE}/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (!res.ok) return null
+    if (res.status === 401) return { kind: 'unauthenticated' }
+    if (!res.ok) return { kind: 'error' }
     const body = await res.json()
-    return body.user ?? null
+    return body.user ? { kind: 'ok', user: body.user } : { kind: 'unauthenticated' }
   } catch {
-    return null
+    return { kind: 'error' }
   }
+}
+
+// Retries transient failures (a cold serverless start, a network blip)
+// before giving up — this covers the very first load too, not just
+// mid-session refetches, so a momentary backend hiccup doesn't need an
+// already-populated user to fall back on to avoid looking like a logout.
+async function fetchMe(): Promise<FetchMeResult> {
+  const token = getAuthToken()
+  if (!token) return { kind: 'unauthenticated' }
+
+  const delays = [0, 500, 1500]
+  let last: FetchMeResult = { kind: 'error' }
+  for (const delay of delays) {
+    if (delay) await new Promise(r => setTimeout(r, delay))
+    last = await fetchMeOnce(token)
+    if (last.kind !== 'error') return last
+  }
+  return last
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -46,8 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refetch = useCallback(async () => {
     setIsPending(true)
-    const u = await fetchMe()
-    setUser(u)
+    const result = await fetchMe()
+    if (result.kind === 'ok') setUser(result.user)
+    else if (result.kind === 'unauthenticated') setUser(null)
+    // 'error' (transient 5xx/network failure): deliberately leave the
+    // existing user state untouched rather than signing them out.
     setIsPending(false)
   }, [])
 
@@ -121,5 +151,20 @@ export async function signOut(): Promise<void> {
     await firebaseSignOut(getFirebaseAuth())
   } catch {
     // Best-effort — our own token is already cleared regardless.
+  }
+}
+
+// Hook version: clears token, wipes context user, and hard-redirects to home.
+// Use this everywhere instead of calling signOut() directly so React state
+// doesn't linger after the session ends.
+export function useSignOut() {
+  const { refetch } = useAuth()
+  return async function doSignOut() {
+    clearAuthToken()
+    try { await firebaseSignOut(getFirebaseAuth()) } catch {}
+    // Reset auth context so no page sees a stale user
+    await refetch()
+    // Hard redirect — clears all in-memory state
+    window.location.href = '/'
   }
 }

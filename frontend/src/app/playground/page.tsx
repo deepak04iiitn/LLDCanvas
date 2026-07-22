@@ -19,7 +19,7 @@ import {
   AlertCircle, ArrowLeftRight, ArrowRight, BookOpen,
   Check, Code2, Copy, Download, Loader2,
   Zap, GitBranch, RefreshCw, Pencil, MousePointer2,
-  Cpu, Sparkles,
+  Cpu, Sparkles, Ruler,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -33,6 +33,7 @@ import type { ParseError } from '@/lib/draft'
 import type { UMLNodeData, UMLEdgeData } from '@/types'
 import { cn } from '@/lib/utils'
 import { CodePanel } from '@/components/editor/CodePanel'
+import { fadeUpProps, inViewProps } from '@/lib/motion'
 
 const PLACEHOLDER = `# Draft Notation — write a design, watch it render
 # Docs: lldcanvas.com/docs
@@ -372,32 +373,41 @@ const SYNTAX_TABS = [
   },
 ] as const
 
+// ─── §1/§2 data — the whole "drafting table" concept: Draft Notation reads
+// like a drafting instrument's own onboarding, not a SaaS feature list ───────
+const STATS = [
+  { value: '< 1ms', label: 'render latency' },
+  { value: '6+',    label: 'UML constructs' },
+  { value: '5',     label: 'relationship types' },
+  { value: '0',     label: 'sign-in required' },
+]
+
 const STEPS = [
   {
     n: '01',
     icon: Pencil,
-    color: 'bg-violet-50 text-violet-600 ring-violet-100',
+    tilt: -3,
     title: 'Write in plain English',
     body: 'Describe classes, fields, methods and relationships exactly how you think — no angle brackets, no drag-and-drop.',
   },
   {
     n: '02',
     icon: Cpu,
-    color: 'bg-amber-50 text-amber-600 ring-amber-100',
+    tilt: 2,
     title: 'Parser runs instantly',
     body: 'Draft parses your text with a 400 ms debounce, resolves types and relationships, and builds an AST.',
   },
   {
     n: '03',
     icon: MousePointer2,
-    color: 'bg-brand-tint text-brand ring-brand/20',
+    tilt: -2,
     title: 'Canvas renders',
     body: 'The AST is fed to the same rendering engine as the full editor — proper UML 2.x boxes, arrows, and cardinality labels.',
   },
   {
     n: '04',
     icon: RefreshCw,
-    color: 'bg-sky-50 text-sky-600 ring-sky-100',
+    tilt: 3,
     title: 'Sync back to code',
     body: 'Rearrange nodes visually, then hit "Sync to code" to regenerate the Draft source from your updated layout.',
   },
@@ -457,104 +467,174 @@ function PlaygroundContent() {
   return (
     <div className="overflow-hidden">
 
-      {/* ── §1 Split hero ─────────────────────────────────────────────────── */}
-      <section className="relative border-b border-hairline">
-        {/* subtle dot-grid background */}
+      {/* ── §1 Hero — "The Drafting Table" ──────────────────────────────────
+          Draft Notation, taken literally: a drafting table's blueprint grid,
+          a ruled top edge like a T-square, and a hand-drawn pencil underline
+          on the headline — the page's own metaphor is the product's name. */}
+      <section className="relative overflow-hidden border-b border-hairline">
+        {/* blueprint grid */}
         <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage: 'radial-gradient(circle, #234E3F 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
+            backgroundImage: `
+              linear-gradient(to right, rgba(35,78,63,0.08) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(35,78,63,0.08) 1px, transparent 1px)
+            `,
+            backgroundSize: '32px 32px',
+            maskImage: 'linear-gradient(to bottom, black, transparent 92%)',
           }}
         />
-        <div className="relative mx-auto max-w-6xl px-6 py-12">
-          <div className="grid items-center gap-16 lg:grid-cols-[1fr_1.1fr]">
-            {/* Left */}
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-3.5 py-1.5">
-                <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-brand uppercase">¶01</span>
-                <div className="h-3 w-px bg-brand/20" />
-                <span className="text-[11px] font-medium text-brand/80">Draft Notation</span>
-              </div>
-              <h1 className="text-[2.6rem] font-black leading-[1.1] tracking-tight text-ink sm:text-5xl lg:text-[3.2rem]">
-                The language<br />
-                UML was<br />
-                <span className="text-brand">waiting for.</span>
-              </h1>
-              <p className="mt-6 max-w-md text-base leading-relaxed text-ink-muted">
-                Describe classes, fields, methods and relationships in plain English.
-                Draft Notation parses your text and renders a proper UML class diagram — live, in under a millisecond.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/editor/local"
-                  className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5
-                             text-sm font-semibold text-brand-foreground transition-all hover:bg-brand-hover active:scale-95"
-                >
-                  Open full editor <ArrowRight size={14} />
-                </Link>
-                <Link
-                  href="/docs"
-                  className="flex items-center gap-2 rounded-lg border border-hairline-strong px-5 py-2.5
-                             text-sm font-medium text-ink-muted transition-all hover:border-brand/30 hover:text-ink"
-                >
-                  <BookOpen size={14} /> Read the docs
-                </Link>
-              </div>
-            </div>
+        {/* ruled top edge, like a T-square laid across the table */}
+        <div
+          className="relative h-6 border-b border-hairline-strong"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(to right, var(--ink-faint) 0 1px, transparent 1px 96px),
+              repeating-linear-gradient(to right, var(--hairline-strong) 0 1px, transparent 1px 24px)
+            `,
+            backgroundPosition: 'bottom left, bottom left',
+            backgroundSize: '96px 16px, 24px 9px',
+            backgroundRepeat: 'repeat-x',
+          }}
+        />
 
-            {/* Right — bento stats */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: 'Render latency', value: '< 1ms', sub: 'per keystroke', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'UML constructs', value: '6+', sub: 'class · iface · enum · abstract…', accent: 'text-violet-600', bg: 'bg-violet-50' },
-                { label: 'Relationship types', value: '5', sub: 'has · owns · extends · uses · implements', accent: 'text-sky-600', bg: 'bg-sky-50' },
-                { label: 'No sign-in needed', value: '100%', sub: 'free in the playground', accent: 'text-amber-600', bg: 'bg-amber-50' },
-              ].map(card => (
-                <div key={card.label} className={cn('rounded-2xl p-5', card.bg)}>
-                  <p className={cn('font-mono text-3xl font-black tracking-tight', card.accent)}>{card.value}</p>
-                  <p className="mt-1 text-[11px] font-semibold text-ink">{card.label}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-ink-muted">{card.sub}</p>
+        <div className="relative mx-auto max-w-4xl px-6 pt-8 pb-12 text-center sm:pt-10 sm:pb-14">
+          {/* masking-tape eyebrow */}
+          <motion.div {...fadeUpProps(0)} className="mb-8 flex justify-center">
+            <div
+              className="-rotate-2 bg-gold/[0.14] px-4 py-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+              style={{ clipPath: 'polygon(1.5% 4%, 98.5% 0%, 100% 96%, 0.5% 100%)' }}
+            >
+              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-gold/90 uppercase">
+                ¶01 · Draft Notation
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.h1
+            {...fadeUpProps(0.05)}
+            className="font-serif text-4xl leading-[1.15] font-medium text-ink sm:text-5xl lg:text-[3.4rem]"
+          >
+            Sketch it in{' '}
+            <span className="relative inline-block whitespace-nowrap">
+              plain English
+              <svg
+                className="absolute -bottom-1 left-0 w-full text-gold" height="10" viewBox="0 0 220 10"
+                preserveAspectRatio="none" aria-hidden
+              >
+                <path d="M2,6 Q40,1 80,5 T160,4 T218,6" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+              </svg>
+            </span>
+            .<br className="hidden sm:block" />
+            {' '}Watch the <span className="text-brand">UML</span> draw itself.
+          </motion.h1>
+
+          <motion.p {...fadeUpProps(0.1)} className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-ink-muted">
+            No angle brackets, no drag-and-drop. Describe classes, fields, methods and
+            relationships the way you'd say them out loud — Draft Notation parses every
+            keystroke and draws the diagram itself.
+          </motion.p>
+
+          <motion.div {...fadeUpProps(0.15)} className="mt-8 flex flex-wrap justify-center gap-3">
+            <Link
+              href="/editor/local"
+              className="flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5
+                         text-sm font-semibold text-brand-foreground transition-all hover:bg-brand-hover active:scale-95"
+            >
+              Open full editor <ArrowRight size={14} />
+            </Link>
+            <Link
+              href="/docs"
+              className="flex items-center gap-2 rounded-lg border border-hairline-strong px-5 py-2.5
+                         text-sm font-medium text-ink-muted transition-all hover:border-brand/30 hover:text-ink"
+            >
+              <BookOpen size={14} /> Read the docs
+            </Link>
+          </motion.div>
+
+          {/* measuring-tape stat strip */}
+          <motion.div {...fadeUpProps(0.2)} className="mx-auto mt-16 max-w-2xl">
+            <div
+              className="h-2.5"
+              style={{
+                backgroundImage: `
+                  repeating-linear-gradient(to right, var(--ink-faint) 0 1px, transparent 1px 10px),
+                  repeating-linear-gradient(to right, var(--ink-faint) 0 1px, transparent 1px 50px)
+                `,
+                backgroundSize: '10px 5px, 50px 10px',
+                backgroundPosition: 'top, top',
+                backgroundRepeat: 'repeat-x',
+              }}
+            />
+            <div className="grid grid-cols-2 gap-y-6 pt-3 sm:grid-cols-4">
+              {STATS.map(s => (
+                <div key={s.label}>
+                  <p className="font-mono text-2xl font-bold text-ink">{s.value}</p>
+                  <p className="mt-0.5 font-mono text-[10px] tracking-wide text-ink-faint uppercase">{s.label}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ── §2 How it works (4-step timeline) ────────────────────────────── */}
-      <section className="border-b border-hairline bg-paper-elevated/40 py-20">
+      {/* ── §2 How it works — "Instruments on the table" ─────────────────────
+          Four drafting instruments resting at slightly different angles, as
+          if just set down — tied by a technical dimension line, not a plain
+          connector rule. */}
+      <section className="relative border-b border-hairline bg-paper-elevated/40 py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-12">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-hairline px-3 py-1">
-              <span className="font-mono text-[10px] font-bold tracking-widest text-gold uppercase">¶02</span>
-              <span className="text-[11px] text-ink-faint">How it works</span>
+          <motion.div {...inViewProps(0)} className="mb-16 text-center">
+            <div className="mb-3 inline-flex items-center gap-2">
+              <Ruler size={13} className="text-gold" />
+              <span className="font-mono text-[11px] font-bold tracking-widest text-gold uppercase">¶02 · How it works</span>
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-ink">Four steps, zero friction.</h2>
-          </div>
+            <h2 className="font-serif text-2xl font-medium tracking-tight text-ink sm:text-3xl">
+              Four instruments, one straight line from prose to diagram.
+            </h2>
+          </motion.div>
 
-          <div className="relative grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {/* connector line (desktop) */}
-            <div className="absolute top-8 left-0 right-0 hidden h-px bg-linear-to-r from-transparent via-hairline-strong to-transparent lg:block" />
-
-            {STEPS.map((step, i) => (
-              <div key={step.n} className="relative flex flex-col gap-4">
-                <div className={cn(
-                  'flex h-14 w-14 items-center justify-center rounded-2xl ring-4',
-                  step.color,
-                )}>
-                  <step.icon size={20} />
-                </div>
-                <div>
-                  <span className="font-mono text-[10px] font-bold tracking-widest text-ink-faint/50">{step.n}</span>
-                  <p className="mt-1 text-sm font-semibold text-ink">{step.title}</p>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">{step.body}</p>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <ArrowRight size={14} className="absolute -right-3 top-4 hidden text-hairline-strong lg:block" />
-                )}
+          <div className="relative">
+            {/* dimension line with end-arrows and per-step tick marks (desktop) */}
+            <div className="pointer-events-none absolute top-10 right-6 left-6 hidden lg:block">
+              <div className="relative h-px bg-ink-faint/40">
+                <div className="absolute top-1/2 left-0 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-b border-l border-ink-faint/40" />
+                <div className="absolute top-1/2 right-0 h-2.5 w-2.5 -translate-y-1/2 rotate-45 border-t border-r border-ink-faint/40" />
+                {[0, 1, 2, 3].map(i => (
+                  <div
+                    key={i}
+                    className="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-ink-faint/40"
+                    style={{ left: `${(i / 3) * 100}%` }}
+                  />
+                ))}
               </div>
-            ))}
+            </div>
+
+            <div className="grid gap-y-14 gap-x-8 sm:grid-cols-2 lg:grid-cols-4">
+              {STEPS.map((step, i) => (
+                <motion.div
+                  key={step.n}
+                  {...inViewProps(i * 0.08)}
+                  className="relative flex flex-col items-center text-center"
+                >
+                  <div
+                    style={{ transform: `rotate(${step.tilt}deg)` }}
+                    className="relative flex h-[88px] w-[88px] items-center justify-center rounded-full
+                               border-2 border-hairline-strong bg-paper shadow-[0_6px_16px_-6px_rgba(0,0,0,0.15)]"
+                  >
+                    <step.icon size={26} className="text-brand" strokeWidth={1.75} />
+                    <span
+                      className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full
+                                 border border-hairline-strong bg-paper-elevated font-mono text-[10px] font-bold text-ink-faint shadow-sm"
+                    >
+                      {step.n}
+                    </span>
+                  </div>
+                  <p className="mt-5 text-sm font-semibold text-ink">{step.title}</p>
+                  <p className="mt-1.5 max-w-[230px] text-[13px] leading-relaxed text-ink-muted">{step.body}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -679,7 +759,7 @@ export default function PlaygroundPage() {
             </button>
           </div>
         </div>
-        <div className="relative h-[calc(100vh+8rem)] shrink-0 p-2">
+        <div className="relative h-[75vh] min-h-140 shrink-0 p-2">
           {view === 'code' ? (
             <CodePane code={code} onChange={handleCodeChange} errors={errors} parsing={parsing} />
           ) : (

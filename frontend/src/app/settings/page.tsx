@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { AppShell } from '@/components/dashboard/AppShell'
-import { useSession, signOut } from '@/lib/auth'
+import { useSession, useSignOut } from '@/lib/auth'
 import { api } from '@/lib/api'
 import { usePlan } from '@/hooks/usePlan'
 import Link from 'next/link'
@@ -120,6 +120,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const { data: session, isPending } = useSession()
   const { plan, subscription, loading: planLoading, refresh: refreshPlan } = usePlan()
+  const doSignOut = useSignOut()
 
   // Name editing
   const [name, setName] = useState('')
@@ -162,8 +163,7 @@ export default function SettingsPage() {
   }
 
   async function handleSignOut() {
-    await signOut()
-    router.push('/')
+    await doSignOut()
   }
 
   async function handleCancelSubscription() {
@@ -184,9 +184,8 @@ export default function SettingsPage() {
     setDeleteLoading(true)
     try {
       await api.account.deleteAccount()
-      await signOut()
       toast.success('Account deleted')
-      router.push('/')
+      await doSignOut()
     } catch {
       toast.error('Failed to delete account. Please try again.')
     } finally {

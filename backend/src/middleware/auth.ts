@@ -28,14 +28,29 @@ function extractToken(req: Request): string | null {
 }
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const token = extractToken(req)
-    if (!token) {
-      res.status(401).json({ error: 'Unauthorized' })
-      return
-    }
+  const token = extractToken(req)
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
 
-    const payload = verifyAuthToken(token)
+  // JWT verification failing (missing/expired/tampered token) IS a genuine
+  // auth failure — 401 is correct here.
+  let payload: ReturnType<typeof verifyAuthToken>
+  try {
+    payload = verifyAuthToken(token)
+  } catch {
+    next(createError('Authentication failed', 401))
+    return
+  }
+
+  // A failure past this point (e.g. a DB connection hiccup) means we simply
+  // couldn't verify the otherwise-valid token — that's an infra problem, not
+  // proof the session is invalid. Reporting it as a 500 (not a 401) matters:
+  // a 401 here previously made transient DB errors look identical to "your
+  // session expired, please log in again" to the end user, even though the
+  // JWT itself (valid for 30 days) was never actually invalid.
+  try {
     const user = await User.findById(payload.id)
     if (!user) {
       res.status(401).json({ error: 'Unauthorized' })
@@ -56,8 +71,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       plan: user.plan,
     }
     next()
-  } catch {
-    next(createError('Authentication failed', 401))
+  } catch (err) {
+    next(err)
   }
 }
 
