@@ -1,16 +1,50 @@
 import type { Metadata } from 'next'
 import { publicApi } from '@/lib/public-api'
-import { InterviewQuestionsIndexClient } from '@/components/features/InterviewQuestionsIndexClient'
+import { InterviewQuestionsRosterClient } from '@/components/features/InterviewQuestionsRosterClient'
 import { FeatureCrossLinks } from '@/components/features/FeatureCrossLinks'
+import { FeatureFaq } from '@/components/features/FeatureFaq'
 import { JsonLd } from '@/components/seo/JsonLd'
 
 export const metadata: Metadata = {
-  title: 'LLD Interview Questions',
+  title: 'LLD Interview Questions - 100+ Low-Level Design Practice Problems | LLDCanvas',
   description:
-    'Browse 100+ curated Low-Level Design interview questions — from Parking Lot and ATM Machine to Uber and distributed rate limiters — with difficulty, real-world context, and companies known to ask them.',
+    'Browse 100+ curated Low-Level Design interview questions - from Parking Lot and ATM Machine to Uber and distributed rate limiters - with difficulty levels, real-world context, company tags, and community discussions. Free to browse, no sign-in required.',
+  keywords: [
+    'LLD interview questions', 'low level design problems', 'system design practice',
+    'parking lot design', 'uber system design', 'design patterns interview',
+    'object oriented design problems', 'LLD practice problems', 'class diagram interview',
+    'software design interview prep',
+  ],
   alternates: { canonical: '/features/interview-questions' },
-  openGraph: { title: 'LLD Interview Questions — LLDCanvas', type: 'website', url: '/features/interview-questions' },
+  openGraph: {
+    title: 'LLD Interview Questions - LLDCanvas',
+    description: '100+ curated Low-Level Design problems with difficulty, companies, and community discussions.',
+    type: 'website', url: '/features/interview-questions',
+  },
 }
+
+const FAQ = [
+  {
+    q: 'Are these real interview questions?',
+    a: 'Yes - every problem in the list has been reported by engineers who interviewed at the companies tagged on each problem. They reflect the actual vocabulary, scope, and constraints that interviewers use when asking LLD questions.',
+  },
+  {
+    q: 'What is the difference between Easy, Medium, and Hard?',
+    a: 'Easy problems involve a single well-defined system (Parking Lot, Vending Machine) where the class structure is mostly obvious. Medium problems involve multiple interacting subsystems or a non-trivial design decision. Hard problems require distributed thinking, concurrency handling, or a deep understanding of multiple design patterns working together.',
+  },
+  {
+    q: 'Can I solve these problems in the LLDCanvas editor?',
+    a: 'Yes - each problem page links directly to the editor so you can start drawing your UML class diagram immediately. Your diagram autosaves and you can share it with collaborators for a mock interview session.',
+  },
+  {
+    q: 'Do I need an account to view the problems?',
+    a: 'No - all problems are publicly visible. An account is needed to save your diagram solutions, access hints, join community discussions, and run code.',
+  },
+  {
+    q: 'How are community discussions different from community solutions?',
+    a: 'Discussions are freeform - you can ask questions, share partial ideas, paste code, or critique an approach. They are not scored or ranked. The goal is learning through dialogue, not upvotes.',
+  },
+]
 
 export default async function InterviewQuestionsIndexPage() {
   const res = await publicApi.problems.list()
@@ -23,29 +57,13 @@ export default async function InterviewQuestionsIndexPage() {
         '@type': 'CollectionPage',
         name: 'LLD Interview Questions',
         url: 'https://lldcanvas.com/features/interview-questions',
+        description: '100+ curated Low-Level Design interview problems with difficulty, companies, and community discussions.',
         numberOfItems: problems.length,
       }} />
 
-      <section className="border-b border-hairline px-6 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <p className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-            <span className="text-gold">¶04</span> — Interview Questions
-          </p>
-          <h1 className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-            {problems.length}+ Low-Level Design questions, worked out.
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted">
-            Every question that comes up in real LLD interviews — Parking Lot to Uber, ATM to
-            distributed rate limiters — with difficulty, real-world context, and the companies
-            known to ask it.
-          </p>
-        </div>
-      </section>
+      <InterviewQuestionsRosterClient problems={problems} />
 
-      <div className="pt-8">
-        <InterviewQuestionsIndexClient problems={problems} />
-      </div>
-
+      <FeatureFaq items={FAQ} />
       <FeatureCrossLinks exclude="/features/interview-questions" />
     </div>
   )
