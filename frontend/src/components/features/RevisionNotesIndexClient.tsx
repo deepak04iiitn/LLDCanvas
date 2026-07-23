@@ -133,8 +133,8 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
                         <span
                           className={cn(
                             'mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full sm:hidden',
-                            n.difficulty === 'easy'   ? 'bg-emerald-400'
-                            : n.difficulty === 'medium' ? 'bg-amber-400'
+                            n.difficulty === 'basic'        ? 'bg-emerald-400'
+                            : n.difficulty === 'intermediate' ? 'bg-amber-400'
                             : 'bg-red-400',
                           )}
                         />
