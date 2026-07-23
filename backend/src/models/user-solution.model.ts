@@ -6,6 +6,7 @@ export interface IUserSolution extends Document {
   diagramId:   Types.ObjectId | null
   status:      'in_progress' | 'submitted'
   submittedAt: Date | null
+  notes:       string       // private per-problem notes written by the user while practicing
   createdAt:   Date
   updatedAt:   Date
 }
@@ -17,6 +18,7 @@ const schema = new Schema<IUserSolution>(
     diagramId:   { type: Schema.Types.ObjectId, ref: 'Diagram', default: null },
     status:      { type: String, enum: ['in_progress', 'submitted'], default: 'in_progress' },
     submittedAt: { type: Date, default: null },
+    notes:       { type: String, default: '' },
   },
   { timestamps: true },
 )

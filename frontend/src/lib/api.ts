@@ -187,6 +187,15 @@ export const api = {
         `/problems/${slug}/solutions?page=${page}&sort=${sort}`,
       ),
 
+    getNotes: (slug: string) =>
+      request<{ notes: string }>(`/problems/${slug}/notes`),
+
+    updateNotes: (slug: string, notes: string) =>
+      request<{ ok: boolean }>(`/problems/${slug}/notes`, {
+        method: 'PATCH',
+        body: JSON.stringify({ notes }),
+      }),
+
     posts: {
       list: (slug: string, params?: { page?: number; sort?: 'newest' | 'oldest'; type?: string }) => {
         const qs = new URLSearchParams()

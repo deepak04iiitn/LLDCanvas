@@ -19,6 +19,10 @@ router.post('/:slug/solutions',           problemsController.startSolution)
 router.patch('/:slug/solutions/submit',   problemsController.submitSolution)
 router.get('/:slug/solutions',            problemsController.listSolutions)
 
+// Private notes
+router.get('/:slug/notes',                problemsController.getNotes)
+router.patch('/:slug/notes',              problemsController.updateNotes)
+
 // Community discussions
 router.get ('/:slug/posts',                              problemPostsController.list)
 router.post('/:slug/posts',                              problemPostsController.create)

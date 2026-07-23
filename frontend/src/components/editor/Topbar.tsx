@@ -8,7 +8,7 @@ import {
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
   Maximize2, Minimize2, FileInput, Code2,
-  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock,
+  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock, NotebookPen,
 } from 'lucide-react'
 
 import { motion, AnimatePresence } from 'framer-motion'
@@ -65,6 +65,8 @@ interface TopbarProps {
   problemSlug?: string
   onOpenProblemDiscussion?: () => void
   problemDiscussionOpen?: boolean
+  onOpenProblemNotes?: () => void
+  problemNotesOpen?: boolean
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -378,6 +380,8 @@ export function Topbar({
   problemSlug,
   onOpenProblemDiscussion,
   problemDiscussionOpen = false,
+  onOpenProblemNotes,
+  problemNotesOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -650,6 +654,25 @@ export function Topbar({
               <TooltipContent side="bottom">Community discussions for this problem</TooltipContent>
             </Tooltip>
           )
+        )}
+
+        {/* Problem Notes button — only shown when practicing a problem */}
+        {problemSlug && onOpenProblemNotes && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenProblemNotes}
+              className={cn(
+                iconBtnBase,
+                'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                problemNotesOpen && 'bg-brand-tint text-brand',
+              )}
+              aria-label="My notes for this problem"
+            >
+              <NotebookPen className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Notes</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">My private notes for this problem</TooltipContent>
+          </Tooltip>
         )}
 
         {/* Comments button — only shown in collab sessions */}

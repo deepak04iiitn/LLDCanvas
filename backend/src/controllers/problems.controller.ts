@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { Problem } from '../models/problem.model'
 import { UserSolution } from '../models/user-solution.model'
-import { CodeExecutionLog } from '../models/code-execution-log.model'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 import { User } from '../models/user.model'
@@ -43,22 +42,17 @@ export const problemsController = {
       // Attach submission counts and user's own solution status
       const problemIds = problems.map(p => p._id)
 
-      // Build slug→id map for joining CodeExecutionLog counts
-      const slugToId = new Map(problems.map(p => [p.slug as string, p._id.toString()]))
-      const slugs    = problems.map(p => p.slug as string)
-
-      const [solverCounts, userSolutions] = await Promise.all([
-        // Count unique users who ran code successfully per problem (1 per user)
-        CodeExecutionLog.aggregate([
-          { $match: { problemSlug: { $in: slugs }, status: 'success' } },
-          { $group: { _id: { problemSlug: '$problemSlug', userId: '$userId' } } },
-          { $group: { _id: '$_id.problemSlug', count: { $sum: 1 } } },
+      // Count users who marked each problem as complete (unique — 1 per user via unique index)
+      const [submissionCounts, userSolutions] = await Promise.all([
+        UserSolution.aggregate([
+          { $match: { problemId: { $in: problemIds }, status: 'submitted' } },
+          { $group: { _id: '$problemId', count: { $sum: 1 } } },
         ]),
         UserSolution.find({ problemId: { $in: problemIds }, userId }).lean(),
       ])
 
-      const countMap    = new Map(
-        solverCounts.map((s: { _id: string; count: number }) => [slugToId.get(s._id) ?? s._id, s.count])
+      const countMap = new Map(
+        submissionCounts.map((s: { _id: { toString(): string }; count: number }) => [s._id.toString(), s.count])
       )
       const solutionMap = new Map(userSolutions.map(s => [s.problemId.toString(), s]))
 
@@ -84,12 +78,11 @@ export const problemsController = {
 
       const locked = !isProblemAccessible(req.user!.plan, problem.difficulty, problem.slug)
 
-      // Count unique users who ran code successfully for this problem
-      const [uniqueSolvers, mySolution] = await Promise.all([
-        CodeExecutionLog.distinct('userId', { problemSlug: problem.slug, status: 'success' }),
+      // Count users who marked this problem as complete (1 per user via unique index)
+      const [submissionCount, mySolution] = await Promise.all([
+        UserSolution.countDocuments({ problemId: problem._id, status: 'submitted' }),
         UserSolution.findOne({ problemId: problem._id, userId }).lean(),
       ])
-      const submissionCount = uniqueSolvers.length
 
       res.json({
         problem: {
@@ -248,6 +241,37 @@ export const problemsController = {
       enriched.sort((a, b) => (a.isOwn ? -1 : b.isOwn ? 1 : 0))
 
       res.json({ solutions: enriched, total, page, totalPages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
+
+  // GET /problems/:slug/notes  — fetch the current user's private notes for a problem
+  getNotes: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.id
+      const problem = await Problem.findOne({ slug: req.params.slug, isActive: true }).lean()
+      if (!problem) throw createError('Problem not found', 404)
+
+      const sol = await UserSolution.findOne({ problemId: problem._id, userId }).lean()
+      res.json({ notes: sol?.notes ?? '' })
+    } catch (err) { next(err) }
+  },
+
+  // PATCH /problems/:slug/notes  — save the current user's private notes for a problem
+  updateNotes: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.id
+      const { notes } = req.body as { notes: string }
+      if (typeof notes !== 'string') throw createError('notes must be a string', 400)
+
+      const problem = await Problem.findOne({ slug: req.params.slug, isActive: true }).lean()
+      if (!problem) throw createError('Problem not found', 404)
+
+      await UserSolution.findOneAndUpdate(
+        { problemId: problem._id, userId },
+        { $set: { notes } },
+        { upsert: true, new: true },
+      )
+      res.json({ ok: true })
     } catch (err) { next(err) }
   },
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import {
   ArrowLeft, ArrowRight, CheckCircle2, Clock, Play, ExternalLink,
   Lightbulb, Lock, ChevronDown, ChevronUp, RefreshCw,
-  Users, CheckCheck, AlertTriangle, MessageSquare, ThumbsUp,
+  Users, AlertTriangle, MessageSquare, ThumbsUp,
   ChevronRight, HelpCircle, Layers, Code2, Plus, Trash2, Send, Loader2,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -435,7 +435,6 @@ export default function ProblemDetailPage() {
   const [loading,         setLoading]         = useState(true)
   const [tab,             setTab]             = useState<Tab>('requirements')
   const [starting,        setStarting]        = useState(false)
-  const [submitting,      setSubmitting]      = useState(false)
 
   // Community discussions
   const [posts,       setPosts]       = useState<ProblemPost[]>([])
@@ -483,16 +482,6 @@ export default function ProblemDetailPage() {
     finally { setStarting(false) }
   }
 
-  async function handleSubmit() {
-    if (!slug) return
-    setSubmitting(true)
-    try {
-      const { solution } = await api.problems.submit(slug)
-      setMySolution(solution); setSubmissionCount(c => c + 1)
-      toast.success('Solution submitted! It\'s now visible to others.', { icon: '🎉' })
-    } catch { toast.error('Could not submit solution') }
-    finally { setSubmitting(false) }
-  }
 
   async function handleUpvote(postId: string) {
     try {
@@ -594,17 +583,10 @@ export default function ProblemDetailPage() {
                     </button>
                   )}
                   {isInProgress && (
-                    <div className="flex flex-col items-end gap-2">
-                      <button onClick={() => router.push(`/editor/${mySolution.diagramId}?problem=${slug}`)}
-                        className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90">
-                        <ExternalLink className="h-4 w-4" /> Resume in Editor
-                      </button>
-                      <button onClick={handleSubmit} disabled={submitting}
-                        className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-all hover:bg-emerald-100 disabled:opacity-50">
-                        {submitting ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
-                        Mark as Complete
-                      </button>
-                    </div>
+                    <button onClick={() => router.push(`/editor/${mySolution.diagramId}?problem=${slug}`)}
+                      className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90">
+                      <ExternalLink className="h-4 w-4" /> Resume in Editor
+                    </button>
                   )}
                   {isSolved && (
                     <button onClick={() => router.push(`/editor/${mySolution.diagramId}?problem=${slug}`)}

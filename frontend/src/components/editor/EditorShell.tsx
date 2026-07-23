@@ -42,8 +42,11 @@ import { useCollabCanvas } from '@/hooks/useCollabCanvas'
 import { ImportDraftModal } from '@/components/editor/ImportDraftModal'
 import { CodePanel } from '@/components/editor/CodePanel'
 import { ProblemDiscussionPanel } from '@/components/editor/ProblemDiscussionPanel'
+import { ProblemNotesPanel } from '@/components/editor/ProblemNotesPanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
+import { api } from '@/lib/api'
+import { CheckCircle2 } from 'lucide-react'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
@@ -144,6 +147,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
   const [codePanelOpen,             setCodePanelOpen]             = useState(false)
   const [problemDiscussionOpen,     setProblemDiscussionOpen]     = useState(false)
+  const [problemNotesOpen,          setProblemNotesOpen]          = useState(false)
 
   // ── Collab ────────────────────────────────────────────────────────────────
   const { joinRoom, leaveRoom, moveCursor, myRole, unreadMentions, collaborators } = useCollab()
@@ -248,6 +252,25 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     const snapshot = { nodes: getNodes(), edges: getEdges() }
     await endSession(snapshot)
   }, [endSession, getNodes, getEdges])
+
+  // ── Mark problem as complete (+ end interview if active) ─────────────────
+  const [completing, setCompleting] = useState(false)
+  const [completed,  setCompleted]  = useState(false)
+
+  const handleMarkComplete = useCallback(async () => {
+    if (!problemSlug || completing || completed) return
+    setCompleting(true)
+    try {
+      await api.problems.submit(problemSlug)
+      setCompleted(true)
+      if (activeSession) await handleEndSession()
+      toast.success('Problem marked as complete! 🎉', { duration: 4000 })
+    } catch {
+      toast.error('Could not mark as complete')
+    } finally {
+      setCompleting(false)
+    }
+  }, [problemSlug, completing, completed, activeSession, handleEndSession])
 
   // ── Local-mode persistence → localStorage ────────────────────────────────
   // Run after the autosave effect; only active when diagramId is null (local mode).
@@ -604,7 +627,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     addInterface:  () => insertNode('interface'),
     addEnum:       () => insertNode('enum'),
     addAbstract:   () => insertNode('abstract-class'),
-    addNote:       () => insertNode('note'),
     addStereotype: insertStereotype,
     insertPattern,
     fitView:       handleFitView,
@@ -652,6 +674,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         problemSlug={problemSlug}
         onOpenProblemDiscussion={problemSlug ? () => setProblemDiscussionOpen(v => !v) : undefined}
         problemDiscussionOpen={problemDiscussionOpen}
+        onOpenProblemNotes={problemSlug ? () => setProblemNotesOpen(v => !v) : undefined}
+        problemNotesOpen={problemNotesOpen}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -661,7 +685,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onAddInterface={() => insertNode('interface')}
             onAddEnum={() => insertNode('enum')}
             onAddAbstract={() => insertNode('abstract-class')}
-            onAddNote={() => insertNode('note')}
             onAddStereotype={insertStereotype}
             onInsertPattern={insertPattern}
           />
@@ -714,12 +737,47 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             />
           )}
 
+          {/* Per-problem private notes panel */}
+          {problemSlug && (
+            <ProblemNotesPanel
+              open={problemNotesOpen}
+              onClose={() => setProblemNotesOpen(false)}
+              slug={problemSlug}
+            />
+          )}
+
           <RelationshipPicker
             open={pickerOpen}
             position={pickerPos}
             onSelect={onRelationshipPick}
             onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
+
+          {/* ── Mark as Complete — bottom-left corner, only in problem context ── */}
+          {problemSlug && !readOnly && (
+            <div className="absolute bottom-4 left-4 z-20">
+              {completed ? (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 shadow-sm">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-semibold text-emerald-700">Completed!</span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleMarkComplete}
+                  disabled={completing}
+                  className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2
+                             text-sm font-semibold text-emerald-700 shadow-sm transition-all
+                             hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md
+                             disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  {completing
+                    ? (activeSession ? 'Submitting & ending…' : 'Marking…')
+                    : 'Mark as Complete'}
+                </button>
+              )}
+            </div>
+          )}
         </main>
 
         {/* Problem panel — right sidebar when practicing */}

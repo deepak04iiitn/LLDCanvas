@@ -39,7 +39,6 @@ export interface CommandPaletteActions {
   addInterface: () => void
   addEnum: () => void
   addAbstract: () => void
-  addNote: () => void
   addStereotype: (s: string) => void
   insertPattern: (key: string) => void
   fitView: () => void
@@ -96,10 +95,6 @@ export function CommandPalette({ open, onClose, actions }: CommandPaletteProps) 
               <LayoutList className="h-4 w-4 text-violet-500" />
               Add Abstract Class
               <CommandShortcut>A</CommandShortcut>
-            </CommandItem>
-            <CommandItem value="add note" onSelect={() => run(actions.addNote, onClose)} className="gap-2">
-              <StickyNote className="h-4 w-4 text-amber-500" />
-              Add Note
             </CommandItem>
           </CommandGroup>
 
