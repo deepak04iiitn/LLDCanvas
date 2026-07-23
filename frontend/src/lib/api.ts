@@ -295,7 +295,7 @@ export const api = {
   },
 
   code: {
-    run: (payload: { compiler: string; code: string; input?: string }) =>
+    run: (payload: { compiler: string; code: string; input?: string; problemSlug?: string }) =>
       request<{
         output: string
         error: string

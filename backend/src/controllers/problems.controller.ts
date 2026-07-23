@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { Problem } from '../models/problem.model'
 import { UserSolution } from '../models/user-solution.model'
+import { CodeExecutionLog } from '../models/code-execution-log.model'
 import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 import { User } from '../models/user.model'
@@ -42,15 +43,23 @@ export const problemsController = {
       // Attach submission counts and user's own solution status
       const problemIds = problems.map(p => p._id)
 
-      const [submissionCounts, userSolutions] = await Promise.all([
-        UserSolution.aggregate([
-          { $match: { problemId: { $in: problemIds }, status: 'submitted' } },
-          { $group: { _id: '$problemId', count: { $sum: 1 } } },
+      // Build slug→id map for joining CodeExecutionLog counts
+      const slugToId = new Map(problems.map(p => [p.slug as string, p._id.toString()]))
+      const slugs    = problems.map(p => p.slug as string)
+
+      const [solverCounts, userSolutions] = await Promise.all([
+        // Count unique users who ran code successfully per problem (1 per user)
+        CodeExecutionLog.aggregate([
+          { $match: { problemSlug: { $in: slugs }, status: 'success' } },
+          { $group: { _id: { problemSlug: '$problemSlug', userId: '$userId' } } },
+          { $group: { _id: '$_id.problemSlug', count: { $sum: 1 } } },
         ]),
         UserSolution.find({ problemId: { $in: problemIds }, userId }).lean(),
       ])
 
-      const countMap    = new Map(submissionCounts.map((s: { _id: { toString(): string }; count: number }) => [s._id.toString(), s.count]))
+      const countMap    = new Map(
+        solverCounts.map((s: { _id: string; count: number }) => [slugToId.get(s._id) ?? s._id, s.count])
+      )
       const solutionMap = new Map(userSolutions.map(s => [s.problemId.toString(), s]))
 
       const plan = req.user!.plan
@@ -75,10 +84,12 @@ export const problemsController = {
 
       const locked = !isProblemAccessible(req.user!.plan, problem.difficulty, problem.slug)
 
-      const [submissionCount, mySolution] = await Promise.all([
-        UserSolution.countDocuments({ problemId: problem._id, status: 'submitted' }),
+      // Count unique users who ran code successfully for this problem
+      const [uniqueSolvers, mySolution] = await Promise.all([
+        CodeExecutionLog.distinct('userId', { problemSlug: problem.slug, status: 'success' }),
         UserSolution.findOne({ problemId: problem._id, userId }).lean(),
       ])
+      const submissionCount = uniqueSolvers.length
 
       res.json({
         problem: {

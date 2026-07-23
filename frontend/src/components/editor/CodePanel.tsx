@@ -115,6 +115,7 @@ interface CodeResult {
 interface CodePanelProps {
   open: boolean
   onClose: () => void
+  problemSlug?: string
 }
 
 // ─── Light theme for CodeMirror to match app ─────────────────────────────────
@@ -133,7 +134,7 @@ const lightTheme = EditorView.theme({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function CodePanel({ open, onClose }: CodePanelProps) {
+export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
   const [lang,         setLang]         = useState<LangValue>('python-3.14')
   const [code,         setCode]         = useState(STARTERS['python-3.14'])
   const [stdin,        setStdin]        = useState('')
@@ -171,7 +172,7 @@ export function CodePanel({ open, onClose }: CodePanelProps) {
     setRunning(true)
     setResult(null)
     try {
-      const data = await api.code.run({ compiler: lang, code, input: stdin })
+      const data = await api.code.run({ compiler: lang, code, input: stdin, ...(problemSlug ? { problemSlug } : {}) })
       setResult(data as CodeResult)
     } catch (err: unknown) {
       const apiErr = err as Error & { banned?: boolean; status?: number }

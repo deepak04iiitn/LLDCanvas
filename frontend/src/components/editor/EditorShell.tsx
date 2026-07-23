@@ -702,6 +702,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           <CodePanel
             open={codePanelOpen}
             onClose={() => setCodePanelOpen(false)}
+            problemSlug={problemSlug}
           />
 
           {/* Problem community discussion panel */}
