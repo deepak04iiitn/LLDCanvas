@@ -17,6 +17,7 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { DiagramStage, DiagramNode, DiagramBox, type DiagramEdge } from '@/components/marketing/ConnectedDiagram'
+import { FAQS } from '@/components/marketing/faq-data'
 import { EASE, fadeUpProps, inViewProps } from '@/lib/motion'
 import { cn } from '@/lib/utils'
 
@@ -115,7 +116,7 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '04', title: 'Interview Mode',
-    detail: 'Design against a real countdown. Every session becomes a streak, a heatmap, a graph.',
+    detail: 'Timed LLD interview practice against a real countdown. Every session becomes a streak, a heatmap, a graph.',
     points: [
       'Pick 30, 45, 60, 90 minutes, or go unlimited — pause and resume without losing the clock.',
       'Every session auto-saves a snapshot, so an unfinished attempt is never actually lost.',
@@ -125,7 +126,7 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '05', title: 'Problems + Community',
-    detail: 'Curated by company and difficulty, with staged hints and real discussion threads.',
+    detail: '100+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
     points: [
       'Three hints unlock one at a time, so you\'re never spoiled all at once.',
       'See how other engineers structured the same design before you settle on your own.',
@@ -525,7 +526,7 @@ function DraftNotationSection() {
     <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
       <div>
         <motion.p {...inViewProps(0)} className="mb-5 max-w-md text-base leading-relaxed text-ink-muted">
-          No angle brackets, no drag-and-drop required. Write a sentence like{' '}
+          No angle brackets, no drag-and-drop required. Describe a Low-Level Design in a sentence like{' '}
           <code className="rounded bg-hairline px-1 py-0.5 font-mono text-[13px] text-brand">User has many Post</code>{' '}
           and the relationship, the arrow, and the multiplicity all render themselves — instantly, live,
           as you type.
@@ -565,10 +566,10 @@ function DraftNotationSection() {
 const COMPARISON_ROWS = [
   'UML relationship semantics — enforced, not hand-drawn',
   'Real class, interface, and enum node types',
-  '23 design pattern skeletons, pre-wired',
+  '23 Gang-of-Four design pattern skeletons, pre-wired',
   'Plain-English code ↔ diagram (Draft Notation)',
-  'Timed practice with streaks & activity analytics',
-  'Curated LLD problems, hints & community discussion',
+  'Timed LLD interview practice with streaks & activity analytics',
+  '100+ curated LLD & system design interview questions, hints & community discussion',
   'Run real code in 11 languages, in the same canvas',
   'Real-time collaboration with live cursors & @mention comments',
 ]
@@ -579,14 +580,14 @@ function ComparisonTable() {
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-hairline">
-            <th className="px-5 py-4 text-left align-bottom">
+            <th scope="col" className="px-5 py-4 text-left align-bottom">
               <p className="font-mono text-[10px] font-medium tracking-widest text-ink-faint uppercase">Capability</p>
             </th>
-            <th className="px-5 py-4 text-left align-bottom">
+            <th scope="col" className="px-5 py-4 text-left align-bottom">
               <p className="font-mono text-[10px] font-medium tracking-widest text-ink-faint uppercase">Generic tools</p>
               <p className="mt-1 text-xs font-normal text-ink-faint">draw.io, Lucidchart, Excalidraw…</p>
             </th>
-            <th className="bg-brand-tint px-5 py-4 text-left align-bottom">
+            <th scope="col" className="bg-brand-tint px-5 py-4 text-left align-bottom">
               <p className="font-mono text-[10px] font-medium tracking-widest text-brand uppercase">LLDCanvas</p>
             </th>
           </tr>
@@ -830,9 +831,9 @@ function ProblemsCommunitySection() {
                   <span className={cn('shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-semibold', DIFF_BADGE[p.diff])}>
                     {p.diff}
                   </span>
-                  <span className={cn('truncate text-sm font-medium', p.active ? 'text-brand' : 'text-ink')}>
+                  <h3 className={cn('m-0 truncate text-sm font-medium', p.active ? 'text-brand' : 'text-ink')}>
                     {p.title}
-                  </span>
+                  </h3>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {p.companies.slice(0, 2).map(c => (
@@ -1033,7 +1034,7 @@ function FlipCard({ topic, delay }: { topic: typeof REVISION_TOPICS[number]; del
           </div>
 
           <div className="relative z-10">
-            <p className="mb-1 text-sm font-semibold text-ink">{topic.title}</p>
+            <h3 className="mb-1 text-sm font-semibold text-ink">{topic.title}</h3>
             <p className="font-mono text-[10px] text-ink-faint">hover to revise →</p>
           </div>
         </div>
@@ -1530,56 +1531,73 @@ function CollaborationSection() {
   )
 }
 
-// ─── (placeholder to satisfy the StrReplace boundary) ────────────────────────
-// ─── FAQ (accordion) ─────────────────────────────────────────────────────────
-const FAQS = [
-  {
-    q: 'What is LLDCanvas?',
-    a: 'LLDCanvas is an all-in-one Low-Level Design (LLD) interview-prep platform: a UML class diagram editor, a curated problems library with community discussion, timed Interview Mode with analytics, bite-sized revision notes, a plain-English code↔diagram language (Draft Notation), and a code execution sandbox — all in one place, not scattered across separate tools.',
-  },
-  {
-    q: 'How is LLDCanvas different from draw.io or Lucidchart?',
-    a: 'draw.io and Lucidchart work with generic shapes. LLDCanvas works with classes. Every node is a real UML class node — with a header, attributes section, and methods section. Relationships have semantic meaning (a filled diamond is composition, a hollow triangle is inheritance). You also get all 23 classic design pattern skeletons pre-wired, plus practice problems, timed interview drills, and runnable code — none of which exist in generic diagramming tools.',
-  },
-  {
-    q: 'What is Draft Notation?',
-    a: 'A plain-English way to write class diagrams — describe classes and relationships in sentences like "User has many Post", and the diagram renders itself live as you type. Try it in the standalone Playground, or read the full syntax guide in the Docs.',
-  },
-  {
-    q: 'What is Interview Mode?',
-    a: 'A timed practice mode: set a duration, design against a real countdown, and every session is logged automatically into a daily streak, an activity heatmap, and progress analytics — so the first time you design under real pressure isn\'t the day it counts.',
-  },
-  {
-    q: 'Is there a problems library?',
-    a: 'Yes — a curated set of LLD problems tagged by difficulty and by the companies that ask them, each with staged hints and a community discussion thread where you can compare your approach against others\' submitted solutions.',
-  },
-  {
-    q: 'Can I run code, not just draw diagrams?',
-    a: 'Yes — the editor and Playground both include a code execution panel supporting 11 languages (Python, Java, C++, Go, Rust, TypeScript, C#, Ruby, PHP, Haskell, F#), so you can turn a class into real, runnable logic without leaving the canvas.',
-  },
-  {
-    q: 'Can I collaborate with others in real time?',
-    a: 'Yes — invite teammates into the same diagram and see their cursors and edits live, no refresh or manual merging required. You can also leave threaded comments pinned to a specific node, with @mentions to bring someone into the conversation.',
-  },
-  {
-    q: 'Do I need an account to use it?',
-    a: 'No — open the local editor and start drawing immediately. No login, no install. Sign in only when you want cloud sync, Interview Mode history, the problems library, or revision notes tracking.',
-  },
-  {
-    q: 'What happens to my local work if I sign in later?',
-    a: 'It migrates automatically — your local diagram is copied to your cloud account the moment you sign in, and you are redirected to it.',
-  },
-  {
-    q: 'Can I export my diagrams?',
-    a: 'Yes. Export as PNG (for resumes, slide decks), SVG (scalable, for design docs), PlantUML text, Mermaid text (for GitHub READMEs, Notion, Confluence), or Draft Notation (plain-text, re-importable). All exports are available from the toolbar or the Ctrl+K command palette.',
-  },
-  {
-    q: 'Is it free?',
-    a: 'Yes — the entire platform is free right now: the editor, all 23 design pattern skeletons, Draft Notation, Interview Mode, the problems library, revision notes, and code execution. Signing in (free, just Google or email) only adds cloud sync and progress tracking across devices.',
-  },
-]
+// ─── FAQ (accordion) ──────────────────────────────────────────────────────────
+// FAQ copy itself lives in faq-data.ts, shared with the FAQPage JSON-LD in
+// app/page.tsx so the structured data always matches what's rendered here
+// verbatim. This file only adds the internal-link overlay below — links are
+// wrapped around substrings of that same text at render time, so the visible
+// words users read (and what Google indexes as the FAQ answer) never diverge
+// from the JSON-LD.
+const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
+  'What is LLDCanvas?': [
+    ['Draft Notation', '/features/draft-notation'],
+    ['code execution sandbox', '/features/code-execution'],
+  ],
+  'What is Low-Level Design (LLD)?': [
+    ['SOLID principles', '/dashboard/revision'],
+  ],
+  'What is the difference between Low-Level Design (LLD) and System Design (HLD) interviews?': [
+    ['revision notes library', '/features/revision-notes'],
+  ],
+  'How is LLDCanvas different from draw.io or Lucidchart?': [
+    ['LLD interview-question library', '/features/interview-questions'],
+  ],
+  'What is Draft Notation?': [
+    ['standalone Playground', '/playground'],
+    ['Docs', '/docs'],
+  ],
+  'Does LLDCanvas have a library of LLD and system design interview questions?': [
+    ['100+ Low-Level Design problems and interview questions', '/dashboard/problems'],
+  ],
+  'Are SOLID principles covered?': [
+    ['revision notes', '/dashboard/revision'],
+  ],
+  'Can I run code, not just draw diagrams?': [
+    ['Playground', '/playground'],
+  ],
+  'Is LLDCanvas a free LLD course, or just a diagramming tool?': [
+    ['the full problems library', '/dashboard/problems'],
+  ],
+  'Do I need a CS degree or prior experience to learn Low-Level Design here?': [
+    ['Basic-tier revision notes', '/dashboard/revision'],
+    ['Easy problems in the library', '/dashboard/problems'],
+    ['Draft Notation', '/features/draft-notation'],
+  ],
+}
 
-function FaqItem({ q, a, index }: { q: string; a: string; index: number }) {
+const faqLinkClass = 'text-brand underline decoration-hairline-strong underline-offset-2 transition-colors hover:decoration-brand'
+
+function linkifyFaqAnswer(text: string, pairs: [phrase: string, href: string][]): React.ReactNode {
+  if (pairs.length === 0) return text
+  let earliest: { idx: number; phrase: string; href: string } | null = null
+  for (const [phrase, href] of pairs) {
+    const idx = text.indexOf(phrase)
+    if (idx !== -1 && (!earliest || idx < earliest.idx)) earliest = { idx, phrase, href }
+  }
+  if (!earliest) return text
+  const before = text.slice(0, earliest.idx)
+  const after = text.slice(earliest.idx + earliest.phrase.length)
+  const remaining = pairs.filter(([phrase]) => phrase !== earliest!.phrase)
+  return (
+    <>
+      {before}
+      <Link href={earliest.href} className={faqLinkClass}>{earliest.phrase}</Link>
+      {linkifyFaqAnswer(after, remaining)}
+    </>
+  )
+}
+
+function FaqItem({ q, a, index }: { q: string; a: React.ReactNode; index: number }) {
   const [open, setOpen] = useState(false)
   return (
     <motion.div {...inViewProps(index * 0.03)} className="border-b border-hairline last:border-0">
@@ -1608,7 +1626,7 @@ function Faq() {
   return (
     <div className="border-t border-hairline">
       {FAQS.map((f, i) => (
-        <FaqItem key={f.q} q={f.q} a={f.a} index={i} />
+        <FaqItem key={f.q} q={f.q} a={linkifyFaqAnswer(f.a, FAQ_LINKS[f.q] ?? [])} index={i} />
       ))}
     </div>
   )
@@ -1647,7 +1665,7 @@ export function LandingPageClient() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div>
             <motion.div {...fadeUpProps(0)}>
-              <Eyebrow index="01">the all-in-one lld platform</Eyebrow>
+              <Eyebrow index="01">free lld &amp; system design interview prep</Eyebrow>
             </motion.div>
 
             <motion.h1
@@ -1660,9 +1678,11 @@ export function LandingPageClient() {
             </motion.h1>
 
             <motion.p className="mb-9 max-w-md text-lg leading-relaxed text-ink-muted" {...fadeUpProps(0.16)}>
-              A UML editor that understands OOP, 23 pre-wired design patterns, timed practice
-              with real analytics, curated problems with community discussion, revision notes,
-              and runnable code — all in one canvas, not seven different tools.
+              The complete Low-Level Design (LLD) interview preparation platform: a UML editor
+              that understands OOP, 23 pre-wired design patterns, SOLID principles notes, timed
+              practice with real analytics, 100+ curated LLD and system design interview questions
+              with community discussion, and runnable code — all in one canvas, not seven
+              different tools.
             </motion.p>
 
             <motion.div className="flex flex-wrap items-center gap-3" {...fadeUpProps(0.24)}>
@@ -1699,13 +1719,14 @@ export function LandingPageClient() {
       {/* ─── Platform pillars ───────────────────────────────────────────────── */}
       <section id="platform" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="02">the full picture</Eyebrow>
+          <Eyebrow index="02">the complete lld &amp; system design toolkit</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Eight tools. One platform. Zero context switching.
+            One platform for LLD interview prep. Zero context switching.
           </h2>
           <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Most candidates cobble together a diagramming tool, a problems site, a timer app, and
-            a notes doc — solo. Here's the platform that replaces all of them, teammates included —
+            Most candidates cobble together a UML diagramming tool, a system design questions
+            site, a timer app, and a notes doc — solo. Here&apos;s the platform that replaces all of
+            them for Low-Level Design and system design interview practice, teammates included —
             eight surfaces on one shelf. Pick one to open it.
           </p>
           <PillarSpineRail />
@@ -1715,10 +1736,15 @@ export function LandingPageClient() {
       {/* ─── Feature chain ──────────────────────────────────────────────────── */}
       <section id="features" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="03">the editor</Eyebrow>
-          <h2 className="mb-8 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
+          <Eyebrow index="03">the uml class diagram editor</Eyebrow>
+          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Five interfaces. One canvas.
           </h2>
+          <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
+            A UML diagram editor built for Low-Level Design interviews specifically — instant class
+            insertion, drag-to-connect relationships, a searchable design-pattern library, and
+            export to the formats your design docs actually use.
+          </p>
           <FeatureChain />
         </div>
       </section>
@@ -1726,7 +1752,7 @@ export function LandingPageClient() {
       {/* ─── Draft Notation ─────────────────────────────────────────────────── */}
       <section id="draft-notation" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="04">code ↔ diagram</Eyebrow>
+          <Eyebrow index="04">draft notation — code ↔ diagram</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Say it in English. See it as UML.
           </h2>
@@ -1737,10 +1763,14 @@ export function LandingPageClient() {
       {/* ─── Differentiators ────────────────────────────────────────────────── */}
       <section className="px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="05">what only we have</Eyebrow>
-          <h2 className="mb-10 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
+          <Eyebrow index="05">lldcanvas vs. generic diagramming tools</Eyebrow>
+          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             See the difference, not just hear about it.
           </h2>
+          <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
+            Generic tools draw shapes. LLDCanvas is purpose-built for Low-Level Design and system
+            design interview preparation — here&apos;s exactly what that gets you.
+          </p>
           <ComparisonTable />
         </div>
       </section>
@@ -1766,7 +1796,7 @@ export function LandingPageClient() {
               </motion.div>
 
               <motion.p {...inViewProps(0.04)} className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-                <span className="text-gold">¶07</span> — practice like the real thing
+                <span className="text-gold">¶06</span> — timed lld interview practice
               </motion.p>
 
               <motion.h2 {...inViewProps(0.08)} className="mb-5 max-w-md font-serif text-3xl leading-[1.15] font-medium text-ink sm:text-4xl">
@@ -1775,10 +1805,10 @@ export function LandingPageClient() {
 
               <motion.p {...inViewProps(0.12)} className="mb-6 max-w-md text-base leading-relaxed text-ink-muted">
                 Set a timer and design against a real countdown — the exact pressure you&apos;ll
-                feel in the actual interview, so the first time you work under a clock isn&apos;t
-                the day it counts. Every session is then logged automatically: watch a daily
-                streak build, an activity heatmap fill in week by week, and a practice-time
-                graph trend upward.
+                feel in an actual LLD or system design interview, so the first time you work under
+                a clock isn&apos;t the day it counts. Every session is then logged automatically:
+                watch a daily streak build, an activity heatmap fill in week by week, and a
+                practice-time graph trend upward.
               </motion.p>
 
               <motion.div {...inViewProps(0.14)} className="mb-8 max-w-md space-y-3">
@@ -1821,14 +1851,14 @@ export function LandingPageClient() {
       {/* ─── Problems + Community ───────────────────────────────────────────── */}
       <section id="problems" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="06">practice with real problems</Eyebrow>
+          <Eyebrow index="07">lld &amp; system design interview questions</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Problems asked by real companies. Solved by a real community.
           </h2>
           <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Every problem is tagged by difficulty and the companies known to ask it.
-            Staged hints reveal one at a time — never all at once.
-            Compare your approach against the community thread when you're done.
+            100+ Low-Level Design and system design interview questions and problems, each tagged
+            by difficulty and the companies known to ask it. Staged hints reveal one at a time —
+            never all at once. Compare your approach against the community thread when you&apos;re done.
           </p>
           <ProblemsCommunitySection />
         </div>
@@ -1837,13 +1867,13 @@ export function LandingPageClient() {
       {/* ─── Revision Notes ─────────────────────────────────────────────────── */}
       <section id="revision" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="07">theory, in five minutes</Eyebrow>
+          <Eyebrow index="08">solid principles &amp; system design fundamentals</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Revision notes for exactly what you keep forgetting.
           </h2>
           <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Bite-sized theory on SOLID, composition vs. inheritance, thread-safety, and more —
-            bookmark what to revisit, and track what's actually sunk in.
+            Bite-sized theory on SOLID principles, composition vs. inheritance, thread-safety, the
+            CAP theorem, and more — bookmark what to revisit, and track what&apos;s actually sunk in.
           </p>
           <RevisionNotesSection />
         </div>
@@ -1852,9 +1882,9 @@ export function LandingPageClient() {
       {/* ─── Code Execution ─────────────────────────────────────────────────── */}
       <section id="code-execution" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="08">from diagram to running code</Eyebrow>
+          <Eyebrow index="09">from diagram to running code</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Don't just design it. Run it.
+            Don&apos;t just design it. Run it.
           </h2>
           <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
             Sketch the class in the canvas, then execute it in 11 languages without leaving the tab.
@@ -1867,9 +1897,9 @@ export function LandingPageClient() {
       {/* ─── Live Collaboration ─────────────────────────────────────────────── */}
       <section id="collaboration" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="09">work with others</Eyebrow>
+          <Eyebrow index="10">work with others</Eyebrow>
           <h2 className="mb-2 max-w-xl font-serif text-2xl font-medium text-ink sm:text-3xl">
-            You don't design in isolation. Why practice like it?
+            You don&apos;t design in isolation. Why practice like it?
           </h2>
           <p className="mb-8 max-w-xl text-base leading-relaxed text-ink-muted">
             Invite a teammate into your diagram and work side by side — live cursors, pinned
@@ -1885,10 +1915,14 @@ export function LandingPageClient() {
       {/* ─── FAQ ────────────────────────────────────────────────────────────── */}
       <section id="faq" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-4xl">
-          <Eyebrow index="10">questions</Eyebrow>
-          <h2 className="mb-10 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
+          <Eyebrow index="11">lld &amp; system design interview faqs</Eyebrow>
+          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Everything worth knowing before you start.
           </h2>
+          <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
+            Common questions about Low-Level Design, system design interviews, and how LLDCanvas&apos;s
+            free interview-prep platform works.
+          </p>
           <Faq />
         </div>
       </section>

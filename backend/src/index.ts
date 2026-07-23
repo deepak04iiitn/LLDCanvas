@@ -66,7 +66,18 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
 app.use(express.json({ limit: '10mb' }))
 
 // ─── Global rate limit ─────────────────────────────────────────────────────────
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false }))
+// Interview sync (PATCH /interview/:id) and analytics heartbeat poll every
+// 30s per open tab by design and have their own generous, per-identity
+// limiters (see middleware/rateLimit.ts) — they're skipped here so a handful
+// of extra tabs/sessions can't burn through the shared per-IP budget and
+// 429 every other route (login, diagram saves, etc.) for the whole window.
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path.startsWith('/analytics/heartbeat') || /^\/interview\/[^/]+$/.test(req.path),
+}))
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }))

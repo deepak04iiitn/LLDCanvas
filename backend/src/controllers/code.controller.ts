@@ -4,6 +4,9 @@ import { CodeExecutionLog } from '../models/code-execution-log.model'
 import { CodeBan } from '../models/code-ban.model'
 import { getLimits } from '../config/plans'
 
+// Max source-code size stored for history (8 KB — keeps DB lean)
+const MAX_STORED_CODE = 8_192
+
 const COMPILER_API = 'https://api.onlinecompiler.io/api/run-code-sync/'
 
 export const SUPPORTED_COMPILERS = [
@@ -102,6 +105,9 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
 
     // ── Log execution ─────────────────────────────────────────────────────────
     const isSuccess = (data.exit_code ?? 0) === 0
+    const storedCode = code.length > MAX_STORED_CODE
+      ? code.slice(0, MAX_STORED_CODE) + '\n// [truncated — code exceeded 8 KB storage limit]'
+      : code
     CodeExecutionLog.create({
       userId,
       language:    compiler,
@@ -110,6 +116,7 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
       executionMs: Math.round(parseFloat(data.time ?? '0') * 1000),
       memoryKb:    parseInt(data.memory ?? '0', 10),
       codeLength:  code.length,
+      code:        storedCode,
       ...(problemSlug ? { problemSlug } : {}),
     }).catch(() => { /* non-fatal — never block the response */ })
 
@@ -121,4 +128,37 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
 
 export async function listCompilers(_req: Request, res: Response) {
   res.json({ compilers: SUPPORTED_COMPILERS })
+}
+
+// ── GET /code/history ─────────────────────────────────────────────────────────
+// Returns the current user's paginated run history (newest first).
+// Query params: problemSlug? (filter by problem), page (default 1), limit (default 20, max 50)
+export async function getHistory(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.id
+    const { problemSlug, page = '1', limit = '20' } = req.query as {
+      problemSlug?: string; page?: string; limit?: string
+    }
+
+    const pageNum  = Math.max(1, parseInt(page, 10)  || 1)
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20))
+    const skip     = (pageNum - 1) * limitNum
+
+    const filter: Record<string, unknown> = { userId }
+    if (problemSlug) filter.problemSlug = problemSlug
+
+    const [runs, total] = await Promise.all([
+      CodeExecutionLog.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .select('language status exitCode executionMs memoryKb codeLength code problemSlug createdAt')
+        .lean(),
+      CodeExecutionLog.countDocuments(filter),
+    ])
+
+    res.json({ runs, total, page: pageNum, pages: Math.ceil(total / limitNum) })
+  } catch (err) {
+    next(err)
+  }
 }

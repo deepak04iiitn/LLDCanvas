@@ -257,20 +257,32 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [completing, setCompleting] = useState(false)
   const [completed,  setCompleted]  = useState(false)
 
+  // Effective slug: prefer the URL/linked prop, fall back to the interview
+  // session's assigned problem so the button always shows during a session.
+  const effectiveProblemSlug = problemSlug ?? activeSession?.problemSlug ?? null
+
   const handleMarkComplete = useCallback(async () => {
-    if (!problemSlug || completing || completed) return
+    if ((!effectiveProblemSlug && !activeSession) || completing || completed) return
     setCompleting(true)
     try {
-      await api.problems.submit(problemSlug)
+      if (activeSession) {
+        // Interview mode — no UserSolution exists; just end the session
+        await handleEndSession()
+      } else {
+        // Practice mode — mark the problem as submitted via UserSolution
+        await api.problems.submit(effectiveProblemSlug!)
+      }
       setCompleted(true)
-      if (activeSession) await handleEndSession()
-      toast.success('Problem marked as complete! 🎉', { duration: 4000 })
+      toast.success(
+        activeSession ? 'Session complete! Great work 🎉' : 'Problem marked as complete! 🎉',
+        { duration: 4000 },
+      )
     } catch {
       toast.error('Could not mark as complete')
     } finally {
       setCompleting(false)
     }
-  }, [problemSlug, completing, completed, activeSession, handleEndSession])
+  }, [effectiveProblemSlug, completing, completed, activeSession, handleEndSession])
 
   // ── Local-mode persistence → localStorage ────────────────────────────────
   // Run after the autosave effect; only active when diagramId is null (local mode).
@@ -753,8 +765,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
 
-          {/* ── Mark as Complete — bottom-left corner, only in problem context ── */}
-          {problemSlug && !readOnly && (
+          {/* ── Mark as Complete — bottom-left corner, practice problems only ── */}
+          {effectiveProblemSlug && !activeSession && !readOnly && (
             <div className="absolute bottom-4 left-4 z-20">
               {completed ? (
                 <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 shadow-sm">

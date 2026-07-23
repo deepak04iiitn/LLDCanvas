@@ -198,7 +198,7 @@ function Skeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProblemsPage() {
-  const { isFree } = usePlan()
+  const { isFree, isUltimate } = usePlan()
   const [allProblems, setAllProblems] = useState<ProblemSummary[]>([])
   const [categories,  setCategories]  = useState<string[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -401,7 +401,8 @@ export default function ProblemsPage() {
               {/* Difficulty pills */}
               <div className="flex shrink-0 gap-1 rounded-xl border border-hairline bg-paper p-1">
                 {DIFFICULTIES.map(d => {
-                  const isLocked = isFree && d === 'hard'
+                  // medium locked for free; hard locked for free + pro (ultimate-only)
+                  const isLocked = (isFree && (d === 'medium' || d === 'hard')) || (!isUltimate && d === 'hard')
                   return (
                     <button key={d} onClick={() => !isLocked && setDiff(d)}
                       className={cn(
@@ -425,13 +426,15 @@ export default function ProblemsPage() {
               </div>
             </div>
 
-            {/* Free plan notice */}
-            {isFree && (
+            {/* Plan access notice */}
+            {!isUltimate && (
               <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                 <Lock className="h-4 w-4 shrink-0 text-amber-500" />
                 <p className="text-xs text-amber-800">
-                  <span className="font-semibold">Free plan:</span> all Easy problems plus a small selection of Medium
-                  problems are available. Full Medium access and all Hard problems require Pro or Ultimate.
+                  {isFree
+                    ? <><span className="font-semibold">Free plan:</span> 10 curated Easy problems available. Upgrade to Pro for all Easy + select Medium problems, or Ultimate for the full library including Hard.</>
+                    : <><span className="font-semibold">Pro plan:</span> all Easy + a curated set of Medium problems available. Upgrade to Ultimate to unlock all Medium and Hard problems.</>
+                  }
                 </p>
                 <Link href="/pricing" className="ml-auto shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
                   Upgrade

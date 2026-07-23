@@ -8,6 +8,7 @@ export interface ICodeExecutionLog extends Document {
   executionMs:  number
   memoryKb:     number
   codeLength:   number
+  code?:        string   // source code at time of run (max 8 KB stored)
   problemSlug?: string   // set when code is run from a practice problem editor
   createdAt:    Date
 }
@@ -21,6 +22,7 @@ const schema = new Schema<ICodeExecutionLog>(
     executionMs: { type: Number, default: 0 },
     memoryKb:    { type: Number, default: 0 },
     codeLength:  { type: Number, default: 0 },
+    code:        { type: String, default: null },
     problemSlug: { type: String, default: null, index: true },
   },
   { timestamps: { createdAt: true, updatedAt: false } },

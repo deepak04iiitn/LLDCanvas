@@ -5,6 +5,7 @@ import { UserSolution } from '../models/user-solution.model'
 import { Problem } from '../models/problem.model'
 import { CollabInvite } from '../models/collab-invite.model'
 import { DiagramVersion } from '../models/diagram-version.model'
+import { InterviewSession } from '../models/interview-session.model'
 import { createError } from '../middleware/error'
 
 // Express params can be `string | string[]` — this normalises to string
@@ -94,10 +95,14 @@ export const diagramsController = {
       // its linked problem slug so the editor can show the requirements/
       // discussion panel even when opened from somewhere that doesn't pass
       // ?problem= in the URL (e.g. the "My UML Diagrams" dashboard grid).
-      const linkedSolution = await UserSolution.findOne({ diagramId }).select('problemId').lean()
+      // Also handles interview-session diagrams which have no UserSolution link.
+      const linkedSolution  = await UserSolution.findOne({ diagramId }).select('problemId').lean()
+      const linkedInterview = !linkedSolution
+        ? await InterviewSession.findOne({ diagramId }).select('problemSlug').lean()
+        : null
       const problemSlug = linkedSolution
         ? (await Problem.findById(linkedSolution.problemId).select('slug').lean())?.slug ?? null
-        : null
+        : linkedInterview?.problemSlug ?? null
 
       // Owner — always allowed
       if (diagram.userId.toString() === userId) return res.json({ diagram, problemSlug })

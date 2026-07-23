@@ -4,7 +4,7 @@ export interface PlanLimits {
   codeExecutionsPerDay: number      // successful runs per day
   patternTemplates: number          // Infinity = all
   exportFormats: string[]           // [] = no export
-  problemAccess: 'easy_medium' | 'all'
+  problemAccess: 'free_easy_only' | 'easy_and_some_medium' | 'all'
   hintsAccess: boolean
   communityDiscussion: boolean
   revisionBookmarks: boolean
@@ -19,9 +19,9 @@ export interface PlanLimits {
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
   free: {
     codeExecutionsPerDay: 15,
-    patternTemplates: 10,
+    patternTemplates: 16,
     exportFormats: [],
-    problemAccess: 'easy_medium',
+    problemAccess: 'free_easy_only',
     hintsAccess: false,
     communityDiscussion: false,
     revisionBookmarks: false,
@@ -36,7 +36,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     codeExecutionsPerDay: 25,
     patternTemplates: Infinity,
     exportFormats: ['plantuml', 'mermaid', 'draft'],
-    problemAccess: 'all',
+    problemAccess: 'easy_and_some_medium',
     hintsAccess: true,
     communityDiscussion: true,
     revisionBookmarks: true,
@@ -68,26 +68,62 @@ export function getLimits(plan: PlanName): PlanLimits {
   return PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 }
 
-/** The 10 patterns available on the free tier (most uncommon / least used GoF patterns) */
+/**
+ * The 5 design patterns locked behind Pro — the most frequently tested
+ * in real LLD/system-design interviews.
+ */
+export const PRO_ONLY_PATTERN_KEYS = [
+  'singleton',               // #1 most asked LLD pattern
+  'factory-method',          // most common creational
+  'abstract-factory',        // advanced creational — multi-family objects
+  'observer',                // most common behavioral
+  'strategy',                // extremely common in OOP questions
+  'decorator',               // frequently asked (middleware, logging, etc.)
+  'chain-of-responsibility', // common in request pipelines & middleware
+] as const
+
+/** Free tier patterns — all 23 GoF patterns except the 7 Pro-gated ones above (16 total). */
 export const FREE_PATTERN_KEYS = [
+  'builder',
+  'prototype',
+  'adapter',
+  'bridge',
+  'composite',
+  'facade',
   'flyweight',
-  'visitor',
+  'proxy',
+  'command',
   'interpreter',
+  'iterator',
   'mediator',
   'memento',
-  'prototype',
-  'bridge',
-  'chain-of-responsibility',
-  'iterator',
+  'state',
   'template-method',
+  'visitor',
 ] as const
 
 /**
- * All easy problems are free. All hard problems require Pro+. Medium is the
- * one tier that's partially gated — only this curated, less-commonly-asked
- * handful stay free; the rest of medium requires Pro+.
+ * The 10 easy problems available on the free tier.
+ * These are the most beginner-friendly, foundational LLD questions.
  */
-export const FREE_MEDIUM_PROBLEM_SLUGS = [
+export const FREE_EASY_PROBLEM_SLUGS = [
+  'parking-lot',
+  'atm-machine',
+  'library-management',
+  'vending-machine',
+  'elevator-system',
+  'tic-tac-toe',
+  'chess-game',
+  'snake-and-ladder',
+  'deck-of-cards',
+  'traffic-light-system',
+] as const
+
+/**
+ * Medium problems accessible to Pro users (less than half of all medium problems).
+ * Ultimate users get all medium problems; hard problems require Ultimate.
+ */
+export const PRO_MEDIUM_PROBLEM_SLUGS = [
   'coupon-system',
   'cricket-scoreboard',
   'recipe-meal-planning',
@@ -98,10 +134,6 @@ export const FREE_MEDIUM_PROBLEM_SLUGS = [
   'restaurant-pos-kitchen-display',
   'ebook-lending-platform',
   'gym-membership-class-booking',
-  'fitness-tracker-app',
-  'multiplayer-tictactoe-matchmaking',
-  'warehouse-order-fulfillment',
-  'airline-boarding-seat-assignment',
 ] as const
 
 export function isProblemAccessible(
@@ -109,9 +141,18 @@ export function isProblemAccessible(
   difficulty: 'easy' | 'medium' | 'hard',
   slug: string,
 ): boolean {
-  if (plan !== 'free') return true
-  if (difficulty === 'easy') return true
-  if (difficulty === 'medium') return (FREE_MEDIUM_PROBLEM_SLUGS as readonly string[]).includes(slug)
+  // Ultimate — full access to all problems
+  if (plan === 'ultimate') return true
+
+  // Pro — all easy + a curated set of medium; hard is Ultimate-only
+  if (plan === 'pro') {
+    if (difficulty === 'easy')   return true
+    if (difficulty === 'medium') return (PRO_MEDIUM_PROBLEM_SLUGS as readonly string[]).includes(slug)
+    return false // hard requires Ultimate
+  }
+
+  // Free — only the 10 curated easy problems; medium and hard are locked
+  if (difficulty === 'easy') return (FREE_EASY_PROBLEM_SLUGS as readonly string[]).includes(slug)
   return false
 }
 

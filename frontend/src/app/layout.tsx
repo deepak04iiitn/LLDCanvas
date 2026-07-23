@@ -26,26 +26,51 @@ const fraunces = Fraunces({
   axes: ['opsz', 'SOFT', 'WONK'],
 })
 
+// metadataBase anchors every relative URL used in openGraph/twitter metadata
+// (across this file and every page's own metadata export) into an absolute
+// URL. Without it, Next.js falls back to http://localhost:3000 for OG/Twitter
+// image tags in production — silently breaking link-preview cards everywhere.
+const SITE_URL = 'https://lldcanvas.com'
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     template: '%s — LLDCanvas',
-    default: 'LLDCanvas',
+    default: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
   },
-  description: 'The fastest way to create UML diagrams for Low-Level Design interviews. Draw class diagrams, relationships, and design patterns in seconds.',
-  keywords: ['UML', 'Low-Level Design', 'LLD', 'class diagram', 'interview prep', 'software design'],
+  description:
+    'Practice Low-Level Design (LLD) and System Design interviews for free: a UML class diagram editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed Interview Mode, and runnable code — all in one platform.',
+  applicationName: 'LLDCanvas',
+  keywords: [
+    'LLD interview', 'Low-Level Design interview', 'LLD interview preparation', 'LLD interview practice',
+    'LLD course', 'free LLD course', 'learn low-level design', 'low-level design tutorial',
+    'low-level design examples', 'low-level design questions', 'low-level design problems',
+    'system design interview', 'system design preparation', 'system design course',
+    'object-oriented design', 'design patterns', 'SOLID principles', 'UML class diagram',
+    'software design interview', 'SDE interview preparation',
+  ],
+  authors: [{ name: 'LLDCanvas' }],
+  category: 'technology',
   openGraph: {
-    title: 'LLDCanvas — UML diagrams for LLD interviews',
-    description: 'The fastest way to create UML class diagrams for Low-Level Design interviews.',
+    title: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
+    description:
+      'A UML class diagram editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed practice with analytics, and runnable code — everything for your next LLD or system design interview.',
     type: 'website',
     siteName: 'LLDCanvas',
+    locale: 'en_US',
+    images: [{ url: '/LLDCanvas.png', width: 1774, height: 887, alt: 'LLDCanvas — Low-Level Design interview preparation platform' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LLDCanvas — UML diagrams for LLD interviews',
-    description: 'Draw class diagrams, design patterns, and LLD skeletons instantly.',
+    site: '@lldcanvas',
+    title: 'LLDCanvas — Free LLD & System Design Interview Prep',
+    description: 'UML editor, 23 design patterns, SOLID principles notes, LLD interview questions, timed practice, and runnable code — all in one place.',
+    images: ['/LLDCanvas.png'],
   },
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/LLDCanvas_Logo.png',
   },
 }
 

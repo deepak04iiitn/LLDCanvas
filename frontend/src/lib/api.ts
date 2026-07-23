@@ -318,6 +318,31 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+
+    history: (params?: { problemSlug?: string; page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params?.problemSlug) qs.set('problemSlug', params.problemSlug)
+      if (params?.page)        qs.set('page',        String(params.page))
+      if (params?.limit)       qs.set('limit',       String(params.limit))
+      const query = qs.toString()
+      return request<{
+        runs: Array<{
+          _id: string
+          language: string
+          status: 'success' | 'error'
+          exitCode: number
+          executionMs: number
+          memoryKb: number
+          codeLength: number
+          code?: string
+          problemSlug?: string
+          createdAt: string
+        }>
+        total: number
+        page: number
+        pages: number
+      }>(`/code/history${query ? `?${query}` : ''}`)
+    },
   },
 
   billing: {

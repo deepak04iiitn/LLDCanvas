@@ -33,45 +33,45 @@ export const analyticsController = {
 
       const now = new Date()
 
-      // Determine if this visitor has been seen in a previous session
+      // Determine if this visitor has been seen in a previous session (only matters for new docs)
       const isReturning = !!(await AnalyticsSession.exists({
         visitorId,
         sessionId: { $ne: sessionId },
       }))
 
-      const existing = await AnalyticsSession.findOne({ sessionId })
+      // Atomic upsert — $setOnInsert only runs when the document is being created,
+      // preventing race conditions when concurrent heartbeats arrive simultaneously.
+      const result = await AnalyticsSession.findOneAndUpdate(
+        { sessionId },
+        {
+          $setOnInsert: {
+            visitorId,
+            isReturning,
+            startedAt:   now,
+            userAgent:   req.headers['user-agent'] ?? '',
+            pageViews:   1,
+            pages:       [page],
+            totalDurationSeconds: 0,
+          },
+          $set: {
+            lastHeartbeat: now,
+            currentPage:   page,
+            ...(userId ? { userId } : {}),
+          },
+          $inc: {
+            totalDurationSeconds: Math.max(0, durationDelta),
+          },
+        },
+        { upsert: true, new: false } // new:false → returns the doc BEFORE update (null if inserted)
+      )
 
-      if (existing) {
-        const addPage = page && existing.currentPage !== page
+      // For existing sessions: track new page visits
+      const wasExisting = result !== null
+      if (wasExisting && page && result.currentPage !== page) {
         await AnalyticsSession.updateOne(
           { sessionId },
-          {
-            $set: {
-              lastHeartbeat: now,
-              currentPage: page,
-              ...(userId ? { userId } : {}),
-            },
-            $inc: {
-              totalDurationSeconds: Math.max(0, durationDelta),
-              pageViews: addPage ? 1 : 0,
-            },
-            ...(addPage ? { $push: { pages: page } } : {}),
-          }
+          { $push: { pages: page }, $inc: { pageViews: 1 } }
         )
-      } else {
-        await AnalyticsSession.create({
-          sessionId,
-          visitorId,
-          userId,
-          isReturning,
-          startedAt: now,
-          lastHeartbeat: now,
-          currentPage: page,
-          totalDurationSeconds: 0,
-          pageViews: 1,
-          pages: [page],
-          userAgent: req.headers['user-agent'] ?? '',
-        })
       }
 
       res.json({ ok: true })

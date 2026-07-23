@@ -37,16 +37,31 @@ export function useInterviewTimer() {
   }, [activeSession, isPaused])
 
   // Sync on tab close / visibility change
-  const flushSync = useCallback(() => {
-    if (!activeSession) return
-    api.interview.update(activeSession._id, { timeElapsed: elapsed }).catch(() => {/* silent */})
-  }, [activeSession, elapsed])
+  // Use a ref so the stable listener always reads the latest elapsed without
+  // being recreated every second (which would cause listener accumulation).
+  const elapsedRef   = useRef(elapsed)
+  const sessionRef   = useRef(activeSession)
+  useEffect(() => { elapsedRef.current = elapsed },       [elapsed])
+  useEffect(() => { sessionRef.current = activeSession }, [activeSession])
 
   useEffect(() => {
-    window.addEventListener('beforeunload', flushSync)
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') flushSync()
-    })
-    return () => window.removeEventListener('beforeunload', flushSync)
-  }, [flushSync])
+    function onBeforeUnload() {
+      if (!sessionRef.current) return
+      api.interview.update(sessionRef.current._id, { timeElapsed: elapsedRef.current }).catch(() => {})
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === 'hidden' && sessionRef.current) {
+        api.interview.update(sessionRef.current._id, { timeElapsed: elapsedRef.current }).catch(() => {})
+      }
+    }
+
+    window.addEventListener('beforeunload', onBeforeUnload)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  // Empty deps — registered once on mount, refs keep values current
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }
