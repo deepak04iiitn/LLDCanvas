@@ -2,10 +2,44 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus } from 'lucide-react'
+import {
+  ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
+  LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
+  CreditCard, Layers, Mail, Share2, MessageCircle, ExternalLink,
+} from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
+
+// ─── Feature links ────────────────────────────────────────────────────────────
+
+const FEATURE_LINKS = [
+  { label: 'UML Editor',          href: '/features/editor',              Icon: LayoutTemplate },
+  { label: 'Draft Notation',      href: '/features/draft-notation',      Icon: PenLine        },
+  { label: 'Interview Questions', href: '/features/interview-questions',  Icon: ListChecks     },
+  { label: 'Interview Mode',      href: '/features/interview-mode',       Icon: Timer          },
+  { label: 'Collaboration',       href: '/features/collaboration',        Icon: Users          },
+  { label: 'Code Execution',      href: '/features/code-execution',       Icon: Terminal       },
+  { label: 'Revision Notes',      href: '/features/revision-notes',       Icon: BookOpen       },
+]
+
+// ─── Nav link helper ──────────────────────────────────────────────────────────
+
+function NavLink({ href, Icon, children }: { href: string; Icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <li>
+      <Link
+        href={href}
+        className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+      >
+        <Icon size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+        {children}
+      </Link>
+    </li>
+  )
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export function SiteFooter() {
   const [authOpen, setAuthOpen] = useState(false)
@@ -13,7 +47,6 @@ export function SiteFooter() {
   const [mounted,  setMounted]  = useState(false)
   const { data: session } = useSession()
 
-  // Only reveal session-dependent links after hydration to avoid SSR mismatch
   useEffect(() => { setMounted(true) }, [])
 
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
@@ -23,7 +56,7 @@ export function SiteFooter() {
     <>
       <footer className="relative overflow-hidden border-t border-hairline-strong bg-paper px-5 pb-0 pt-20 sm:px-8">
 
-        {/* ── Grain texture overlay ─────────────────────────────────────────── */}
+        {/* ── Grain texture ─────────────────────────────────────────────────── */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-[0.025]"
@@ -34,58 +67,115 @@ export function SiteFooter() {
           }}
         />
 
-        {/* ── Radial brand glow behind giant text ───────────────────────────── */}
+        {/* ── Radial brand glow ─────────────────────────────────────────────── */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-72 opacity-20"
           style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 100%, #234E3F33, transparent)' }}
         />
 
-        {/* ── Content ──────────────────────────────────────────────────────── */}
+        {/* ── Content ───────────────────────────────────────────────────────── */}
         <div className="relative mx-auto max-w-6xl">
 
-          {/* Top row */}
-          <div className="flex flex-col gap-12 sm:flex-row sm:items-start sm:justify-between">
+          {/* Main row — brand left, nav columns fill the rest */}
+          <div className="flex flex-col gap-12 lg:flex-row lg:items-start">
 
-            {/* Brand block */}
-            <div className="max-w-xs">
+            {/* ── Brand block ─────────────────────────────────────────────── */}
+            <div className="lg:w-64 lg:flex-none lg:pr-8">
               <Link href="/" className="inline-block">
                 <Wordmark height={36} />
               </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                The fastest UML class diagram editor for Low-Level Design interviews and OOP design sessions.
+                The complete platform for Low-Level Design — practice interview questions, design systems visually, run code, and collaborate in real time.
               </p>
               <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] tracking-widest text-ink-faint uppercase">
                 ¶ v1.0
               </span>
             </div>
 
-            {/* Nav columns */}
-            <div className="flex gap-14 sm:gap-20">
+            {/* ── Nav columns — always fill remaining space evenly ────────── */}
+            <div className="flex flex-1 flex-col gap-10 sm:flex-row sm:justify-between">
+
+              {/* Features */}
               <div>
                 <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
-                  Product
+                  Features
                 </p>
                 <ul className="space-y-3">
-                  {[
-                    { label: 'Open Editor',  href: '/editor/local', Icon: Pencil },
-                    { label: 'Playground',   href: '/playground',   Icon: ArrowUpRight },
-                    { label: 'Docs',         href: '/docs',         Icon: BookOpen },
-                    ...(mounted && session ? [{ label: 'Dashboard', href: '/dashboard', Icon: LayoutDashboard }] : []),
-                  ].map(({ label, href, Icon }) => (
-                    <li key={label}>
-                      <Link
-                        href={href}
-                        className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
-                      >
-                        <Icon size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
-                        {label}
-                      </Link>
-                    </li>
+                  {FEATURE_LINKS.map(({ label, href, Icon }) => (
+                    <NavLink key={label} href={href} Icon={Icon}>{label}</NavLink>
                   ))}
                 </ul>
               </div>
 
+              {/* Platform */}
+              <div>
+                <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
+                  Platform
+                </p>
+                <ul className="space-y-3">
+                  <NavLink href="/editor/local" Icon={Pencil}>Open Editor</NavLink>
+                  <NavLink href="/playground"   Icon={ArrowUpRight}>Playground</NavLink>
+                  <NavLink href="/features"     Icon={Layers}>All Features</NavLink>
+                  <NavLink href="/pricing"      Icon={CreditCard}>Pricing</NavLink>
+                  {mounted && session && (
+                    <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
+                  )}
+                </ul>
+              </div>
+
+              {/* Connect */}
+              <div>
+                <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
+                  Connect
+                </p>
+                <ul className="space-y-3">
+                  <li>
+                    <a
+                      href="mailto:support@lldcanvas.com"
+                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+                    >
+                      <Mail size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+                      support@lldcanvas.com
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://github.com/lldcanvas"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+                    >
+                      <ExternalLink size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+                      GitHub
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://twitter.com/lldcanvas"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+                    >
+                      <Share2 size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+                      Twitter / X
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="https://discord.gg/lldcanvas"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+                    >
+                      <MessageCircle size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+                      Discord
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Account (signed-out only) */}
               {mounted && !session && (
                 <div>
                   <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
@@ -116,17 +206,25 @@ export function SiteFooter() {
             </div>
           </div>
 
-          {/* Gradient divider */}
-          <div className="mt-16 h-px bg-gradient-to-r from-transparent via-hairline-strong to-transparent" />
+          {/* ── Gradient divider ─────────────────────────────────────────────── */}
+          <div className="mt-16 h-px bg-linear-to-r from-transparent via-hairline-strong to-transparent" />
 
-          {/* Bottom bar */}
+          {/* ── Bottom bar ───────────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2 py-5 pr-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-[11px] text-ink-faint">
               © <span suppressHydrationWarning>{new Date().getFullYear()}</span> LLDCanvas — built for engineers, by engineers.
             </p>
-            <p className="shrink-0 font-mono text-[11px] text-ink-faint">
-              Crafted with precision · India
-            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/pricing" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Pricing
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/features" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Features
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <p className="font-mono text-[11px] text-ink-faint">India</p>
+            </div>
           </div>
         </div>
 
@@ -140,7 +238,7 @@ export function SiteFooter() {
           }}
         >
           <p
-            className="w-full text-center font-serif font-black leading-none text-brand/[0.18] tracking-tighter"
+            className="w-full text-center font-serif font-black leading-none tracking-tighter text-brand/18"
             style={{ fontSize: 'clamp(5rem, 16vw, 13rem)', letterSpacing: '-0.04em' }}
           >
             LLDCANVAS
