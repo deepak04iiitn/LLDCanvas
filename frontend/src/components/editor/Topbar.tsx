@@ -384,7 +384,7 @@ export function Topbar({
   problemNotesOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
-  const { activeSession } = useInterview()
+  const { activeSession, isNotesOpen, setNotesOpen } = useInterview()
   const { plan, isFree } = usePlan()
   const router = useRouter()
 
@@ -656,22 +656,24 @@ export function Topbar({
           )
         )}
 
-        {/* Problem Notes button — only shown when practicing a problem */}
-        {problemSlug && onOpenProblemNotes && (
+        {/* Notes button — interview session notes OR practice problem notes */}
+        {(activeSession || (problemSlug && onOpenProblemNotes)) && (
           <Tooltip>
             <TooltipTrigger
-              onClick={onOpenProblemNotes}
+              onClick={activeSession ? () => setNotesOpen(true) : onOpenProblemNotes}
               className={cn(
                 iconBtnBase,
                 'w-auto gap-1.5 px-2.5 text-xs font-medium',
-                problemNotesOpen && 'bg-brand-tint text-brand',
+                (activeSession ? isNotesOpen : problemNotesOpen) && 'bg-brand-tint text-brand',
               )}
-              aria-label="My notes for this problem"
+              aria-label={activeSession ? 'Session notes' : 'My notes for this problem'}
             >
               <NotebookPen className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Notes</span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">My private notes for this problem</TooltipContent>
+            <TooltipContent side="bottom">
+              {activeSession ? 'Session notes' : 'My private notes for this problem'}
+            </TooltipContent>
           </Tooltip>
         )}
 

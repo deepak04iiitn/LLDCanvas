@@ -132,11 +132,11 @@ export function SiteFooter() {
                 <ul className="space-y-3">
                   <li>
                     <a
-                      href="mailto:support@lldcanvas.com"
+                      href="mailto:support.lldcanvas@gmail.com"
                       className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                     >
                       <Mail size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
-                      support@lldcanvas.com
+                      support.lldcanvas@gmail.com
                     </a>
                   </li>
                   <li>

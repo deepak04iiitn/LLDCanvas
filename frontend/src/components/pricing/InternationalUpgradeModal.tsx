@@ -7,7 +7,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
 
-const SUPPORT_EMAIL = 'dky422003@gmail.com'
+const SUPPORT_EMAIL = 'support.lldcanvas@gmail.com'
 const CAL_LINK = 'deepak-yadav-04/lld-canvas'
 const CAL_NAMESPACE = 'lld-canvas'
 

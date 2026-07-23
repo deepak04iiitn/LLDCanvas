@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { requireAuth } from '../middleware/auth'
+import { interviewSyncRateLimit } from '../middleware/rateLimit'
 import {
   createSession,
   listSessions,
@@ -15,7 +16,7 @@ router.use(requireAuth)
 router.post('/',        createSession)
 router.get('/',         listSessions)
 router.get('/:id',      getSession)
-router.patch('/:id',    updateSession)
+router.patch('/:id',    interviewSyncRateLimit, updateSession)
 router.delete('/:id',   deleteSession)
 
 export default router

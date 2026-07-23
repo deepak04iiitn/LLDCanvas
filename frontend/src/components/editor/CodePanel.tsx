@@ -14,10 +14,11 @@ import { EditorView } from '@codemirror/view'
 import {
   X, Play, ChevronDown, ChevronRight, GripVertical,
   Clock, MemoryStick, Terminal, Loader2, AlertTriangle,
-  CheckCircle2, Copy, Check, RotateCcw, Ban, Zap,
+  CheckCircle2, Copy, Check, RotateCcw, Ban, Zap, History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
+import { RunHistoryDrawer } from './RunHistoryDrawer'
 
 // ─── Language config ─────────────────────────────────────────────────────────
 
@@ -147,6 +148,8 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
   const [panelWidth,   setPanelWidth]   = useState(480)
   const [langOpen,     setLangOpen]     = useState(false)
   const [bottomHeight, setBottomHeight] = useState(120)
+  const [historyOpen,  setHistoryOpen]  = useState(false)
+  const [runCount,     setRunCount]     = useState(0)
 
   const panelRef        = useRef<HTMLElement>(null)
   const resizingRef     = useRef(false)
@@ -174,6 +177,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     try {
       const data = await api.code.run({ compiler: lang, code, input: stdin, ...(problemSlug ? { problemSlug } : {}) })
       setResult(data as CodeResult)
+      setRunCount(c => c + 1)
     } catch (err: unknown) {
       const apiErr = err as Error & { banned?: boolean; status?: number }
       if (apiErr.banned) {
@@ -380,6 +384,20 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
                   <RotateCcw className="h-3.5 w-3.5" />
                 </button>
 
+                {/* Run history */}
+                <button
+                  onClick={() => setHistoryOpen(v => !v)}
+                  title="Run history"
+                  className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-md transition',
+                    historyOpen
+                      ? 'bg-brand/10 text-brand'
+                      : 'text-ink-faint hover:bg-hairline hover:text-ink',
+                  )}
+                >
+                  <History className="h-3.5 w-3.5" />
+                </button>
+
                 {/* Run */}
                 <button
                   onClick={run}
@@ -576,6 +594,19 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
                 )}
               </div>  {/* /output pane */}
             </div>  {/* /bottom section */}
+
+            {/* ── Run History Drawer (slides over the panel) ───────────────── */}
+            <RunHistoryDrawer
+              open={historyOpen}
+              onClose={() => setHistoryOpen(false)}
+              problemSlug={problemSlug}
+              runCount={runCount}
+              onRestoreCode={(restoredCode, language) => {
+                setCode(restoredCode)
+                setLang(language as typeof lang)
+                setResult(null)
+              }}
+            />
           </motion.aside>
         </>
       )}

@@ -22,7 +22,7 @@ import { STEREOTYPES } from '@/components/editor/CommandPalette'
 import { ALL_PATTERNS, type PatternData } from '@/data/patterns'
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
-import { FREE_PATTERN_KEYS } from '@/lib/plans'
+import { PRO_ONLY_PATTERN_KEYS } from '@/lib/plans'
 import Link from 'next/link'
 
 interface NodeInsertItem {
@@ -223,7 +223,7 @@ export function LeftPanel({
                                     key={p.key}
                                     pattern={p}
                                     onClick={() => onInsertPattern(p.key)}
-                                    locked={isFree && !FREE_PATTERN_KEYS.has(p.key)}
+                                    locked={isFree && PRO_ONLY_PATTERN_KEYS.has(p.key)}
                                   />
                                 ))}
                               </div>
