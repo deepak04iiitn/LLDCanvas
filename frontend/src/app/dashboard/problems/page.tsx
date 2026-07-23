@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   Search, BookOpen, CheckCircle2, Clock, ChevronRight,
   RefreshCw, Target, TrendingUp, Zap, Lock, ArrowRight,
+  SlidersHorizontal, ChevronDown, X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { AppShell } from '@/components/dashboard/AppShell'
@@ -74,7 +75,7 @@ function ProblemCard({ problem }: { problem: ProblemSummary }) {
     >
       {/* Solved accent stripe */}
       {isSolved && (
-        <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full bg-brand" />
+        <div className="absolute left-0 top-4 bottom-4 w-0.75 rounded-r-full bg-brand" />
       )}
 
       {/* Top row: difficulty + status */}
@@ -204,7 +205,19 @@ export default function ProblemsPage() {
   const [diff,        setDiff]        = useState<Diff>('all')
   const [category,    setCategory]    = useState('')
   const [q,           setQ]           = useState('')
+  const [catOpen,     setCatOpen]     = useState(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const catRef = useRef<HTMLDivElement>(null)
+
+  // Close category dropdown on outside click
+  useEffect(() => {
+    if (!catOpen) return
+    function handleOutside(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [catOpen])
 
   // Fetch ALL problems once for accurate counts
   useEffect(() => {
@@ -306,6 +319,7 @@ export default function ProblemsPage() {
 
             {/* Filters */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+
               {/* Search */}
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
@@ -317,8 +331,75 @@ export default function ProblemsPage() {
                 />
               </div>
 
+              {/* Category dropdown */}
+              {categories.length > 0 && (
+                <div className="relative shrink-0" ref={catRef}>
+                  <button
+                    onClick={() => setCatOpen(v => !v)}
+                    className={cn(
+                      'flex h-9 items-center gap-2 rounded-xl border px-3 font-mono text-[11px] font-medium transition-all',
+                      category
+                        ? 'border-brand bg-brand text-brand-foreground shadow-sm'
+                        : 'border-hairline-strong bg-paper text-ink-muted hover:border-brand/40 hover:text-ink',
+                    )}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+                    <span className="max-w-30 truncate">{category || 'Category'}</span>
+                    {category
+                      ? <X className="h-3 w-3 shrink-0 opacity-70" onClick={e => { e.stopPropagation(); setCategory('') }} />
+                      : <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', catOpen && 'rotate-180')} />
+                    }
+                  </button>
+
+                  {catOpen && (
+                    <div className="absolute left-0 top-full z-50 mt-1.5 w-52 overflow-hidden rounded-xl border border-hairline-strong bg-paper shadow-lg shadow-ink/8 ring-1 ring-inset ring-white/60">
+                      {/* Header */}
+                      <div className="border-b border-hairline px-3 py-2">
+                        <p className="font-mono text-[9px] font-semibold tracking-[0.15em] text-ink-faint uppercase">
+                          Filter by category
+                        </p>
+                      </div>
+                      {/* Options */}
+                      <div className="max-h-60 overflow-y-auto p-1">
+                        <button
+                          onClick={() => { setCategory(''); setCatOpen(false) }}
+                          className={cn(
+                            'flex w-full items-center rounded-lg px-3 py-2 text-left font-mono text-[11px] font-medium transition-colors',
+                            !category ? 'bg-brand text-brand-foreground' : 'text-ink-muted hover:bg-hairline hover:text-ink',
+                          )}
+                        >
+                          All categories
+                          {!category && <span className="ml-auto font-mono text-[9px] opacity-70">{allProblems.length}</span>}
+                        </button>
+                        {categories.map(c => {
+                          const count = allProblems.filter(p => p.category === c).length
+                          return (
+                            <button
+                              key={c}
+                              onClick={() => { setCategory(c); setCatOpen(false) }}
+                              className={cn(
+                                'flex w-full items-center rounded-lg px-3 py-2 text-left font-mono text-[11px] font-medium transition-colors',
+                                category === c ? 'bg-brand text-brand-foreground' : 'text-ink-muted hover:bg-hairline hover:text-ink',
+                              )}
+                            >
+                              {c}
+                              <span className={cn(
+                                'ml-auto font-mono text-[9px] tabular-nums',
+                                category === c ? 'opacity-70' : 'text-ink-faint',
+                              )}>
+                                {count}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Difficulty pills */}
-              <div className="flex gap-1 rounded-xl border border-hairline bg-paper p-1">
+              <div className="flex shrink-0 gap-1 rounded-xl border border-hairline bg-paper p-1">
                 {DIFFICULTIES.map(d => {
                   const isLocked = isFree && d === 'hard'
                   return (
@@ -343,37 +424,6 @@ export default function ProblemsPage() {
                 })}
               </div>
             </div>
-
-            {/* Category chips */}
-            {categories.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setCategory('')}
-                  className={cn(
-                    'rounded-full border px-3 py-1 font-mono text-[11px] font-medium transition-all',
-                    !category
-                      ? 'border-brand bg-brand text-brand-foreground'
-                      : 'border-hairline-strong bg-paper text-ink-muted hover:border-brand/40 hover:text-ink',
-                  )}
-                >
-                  All categories
-                </button>
-                {categories.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => setCategory(category === c ? '' : c)}
-                    className={cn(
-                      'rounded-full border px-3 py-1 font-mono text-[11px] font-medium transition-all',
-                      category === c
-                        ? 'border-brand bg-brand text-brand-foreground'
-                        : 'border-hairline-strong bg-paper text-ink-muted hover:border-brand/40 hover:text-ink',
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* Free plan notice */}
             {isFree && (

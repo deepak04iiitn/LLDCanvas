@@ -37,7 +37,6 @@ interface LeftPanelProps {
   onAddInterface: () => void
   onAddEnum: () => void
   onAddAbstract: () => void
-  onAddNote: () => void
   onAddStereotype: (stereotype: string) => void
   onInsertPattern: (key: string) => void
 }
@@ -143,7 +142,6 @@ export function LeftPanel({
   onAddInterface,
   onAddEnum,
   onAddAbstract,
-  onAddNote,
   onAddStereotype,
   onInsertPattern,
 }: LeftPanelProps) {
@@ -157,7 +155,6 @@ export function LeftPanel({
     { icon: <Shapes className="h-4 w-4" />,    label: 'Interface',      shortcut: 'I', action: onAddInterface },
     { icon: <List className="h-4 w-4" />,      label: 'Enum',           shortcut: 'E', action: onAddEnum },
     { icon: <LayoutList className="h-4 w-4" />,label: 'Abstract Class', shortcut: 'A', action: onAddAbstract },
-    { icon: <StickyNote className="h-4 w-4" />,label: 'Note',           shortcut: 'N', action: onAddNote },
   ]
 
   return (

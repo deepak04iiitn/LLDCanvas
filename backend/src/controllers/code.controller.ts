@@ -58,10 +58,11 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
     const apiKey = process.env.ONLINE_COMPILER_API_KEY
     if (!apiKey) throw createError('Code execution is not configured on this server.', 503)
 
-    const { compiler, code, input = '' } = req.body as {
+    const { compiler, code, input = '', problemSlug } = req.body as {
       compiler: string
       code: string
       input?: string
+      problemSlug?: string
     }
 
     if (!compiler || !VALID_COMPILERS.has(compiler as never)) {
@@ -109,6 +110,7 @@ export async function runCode(req: Request, res: Response, next: NextFunction) {
       executionMs: Math.round(parseFloat(data.time ?? '0') * 1000),
       memoryKb:    parseInt(data.memory ?? '0', 10),
       codeLength:  code.length,
+      ...(problemSlug ? { problemSlug } : {}),
     }).catch(() => { /* non-fatal — never block the response */ })
 
     res.json(data)

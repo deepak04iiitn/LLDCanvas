@@ -8,7 +8,7 @@ import {
   Hand, MousePointer2, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
   Maximize2, Minimize2, FileInput, Code2,
-  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock,
+  MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock, NotebookPen,
 } from 'lucide-react'
 
 import { motion, AnimatePresence } from 'framer-motion'
@@ -65,6 +65,8 @@ interface TopbarProps {
   problemSlug?: string
   onOpenProblemDiscussion?: () => void
   problemDiscussionOpen?: boolean
+  onOpenProblemNotes?: () => void
+  problemNotesOpen?: boolean
 }
 
 // ─── Save status indicator ────────────────────────────────────────────────────
@@ -378,6 +380,8 @@ export function Topbar({
   problemSlug,
   onOpenProblemDiscussion,
   problemDiscussionOpen = false,
+  onOpenProblemNotes,
+  problemNotesOpen = false,
 }: TopbarProps) {
   const { theme, cycleTheme } = useEditor()
   const { activeSession } = useInterview()
@@ -401,58 +405,8 @@ export function Topbar({
         </div>
       </div>
 
-      {/* CENTER — Interview Mode (takes only as much space as needed) */}
+      {/* CENTER — Active session timer only */}
       <div className="flex items-center justify-center px-4">
-        {!activeSession && !readOnly && (
-          isFree ? (
-            <Tooltip>
-              <TooltipTrigger>
-                <Link
-                  href="/pricing"
-                  className="group flex h-8 items-center gap-2 rounded-full border border-gray-200
-                             bg-gray-50 py-1 pr-3.5 pl-1 transition-all duration-150
-                             hover:border-amber-300 hover:bg-amber-50
-                             dark:border-[#3C3C3E] dark:bg-[#2C2C2E]"
-                  aria-label="Interview Mode - Pro feature"
-                >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
-                                   shadow-sm ring-1 ring-gray-200
-                                   dark:bg-[#1C1C1E] dark:ring-[#3C3C3E]">
-                    <Lock className="h-3.5 w-3.5 text-amber-500" />
-                  </span>
-                  <span className="hidden text-xs font-medium text-gray-400 sm:flex items-center gap-1 dark:text-gray-500">
-                    Interview Mode
-                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">Pro</span>
-                  </span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Interview Mode requires a Pro plan - click to upgrade</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger
-                onClick={onStartInterview}
-                className="group flex h-8 items-center gap-2 rounded-full border border-indigo-200
-                           bg-indigo-50 py-1 pr-3.5 pl-1 transition-all duration-150
-                           hover:border-indigo-300 hover:bg-indigo-100
-                           dark:border-indigo-500/25 dark:bg-indigo-500/10
-                           dark:hover:border-indigo-500/40 dark:hover:bg-indigo-500/15"
-                aria-label="Turn on Interview Mode"
-              >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white
-                                 shadow-sm ring-1 ring-indigo-200
-                                 dark:bg-[#1C1C1E] dark:ring-indigo-500/30">
-                  <Mic className="h-3.5 w-3.5 text-indigo-500" />
-                </span>
-                <span className="hidden text-xs font-medium text-indigo-700 sm:block dark:text-indigo-300">
-                  Interview Mode
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Start a timed practice session</TooltipContent>
-            </Tooltip>
-          )
-        )}
-
         {activeSession && (
           <InlineTimer
             onEndSession={onEndInterview}
@@ -700,6 +654,25 @@ export function Topbar({
               <TooltipContent side="bottom">Community discussions for this problem</TooltipContent>
             </Tooltip>
           )
+        )}
+
+        {/* Problem Notes button — only shown when practicing a problem */}
+        {problemSlug && onOpenProblemNotes && (
+          <Tooltip>
+            <TooltipTrigger
+              onClick={onOpenProblemNotes}
+              className={cn(
+                iconBtnBase,
+                'w-auto gap-1.5 px-2.5 text-xs font-medium',
+                problemNotesOpen && 'bg-brand-tint text-brand',
+              )}
+              aria-label="My notes for this problem"
+            >
+              <NotebookPen className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Notes</span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">My private notes for this problem</TooltipContent>
+          </Tooltip>
         )}
 
         {/* Comments button — only shown in collab sessions */}

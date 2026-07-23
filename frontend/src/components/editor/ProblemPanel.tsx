@@ -17,19 +17,13 @@ import Link from 'next/link'
 
 // ─── Hints helper ─────────────────────────────────────────────────────────────
 
-const HINT_KEY = (slug: string) => `lld_hints_${slug}`
 
 function HintsSection({ slug, hints }: { slug: string; hints: string[] }) {
-  const [revealed, setRevealed] = useState<number[]>(() => {
-    try { return JSON.parse(localStorage.getItem(HINT_KEY(slug)) ?? '[]') }
-    catch { return [] }
-  })
+  const [revealed, setRevealed] = useState<number[]>([])
   const [confirmIdx, setConfirmIdx] = useState<number | null>(null)
 
   function revealHint(i: number) {
-    const next = [...new Set([...revealed, i])]
-    setRevealed(next)
-    localStorage.setItem(HINT_KEY(slug), JSON.stringify(next))
+    setRevealed(prev => [...new Set([...prev, i])])
     setConfirmIdx(null)
   }
 
@@ -213,7 +207,7 @@ export function ProblemPanel({ slug, collapsed, onCollapse, onExpand, diagramId 
     <motion.div
       key="problem-panel"
       initial={{ width: 36 }}
-      animate={{ width: 320 }}
+      animate={{ width: 400 }}
       exit={{ width: 36 }}
       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
       className="relative flex h-full flex-col overflow-hidden rounded-l-2xl border-l border-y border-hairline bg-paper-elevated shadow-xl"
