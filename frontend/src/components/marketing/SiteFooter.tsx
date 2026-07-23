@@ -14,13 +14,13 @@ import { useSession } from '@/lib/auth'
 // ─── Feature links ────────────────────────────────────────────────────────────
 
 const FEATURE_LINKS = [
-  { label: 'UML Editor',          href: '/features/editor',              Icon: LayoutTemplate },
-  { label: 'Draft Notation',      href: '/features/draft-notation',      Icon: PenLine        },
-  { label: 'Interview Questions', href: '/features/interview-questions',  Icon: ListChecks     },
-  { label: 'Interview Mode',      href: '/features/interview-mode',       Icon: Timer          },
-  { label: 'Collaboration',       href: '/features/collaboration',        Icon: Users          },
-  { label: 'Code Execution',      href: '/features/code-execution',       Icon: Terminal       },
-  { label: 'Revision Notes',      href: '/features/revision-notes',       Icon: BookOpen       },
+  { label: 'UML Diagram Editor',        href: '/features/editor',              Icon: LayoutTemplate },
+  { label: 'Draft Notation',            href: '/features/draft-notation',      Icon: PenLine        },
+  { label: 'LLD Interview Questions',   href: '/features/interview-questions',  Icon: ListChecks     },
+  { label: 'LLD Interview Mode',        href: '/features/interview-mode',       Icon: Timer          },
+  { label: 'Real-Time Collaboration',   href: '/features/collaboration',        Icon: Users          },
+  { label: 'Code Execution Sandbox',    href: '/features/code-execution',       Icon: Terminal       },
+  { label: 'SOLID & System Design Notes', href: '/features/revision-notes',     Icon: BookOpen       },
 ]
 
 // ─── Nav link helper ──────────────────────────────────────────────────────────
@@ -86,7 +86,9 @@ export function SiteFooter() {
                 <Wordmark height={36} />
               </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                The complete platform for Low-Level Design — practice interview questions, design systems visually, run code, and collaborate in real time.
+                The complete free platform for Low-Level Design and system design interview
+                preparation — practice LLD interview questions, design with UML and 23 design
+                patterns, run code, and collaborate in real time.
               </p>
               <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] tracking-widest text-ink-faint uppercase">
                 ¶ v1.0

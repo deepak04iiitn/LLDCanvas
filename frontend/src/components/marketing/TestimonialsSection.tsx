@@ -73,7 +73,11 @@ function TestimonialCard({ t, accent = false }: { t: Testimonial; accent?: boole
       </p>
       <div className="flex items-center gap-3 border-t border-hairline pt-3">
         {t.avatar ? (
-          <img src={t.avatar} alt={t.name} className="h-8 w-8 rounded-full object-cover ring-1 ring-hairline" />
+          <img
+            src={t.avatar}
+            alt={`${t.name}${t.role ? `, ${t.role}` : ''} — LLDCanvas user`}
+            className="h-8 w-8 rounded-full object-cover ring-1 ring-hairline"
+          />
         ) : (
           <div className={cn(
             'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ring-1',
@@ -381,7 +385,7 @@ export function TestimonialsSection() {
                 <em className="not-italic text-brand">trusted by interviewers.</em>
               </h2>
               <p className="mt-2 text-sm text-ink-faint">
-                Real stories from developers who aced their LLD rounds.
+                Real stories from developers who aced their LLD and system design interview rounds.
               </p>
             </div>
 
