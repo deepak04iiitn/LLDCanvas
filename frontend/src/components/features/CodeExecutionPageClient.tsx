@@ -140,7 +140,7 @@ function CompileTerminal() {
               <motion.span
                 className="ml-0.5 inline-block h-3.5 w-1.5 rounded-sm bg-brand/70 align-middle"
                 animate={{ opacity: [1, 0] }}
-                transition={{ repeat: Infinity, duration: 0.8, ease: 'steps(1)' }}
+                transition={{ repeat: Infinity, duration: 0.6, ease: 'linear', repeatType: 'reverse' }}
               />
             )}
           </motion.div>
