@@ -1,17 +1,47 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
-import { publicApi, NOTE_DIFF_META, type PublicRevisionNoteSummary } from '@/lib/public-api'
-import { FeatureCrossLinks } from '@/components/features/FeatureCrossLinks'
+import { publicApi, type PublicRevisionNoteSummary } from '@/lib/public-api'
 import { JsonLd } from '@/components/seo/JsonLd'
+import { RevisionNotesIndexClient } from '@/components/features/RevisionNotesIndexClient'
+
+// ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: 'LLD Revision Notes',
+  title: 'LLD Revision Notes — Design Patterns, SOLID & OOP for Interviews | LLDCanvas',
   description:
-    'Concise revision notes for Low-Level Design interviews — design patterns, OOP & SOLID principles, and system design concepts, each with a real-world analogy.',
+    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer…), OOP principles, SOLID, and system design fundamentals — each with a real-world analogy and runnable code examples.',
+  keywords: [
+    'LLD revision notes',
+    'low level design notes',
+    'design patterns cheat sheet',
+    'SOLID principles notes',
+    'OOP interview notes',
+    'system design revision',
+    'singleton pattern',
+    'factory pattern',
+    'observer pattern',
+    'software design interview prep',
+    'LLD interview preparation',
+    'low level design interview',
+    'design patterns for interviews',
+    'object oriented design',
+    'LLDCanvas',
+  ],
   alternates: { canonical: '/features/revision-notes' },
-  openGraph: { title: 'LLD Revision Notes — LLDCanvas', type: 'website', url: '/features/revision-notes' },
+  openGraph: {
+    title: 'LLD Revision Notes — Design Patterns, SOLID & OOP | LLDCanvas',
+    description:
+      'Concise, analogy-backed revision notes for every key Low-Level Design concept. Study design patterns, OOP, SOLID principles, and more — all in one place.',
+    type: 'website',
+    url: '/features/revision-notes',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LLD Revision Notes | LLDCanvas',
+    description: 'Concise revision notes for Low-Level Design interviews — design patterns, SOLID, OOP & more.',
+  },
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   const groups = new Map<string, PublicRevisionNoteSummary[]>()
@@ -23,66 +53,38 @@ function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   return [...groups.entries()]
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function RevisionNotesIndexPage() {
   const res = await publicApi.revisionNotes.list()
   const notes = res?.notes ?? []
   const groups = groupByCategory(notes)
 
   return (
-    <div className="overflow-hidden">
+    <>
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        name: 'LLD Revision Notes',
+        name: 'LLD Revision Notes — Design Patterns, SOLID & OOP',
         url: 'https://lldcanvas.com/features/revision-notes',
+        description: 'Concise revision notes for Low-Level Design interviews covering design patterns, OOP, SOLID principles, and system design fundamentals.',
         numberOfItems: notes.length,
+        hasPart: groups.map(([category, categoryNotes]) => ({
+          '@type': 'ItemList',
+          name: category,
+          numberOfItems: categoryNotes.length,
+        })),
+      }} />
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
+          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.com/features/revision-notes' },
+        ],
       }} />
 
-      <section className="border-b border-hairline px-6 py-16 sm:px-8 sm:py-20">
-        <div className="mx-auto max-w-5xl">
-          <p className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-            <span className="text-gold">¶05</span> — Revision Notes
-          </p>
-          <h1 className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-            {notes.length} notes, six subjects, one syllabus.
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-muted">
-            The concepts interviewers actually probe — design patterns, OOP &amp; SOLID
-            principles, and system design fundamentals — each distilled with a real-world
-            analogy.
-          </p>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-5xl px-6 py-10 sm:px-8">
-        {groups.map(([category, categoryNotes]) => (
-          <div key={category} className="mb-12 last:mb-0">
-            <h2 className="mb-4 font-serif text-xl font-medium text-ink">{category}</h2>
-            <div className="divide-y divide-hairline rounded-xl border border-hairline bg-paper-elevated">
-              {categoryNotes.map(n => {
-                const m = NOTE_DIFF_META[n.difficulty]
-                return (
-                  <Link
-                    key={n.slug}
-                    href={`/features/revision-notes/${n.categorySlug}/${n.slug}`}
-                    className="group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-paper"
-                  >
-                    <span className={cn('mt-0.5 shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase ring-1', m.bg, m.color, m.ring)}>
-                      {m.label}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-ink transition-colors group-hover:text-brand">{n.title}</p>
-                      <p className="mt-0.5 line-clamp-1 text-[13px] text-ink-muted">{n.summary}</p>
-                    </div>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <FeatureCrossLinks exclude="/features/revision-notes" />
-    </div>
+      <RevisionNotesIndexClient notes={notes} groups={groups} />
+    </>
   )
 }
