@@ -73,8 +73,8 @@ const PLANS = [
     iconCls:     'text-amber-600',
     badgeCls:    'bg-amber-500 text-white',
     btnCls:      'bg-amber-500 text-white hover:bg-amber-600',
-    priceINR:    { monthly: 299,  yearly: 2999  },
-    priceUSD:    { monthly: 10, yearly: 100 },
+    priceINR:    { monthly: 399,  yearly: 3999  },
+    priceUSD:    { monthly: 13, yearly: 130 },
     tagline:     'For teams and power users',
     highlight:   false,
     features: [

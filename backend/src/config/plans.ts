@@ -189,7 +189,7 @@ export const PRICING = {
     yearly:  { INR: 1999, USD: 60 },
   },
   ultimate: {
-    monthly: { INR: 299, USD: 10 },
-    yearly:  { INR: 2999, USD: 100 },
+    monthly: { INR: 399, USD: 13 },
+    yearly:  { INR: 3999, USD: 130 },
   },
 } as const
