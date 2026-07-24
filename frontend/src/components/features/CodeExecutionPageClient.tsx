@@ -467,7 +467,7 @@ export function CodeExecutionPageClient() {
               <p>
                 Combine code execution with the{' '}
                 <Link href="/features/interview-questions" className="text-brand hover:underline">
-                  100+ practice problems
+                  110+ practice problems
                 </Link>
                 {' '}and{' '}
                 <Link href="/features/interview-mode" className="text-brand hover:underline">
@@ -522,7 +522,7 @@ export function CodeExecutionPageClient() {
             {[
               { href: '/features/editor',              label: 'UML Editor — design the classes first' },
               { href: '/features/draft-notation',      label: 'Draft Notation — write diagrams in plain English' },
-              { href: '/features/interview-questions', label: 'Practice Problems — 100+ LLD problems to implement' },
+              { href: '/features/interview-questions', label: 'Practice Problems — 110+ LLD problems to implement' },
               { href: '/features/interview-mode',      label: 'Interview Mode — timed sessions' },
               { href: '/pricing',                      label: 'View daily execution limits by plan' },
             ].map(l => (

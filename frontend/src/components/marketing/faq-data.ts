@@ -34,7 +34,7 @@ export const FAQS: FaqEntry[] = [
   },
   {
     q: 'Does LLDCanvas have a library of LLD and system design interview questions?',
-    a: 'Yes — a curated library of 100+ Low-Level Design problems and interview questions, tagged by difficulty (Easy, Medium, Hard) and by the companies known to ask them (Amazon, Google, Meta, Uber, Stripe, and more). Each problem ships with staged hints that unlock one at a time, plus a community discussion thread where you can compare your class diagram against other engineers’ submitted solutions.',
+    a: 'Yes — a curated library of 110+ Low-Level Design problems and interview questions, tagged by difficulty (Easy, Medium, Hard) and by the companies known to ask them (Amazon, Google, Meta, Uber, Stripe, and more). Each problem ships with staged hints that unlock one at a time, plus a community discussion thread where you can compare your class diagram against other engineers’ submitted solutions.',
   },
   {
     q: 'Which design patterns and OOP concepts does LLDCanvas cover?',

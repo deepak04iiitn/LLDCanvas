@@ -12,7 +12,7 @@ import { Reveal } from '@/components/features/Reveal'
 export const metadata: Metadata = {
   title: 'LLD Interview Preparation Platform — Features | LLDCanvas',
   description:
-    'Everything you need to prepare for Low-Level Design (LLD) and machine coding interviews: a real UML class diagram editor, Draft Notation plain-English diagramming, timed Interview Mode, 100+ LLD interview questions from real companies, design pattern revision notes, multi-language code execution, and real-time collaboration.',
+    'Everything you need to prepare for Low-Level Design (LLD) and machine coding interviews: a real UML class diagram editor, Draft Notation plain-English diagramming, timed Interview Mode, 110+ LLD interview questions from real companies, design pattern revision notes, multi-language code execution, and real-time collaboration.',
   keywords: [
     'low level design interview', 'low level design interview questions', 'LLD interview preparation',
     'LLD interview questions and answers', 'machine coding round', 'object oriented design interview',
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/features' },
   openGraph: {
     title: 'LLDCanvas — Low-Level Design Interview Preparation Platform',
-    description: 'UML editor, Draft Notation, Interview Mode, 100+ LLD interview questions, design pattern revision notes, code execution, and real-time collaboration.',
+    description: 'UML editor, Draft Notation, Interview Mode, 110+ LLD interview questions, design pattern revision notes, code execution, and real-time collaboration.',
     type: 'website', url: '/features',
   },
 }
@@ -43,7 +43,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'How should I prepare for a machine coding round?',
-    a: 'Practice under a timer, out loud, the way the real round runs: read the requirements, identify the entities, choose relationships and patterns deliberately, then generate working code. LLDCanvas’s Interview Mode and 100+ practice problems are built specifically around that loop.',
+    a: 'Practice under a timer, out loud, the way the real round runs: read the requirements, identify the entities, choose relationships and patterns deliberately, then generate working code. LLDCanvas’s Interview Mode and 110+ practice problems are built specifically around that loop.',
   },
   {
     q: 'Which companies ask Low-Level Design interview questions?',
@@ -51,7 +51,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Is LLDCanvas free to use?',
-    a: 'Yes — the UML editor, Draft Notation, a subset of practice problems, and revision notes are free. Interview Mode, the full 100+ problem library, and multi-language code execution are part of the paid plan; see Pricing for details.',
+    a: 'Yes — the UML editor, Draft Notation, a subset of practice problems, and revision notes are free. Interview Mode, the full 110+ problem library, and multi-language code execution are part of the paid plan; see Pricing for details.',
   },
 ]
 

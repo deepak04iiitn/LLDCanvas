@@ -428,7 +428,7 @@ export function InterviewModePageClient() {
               <p>
                 Pair Interview Mode with the{' '}
                 <Link href="/features/interview-questions" className="text-brand hover:underline">
-                  100+ practice problems
+                  110+ practice problems
                 </Link>
                 {' '}and{' '}
                 <Link href="/features/revision-notes" className="text-brand hover:underline">
@@ -505,7 +505,7 @@ export function InterviewModePageClient() {
           </p>
           <div className="flex flex-wrap gap-3">
             {[
-              { href: '/features/interview-questions', label: '100+ LLD practice problems'                    },
+              { href: '/features/interview-questions', label: '110+ LLD practice problems'                    },
               { href: '/features/revision-notes',      label: 'Revision notes — design patterns and OOP'     },
               { href: '/features/editor',              label: 'UML Editor — draw your designs'               },
               { href: '/features/collaboration',       label: 'Collaboration — mock interview with a partner' },

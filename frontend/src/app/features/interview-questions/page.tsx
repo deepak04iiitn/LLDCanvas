@@ -6,9 +6,9 @@ import { FeatureFaq } from '@/components/features/FeatureFaq'
 import { JsonLd } from '@/components/seo/JsonLd'
 
 export const metadata: Metadata = {
-  title: 'LLD Interview Questions - 100+ Low-Level Design Practice Problems | LLDCanvas',
+  title: 'LLD Interview Questions - 110+ Low-Level Design Practice Problems | LLDCanvas',
   description:
-    'Browse 100+ curated Low-Level Design interview questions - from Parking Lot and ATM Machine to Uber and distributed rate limiters - with difficulty levels, real-world context, company tags, and community discussions. Free to browse, no sign-in required.',
+    'Browse 110+ curated Low-Level Design interview questions - from Parking Lot and ATM Machine to Uber and distributed rate limiters - with difficulty levels, real-world context, company tags, and community discussions. Free to browse, no sign-in required.',
   keywords: [
     'LLD interview questions', 'low level design problems', 'system design practice',
     'parking lot design', 'uber system design', 'design patterns interview',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/features/interview-questions' },
   openGraph: {
     title: 'LLD Interview Questions - LLDCanvas',
-    description: '100+ curated Low-Level Design problems with difficulty, companies, and community discussions.',
+    description: '110+ curated Low-Level Design problems with difficulty, companies, and community discussions.',
     type: 'website', url: '/features/interview-questions',
   },
 }
@@ -57,7 +57,7 @@ export default async function InterviewQuestionsIndexPage() {
         '@type': 'CollectionPage',
         name: 'LLD Interview Questions',
         url: 'https://lldcanvas.com/features/interview-questions',
-        description: '100+ curated Low-Level Design interview problems with difficulty, companies, and community discussions.',
+        description: '110+ curated Low-Level Design interview problems with difficulty, companies, and community discussions.',
         numberOfItems: problems.length,
       }} />
 

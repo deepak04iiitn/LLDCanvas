@@ -433,7 +433,7 @@ export default function EditorFeaturePage() {
           {[
             { href: '/features/draft-notation',    label: 'Draft Notation — write UML in plain English' },
             { href: '/features/interview-mode',     label: 'Interview Mode — timed practice sessions' },
-            { href: '/features/interview-questions', label: 'Practice Problems — 100+ LLD questions' },
+            { href: '/features/interview-questions', label: 'Practice Problems — 110+ LLD questions' },
             { href: '/features/code-execution',     label: 'Code Execution — run code next to your diagram' },
             { href: '/features/collaboration',      label: 'Collaboration — design with teammates' },
           ].map(l => (

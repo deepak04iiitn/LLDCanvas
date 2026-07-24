@@ -8,7 +8,7 @@ const LINKS = [
   { href: '/features/editor',              label: 'The Editor',          note: 'UML diagram canvas'   },
   { href: '/features/draft-notation',      label: 'Draft Notation',      note: 'Text → diagram'   },
   { href: '/features/interview-mode',      label: 'Interview Mode',      note: 'Timed practice'        },
-  { href: '/features/interview-questions', label: 'Interview Questions', note: '100+ problems'         },
+  { href: '/features/interview-questions', label: 'Interview Questions', note: '110+ problems'         },
   { href: '/features/revision-notes',      label: 'Revision Notes',      note: 'Concept refreshers'    },
   { href: '/features/code-execution',      label: 'Code Execution',      note: '12 languages'          },
   { href: '/features/collaboration',       label: 'Collaboration',       note: 'Real-time sync'        },

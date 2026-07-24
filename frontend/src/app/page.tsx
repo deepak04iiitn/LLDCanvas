@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   // "…Platform — LLDCanvas" twice in the actual <title> tag.
   title: { absolute: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform' },
   description:
-    'Prepare for Low-Level Design (LLD) and system design interviews for free: a UML class diagram editor, 23 pre-wired design patterns, SOLID principles notes, 100+ curated LLD interview questions with community discussion, timed Interview Mode with analytics, a plain-English code↔diagram language, multi-language code execution, and real-time collaboration — all in one platform.',
+    'Prepare for Low-Level Design (LLD) and system design interviews for free: a UML class diagram editor, 23 pre-wired design patterns, SOLID principles notes, 110+ curated LLD interview questions with community discussion, timed Interview Mode with analytics, a plain-English code↔diagram language, multi-language code execution, and real-time collaboration — all in one platform.',
   keywords: [
     'LLD interview', 'low level design interview', 'LLD interview preparation', 'LLD interview practice',
     'LLD course', 'free LLD course', 'learn low level design', 'low level design tutorial',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
     description:
-      'A UML editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed practice with analytics, revision notes, and runnable code — everything for your next LLD or system design interview.',
+      'A UML editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed practice with analytics, revision notes, and runnable code — everything for your next LLD or system design interview.',
     type: 'website',
     siteName: 'LLDCanvas',
     url: '/',
@@ -85,7 +85,7 @@ const JSON_LD = {
       isAccessibleForFree: true,
       publisher: { '@id': `${SITE_URL}/#organization` },
       description:
-        'A free, all-in-one Low-Level Design (LLD) and system design interview-prep platform: a UML class diagram editor, 23 pre-wired Gang-of-Four design patterns, timed Interview Mode with analytics, a curated library of 100+ LLD interview questions with community discussion, SOLID-principles revision notes, a plain-English code↔diagram language (Draft Notation), and multi-language code execution.',
+        'A free, all-in-one Low-Level Design (LLD) and system design interview-prep platform: a UML class diagram editor, 23 pre-wired Gang-of-Four design patterns, timed Interview Mode with analytics, a curated library of 110+ LLD interview questions with community discussion, SOLID-principles revision notes, a plain-English code↔diagram language (Draft Notation), and multi-language code execution.',
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -98,7 +98,7 @@ const JSON_LD = {
         '13 class-role stereotypes for object-oriented design',
         'Draft Notation — plain-English code to diagram',
         'Interview Mode — timed LLD and system design practice with streaks and analytics',
-        '100+ curated LLD interview questions with community discussion',
+        '110+ curated LLD interview questions with community discussion',
         'SOLID principles and system design fundamentals revision notes',
         'Multi-language code execution (11 languages)',
         'PNG, SVG, PlantUML, Mermaid, and Draft export',
@@ -114,7 +114,7 @@ const JSON_LD = {
       '@id': `${SITE_URL}/#course`,
       name: 'Free Low-Level Design & System Design Interview Preparation',
       description:
-        'A free, self-paced curriculum covering Low-Level Design (LLD) and system-design-adjacent interview fundamentals: SOLID principles, the 23 Gang-of-Four design patterns, 100+ curated LLD interview questions from real companies, and timed practice with analytics.',
+        'A free, self-paced curriculum covering Low-Level Design (LLD) and system-design-adjacent interview fundamentals: SOLID principles, the 23 Gang-of-Four design patterns, 110+ curated LLD interview questions from real companies, and timed practice with analytics.',
       provider: { '@id': `${SITE_URL}/#organization` },
       url: SITE_URL,
       isAccessibleForFree: true,

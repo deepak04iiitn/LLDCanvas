@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     default: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
   },
   description:
-    'Practice Low-Level Design (LLD) and System Design interviews for free: a UML class diagram editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed Interview Mode, and runnable code — all in one platform.',
+    'Practice Low-Level Design (LLD) and System Design interviews for free: a UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed Interview Mode, and runnable code — all in one platform.',
   applicationName: 'LLDCanvas',
   keywords: [
     'LLD interview', 'Low-Level Design interview', 'LLD interview preparation', 'LLD interview practice',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
     description:
-      'A UML class diagram editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed practice with analytics, and runnable code — everything for your next LLD or system design interview.',
+      'A UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed practice with analytics, and runnable code — everything for your next LLD or system design interview.',
     type: 'website',
     siteName: 'LLDCanvas',
     locale: 'en_US',

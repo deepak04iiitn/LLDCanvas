@@ -126,7 +126,7 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '05', title: 'Problems + Community',
-    detail: '100+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
+    detail: '110+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
     points: [
       'Three hints unlock one at a time, so you\'re never spoiled all at once.',
       'See how other engineers structured the same design before you settle on your own.',
@@ -322,7 +322,7 @@ function FeatureChain() {
 
 // ─── Spec strip ───────────────────────────────────────────────────────────────
 const SPECS = [
-  { n: '100+', label: 'Practice problems' },
+  { n: '110+', label: 'Practice problems' },
   { n: '23',  label: 'Design patterns' },
   { n: '13',  label: 'Class roles' },
   { n: '7',   label: 'Relationship types' },
@@ -569,7 +569,7 @@ const COMPARISON_ROWS = [
   '23 Gang-of-Four design pattern skeletons, pre-wired',
   'Plain-English code ↔ diagram (Draft Notation)',
   'Timed LLD interview practice with streaks & activity analytics',
-  '100+ curated LLD & system design interview questions, hints & community discussion',
+  '110+ curated LLD & system design interview questions, hints & community discussion',
   'Run real code in 11 languages, in the same canvas',
   'Real-time collaboration with live cursors & @mention comments',
 ]
@@ -813,7 +813,7 @@ function ProblemsCommunitySection() {
         >
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Problem Library</p>
-            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">100+ problems</span>
+            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">110+ problems</span>
           </div>
           <div className="space-y-1.5">
             {BENTO_PROBLEMS.map((p, i) => (
@@ -1557,7 +1557,7 @@ const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
     ['Docs', '/docs'],
   ],
   'Does LLDCanvas have a library of LLD and system design interview questions?': [
-    ['100+ Low-Level Design problems and interview questions', '/dashboard/problems'],
+    ['110+ Low-Level Design problems and interview questions', '/dashboard/problems'],
   ],
   'Are SOLID principles covered?': [
     ['revision notes', '/dashboard/revision'],
@@ -1680,7 +1680,7 @@ export function LandingPageClient() {
             <motion.p className="mb-9 max-w-md text-lg leading-relaxed text-ink-muted" {...fadeUpProps(0.16)}>
               The complete Low-Level Design (LLD) interview preparation platform: a UML editor
               that understands OOP, 23 pre-wired design patterns, SOLID principles notes, timed
-              practice with real analytics, 100+ curated LLD and system design interview questions
+              practice with real analytics, 110+ curated LLD and system design interview questions
               with community discussion, and runnable code — all in one canvas, not seven
               different tools.
             </motion.p>
@@ -1856,7 +1856,7 @@ export function LandingPageClient() {
             Problems asked by real companies. Solved by a real community.
           </h2>
           <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
-            100+ Low-Level Design and system design interview questions and problems, each tagged
+            110+ Low-Level Design and system design interview questions and problems, each tagged
             by difficulty and the companies known to ask it. Staged hints reveal one at a time —
             never all at once. Compare your approach against the community thread when you&apos;re done.
           </p>
