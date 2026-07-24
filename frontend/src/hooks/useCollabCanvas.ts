@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef } from 'react'
 import { type Node, type Edge } from '@xyflow/react'
@@ -30,11 +30,11 @@ export function useCollabCanvas(
     })
   }, [registerPatchHandler])
 
-  // Emit own changes — skip when the change came from a remote patch
+  // Emit own changes - skip when the change came from a remote patch
   useEffect(() => {
     if (!diagramId || myRole === 'viewer' || myRole === null) return
 
-    // This effect ran because of a remote setNodes/setEdges call — skip emitting back
+    // This effect ran because of a remote setNodes/setEdges call - skip emitting back
     if (isRemoteUpdate.current) {
       isRemoteUpdate.current = false
       return

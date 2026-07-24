@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -77,7 +77,7 @@ export function SiteFooter() {
         {/* ── Content ───────────────────────────────────────────────────────── */}
         <div className="relative mx-auto max-w-6xl">
 
-          {/* Main row — brand left, nav columns fill the rest */}
+          {/* Main row - brand left, nav columns fill the rest */}
           <div className="flex flex-col gap-12 lg:flex-row lg:items-start">
 
             {/* ── Brand block ─────────────────────────────────────────────── */}
@@ -87,7 +87,7 @@ export function SiteFooter() {
               </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
                 The complete free platform for Low-Level Design and system design interview
-                preparation — practice LLD interview questions, design with UML and 23 design
+                preparation - practice LLD interview questions, design with UML and 23 design
                 patterns, run code, and collaborate in real time.
               </p>
               <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] tracking-widest text-ink-faint uppercase">
@@ -95,7 +95,7 @@ export function SiteFooter() {
               </span>
             </div>
 
-            {/* ── Nav columns — always fill remaining space evenly ────────── */}
+            {/* ── Nav columns - always fill remaining space evenly ────────── */}
             <div className="flex flex-1 flex-col gap-10 sm:flex-row sm:justify-between">
 
               {/* Features */}
@@ -214,7 +214,7 @@ export function SiteFooter() {
           {/* ── Bottom bar ───────────────────────────────────────────────────── */}
           <div className="flex flex-col gap-2 py-5 pr-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-mono text-[11px] text-ink-faint">
-              © <span suppressHydrationWarning>{new Date().getFullYear()}</span> LLDCanvas — built for engineers, by engineers.
+              © <span suppressHydrationWarning>{new Date().getFullYear()}</span> LLDCanvas - built for engineers, by engineers.
             </p>
             <div className="flex items-center gap-4">
               <Link href="/pricing" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">

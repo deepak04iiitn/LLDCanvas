@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
@@ -68,7 +68,7 @@ function StatCard({ label, value, sub, icon: Icon, cls }: { label: string; value
 
 export default function AdminRevenuePage() {
   const [range,   setRange]   = useState('30d')
-  const [month,   setMonth]   = useState<string | null>(null)  // "YYYY-MM" — set = viewing a specific month instead of a relative range
+  const [month,   setMonth]   = useState<string | null>(null)  // "YYYY-MM" - set = viewing a specific month instead of a relative range
   const [data,    setData]    = useState<RevenueData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -149,7 +149,7 @@ export default function AdminRevenuePage() {
         <div className="flex h-48 items-center justify-center text-sm text-ink-muted">Loading...</div>
       ) : (
         <>
-          {/* Recurring revenue — "right now", independent of the range/month picker above */}
+          {/* Recurring revenue - "right now", independent of the range/month picker above */}
           <div className="grid grid-cols-2 gap-4">
             <StatCard
               icon={TrendingUp}

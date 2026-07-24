@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -201,7 +201,7 @@ export default function AdminOverviewPage() {
 
             {/* Live charts */}
             <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              <ChartCard title="Active users — last 24 h" className="lg:col-span-2">
+              <ChartCard title="Active users - last 24 h" className="lg:col-span-2">
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={hourlyData}>
                     <defs>
@@ -246,7 +246,7 @@ export default function AdminOverviewPage() {
             {/* Top pages */}
             {live.topPages.length > 0 && (
               <div className="mt-4">
-                <ChartCard title="Top pages — last 30 days">
+                <ChartCard title="Top pages - last 30 days">
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {live.topPages.map((p, i) => (
                       <div key={p.page} className="flex items-center gap-3 rounded-lg border border-hairline bg-paper px-3 py-2">
@@ -289,7 +289,7 @@ export default function AdminOverviewPage() {
 
       {/* ── 30-day trend charts ──────────────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="User registrations — 30 days">
+        <ChartCard title="User registrations - 30 days">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={userGrowthData}>
               <defs>
@@ -307,7 +307,7 @@ export default function AdminOverviewPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="UML Diagrams created — 30 days">
+        <ChartCard title="UML Diagrams created - 30 days">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={diagramData} barSize={14}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
@@ -321,7 +321,7 @@ export default function AdminOverviewPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <ChartCard title="Session activity — 30 days" className="lg:col-span-2">
+        <ChartCard title="Session activity - 30 days" className="lg:col-span-2">
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={sessionData}>
               <defs>
@@ -500,10 +500,10 @@ export default function AdminOverviewPage() {
                 { href: '/admin/problems',      Icon: BookOpen,          label: 'Manage Problems',        sub: `${featureStats.problems.total} total`,    color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 { href: '/admin/revision',      Icon: Layers,            label: 'Manage Revision Notes',  sub: `${featureStats.revision.totalNotes} notes`, color: 'text-violet-600', bg: 'bg-violet-50' },
                 { href: '/admin/collab',        Icon: MessageSquareText, label: 'Collaboration Hub',      sub: `${featureStats.collab.totalComments} discussions`, color: 'text-blue-600', bg: 'bg-blue-50' },
-                { href: '/admin/code',          Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '—', color: 'text-amber-600', bg: 'bg-amber-50' },
-                { href: '/admin/subscriptions', Icon: CreditCard,        label: 'Subscriptions',          sub: billingOverview ? `${billingOverview.activeSubscriptions} active` : '—', color: 'text-brand', bg: 'bg-brand/10' },
-                { href: '/admin/revenue',       Icon: IndianRupee,       label: 'Revenue',                sub: billingOverview ? `₹${billingOverview.mrr.toLocaleString('en-IN')} MRR` : '—', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { href: '/admin/feedback',      Icon: Bug,               label: 'Feedback & Reports',     sub: feedbackStats ? `${feedbackStats.byStatus.open ?? 0} open · ${feedbackStats.total} total` : '—', color: 'text-red-600', bg: 'bg-red-50' },
+                { href: '/admin/code',          Icon: Terminal,          label: 'Code Execution',         sub: codeStats ? `${codeStats.totalRuns.toLocaleString()} total runs` : '-', color: 'text-amber-600', bg: 'bg-amber-50' },
+                { href: '/admin/subscriptions', Icon: CreditCard,        label: 'Subscriptions',          sub: billingOverview ? `${billingOverview.activeSubscriptions} active` : '-', color: 'text-brand', bg: 'bg-brand/10' },
+                { href: '/admin/revenue',       Icon: IndianRupee,       label: 'Revenue',                sub: billingOverview ? `₹${billingOverview.mrr.toLocaleString('en-IN')} MRR` : '-', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                { href: '/admin/feedback',      Icon: Bug,               label: 'Feedback & Reports',     sub: feedbackStats ? `${feedbackStats.byStatus.open ?? 0} open · ${feedbackStats.total} total` : '-', color: 'text-red-600', bg: 'bg-red-50' },
               ].map(nav => (
                 <Link
                   key={nav.href}

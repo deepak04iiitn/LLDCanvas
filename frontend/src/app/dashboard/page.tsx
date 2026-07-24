@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -39,7 +39,7 @@ export default function DashboardPage() {
   const debouncedSearch = useDebounce(search, 300)
 
   // ─── Page title ─────────────────────────────────────────────────────────────
-  useEffect(() => { document.title = 'Dashboard — LLDCanvas' }, [])
+  useEffect(() => { document.title = 'Dashboard - LLDCanvas' }, [])
 
   // ─── Upgrade success toast ────────────────────────────────────────────────
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function DashboardPage() {
     }
 
     migrate()
-  // Run only once when session appears — intentionally no dep on migrate fn
+  // Run only once when session appears - intentionally no dep on migrate fn
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
@@ -150,13 +150,13 @@ export default function DashboardPage() {
       mobileBanner={
         <div className="flex items-center gap-2 border-b border-hairline bg-gold-tint px-4 py-2 text-xs text-ink sm:hidden">
           <Monitor className="h-3.5 w-3.5 shrink-0 text-gold" />
-          LLDCanvas works best on a desktop browser — the editor isn&apos;t supported on mobile.
+          LLDCanvas works best on a desktop browser - the editor isn&apos;t supported on mobile.
         </div>
       }
     >
       <div className="flex h-full flex-col overflow-hidden">
 
-        {/* ── Resume banner — incomplete session ─────────────────────────── */}
+        {/* ── Resume banner - incomplete session ─────────────────────────── */}
         {incompleteSession && !resumeBannerDismissed && !runningSession && (
           <div className="flex shrink-0 items-center gap-3 border-b border-amber-200 bg-amber-50 px-5 py-2.5 sm:px-8">
             <Timer className="h-4 w-4 shrink-0 text-amber-600" />

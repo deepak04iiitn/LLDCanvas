@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -38,7 +38,7 @@ export function LocalEditorBanner({ onDismiss }: LocalEditorBannerProps) {
         {/* Message */}
         <p className="flex-1 text-sm text-indigo-800 dark:text-indigo-300">
           <span className="font-medium">Working locally</span>
-          {' — sign in to save to the cloud and access your diagrams on any device.'}
+          {' - sign in to save to the cloud and access your diagrams on any device.'}
         </p>
 
         {/* Sign in button */}

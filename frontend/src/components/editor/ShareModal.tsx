@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -99,7 +99,7 @@ export function ShareModal({ open, onOpenChange, diagramId, diagramTitle }: Prop
       const { share: s } = await api.share.get(diagramId)
       setShare(s)
     } catch {
-      /* diagram might not have a share yet — that's fine */
+      /* diagram might not have a share yet - that's fine */
       setShare(null)
     } finally {
       setLoading(false)

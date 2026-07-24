@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
@@ -152,7 +152,7 @@ export function usePlan() {
   }, [applyData])
 
   // Key fix: isFree / isPro are false while loading so gates stay hidden
-  // until we actually know the plan — preventing the lock-flicker
+  // until we actually know the plan - preventing the lock-flicker
   const isPro      = !state.loading && (state.plan === 'pro' || state.plan === 'ultimate')
   const isUltimate = !state.loading && state.plan === 'ultimate'
   const isFree     = !state.loading && state.plan === 'free'

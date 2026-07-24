@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   useCallback,
@@ -99,7 +99,7 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        {/* ── group: CSS-only hover — no state change, so dragging stays smooth ── */}
+        {/* ── group: CSS-only hover - no state change, so dragging stays smooth ── */}
         <div className="group relative" style={{ width: 20, height: 20 }}>
 
           {/* Handles */}
@@ -107,7 +107,7 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
             <Handle key={hId} id={hId} type="source" position={position} style={style} className={HANDLE_CLS} />
           ))}
 
-          {/* ── Floating card — pure CSS show/hide via group-hover + editing override ── */}
+          {/* ── Floating card - pure CSS show/hide via group-hover + editing override ── */}
           <div
             className={cn(
               // Position: centred above the pin

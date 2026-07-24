@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { DraftNotationPageClient } from '@/components/features/DraftNotationPageClient'
 import { JsonLd } from '@/components/seo/JsonLd'
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/features/draft-notation' },
   openGraph: {
-    title: 'Draft Notation — Plain-English UML - LLDCanvas',
+    title: 'Draft Notation - Plain-English UML - LLDCanvas',
     description: 'Write "User has many Order" and see a UML diagram draw itself in real time.',
     type: 'website', url: '/features/draft-notation',
   },
@@ -25,7 +25,7 @@ export default function DraftNotationFeaturePage() {
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: 'Draft Notation — Plain-English UML',
+        name: 'Draft Notation - Plain-English UML',
         url: 'https://lldcanvas.com/features/draft-notation',
         description: 'LLDCanvas\'s own plain-English UML diagramming language.',
       }} />

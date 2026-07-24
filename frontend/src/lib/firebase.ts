@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
+﻿import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth'
 
 const firebaseConfig = {
@@ -13,7 +13,7 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null
 let auth: Auth | null = null
 
-// Lazy — Firebase Auth is only ever used client-side (Google sign-in popup),
+// Lazy - Firebase Auth is only ever used client-side (Google sign-in popup),
 // but this module is imported transitively by every page via AuthProvider in
 // the root layout. Initializing eagerly at module load would run during
 // Next.js's server-side prerendering too, where there's no popup to show and

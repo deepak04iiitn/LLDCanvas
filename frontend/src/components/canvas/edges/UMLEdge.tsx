@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback } from 'react'
 import {
@@ -251,7 +251,7 @@ export function UMLEdge({
         className="transition-all duration-150 ease-out pointer-events-none"
       />
 
-      {/* Edge label (relationship type + line-style toggle) — shown when selected */}
+      {/* Edge label (relationship type + line-style toggle) - shown when selected */}
       {selected && (
         <EdgeLabelRenderer>
           <div

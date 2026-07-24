@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -63,7 +63,7 @@ const PLANS = [
       'Full templates, hints & community',
       '25 code executions / day',
       '10 interview mode sessions / mo',
-      'Collaboration — up to 3 people',
+      'Collaboration - up to 3 people',
     ],
   },
   {
@@ -79,7 +79,7 @@ const PLANS = [
     highlight:   false,
     features: [
       'Everything in Pro',
-      'Full problem library — Easy, Medium & Hard',
+      'Full problem library - Easy, Medium & Hard',
       'Unlimited interview sessions & collaboration',
       'Version history + activity timeline',
       'Full analytics & priority support',
@@ -315,7 +315,7 @@ export default function PricingPage() {
             Practice more. Pay for what you use.
           </motion.h1>
           <motion.p {...fadeUpProps(0.12)} className="mx-auto max-w-xl text-base leading-relaxed text-ink-muted">
-            Start free, forever — upgrade only when the editor, the problems, or the practice
+            Start free, forever - upgrade only when the editor, the problems, or the practice
             history genuinely aren't enough. Cancel anytime.
           </motion.p>
         </div>

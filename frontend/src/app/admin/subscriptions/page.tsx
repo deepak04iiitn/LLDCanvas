@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
@@ -29,7 +29,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const PLAN_ICON = { free: Zap, pro: Rocket, ultimate: Crown } as const
 
-// Statuses where there's nothing left to cancel — Razorpay has already
+// Statuses where there's nothing left to cancel - Razorpay has already
 // closed the subscription out one way or another. Anything else (active,
 // created, authenticated, pending, halted) is still a live subscription an
 // admin might need to force-cancel, e.g. one stuck "halted" after failed
@@ -379,7 +379,7 @@ export default function AdminSubscriptionsPage() {
           </motion.div>
         </div>
       )}
-      {/* Manual onboard — sliding right panel */}
+      {/* Manual onboard - sliding right panel */}
       <Sheet open={manualOpen} onOpenChange={setManualOpen}>
         <SheetContent
           side="right"
@@ -511,7 +511,7 @@ export default function AdminSubscriptionsPage() {
                 className="w-full rounded-xl border border-hairline bg-paper-elevated px-3 py-2.5 text-sm text-ink outline-none"
               />
               <p className="mt-1.5 text-[11px] leading-relaxed text-ink-faint">
-                Access will run through {new Date(Date.now() + manualForm.months * 30 * 86400000).toLocaleDateString()} approx. — for a
+                Access will run through {new Date(Date.now() + manualForm.months * 30 * 86400000).toLocaleDateString()} approx. - for a
                 prepaid multi-month purchase (e.g. paid for 3 or 6 months at once), just set the exact number here.
               </p>
             </div>

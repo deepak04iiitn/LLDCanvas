@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -26,7 +26,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
   const [googleLoading, setGoogleLoading] = useState(false)
 
   // Re-sync `mode` when the caller passes a different defaultMode (e.g. the
-  // page's "Sign in" vs "Get started" buttons) — adjusted during render, per
+  // page's "Sign in" vs "Get started" buttons) - adjusted during render, per
   // React's own guidance, rather than in a useEffect.
   const [prevDefaultMode, setPrevDefaultMode] = useState(defaultMode)
   if (defaultMode !== prevDefaultMode) {
@@ -59,7 +59,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
       toast.success('Signed in!')
       postLoginNavigate()
     } catch (err: unknown) {
-      // Popup closed by the user isn't a real error — don't show a toast for it.
+      // Popup closed by the user isn't a real error - don't show a toast for it.
       const code = (err as { code?: string })?.code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
         toast.error('Google sign-in failed. Please try again.')
@@ -96,7 +96,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
     <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset() }}>
       <DialogContent className="overflow-hidden rounded-md border border-hairline-strong bg-paper-elevated p-0 shadow-xl sm:max-w-[460px]">
 
-        {/* ── Header — same class-box grammar as the landing page's CTA box ── */}
+        {/* ── Header - same class-box grammar as the landing page's CTA box ── */}
         <div className="px-6 pt-5 pb-4">
           <p className="font-mono text-[10px] text-gold italic">&laquo;{mode}&raquo;</p>
           <h2 className="mt-1 font-serif text-xl font-medium text-ink">
@@ -185,7 +185,7 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
           </form>
         </div>
 
-        {/* ── Footer — mode toggle ─────────────────────────────────────────── */}
+        {/* ── Footer - mode toggle ─────────────────────────────────────────── */}
         <div className="border-t border-hairline bg-paper px-6 py-3 text-center text-sm text-ink-muted">
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button

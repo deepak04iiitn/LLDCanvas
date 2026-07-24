@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   createContext,
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils'
 // lines) as its actual layout mechanism, not screenshots. Connector lines are
 // computed from each node's REAL rendered bounding box (measured via
 // getBoundingClientRect after layout/resize/font-load), never from hand-typed
-// coordinates — two independently-guessed numbers is how a line ends up not
+// coordinates - two independently-guessed numbers is how a line ends up not
 // touching the box it's supposed to connect to.
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
@@ -45,7 +45,7 @@ function elbowPath(a: { x: number; y: number }, b: { x: number; y: number }, ben
 }
 
 // A 'h' bend exits/enters both anchors horizontally (correct for left/right
-// sides) — its final approach segment runs at a fixed y, which is exactly
+// sides) - its final approach segment runs at a fixed y, which is exactly
 // wrong for a 'top'/'bottom' anchor: that segment ends up traveling flush
 // along the target box's own border for most of its length instead of
 // dropping into it perpendicularly, reading as the line visually fusing with
@@ -74,7 +74,7 @@ function DiagramDefs() {
   )
 }
 
-// ─── Stage context — lets a DiagramNode register its element for measurement ──
+// ─── Stage context - lets a DiagramNode register its element for measurement ──
 interface StageCtx {
   registerNode: (id: string) => (el: HTMLDivElement | null) => void
 }
@@ -84,12 +84,12 @@ export interface DiagramEdge {
   id: string
   from: { node: string; side: Side }
   to: { node: string; side: Side }
-  /** Defaults to whatever `from`/`to` sides imply (see autoBend) — only set this to override that. */
+  /** Defaults to whatever `from`/`to` sides imply (see autoBend) - only set this to override that. */
   bend?: 'h' | 'v'
   variant?: 'solid' | 'dashed'
   marker?: 'arrow' | 'diamond' | 'diamond-filled' | 'none'
   /** Which end the marker sits on. Composition/aggregation diamonds belong on
-   * the "whole" end, which is usually `from` rather than `to` — default 'end'
+   * the "whole" end, which is usually `from` rather than `to` - default 'end'
    * covers plain directional arrows (dependency, realization). */
   markerSide?: 'start' | 'end'
 }
@@ -153,7 +153,7 @@ export function DiagramStage({ children, edges, className = '', style }: Diagram
     <StageContext.Provider value={{ registerNode }}>
       <div ref={containerRef} className={cn('relative', className)} style={style}>
         {children}
-        {/* Rendered after (and z-indexed above) the nodes — otherwise each
+        {/* Rendered after (and z-indexed above) the nodes - otherwise each
             box's opaque background paints over the very marker/line-end that's
             supposed to visibly touch its border, making connections look
             broken right where they matter most. */}

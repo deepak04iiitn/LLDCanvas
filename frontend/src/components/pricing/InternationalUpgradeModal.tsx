@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect } from 'react'
 import { Mail, CalendarClock } from 'lucide-react'
@@ -42,14 +42,14 @@ export function InternationalUpgradeModal({ open, onOpenChange, planName }: Inte
             <p className="text-sm leading-relaxed text-ink-muted">
               International payments are not supported through our payment gateway yet.
               To upgrade to <span className="font-medium text-ink">{planName}</span>, please
-              contact our support team or schedule a quick call — we&apos;ll manually onboard
+              contact our support team or schedule a quick call - we&apos;ll manually onboard
               you and activate your subscription.
             </p>
           </div>
 
           <div className="mt-6 space-y-2.5">
             <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Upgrade to ${planName} — international payment`)}`}
+              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`Upgrade to ${planName} - international payment`)}`}
               className="flex w-full items-center justify-center gap-2 rounded-md border border-hairline-strong bg-paper py-2.5 text-sm font-medium text-ink transition-colors hover:bg-hairline/30"
             >
               <Mail className="h-4 w-4" />

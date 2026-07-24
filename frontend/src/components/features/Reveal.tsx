@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
@@ -11,7 +11,7 @@ interface RevealProps {
   id?: string
 }
 
-// Fades/rises an element in the moment it scrolls into view — `once: true`
+// Fades/rises an element in the moment it scrolls into view - `once: true`
 // so it never re-triggers on scroll-back, and the small negative viewport
 // margin means it fires just before the section is fully in frame rather
 // than only once it's dead-center.

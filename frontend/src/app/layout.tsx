@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-// Display serif for headings on marketing/dashboard/settings pages only —
+// Display serif for headings on marketing/dashboard/settings pages only -
 // the editor's own chrome never references --font-serif.
 const fraunces = Fraunces({
   variable: '--font-fraunces',
@@ -29,17 +29,17 @@ const fraunces = Fraunces({
 // metadataBase anchors every relative URL used in openGraph/twitter metadata
 // (across this file and every page's own metadata export) into an absolute
 // URL. Without it, Next.js falls back to http://localhost:3000 for OG/Twitter
-// image tags in production — silently breaking link-preview cards everywhere.
+// image tags in production - silently breaking link-preview cards everywhere.
 const SITE_URL = 'https://lldcanvas.com'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    template: '%s — LLDCanvas',
-    default: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
+    template: '%s - LLDCanvas',
+    default: 'LLDCanvas - Free LLD & System Design Interview Preparation Platform',
   },
   description:
-    'Practice Low-Level Design (LLD) and System Design interviews for free: a UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed Interview Mode, and runnable code — all in one platform.',
+    'Practice Low-Level Design (LLD) and System Design interviews for free: a UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed Interview Mode, and runnable code - all in one platform.',
   applicationName: 'LLDCanvas',
   keywords: [
     'LLD interview', 'Low-Level Design interview', 'LLD interview preparation', 'LLD interview practice',
@@ -52,19 +52,19 @@ export const metadata: Metadata = {
   authors: [{ name: 'LLDCanvas' }],
   category: 'technology',
   openGraph: {
-    title: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
+    title: 'LLDCanvas - Free LLD & System Design Interview Preparation Platform',
     description:
-      'A UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed practice with analytics, and runnable code — everything for your next LLD or system design interview.',
+      'A UML class diagram editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed practice with analytics, and runnable code - everything for your next LLD or system design interview.',
     type: 'website',
     siteName: 'LLDCanvas',
     locale: 'en_US',
-    images: [{ url: '/LLDCanvas.png', width: 1774, height: 887, alt: 'LLDCanvas — Low-Level Design interview preparation platform' }],
+    images: [{ url: '/LLDCanvas.png', width: 1774, height: 887, alt: 'LLDCanvas - Low-Level Design interview preparation platform' }],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@lldcanvas',
-    title: 'LLDCanvas — Free LLD & System Design Interview Prep',
-    description: 'UML editor, 23 design patterns, SOLID principles notes, LLD interview questions, timed practice, and runnable code — all in one place.',
+    title: 'LLDCanvas - Free LLD & System Design Interview Prep',
+    description: 'UML editor, 23 design patterns, SOLID principles notes, LLD interview questions, timed practice, and runnable code - all in one place.',
     images: ['/LLDCanvas.png'],
   },
   icons: {

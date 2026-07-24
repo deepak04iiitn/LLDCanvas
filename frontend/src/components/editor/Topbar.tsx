@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import {
@@ -253,7 +253,7 @@ function InlineTimer({ onEndSession, isFullscreen, onToggleFullscreen }: InlineT
       {/* Divider */}
       <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
 
-      {/* Timer strip — inline, same height as topbar */}
+      {/* Timer strip - inline, same height as topbar */}
       <div className="relative flex items-center gap-1.5">
 
         {/* Colored accent bar */}
@@ -393,7 +393,7 @@ export function Topbar({
       className="relative z-20 grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center border-b
                  border-gray-200 bg-white px-3 dark:border-[#2C2C2E] dark:bg-[#1C1C1E]"
     >
-      {/* LEFT — Logo + title */}
+      {/* LEFT - Logo + title */}
       <div className="flex min-w-0 items-center">
         <Link href="/" className="flex shrink-0 items-center select-none">
           <Wordmark height={22} priority />
@@ -405,7 +405,7 @@ export function Topbar({
         </div>
       </div>
 
-      {/* CENTER — Active session timer only */}
+      {/* CENTER - Active session timer only */}
       <div className="flex items-center justify-center px-4">
         {activeSession && (
           <InlineTimer
@@ -416,7 +416,7 @@ export function Topbar({
         )}
       </div>
 
-      {/* RIGHT — Action buttons */}
+      {/* RIGHT - Action buttons */}
       <div className="flex items-center justify-end gap-1.5">
 
 
@@ -440,7 +440,7 @@ export function Topbar({
             >
               <Hand className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">Pan — drag to move canvas</TooltipContent>
+            <TooltipContent side="bottom">Pan - drag to move canvas</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger
@@ -454,7 +454,7 @@ export function Topbar({
             >
               <MousePointer2 className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">Select — drag to box-select nodes</TooltipContent>
+            <TooltipContent side="bottom">Select - drag to box-select nodes</TooltipContent>
           </Tooltip>
         </div>
 
@@ -514,7 +514,7 @@ export function Topbar({
             <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Export
             </div>
-            {/* PNG — Ultimate only */}
+            {/* PNG - Ultimate only */}
             {canExport(plan, 'png') ? (
               <DropdownMenuItem onClick={onExportPNG} className="gap-2">
                 <Image className="h-4 w-4 text-indigo-500" />
@@ -528,7 +528,7 @@ export function Topbar({
                 <span className="text-[9px] font-bold uppercase text-amber-500">Ult.</span>
               </DropdownMenuItem>
             )}
-            {/* SVG — Ultimate only */}
+            {/* SVG - Ultimate only */}
             {canExport(plan, 'svg') ? (
               <DropdownMenuItem onClick={onExportSVG} className="gap-2">
                 <FileCode2 className="h-4 w-4 text-emerald-500" />
@@ -542,7 +542,7 @@ export function Topbar({
                 <span className="text-[9px] font-bold uppercase text-amber-500">Ult.</span>
               </DropdownMenuItem>
             )}
-            {/* Draft — Pro+ */}
+            {/* Draft - Pro+ */}
             {canExport(plan, 'draft') ? (
               <DropdownMenuItem onClick={onExportDraft} className="gap-2">
                 <Code2 className="h-4 w-4 text-cyan-500" />
@@ -556,7 +556,7 @@ export function Topbar({
                 <span className="text-[9px] font-bold uppercase text-amber-500">Pro</span>
               </DropdownMenuItem>
             )}
-            {/* PlantUML — Pro+ */}
+            {/* PlantUML - Pro+ */}
             {canExport(plan, 'plantuml') ? (
               <DropdownMenuItem onClick={onExportPlantUML} className="gap-2">
                 <Download className="h-4 w-4 text-amber-500" />
@@ -570,7 +570,7 @@ export function Topbar({
                 <span className="text-[9px] font-bold uppercase text-amber-500">Pro</span>
               </DropdownMenuItem>
             )}
-            {/* Mermaid — Pro+ */}
+            {/* Mermaid - Pro+ */}
             {canExport(plan, 'mermaid') ? (
               <DropdownMenuItem onClick={onExportMermaid} className="gap-2">
                 <Download className="h-4 w-4 text-violet-500" />
@@ -618,7 +618,7 @@ export function Topbar({
           </Tooltip>
         )}
 
-        {/* Problem Discussions button — only shown when a problem is open */}
+        {/* Problem Discussions button - only shown when a problem is open */}
         {problemSlug && onOpenProblemDiscussion && (
           isFree ? (
             <Tooltip>
@@ -656,7 +656,7 @@ export function Topbar({
           )
         )}
 
-        {/* Notes button — interview session notes OR practice problem notes */}
+        {/* Notes button - interview session notes OR practice problem notes */}
         {(activeSession || (problemSlug && onOpenProblemNotes)) && (
           <Tooltip>
             <TooltipTrigger
@@ -677,7 +677,7 @@ export function Topbar({
           </Tooltip>
         )}
 
-        {/* Comments button — only shown in collab sessions */}
+        {/* Comments button - only shown in collab sessions */}
         {diagramId && onOpenDiscussion && (
           <Tooltip>
             <TooltipTrigger

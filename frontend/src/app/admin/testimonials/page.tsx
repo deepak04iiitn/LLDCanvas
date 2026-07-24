@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -318,7 +318,7 @@ export default function AdminTestimonialsPage() {
             <StatCard label="Total"    value={stats.total}                    Icon={MessageSquareQuote} accent="text-brand"      bg="bg-brand-tint"   />
             <StatCard label="Pending"  value={stats.byStatus.pending ?? 0}   sub="awaiting review"     Icon={Clock}              accent="text-amber-600"  bg="bg-amber-50"     />
             <StatCard label="Approved" value={stats.byStatus.approved ?? 0}  sub="live on landing"     Icon={CheckCircle2}       accent="text-emerald-600" bg="bg-emerald-50"  />
-            <StatCard label="Avg. Rating" value={stats.avgRating ? stats.avgRating.toFixed(1) : '—'} sub="out of 5" Icon={Star} accent="text-amber-500"  bg="bg-amber-50"     />
+            <StatCard label="Avg. Rating" value={stats.avgRating ? stats.avgRating.toFixed(1) : '-'} sub="out of 5" Icon={Star} accent="text-amber-500"  bg="bg-amber-50"     />
           </div>
         )}
 

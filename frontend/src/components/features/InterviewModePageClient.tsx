@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { ArrowRight, Clock, Flame, BarChart2, StickyNote, Pause, CalendarDays, Timer, Trophy, TrendingUp } from 'lucide-react'
@@ -9,7 +9,7 @@ import { Reveal } from '@/components/features/Reveal'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-// Form guide — true = practiced, false = missed
+// Form guide - true = practiced, false = missed
 const FORM_GUIDE = [true, true, false, true, true, true, true, true, true, false, true, true, true, true]
 
 const CAREER_STATS = [
@@ -25,19 +25,19 @@ const PHASES = [
   {
     phase: 'PRE-MATCH', n: '01',
     title: 'Pick your duration and step in.',
-    body: "Choose 30, 45, 60, 90 minutes — or practice without a limit. A blank canvas opens with the full editor. Your notes panel slides open beside it. The clock is ready. You're not.",
+    body: "Choose 30, 45, 60, 90 minutes - or practice without a limit. A blank canvas opens with the full editor. Your notes panel slides open beside it. The clock is ready. You're not.",
     visual: 'picker',
   },
   {
     phase: 'MATCH', n: '02',
     title: 'Design under the countdown.',
-    body: "The timer is always visible. You design exactly like in a real interview — blank slate, full editor, all 23 design pattern skeletons available. Pause if you need to, but paused time doesn't count.",
+    body: "The timer is always visible. You design exactly like in a real interview - blank slate, full editor, all 23 design pattern skeletons available. Pause if you need to, but paused time doesn't count.",
     visual: 'timer',
   },
   {
     phase: 'POST-MATCH', n: '03',
     title: 'Session logged. Streak updated.',
-    body: 'End the session and everything saves automatically — your streak increments, practice time accumulates, and your activity calendar marks the day. No manual tracking. No logging. The habit builds itself.',
+    body: 'End the session and everything saves automatically - your streak increments, practice time accumulates, and your activity calendar marks the day. No manual tracking. No logging. The habit builds itself.',
     visual: 'recap',
   },
 ]
@@ -45,23 +45,23 @@ const PHASES = [
 const FAQ = [
   {
     q: 'What happens when I start an Interview Mode session?',
-    a: "You pick a duration (30, 45, 60, 90 minutes, or unlimited), and you're immediately dropped into a timed canvas session. The clock starts, your notes panel opens on the side, and you design just like you would in a real interview — blank canvas, countdown visible at all times.",
+    a: "You pick a duration (30, 45, 60, 90 minutes, or unlimited), and you're immediately dropped into a timed canvas session. The clock starts, your notes panel opens on the side, and you design just like you would in a real interview - blank canvas, countdown visible at all times.",
   },
   {
     q: 'What happens after the session ends?',
-    a: "Your session is logged automatically — time practiced, date, and completion status are added to your activity calendar and analytics dashboard. The streak counter increments if it's a new day. Your canvas and notes are preserved so you can review or continue later.",
+    a: "Your session is logged automatically - time practiced, date, and completion status are added to your activity calendar and analytics dashboard. The streak counter increments if it's a new day. Your canvas and notes are preserved so you can review or continue later.",
   },
   {
     q: 'Can I pause mid-session?',
-    a: "Yes — the pause button stops the countdown and freezes your elapsed time. Resume when you're ready, and the clock picks up exactly where it left off. The paused time is not counted toward your session — so a 45-minute session always means 45 minutes of actual design work.",
+    a: "Yes - the pause button stops the countdown and freezes your elapsed time. Resume when you're ready, and the clock picks up exactly where it left off. The paused time is not counted toward your session - so a 45-minute session always means 45 minutes of actual design work.",
   },
   {
     q: 'Is my streak broken if I miss a day?',
-    a: "Yes, like any streak system — missing a day resets the current streak to zero. Your longest streak is always preserved in your stats, so you can aim to beat your personal best.",
+    a: "Yes, like any streak system - missing a day resets the current streak to zero. Your longest streak is always preserved in your stats, so you can aim to beat your personal best.",
   },
   {
     q: 'What plan do I need for Interview Mode?',
-    a: "Interview Mode is a Pro and Ultimate feature. Pro includes sessions with basic score summaries. Ultimate includes unlimited sessions and full analytics — time per session, improvement trends, and a personal best tracker.",
+    a: "Interview Mode is a Pro and Ultimate feature. Pro includes sessions with basic score summaries. Ultimate includes unlimited sessions and full analytics - time per session, improvement trends, and a personal best tracker.",
   },
   {
     q: 'Can I use my own diagram inside Interview Mode?',
@@ -228,7 +228,7 @@ export function InterviewModePageClient() {
         <div className="relative mx-auto max-w-5xl px-6 pb-20 pt-12 sm:px-8 sm:pt-16">
           <Reveal>
             <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">¶03</span>&nbsp;—&nbsp;Interview Mode
+              <span className="text-gold">¶03</span>&nbsp;-&nbsp;Interview Mode
             </p>
             <h1 className="font-serif text-[clamp(2.2rem,5vw,4rem)] font-medium leading-[1.05] tracking-tight text-ink">
               Practice like the clock{' '}
@@ -236,13 +236,13 @@ export function InterviewModePageClient() {
               Watch it add up.
             </h1>
             <p className="mt-5 max-w-2xl text-[15px] leading-[1.8] text-ink-muted">
-              Most candidates only ever practice untimed — then freeze when the clock starts
+              Most candidates only ever practice untimed - then freeze when the clock starts
               in a real interview. Interview Mode puts a countdown on the canvas from day one,
               then tracks every session as a streak, an activity heatmap, and a practice-time
               graph so the habit builds itself.
             </p>
 
-            {/* Form guide — sports result strip */}
+            {/* Form guide - sports result strip */}
             <div className="mt-7 flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-1">
                 <span className="mr-2 font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-ink-faint/50">
@@ -311,7 +311,7 @@ export function InterviewModePageClient() {
           <Reveal>
             <div className="border-b border-hairline py-10">
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-                <span className="text-gold">§01</span>&nbsp;—&nbsp;How a session works
+                <span className="text-gold">§01</span>&nbsp;-&nbsp;How a session works
               </p>
               <h2 className="mt-2 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
                 Three phases. From blank canvas to logged session.
@@ -362,13 +362,13 @@ export function InterviewModePageClient() {
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§02</span>&nbsp;—&nbsp;Career stats
+              <span className="text-gold">§02</span>&nbsp;-&nbsp;Career stats
             </p>
             <h2 className="mb-3 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
               Analytics that show progress, not just activity.
             </h2>
             <p className="mb-10 max-w-xl text-[14px] leading-relaxed text-ink-muted">
-              Tracking that you practiced is table stakes. Interview Mode goes further — it shows
+              Tracking that you practiced is table stakes. Interview Mode goes further - it shows
               whether you&apos;re getting faster, where your weak patterns are, and how your
               personal bests improve over time.
             </p>
@@ -407,7 +407,7 @@ export function InterviewModePageClient() {
         <section className="border-b border-hairline py-16">
           <div className="mx-auto max-w-5xl px-6 sm:px-8">
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§03</span>&nbsp;—&nbsp;Why timed practice matters
+              <span className="text-gold">§03</span>&nbsp;-&nbsp;Why timed practice matters
             </p>
             <h2 className="mb-5 font-serif text-[clamp(1.4rem,3vw,2rem)] font-medium text-ink">
               The difference between knowing and performing under pressure.
@@ -416,7 +416,7 @@ export function InterviewModePageClient() {
               <p>
                 Most engineers who fail LLD rounds know the design patterns. They&apos;ve studied Observer,
                 Factory, and Strategy. They can describe composition vs aggregation. But when a countdown
-                clock appears and an interviewer is watching, they freeze — because they&apos;ve only ever
+                clock appears and an interviewer is watching, they freeze - because they&apos;ve only ever
                 practiced in conditions with zero pressure.
               </p>
               <p>
@@ -448,7 +448,7 @@ export function InterviewModePageClient() {
             <div className="grid items-start gap-8 lg:grid-cols-2">
               <div>
                 <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-                  <span className="text-gold">§04</span>&nbsp;—&nbsp;Tactics board
+                  <span className="text-gold">§04</span>&nbsp;-&nbsp;Tactics board
                 </p>
                 <h2 className="mb-4 font-serif text-[clamp(1.4rem,3vw,2rem)] font-medium text-ink">
                   A dedicated panel for your thought process.
@@ -456,7 +456,7 @@ export function InterviewModePageClient() {
                 <p className="text-[14px] leading-[1.85] text-ink-muted">
                   In real LLD interviews, interviewers care as much about how you think as what
                   you design. The session notes panel gives you a dedicated place to write down
-                  your trade-offs, assumptions, constraints, and design decisions as you go —
+                  your trade-offs, assumptions, constraints, and design decisions as you go -
                   the on-screen equivalent of thinking out loud.
                 </p>
                 <p className="mt-4 text-[14px] leading-[1.85] text-ink-muted">
@@ -506,9 +506,9 @@ export function InterviewModePageClient() {
           <div className="flex flex-wrap gap-3">
             {[
               { href: '/features/interview-questions', label: '110+ LLD practice problems'                    },
-              { href: '/features/revision-notes',      label: 'Revision notes — design patterns and OOP'     },
-              { href: '/features/editor',              label: 'UML Editor — draw your designs'               },
-              { href: '/features/collaboration',       label: 'Collaboration — mock interview with a partner' },
+              { href: '/features/revision-notes',      label: 'Revision notes - design patterns and OOP'     },
+              { href: '/features/editor',              label: 'UML Editor - draw your designs'               },
+              { href: '/features/collaboration',       label: 'Collaboration - mock interview with a partner' },
               { href: '/pricing',                      label: 'View Pro and Ultimate plans'                   },
             ].map(l => (
               <Link

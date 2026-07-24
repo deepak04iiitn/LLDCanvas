@@ -1,4 +1,4 @@
-import type { PatternData, HandleSide } from './types'
+﻿import type { PatternData, HandleSide } from './types'
 import type { UMLAttribute, UMLMethod, Visibility, RelationshipType } from '@/types'
 
 // ─── Compact builders (fill required id / isStatic / isAbstract) ─────────────
@@ -42,7 +42,7 @@ function iface(id: string, name: string, x: number, y: number, methods: UMLMetho
   }
 }
 
-// `sourceHandle`/`targetHandle` are required, not optional — see the note on
+// `sourceHandle`/`targetHandle` are required, not optional - see the note on
 // HandleSide in ./types. Every pair below was chosen by looking at each
 // node's actual position relative to the other, not left for React Flow to
 // guess (which always guessed "top" for both ends, regardless of layout).

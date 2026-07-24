@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight, BookOpen, Lock, ChevronRight } from 'lucide-react'
@@ -33,7 +33,7 @@ export async function generateMetadata(
   if (!res) return { title: 'Note not found' }
 
   const { note } = res
-  const title = `${note.title} — LLD Revision Note | LLDCanvas`
+  const title = `${note.title} - LLD Revision Note | LLDCanvas`
   const description = `${note.summary} A ${note.difficulty} ${note.category} concept with real-world analogy and key points for LLD interview preparation.`
 
   return {
@@ -134,7 +134,7 @@ export default async function RevisionNoteDetailPage({
 
           {/* Chapter label */}
           <p className="mb-4 font-mono text-[9px] font-bold uppercase tracking-[0.35em] text-ink-faint/55">
-            Field Entry &nbsp;—&nbsp; {note.category}
+            Field Entry &nbsp;-&nbsp; {note.category}
           </p>
 
           {/* Rarity + difficulty badges */}
@@ -163,7 +163,7 @@ export default async function RevisionNoteDetailPage({
           {/* Summary */}
           <p className="mt-5 text-[16px] leading-[1.8] text-ink-muted">{note.summary}</p>
 
-          {/* Tags — specimen labels */}
+          {/* Tags - specimen labels */}
           {note.tags.length > 0 && (
             <div className="mt-6 flex flex-wrap gap-2">
               {note.tags.map(t => (
@@ -179,13 +179,13 @@ export default async function RevisionNoteDetailPage({
         </Reveal>
       </section>
 
-      {/* ════════════════════ ANALOGY — margin note styling ══════════════ */}
+      {/* ════════════════════ ANALOGY - margin note styling ══════════════ */}
       {note.analogy && (
         <Reveal>
           <section className="border-b border-hairline py-14">
             <div className="mx-auto max-w-3xl px-6 sm:px-8">
               <p className="mb-4 font-mono text-[9px] font-bold uppercase tracking-[0.35em] text-ink-faint/55">
-                Field Note — Real-world Analogy
+                Field Note - Real-world Analogy
               </p>
 
               {/* Margin-note card */}
@@ -205,18 +205,18 @@ export default async function RevisionNoteDetailPage({
         </Reveal>
       )}
 
-      {/* ════════════════════ KEY POINTS — field observations ════════════ */}
+      {/* ════════════════════ KEY POINTS - field observations ════════════ */}
       <Reveal>
         <section className="border-b border-hairline py-14">
           <div className="mx-auto max-w-3xl px-6 sm:px-8">
             <div className="mb-6 flex items-center gap-2">
               <BookOpen size={13} className="text-brand" />
               <p className="font-mono text-[9px] font-bold uppercase tracking-[0.35em] text-ink-faint/55">
-                Field Observations — Key Topics Covered
+                Field Observations - Key Topics Covered
               </p>
             </div>
 
-            {/* First point — always visible */}
+            {/* First point - always visible */}
             {note.firstKeyPoint && (
               <div className="mb-4 flex items-start gap-4">
                 <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-brand/30 bg-brand/5 font-mono text-[10px] font-black text-brand">
@@ -226,7 +226,7 @@ export default async function RevisionNoteDetailPage({
               </div>
             )}
 
-            {/* Locked remaining — redacted document style */}
+            {/* Locked remaining - redacted document style */}
             {remaining > 0 && (
               <div className="relative overflow-hidden rounded-xl border border-hairline bg-paper-elevated">
                 {/* Redacted rows */}

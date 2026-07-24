@@ -1,5 +1,5 @@
-// Dedicated fetch helpers for the public, unauthenticated /public/* backend
-// endpoints — used only by server components under app/features/**. Kept
+﻿// Dedicated fetch helpers for the public, unauthenticated /public/* backend
+// endpoints - used only by server components under app/features/**. Kept
 // separate from lib/api.ts (which is the authenticated client-side API used
 // by the dashboard) since these calls carry no token and are safe to run at
 // build/request time on the server, with Next's fetch cache.

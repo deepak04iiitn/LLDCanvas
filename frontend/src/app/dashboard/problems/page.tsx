@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
@@ -249,7 +249,7 @@ export default function ProblemsPage() {
 
   const filtered = problems
 
-  // Stats — always from full list
+  // Stats - always from full list
   const total     = allProblems.length
   const solved    = allProblems.filter(p => p.myStatus === 'submitted').length
   const inProg    = allProblems.filter(p => p.myStatus === 'in_progress').length
@@ -274,7 +274,7 @@ export default function ProblemsPage() {
             <div>
               <h1 className="font-serif text-2xl font-medium text-ink">Practice Problems</h1>
               <p className="mt-1 text-sm text-ink-faint">
-                Famous LLD interview questions — pick one, design your solution on the canvas.
+                Famous LLD interview questions - pick one, design your solution on the canvas.
               </p>
             </div>
           </div>

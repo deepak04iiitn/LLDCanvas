@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -29,7 +29,7 @@ User has many Post
 `
 
 // ─── Main component ───────────────────────────────────────────────────────────
-// A one-shot importer, not a live editing panel — write or paste Draft
+// A one-shot importer, not a live editing panel - write or paste Draft
 // Notation once, review the parse, then drop it onto the canvas. Authoring
 // Draft Notation live (with a running diagram preview) lives in the
 // standalone Playground, kept out of the editor so the two don't compete for

@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+﻿import { useCallback } from 'react'
 import type { DiagramData } from '@/types'
 
 // ─── Storage keys ──────────────────────────────────────────────────────────────
@@ -6,7 +6,7 @@ export const LOCAL_DATA_KEY   = 'lldcanvas-local-data'
 export const LOCAL_TITLE_KEY  = 'lldcanvas-local-title'
 export const MIGRATE_FLAG_KEY = 'lldcanvas-migrate-pending'
 
-// ─── Read helpers (safe — run on server returns null/fallback) ────────────────
+// ─── Read helpers (safe - run on server returns null/fallback) ────────────────
 function readJson<T>(key: string): T | null {
   if (typeof window === 'undefined') return null
   try {

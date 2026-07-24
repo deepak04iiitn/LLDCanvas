@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Global UML arrowhead definitions.
- * Mount once inside the editor — these IDs are referenced by UMLEdge.tsx.
+ * Mount once inside the editor - these IDs are referenced by UMLEdge.tsx.
  *
  * Marker conventions:
  *  - Inheritance / Realization  → markerEnd  (hollow triangle at parent/interface)
@@ -118,7 +118,7 @@ export function UMLMarkers() {
           />
         </marker>
 
-        {/* ── Aggregation: hollow diamond — used with markerEnd (draw from part→whole) */}
+        {/* ── Aggregation: hollow diamond - used with markerEnd (draw from part→whole) */}
         <marker
           id="uml-aggregation"
           markerWidth="18"

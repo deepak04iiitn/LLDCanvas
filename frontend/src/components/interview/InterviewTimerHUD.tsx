@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { Panel } from '@xyflow/react'
@@ -38,7 +38,7 @@ export function InterviewTimerHUD({ onEndSession, isFullscreen, onToggleFullscre
     pauseTimer, resumeTimer, setNotesOpen,
   } = useInterview()
 
-  // Mount the timer hook — drives the 1-second tick
+  // Mount the timer hook - drives the 1-second tick
   useInterviewTimer()
 
   const [confirmEnd, setConfirmEnd] = useState(false)

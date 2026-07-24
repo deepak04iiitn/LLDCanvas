@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   useEffect,
@@ -99,7 +99,7 @@ function VisibilityCycle({
   return (
     <button
       type="button"
-      title={`${VIS_TITLE[value]} — click to change`}
+      title={`${VIS_TITLE[value]} - click to change`}
       onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onChange(VIS_NEXT[value]) }}
       className={cn(
         'shrink-0 h-[18px] w-[18px] rounded text-[10px] font-bold font-mono',
@@ -112,7 +112,7 @@ function VisibilityCycle({
   )
 }
 
-// ─── Type combobox — dropdown rendered in a portal to escape canvas clipping ──
+// ─── Type combobox - dropdown rendered in a portal to escape canvas clipping ──
 interface TypeComboboxProps {
   value: string
   onChange: (v: string) => void
@@ -293,7 +293,7 @@ function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpe
   const [draft, setDraft]     = useState<UMLAttribute>(attr)
 
   // Tell the parent we've consumed the auto-open request only AFTER this row
-  // has actually mounted with editing=true baked into its initial state —
+  // has actually mounted with editing=true baked into its initial state -
   // not in response to the parent's pendingAttrId simply changing value.
   // Clearing pendingAttrId that way raced the attribute's own data arriving
   // (which flows through React Flow's separate node-store update), so the
@@ -323,7 +323,7 @@ function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpe
                    dark:border-indigo-900/30 dark:bg-indigo-950/20"
         onPointerDown={e => e.stopPropagation()}
       >
-        {/* Row 1: vis badge + name + type — all inline */}
+        {/* Row 1: vis badge + name + type - all inline */}
         <div className="flex items-center gap-1.5">
           <VisibilityCycle value={draft.visibility} onChange={v => setDraft(d => ({ ...d, visibility: v }))} />
           <input
@@ -406,7 +406,7 @@ function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoO
   const [editing, setEditing] = useState(autoOpen)
   const [draft, setDraft]     = useState<UMLMethod>(method)
 
-  // See the matching comment in AttrRow — same fix, same reason.
+  // See the matching comment in AttrRow - same fix, same reason.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (autoOpen) onConsumedAutoOpen?.() }, [])
 
@@ -433,7 +433,7 @@ function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoO
     e.stopPropagation()
   }
 
-  // Width of the visibility badge — used as a spacer so rows 2-4 align under the name input
+  // Width of the visibility badge - used as a spacer so rows 2-4 align under the name input
   const VIS_W = 'w-[18px] shrink-0'
 
   if (editing) {
@@ -468,7 +468,7 @@ function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoO
         {/* Row 2: params + return type, combined */}
         <div className="flex items-center gap-1.5">
           <div className={VIS_W} />
-          {/* ( ) brackets are decorative — input is inside */}
+          {/* ( ) brackets are decorative - input is inside */}
           <div className="flex min-w-0 flex-[1.4] items-center gap-px rounded-md border border-slate-200
                           bg-white px-1.5 py-0.5 font-mono text-[11px]
                           focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100
@@ -598,12 +598,12 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
 
   // Which just-added row should mount already open for editing. Cleared by
   // the row itself (via onConsumedAutoOpen) once it has actually mounted
-  // with editing=true — NOT by an effect keyed on this value changing.
+  // with editing=true - NOT by an effect keyed on this value changing.
   // data.attributes/data.methods arrive via React Flow's own node-store
   // update (a separate write path from this component's local state), so a
   // clear-on-value-change effect could fire and null this out BEFORE the
   // new row's own render (with the new attribute finally present in
-  // data.attributes) ever happens — the row would then mount with
+  // data.attributes) ever happens - the row would then mount with
   // autoOpen=false, silently. Letting the row confirm consumption itself
   // guarantees the ordering regardless of how many render passes it takes
   // for the new data to arrive.

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -340,7 +340,7 @@ function TypewriterPanel() {
         </div>
       </div>
 
-      {/* Split — left wider for code, right wider for diagram */}
+      {/* Split - left wider for code, right wider for diagram */}
       <div className="grid grid-cols-1 sm:grid-cols-[5fr_6fr]" style={{ minHeight: 400 }}>
         {/* Code panel */}
         <div className="border-b border-hairline sm:border-b-0 sm:border-r bg-[#faf9f7] px-5 py-5">
@@ -473,7 +473,7 @@ export function DraftNotationPageClient() {
             </div>
           </Reveal>
 
-          {/* ── Full-width demo stage — the actual hero ── */}
+          {/* ── Full-width demo stage - the actual hero ── */}
           <Reveal delay={0.1}>
             <TypewriterPanel />
           </Reveal>
@@ -512,7 +512,7 @@ export function DraftNotationPageClient() {
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <Reveal>
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§1</span> — Vocabulary
+            <span className="text-gold">§1</span> - Vocabulary
           </p>
           <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
             Eight keywords. Every UML relationship covered.
@@ -545,7 +545,7 @@ export function DraftNotationPageClient() {
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-              <span className="text-gold">§2</span> — Round-trip
+              <span className="text-gold">§2</span> - Round-trip
             </p>
             <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
               Text - diagram - text. No lock-in.
@@ -631,7 +631,7 @@ export function DraftNotationPageClient() {
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <Reveal>
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§3</span> — vs the alternatives
+            <span className="text-gold">§3</span> - vs the alternatives
           </p>
           <h2 className="mb-8 font-serif text-2xl font-medium text-ink">How Draft Notation compares.</h2>
         </Reveal>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { NotebookPen, CheckCircle2, Loader2, List, ListOrdered, Minus, X } from 'lucide-react'
@@ -71,7 +71,7 @@ export function InterviewNotesDrawer() {
     if (activeSession) setNotes(activeSession.notes ?? '')
   }, [activeSession?._id])
 
-  // Debounced auto-save — 800 ms after last keystroke
+  // Debounced auto-save - 800 ms after last keystroke
   const handleChange = useCallback((val: string) => {
     setNotes(val)
     if (!activeSession) return
@@ -188,7 +188,7 @@ export function InterviewNotesDrawer() {
         {/* ── Description ─────────────────────────────────────────────────── */}
         <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 py-2.5">
           <p className="text-[11px] leading-relaxed text-ink-muted">
-            Private notes for this session — jot down your approach, design decisions, and trade-offs.
+            Private notes for this session - jot down your approach, design decisions, and trade-offs.
           </p>
         </div>
 

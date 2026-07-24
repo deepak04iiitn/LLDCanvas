@@ -1,4 +1,4 @@
-// ─── Draft Notation → React Flow nodes + edges ───────────────────────────────
+﻿// ─── Draft Notation → React Flow nodes + edges ───────────────────────────────
 
 import { nanoid } from 'nanoid'
 import type { Node, Edge } from '@xyflow/react'
@@ -52,7 +52,7 @@ function autoLayout(names: string[]): Map<string, { x: number; y: number }> {
 
 // ── Pick a handle side per edge from the two nodes' actual grid positions ────
 // Without this, every edge falls back to React Flow's default (the node's
-// "top" handle for both ends, regardless of layout) — which is exactly how a
+// "top" handle for both ends, regardless of layout) - which is exactly how a
 // row of related classes ends up with every relationship line bunched onto
 // the same anchor point instead of running between the boxes it connects.
 type HandleSide = 'top' | 'right' | 'bottom' | 'left'

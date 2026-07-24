@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import {
   createContext,
@@ -52,7 +52,7 @@ export function InterviewProvider({ children }: { children: ReactNode }) {
       await api.stats.sync(elapsed)
 
       const mins = Math.round(elapsed / 60)
-      toast.success(`Session complete — ${mins} min practiced`, {
+      toast.success(`Session complete - ${mins} min practiced`, {
         action: { label: 'View history', onClick: () => { window.location.href = '/dashboard/sessions' } },
       })
     } catch {

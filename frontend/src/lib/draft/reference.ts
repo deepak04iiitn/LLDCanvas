@@ -1,4 +1,4 @@
-// ─── Draft Notation syntax reference — shared between /docs and the in-app
+﻿// ─── Draft Notation syntax reference - shared between /docs and the in-app
 //     Playground syntax-guide panel, so the two never drift apart. ────────────
 
 export const STEPS = [
@@ -18,7 +18,7 @@ export const STEPS = [
     n: '03',
     mono: 'Plain-English verbs',
     title: 'Connect classes',
-    desc: `Write a sentence like "User has many Post" — the verb decides the arrow.`,
+    desc: `Write a sentence like "User has many Post" - the verb decides the arrow.`,
   },
   {
     n: '04',
@@ -106,7 +106,7 @@ Account acts as Auditable
 ]
 
 export const KEYWORDS = [
-  { kw: 'class',     desc: 'Declare a class — the default, rarely written explicitly' },
+  { kw: 'class',     desc: 'Declare a class - the default, rarely written explicitly' },
   { kw: 'interface', desc: 'Declare an interface (renders with the «interface» stereotype)' },
   { kw: 'abstract',  desc: 'Declare an abstract class' },
   { kw: 'enum',      desc: 'Declare an enum type' },
@@ -114,7 +114,7 @@ export const KEYWORDS = [
 ]
 
 export const VISIBILITY = [
-  { symbol: '(none)', name: 'Public',    plain: 'Anyone can see or call it — the default.' },
+  { symbol: '(none)', name: 'Public',    plain: 'Anyone can see or call it - the default.' },
   { symbol: '-',       name: 'Private',   plain: 'Only this class can see it.' },
   { symbol: '#',       name: 'Protected', plain: 'This class and anything that extends it.' },
   { symbol: '~',       name: 'Package',   plain: 'Only classes in the same module/area.' },
@@ -123,27 +123,27 @@ export const VISIBILITY = [
 export const RELATIONS = [
   {
     verb: 'is a', uml: 'Inheritance',
-    plain: 'A stronger, more specific version of the parent. A Dog is a kind of Animal — it gets everything Animal has, plus its own stuff.',
+    plain: 'A stronger, more specific version of the parent. A Dog is a kind of Animal - it gets everything Animal has, plus its own stuff.',
     example: 'Dog is a Animal',
   },
   {
     verb: 'acts as', uml: 'Realization',
-    plain: 'Promises to follow a contract. A Dog acts as Trainable — it must implement whatever Trainable requires, without inheriting behaviour from it.',
+    plain: 'Promises to follow a contract. A Dog acts as Trainable - it must implement whatever Trainable requires, without inheriting behaviour from it.',
     example: 'Dog acts as Pet, Trainable',
   },
   {
     verb: 'owns', uml: 'Composition',
-    plain: 'Strong, exclusive ownership — the part can\'t exist without the whole. Delete the Order and its OrderItems go with it.',
+    plain: 'Strong, exclusive ownership - the part can\'t exist without the whole. Delete the Order and its OrderItems go with it.',
     example: 'Order owns OrderItem',
   },
   {
     verb: 'has many', uml: 'Aggregation (1 → *)',
-    plain: 'A loose "contains" relationship — the parts can outlive the whole. A User has many Post, but deleting the user needn\'t delete the posts.',
+    plain: 'A loose "contains" relationship - the parts can outlive the whole. A User has many Post, but deleting the user needn\'t delete the posts.',
     example: 'User has many Post',
   },
   {
     verb: 'has one', uml: 'Aggregation (1 → 1)',
-    plain: 'Same idea as "has many", just capped at one — a single optional attachment.',
+    plain: 'Same idea as "has many", just capped at one - a single optional attachment.',
     example: 'User has one Profile',
   },
   {
@@ -153,7 +153,7 @@ export const RELATIONS = [
   },
   {
     verb: 'uses', uml: 'Dependency',
-    plain: 'A light, temporary reliance — one class calls another but doesn\'t hold a lasting reference to it.',
+    plain: 'A light, temporary reliance - one class calls another but doesn\'t hold a lasting reference to it.',
     example: 'Service uses Logger',
   },
   {
@@ -163,14 +163,14 @@ export const RELATIONS = [
   },
   {
     verb: 'knows about', uml: 'Directed association',
-    plain: 'A one-way reference — A knows about B, but B has no idea A exists.',
+    plain: 'A one-way reference - A knows about B, but B has no idea A exists.',
     example: 'Teacher knows about Student',
   },
 ]
 
 export const TIPS = [
   { title: 'Comments', body: 'Start a line with # to write a comment. Great for sections or notes.', code: '# Payment domain\nPaymentGateway' },
-  { title: 'Multiple targets', body: 'Comma-separate targets after any verb — applies to all of them.', code: 'Service uses Logger, Database, Cache' },
+  { title: 'Multiple targets', body: 'Comma-separate targets after any verb - applies to all of them.', code: 'Service uses Logger, Database, Cache' },
   { title: 'Inline enum values', body: 'List enum values after the name, or on the next line.', code: 'enum Color RED, GREEN, BLUE' },
   { title: 'Static & abstract', body: 'Prefix with $ for static, or write abstract inside can …', code: 'Account can $ getInstance(): Account, abstract withdraw()' },
 ]

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { publicApi, type PublicRevisionNoteSummary } from '@/lib/public-api'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { RevisionNotesIndexClient } from '@/components/features/RevisionNotesIndexClient'
@@ -6,9 +6,9 @@ import { RevisionNotesIndexClient } from '@/components/features/RevisionNotesInd
 // ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: 'LLD Revision Notes — Design Patterns, SOLID & OOP for Interviews | LLDCanvas',
+  title: 'LLD Revision Notes - Design Patterns, SOLID & OOP for Interviews | LLDCanvas',
   description:
-    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer…), OOP principles, SOLID, and system design fundamentals — each with a real-world analogy and runnable code examples.',
+    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer…), OOP principles, SOLID, and system design fundamentals - each with a real-world analogy and runnable code examples.',
   keywords: [
     'LLD revision notes',
     'low level design notes',
@@ -28,16 +28,16 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/features/revision-notes' },
   openGraph: {
-    title: 'LLD Revision Notes — Design Patterns, SOLID & OOP | LLDCanvas',
+    title: 'LLD Revision Notes - Design Patterns, SOLID & OOP | LLDCanvas',
     description:
-      'Concise, analogy-backed revision notes for every key Low-Level Design concept. Study design patterns, OOP, SOLID principles, and more — all in one place.',
+      'Concise, analogy-backed revision notes for every key Low-Level Design concept. Study design patterns, OOP, SOLID principles, and more - all in one place.',
     type: 'website',
     url: '/features/revision-notes',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'LLD Revision Notes | LLDCanvas',
-    description: 'Concise revision notes for Low-Level Design interviews — design patterns, SOLID, OOP & more.',
+    description: 'Concise revision notes for Low-Level Design interviews - design patterns, SOLID, OOP & more.',
   },
 }
 
@@ -65,7 +65,7 @@ export default async function RevisionNotesIndexPage() {
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        name: 'LLD Revision Notes — Design Patterns, SOLID & OOP',
+        name: 'LLD Revision Notes - Design Patterns, SOLID & OOP',
         url: 'https://lldcanvas.com/features/revision-notes',
         description: 'Concise revision notes for Low-Level Design interviews covering design patterns, OOP, SOLID principles, and system design fundamentals.',
         numberOfItems: notes.length,

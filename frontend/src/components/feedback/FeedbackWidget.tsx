@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
@@ -173,7 +173,7 @@ export function FeedbackWidget() {
             {/* Body */}
             <AnimatePresence mode="wait">
 
-              {/* Step 1 — pick type */}
+              {/* Step 1 - pick type */}
               {step === 'type' && (
                 <motion.div key="type" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} className="p-4 space-y-2">
                   {FB_TYPES.map(t => (
@@ -196,7 +196,7 @@ export function FeedbackWidget() {
                 </motion.div>
               )}
 
-              {/* Step 2 — form */}
+              {/* Step 2 - form */}
               {step === 'form' && (
                 <motion.form
                   key="form"
@@ -292,7 +292,7 @@ export function FeedbackWidget() {
                 </motion.form>
               )}
 
-              {/* Step 3 — success */}
+              {/* Step 3 - success */}
               {step === 'done' && (
                 <motion.div
                   key="done"

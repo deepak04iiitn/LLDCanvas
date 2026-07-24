@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useRef } from 'react'
@@ -45,7 +45,7 @@ const WORKFLOW_STEPS = [
   {
     n: '01', comment: '// step 01 of 03',
     title: 'Design in the UML canvas',
-    body:  'Use the drag-and-drop editor or Draft Notation to build your class diagram — classes, methods, relationships, and design patterns.',
+    body:  'Use the drag-and-drop editor or Draft Notation to build your class diagram - classes, methods, relationships, and design patterns.',
     log:   'Diagram parsed · 6 classes · 4 relationships',
     visual: 'uml',
   },
@@ -59,31 +59,31 @@ const WORKFLOW_STEPS = [
   {
     n: '03', comment: '// step 03 of 03',
     title: 'Implement the classes, run it',
-    body:  'Write the implementation, add test input, click Run. See real stdout and stderr — no local setup, no tab switching, no waiting.',
+    body:  'Write the implementation, add test input, click Run. See real stdout and stderr - no local setup, no tab switching, no waiting.',
     log:   'Exit code 0 · Executed in 0.34s',
     visual: 'output',
   },
 ]
 
 const PANEL_FEATURES = [
-  { icon: Terminal,  title: 'Real stdout and stderr',  body: 'Get actual compiler/interpreter output — error messages, stack traces, print statements — exactly as you\'d see locally.' },
+  { icon: Terminal,  title: 'Real stdout and stderr',  body: 'Get actual compiler/interpreter output - error messages, stack traces, print statements - exactly as you\'d see locally.' },
   { icon: Layers,    title: 'Stdin support',            body: 'Paste custom input that your program reads from stdin. Test different inputs without modifying your code.' },
-  { icon: GitBranch, title: 'Draggable panel layout',  body: 'The code panel and input/output areas are both resizable — drag to give your code or output more space.' },
+  { icon: GitBranch, title: 'Draggable panel layout',  body: 'The code panel and input/output areas are both resizable - drag to give your code or output more space.' },
   { icon: Zap,       title: 'Language-aware editor',   body: 'Syntax highlighting and basic auto-indentation for every supported language in the editor panel.' },
 ]
 
 const FAQ = [
   {
     q: 'Where does the code actually run?',
-    a: 'In a secure sandboxed execution environment — not in your browser. You write code, click Run, and receive real stdout and stderr output, exactly like running locally. The sandbox enforces memory and time limits so it\'s safe to run arbitrary code.',
+    a: 'In a secure sandboxed execution environment - not in your browser. You write code, click Run, and receive real stdout and stderr output, exactly like running locally. The sandbox enforces memory and time limits so it\'s safe to run arbitrary code.',
   },
   {
     q: 'Can I run code next to my UML diagram in the same window?',
-    a: 'Yes — the code execution panel slides in as a side panel within the editor workspace, so you can implement a class you just diagrammed without switching windows or tabs. The diagram stays visible while you code.',
+    a: 'Yes - the code execution panel slides in as a side panel within the editor workspace, so you can implement a class you just diagrammed without switching windows or tabs. The diagram stays visible while you code.',
   },
   {
     q: 'Can I provide custom input to my program?',
-    a: 'Yes — the panel includes an input section where you can type stdin that your program reads at runtime. This is useful for testing user inputs, file paths, or any interactive CLI behavior.',
+    a: 'Yes - the panel includes an input section where you can type stdin that your program reads at runtime. This is useful for testing user inputs, file paths, or any interactive CLI behavior.',
   },
   {
     q: 'Is there a daily execution limit?',
@@ -119,7 +119,7 @@ function CompileTerminal() {
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
         </div>
         <span className="flex-1 text-center font-mono text-[10px] text-ink-faint/55">
-          lldcanvas — bash — 80x24
+          lldcanvas - bash - 80x24
         </span>
       </div>
 
@@ -271,7 +271,7 @@ export function CodeExecutionPageClient() {
         <div className="relative mx-auto max-w-5xl px-6 pb-20 pt-12 sm:px-8 sm:pt-16">
           <Reveal>
             <p className="mb-6 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">¶06</span>&nbsp;—&nbsp;Code Execution
+              <span className="text-gold">¶06</span>&nbsp;-&nbsp;Code Execution
             </p>
           </Reveal>
 
@@ -287,7 +287,7 @@ export function CodeExecutionPageClient() {
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-[1.8] text-ink-muted">
                 A UML diagram is a plan. Code is the proof. LLDCanvas lets you implement
-                the class you just diagrammed and execute it in 12 languages — right inside
+                the class you just diagrammed and execute it in 12 languages - right inside
                 the same workspace, no tab switching, no local setup.
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-4">
@@ -332,18 +332,18 @@ export function CodeExecutionPageClient() {
         </section>
       </Reveal>
 
-      {/* ════════════════════ LANGUAGES — ls -la table ════════════════════ */}
+      {/* ════════════════════ LANGUAGES - ls -la table ════════════════════ */}
       <section className="border-b border-hairline py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§01</span>&nbsp;—&nbsp;Supported runtimes
+              <span className="text-gold">§01</span>&nbsp;-&nbsp;Supported runtimes
             </p>
             <h2 className="mb-2 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
               12 languages. Use the one your interviewer expects.
             </h2>
             <p className="mb-8 max-w-xl text-[14px] leading-relaxed text-ink-muted">
-              Every major interview language runs in a real sandboxed environment — not emulated,
+              Every major interview language runs in a real sandboxed environment - not emulated,
               not transpiled in the browser, not fake.
             </p>
           </Reveal>
@@ -386,12 +386,12 @@ export function CodeExecutionPageClient() {
         </div>
       </section>
 
-      {/* ════════════════════ WORKFLOW — stacked code-comment steps ════════ */}
+      {/* ════════════════════ WORKFLOW - stacked code-comment steps ════════ */}
       <section className="border-b border-hairline py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§02</span>&nbsp;—&nbsp;The workflow
+              <span className="text-gold">§02</span>&nbsp;-&nbsp;The workflow
             </p>
             <h2 className="mb-12 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
               From UML diagram to running code, without leaving the tab.
@@ -403,7 +403,7 @@ export function CodeExecutionPageClient() {
               <div key={step.n}>
                 <Reveal delay={i * 0.08}>
                   <div className="grid items-start gap-8 lg:grid-cols-2">
-                    {/* Left — comment-style description */}
+                    {/* Left - comment-style description */}
                     <div className="flex flex-col justify-center py-4">
                       <p className="mb-4 font-mono text-[10px] text-ink-faint/35">{step.comment}</p>
                       <p className="mb-1 font-mono text-[9px] font-bold uppercase tracking-[0.38em] text-ink-faint/55">
@@ -420,7 +420,7 @@ export function CodeExecutionPageClient() {
                       </div>
                     </div>
 
-                    {/* Right — visual mockup */}
+                    {/* Right - visual mockup */}
                     <div>{WORKFLOW_VISUALS[step.visual]}</div>
                   </div>
                 </Reveal>
@@ -446,7 +446,7 @@ export function CodeExecutionPageClient() {
         <section className="border-b border-hairline py-16">
           <div className="mx-auto max-w-5xl px-6 sm:px-8">
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§03</span>&nbsp;—&nbsp;Why it matters for LLD preparation
+              <span className="text-gold">§03</span>&nbsp;-&nbsp;Why it matters for LLD preparation
             </p>
             <h2 className="mb-6 font-serif text-[clamp(1.4rem,3vw,2rem)] font-medium text-ink">
               The gap between design and implementation is where most candidates get tripped up.
@@ -455,12 +455,12 @@ export function CodeExecutionPageClient() {
               <p>
                 Drawing a UML class diagram is one skill. Writing an actual working implementation
                 from that diagram is another. Both are tested in LLD rounds at companies like
-                Google, Amazon, Flipkart, and Paytm — some interviewers explicitly ask you to
+                Google, Amazon, Flipkart, and Paytm - some interviewers explicitly ask you to
                 implement one or two of the core classes on screen.
               </p>
               <p>
                 Practicing with code execution next to your diagram builds both skills
-                simultaneously. You notice when your design has a gap — when a method
+                simultaneously. You notice when your design has a gap - when a method
                 signature you drew doesn&apos;t make sense to implement, or when a dependency
                 creates a circular import. The feedback loop is immediate.
               </p>
@@ -485,7 +485,7 @@ export function CodeExecutionPageClient() {
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§04</span>&nbsp;—&nbsp;Panel features
+              <span className="text-gold">§04</span>&nbsp;-&nbsp;Panel features
             </p>
             <h2 className="mb-8 font-serif text-[clamp(1.4rem,3vw,2rem)] font-medium text-ink">
               Everything a code panel needs. Nothing it doesn&apos;t.
@@ -520,10 +520,10 @@ export function CodeExecutionPageClient() {
           </p>
           <div className="flex flex-wrap gap-3">
             {[
-              { href: '/features/editor',              label: 'UML Editor — design the classes first' },
-              { href: '/features/draft-notation',      label: 'Draft Notation — write diagrams in plain English' },
-              { href: '/features/interview-questions', label: 'Practice Problems — 110+ LLD problems to implement' },
-              { href: '/features/interview-mode',      label: 'Interview Mode — timed sessions' },
+              { href: '/features/editor',              label: 'UML Editor - design the classes first' },
+              { href: '/features/draft-notation',      label: 'Draft Notation - write diagrams in plain English' },
+              { href: '/features/interview-questions', label: 'Practice Problems - 110+ LLD problems to implement' },
+              { href: '/features/interview-mode',      label: 'Interview Mode - timed sessions' },
               { href: '/pricing',                      label: 'View daily execution limits by plan' },
             ].map(l => (
               <Link

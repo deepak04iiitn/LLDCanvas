@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '@xyflow/react'
@@ -42,7 +42,7 @@ function NewCommentBubble({ screenX, screenY, onSubmit, onCancel }: NewCommentBu
     setText('')
   }
 
-  // Smart positioning — flip if near screen edges
+  // Smart positioning - flip if near screen edges
   const flipLeft = screenX > window.innerWidth - 320
   const flipUp   = screenY > window.innerHeight - 200
 

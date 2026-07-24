@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -182,7 +182,7 @@ function ProblemPanel({
             <textarea className={ta} rows={4} value={form.nonFunctionalRequirements} onChange={e => set('nonFunctionalRequirements', e.target.value)} placeholder="High availability (99.99%)&#10;Low latency < 100ms…" />
           </Field>
 
-          <Field label="Hints (one per line — up to 3)">
+          <Field label="Hints (one per line - up to 3)">
             <textarea className={ta} rows={3} value={form.hints} onChange={e => set('hints', e.target.value)} placeholder="Think about hash functions&#10;Consider caching at CDN level&#10;Use consistent hashing" />
           </Field>
 
@@ -390,7 +390,7 @@ export default function AdminProblemsPage() {
                   <span className="rounded-full bg-brand-tint px-2 py-0.5 font-mono text-[10px] font-bold text-brand">{p.submitted}</span>
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-faint">
-                  {p.createdAt ? format(parseISO(p.createdAt), 'MMM d, yyyy') : '—'}
+                  {p.createdAt ? format(parseISO(p.createdAt), 'MMM d, yyyy') : '-'}
                 </td>
                 <td className="px-4 py-3">
                   <button onClick={() => handleToggle(p.id)} disabled={toggling === p.id}
@@ -434,7 +434,7 @@ export default function AdminProblemsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-ink-faint">Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} of {total}</p>
+          <p className="text-xs text-ink-faint">Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => load(page - 1)} disabled={page <= 1}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline transition hover:bg-hairline disabled:opacity-40">

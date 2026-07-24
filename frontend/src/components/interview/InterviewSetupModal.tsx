@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -27,7 +27,7 @@ const PRESETS = [
   { label: 'No limit', seconds: 0 },
 ]
 
-// The dial is purely illustrative — it fills toward a full circle as the
+// The dial is purely illustrative - it fills toward a full circle as the
 // chosen duration approaches (and exceeds) 90 minutes, so longer sessions
 // visibly read as "more committed" without needing exact math to matter.
 const RING_RADIUS = 42
@@ -64,7 +64,7 @@ export function InterviewSetupModal({ open, onClose }: Props) {
       startSession(session)
       onClose()
       router.push(`/editor/${diagramId}?problem=${problem.slug}&interview=1`)
-      toast.success(`You're up: ${problem.title} — good luck!`)
+      toast.success(`You're up: ${problem.title} - good luck!`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not start session')
     } finally {
@@ -78,7 +78,7 @@ export function InterviewSetupModal({ open, onClose }: Props) {
         <DialogTitle className="sr-only">Start a practice session</DialogTitle>
 
         <div className="relative px-12 pt-10 pb-9">
-          {/* Soft brand-tinted glow behind the dial — the same warm palette
+          {/* Soft brand-tinted glow behind the dial - the same warm palette
               used across the rest of the app, not a foreign indigo one. */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-linear-to-b from-brand-tint/70 to-transparent" />
 
@@ -136,7 +136,7 @@ export function InterviewSetupModal({ open, onClose }: Props) {
               ))}
             </div>
 
-            {/* Custom minutes — a stepper, not a raw number input, so nothing
+            {/* Custom minutes - a stepper, not a raw number input, so nothing
                 shifts around as the value changes and there's no native
                 spinner arrows to fight with. */}
             {selectedPreset.seconds === -1 && (

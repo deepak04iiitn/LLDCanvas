@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -82,7 +82,7 @@ export function CollabAvatarStack({ onOpenInvite }: CollabAvatarStackProps) {
         )}
       </div>
 
-      {/* Invite button — only owner/editor sees this */}
+      {/* Invite button - only owner/editor sees this */}
       {(myRole === 'owner' || myRole === 'editor') && (
         <Tooltip>
           <TooltipTrigger

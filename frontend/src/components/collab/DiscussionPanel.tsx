@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { MessageSquareText, Send, Trash2, X, CheckCheck } from 'lucide-react'
@@ -363,7 +363,7 @@ export function DiscussionPanel({ open, onClose, diagramId }: DiscussionPanelPro
                   </div>
                   <p className="text-sm font-medium text-ink-muted">No discussions yet</p>
                   <p className="text-xs text-ink-faint">
-                    Start a conversation — use @ to mention collaborators
+                    Start a conversation - use @ to mention collaborators
                   </p>
                 </div>
               ) : (

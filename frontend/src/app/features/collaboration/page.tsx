@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CollaborationPageClient } from '@/components/features/CollaborationPageClient'
 
@@ -7,7 +7,7 @@ import { CollaborationPageClient } from '@/components/features/CollaborationPage
 export const metadata: Metadata = {
   title: 'Real-Time Collaboration for LLD - Work Together on UML Diagrams | LLDCanvas',
   description:
-    "Design Low-Level Systems together, in real time. LLDCanvas Collaboration lets you invite teammates or mentors to your UML diagram — live cursors, @mention comments, instant canvas sync, and role-based access. Perfect for mock interviews, team design reviews, and mentored practice.",
+    "Design Low-Level Systems together, in real time. LLDCanvas Collaboration lets you invite teammates or mentors to your UML diagram - live cursors, @mention comments, instant canvas sync, and role-based access. Perfect for mock interviews, team design reviews, and mentored practice.",
   keywords: [
     'collaborative UML diagram',
     'real-time diagram collaboration',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/features/collaboration' },
   openGraph: {
-    title: 'Real-Time Collaboration — LLDCanvas',
+    title: 'Real-Time Collaboration - LLDCanvas',
     description:
       'Design together, live. Invite teammates to your UML diagram with live cursors, @mentions, instant sync, and role-based access.',
     type: 'website',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Real-Time Collaboration for LLD | LLDCanvas',
     description:
-      'Invite a mentor or teammate to your UML diagram. Live cursors, @mentions, instant sync — no refresh needed.',
+      'Invite a mentor or teammate to your UML diagram. Live cursors, @mentions, instant sync - no refresh needed.',
   },
 }
 

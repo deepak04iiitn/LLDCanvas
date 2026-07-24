@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -100,7 +100,7 @@ function HintsPanel({ slug, hints }: { slug: string; hints: string[] }) {
       <div className="flex items-center gap-2">
         <Lightbulb className="h-4 w-4 text-amber-500" />
         <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
-          Hints — {revealed.length}/3 revealed
+          Hints - {revealed.length}/3 revealed
         </span>
       </div>
       <div className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
@@ -225,7 +225,7 @@ function ComposeForm({ slug, onCreated, onCancel }: {
           </button>
         ))}
       </div>
-      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title — e.g. How do I model a Rate Limiter?"
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title - e.g. How do I model a Rate Limiter?"
         className="mb-2 w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
       <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Describe your question, approach, or discussion…" rows={4}
         className="mb-2 w-full resize-none rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -136,7 +136,7 @@ export default function SettingsPage() {
   const [cancelLoading, setCancelLoading] = useState(false)
 
   // Page title
-  useEffect(() => { document.title = 'Settings — LLDCanvas' }, [])
+  useEffect(() => { document.title = 'Settings - LLDCanvas' }, [])
 
   // Auth guard + hydrate name
   useEffect(() => {

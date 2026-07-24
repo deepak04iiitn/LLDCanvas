@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -31,7 +31,7 @@ export function CollabPresenceDock() {
           <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
         </span>
 
-        {/* Avatar stack — current user first */}
+        {/* Avatar stack - current user first */}
         <div className="flex items-center">
           {/* Me */}
           <div

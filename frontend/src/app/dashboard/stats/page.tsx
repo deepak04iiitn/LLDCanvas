@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { Timer, CheckCircle2, Flame, LayoutDashboard, Clock, TrendingUp, Trophy, Lock, Rocket, Crown, ArrowRight } from 'lucide-react'
@@ -211,7 +211,7 @@ export default function StatsPage() {
                       />
                       <StatCard
                         label="Problems attempted"
-                        value={advanced ? String(advanced.personalBests.totalProblems) : '—'}
+                        value={advanced ? String(advanced.personalBests.totalProblems) : '-'}
                         sub="across all categories"
                         Icon={LayoutDashboard}
                         accent="text-sky-600"

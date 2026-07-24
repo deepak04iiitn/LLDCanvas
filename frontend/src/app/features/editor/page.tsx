@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Check, Shapes, GitBranch, Layers, Download, Keyboard, Palette } from 'lucide-react'
 import { FeatureFaq } from '@/components/features/FeatureFaq'
@@ -32,8 +32,8 @@ const NODE_TYPES = [
 
 const RELATIONSHIP_TYPES = [
   { name: 'Association',    desc: 'A general "uses" link between two classes', line: 'solid',  marker: 'arrow',         ex: 'Order → Customer' },
-  { name: 'Aggregation',    desc: '"Has-a" — the part can outlive the whole',  line: 'solid',  marker: 'diamond-open',  ex: 'Team ◇→ Player' },
-  { name: 'Composition',   desc: '"Owns-a" — the part dies with the whole',   line: 'solid',  marker: 'diamond-filled', ex: 'House ◆→ Room' },
+  { name: 'Aggregation',    desc: '"Has-a" - the part can outlive the whole',  line: 'solid',  marker: 'diamond-open',  ex: 'Team ◇→ Player' },
+  { name: 'Composition',   desc: '"Owns-a" - the part dies with the whole',   line: 'solid',  marker: 'diamond-filled', ex: 'House ◆→ Room' },
   { name: 'Inheritance',   desc: 'Subclass extends a superclass',              line: 'solid',  marker: 'triangle',      ex: 'Dog ▷ Animal' },
   { name: 'Realization',   desc: 'Class implements an interface',              line: 'dashed', marker: 'triangle',      ex: 'List ▷ Collection' },
   { name: 'Dependency',    desc: 'Temporary usage between classes',            line: 'dashed', marker: 'arrow',         ex: 'UserService → Email' },
@@ -42,7 +42,7 @@ const RELATIONSHIP_TYPES = [
 
 const EXPORT_FORMATS = [
   { name: 'PNG',           desc: 'Perfect for slide decks, docs, and Notion pages.' },
-  { name: 'SVG',           desc: 'Scales to any size — ideal for technical blog posts.' },
+  { name: 'SVG',           desc: 'Scales to any size - ideal for technical blog posts.' },
   { name: 'PlantUML',      desc: 'Paste into any tool that accepts PlantUML syntax.' },
   { name: 'Mermaid',       desc: 'Drop straight into GitHub, GitLab, or Notion.' },
   { name: 'Draft Notation', desc: 'Round-trip back to plain-English text.' },
@@ -57,19 +57,19 @@ const DESIGN_PATTERN_CATEGORIES = [
 const FAQ = [
   {
     q: 'Does the editor work offline or without signing in?',
-    a: 'Yes — you can open /editor/local and start drawing immediately with no account. Your diagram is saved to localStorage. Sign in if you want cloud saves, sharing, and collaboration.',
+    a: 'Yes - you can open /editor/local and start drawing immediately with no account. Your diagram is saved to localStorage. Sign in if you want cloud saves, sharing, and collaboration.',
   },
   {
     q: 'How are the 23 design patterns inserted?',
-    a: 'Through a command palette. Press Ctrl+K (or ⌘K on Mac) inside the editor, search for a pattern by name, and the correct class skeleton drops into your canvas — all nodes pre-connected with the right relationship types.',
+    a: 'Through a command palette. Press Ctrl+K (or ⌘K on Mac) inside the editor, search for a pattern by name, and the correct class skeleton drops into your canvas - all nodes pre-connected with the right relationship types.',
   },
   {
     q: 'What does "correct relationship semantics" mean?',
-    a: 'A filled diamond (◆) always means composition — the contained object cannot outlive its container. An open diamond (◇) always means aggregation. An open triangle always means inheritance. LLDCanvas never lets you draw an ambiguous arrow that could be misread as any of those — which is the mistake generic diagramming tools all make.',
+    a: 'A filled diamond (◆) always means composition - the contained object cannot outlive its container. An open diamond (◇) always means aggregation. An open triangle always means inheritance. LLDCanvas never lets you draw an ambiguous arrow that could be misread as any of those - which is the mistake generic diagramming tools all make.',
   },
   {
     q: 'What are class-role stereotypes?',
-    a: 'Labels like «entity», «service», «repository», «factory», or «controller» that annotate a class\'s architectural role. LLDCanvas supports 13 stereotypes rendered in standard UML angle-bracket notation — the same way «interface» is typically shown.',
+    a: 'Labels like «entity», «service», «repository», «factory», or «controller» that annotate a class\'s architectural role. LLDCanvas supports 13 stereotypes rendered in standard UML angle-bracket notation - the same way «interface» is typically shown.',
   },
   {
     q: 'Can I import a diagram from PlantUML or Mermaid?',
@@ -77,7 +77,7 @@ const FAQ = [
   },
   {
     q: 'What happens to my diagram when I export it?',
-    a: 'Export renders a pixel-perfect snapshot or the equivalent text syntax — nothing is transmitted to a server. PNG and SVG exports are generated in your browser from the live canvas state.',
+    a: 'Export renders a pixel-perfect snapshot or the equivalent text syntax - nothing is transmitted to a server. PNG and SVG exports are generated in your browser from the live canvas state.',
   },
 ]
 
@@ -110,14 +110,14 @@ export default function EditorFeaturePage() {
             {/* Left */}
             <div>
               <p className="mb-4 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-                <span className="text-gold">¶01</span> — The Editor
+                <span className="text-gold">¶01</span> - The Editor
               </p>
               <h1 className="font-serif text-4xl font-medium leading-[1.1] tracking-tight text-ink sm:text-5xl">
                 A UML editor that speaks{' '}
                 <span className="text-brand">Low-Level Design.</span>
               </h1>
               <p className="mt-5 text-base leading-relaxed text-ink-muted">
-                Not a generic diagramming tool with UML bolted on — every node type, arrow style, and
+                Not a generic diagramming tool with UML bolted on - every node type, arrow style, and
                 design pattern skeleton is built for the specific vocabulary your interviewer expects.
                 Draw the way interviewers think, not the way a project manager thinks.
               </p>
@@ -137,7 +137,7 @@ export default function EditorFeaturePage() {
               </div>
             </div>
 
-            {/* Right — CSS UML diagram mockup */}
+            {/* Right - CSS UML diagram mockup */}
             <div className="rounded-2xl border border-hairline bg-paper-elevated p-6 shadow-xl">
               {/* Toolbar mockup */}
               <div className="mb-4 flex items-center gap-2 rounded-lg border border-hairline bg-paper px-3 py-2">
@@ -210,14 +210,14 @@ export default function EditorFeaturePage() {
       {/* ── Node types ────────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§1</span> — Node types
+          <span className="text-gold">§1</span> - Node types
         </p>
         <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
           Five node types. Every UML class diagram need covered.
         </h2>
         <p className="mb-8 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-          Each node renders its stereotype in standard UML notation — «interface», «abstract»,
-          «enum» — so your diagram communicates the same vocabulary your interviewer uses,
+          Each node renders its stereotype in standard UML notation - «interface», «abstract»,
+          «enum» - so your diagram communicates the same vocabulary your interviewer uses,
           without manual formatting.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -237,7 +237,7 @@ export default function EditorFeaturePage() {
       <section className="border-y border-hairline bg-paper-elevated/40 py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§2</span> — Relationship types
+            <span className="text-gold">§2</span> - Relationship types
           </p>
           <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
             Seven relationship types. Drawn correctly, every time.
@@ -245,7 +245,7 @@ export default function EditorFeaturePage() {
           <p className="mb-8 max-w-xl text-[15px] leading-relaxed text-ink-muted">
             The most common mistake in LLD interviews is confusing aggregation and composition,
             or drawing dependency as a plain arrow. LLDCanvas enforces the correct arrowhead
-            for each relationship — you choose the type, we render the right symbol.
+            for each relationship - you choose the type, we render the right symbol.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -275,7 +275,7 @@ export default function EditorFeaturePage() {
           <div className="mt-6 rounded-xl border border-brand/20 bg-brand/5 p-4">
             <p className="text-sm leading-relaxed text-ink-muted">
               <strong className="font-semibold text-ink">Pro tip:</strong> You don&apos;t need to memorize the arrowheads.
-              When you draw a connection in LLDCanvas, a tooltip shows the relationship options — select one and the
+              When you draw a connection in LLDCanvas, a tooltip shows the relationship options - select one and the
               correct symbol renders automatically. This is also how you practice remembering them.
             </p>
           </div>
@@ -285,14 +285,14 @@ export default function EditorFeaturePage() {
       {/* ── Design patterns ───────────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§3</span> — Design patterns
+          <span className="text-gold">§3</span> - Design patterns
         </p>
         <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
           All 23 Gang-of-Four patterns, pre-wired and interview-ready.
         </h2>
         <p className="mb-8 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-          Press Ctrl+K, type the pattern name, and the full class skeleton — with all nodes correctly
-          connected — drops onto your canvas. No more manually drawing the Observer pattern from
+          Press Ctrl+K, type the pattern name, and the full class skeleton - with all nodes correctly
+          connected - drops onto your canvas. No more manually drawing the Observer pattern from
           memory under interview pressure.
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -322,13 +322,13 @@ export default function EditorFeaturePage() {
       <section className="border-t border-hairline bg-paper-elevated/40 py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§4</span> — Export formats
+            <span className="text-gold">§4</span> - Export formats
           </p>
           <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
             Five export formats. Your diagram goes where you go.
           </h2>
           <p className="mb-8 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-            Export for a blog post, a PR description, a Notion doc, or a slide deck — whichever
+            Export for a blog post, a PR description, a Notion doc, or a slide deck - whichever
             format your next audience expects, LLDCanvas has you covered.
           </p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -353,18 +353,18 @@ export default function EditorFeaturePage() {
       {/* ── Editor capabilities ───────────────────────────────────────────── */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§5</span> — Built for speed
+          <span className="text-gold">§5</span> - Built for speed
         </p>
         <h2 className="mb-8 font-serif text-2xl font-medium text-ink">
           Keyboard-first, drag-to-connect, and blazing fast.
         </h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { icon: Keyboard, title: 'Command palette', body: 'Ctrl+K opens pattern search, shape insertion, and quick commands — no menu hunting.' },
+            { icon: Keyboard, title: 'Command palette', body: 'Ctrl+K opens pattern search, shape insertion, and quick commands - no menu hunting.' },
             { icon: GitBranch, title: 'Drag-to-connect', body: 'Drag from any port on a node to create a relationship. The correct arrow renders as you drop.' },
             { icon: Layers, title: 'Alignment guides', body: 'Smart snapping and alignment guides keep your diagram clean, even on large canvases.' },
-            { icon: Palette, title: 'Three canvas themes', body: 'Light, dark, and blueprint themes — switch any time without altering your diagram.' },
-            { icon: Check, title: 'Undo / redo', body: 'Full history stack. Ctrl+Z / Ctrl+Shift+Z — works the way you expect it to.' },
+            { icon: Palette, title: 'Three canvas themes', body: 'Light, dark, and blueprint themes - switch any time without altering your diagram.' },
+            { icon: Check, title: 'Undo / redo', body: 'Full history stack. Ctrl+Z / Ctrl+Shift+Z - works the way you expect it to.' },
             { icon: ArrowRight, title: 'Multiple select', body: 'Box-select a group of nodes, move them together, or delete them in one action.' },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="flex items-start gap-3">
@@ -431,11 +431,11 @@ export default function EditorFeaturePage() {
         <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-widest text-ink-faint">Related features</p>
         <div className="flex flex-wrap gap-3">
           {[
-            { href: '/features/draft-notation',    label: 'Draft Notation — write UML in plain English' },
-            { href: '/features/interview-mode',     label: 'Interview Mode — timed practice sessions' },
-            { href: '/features/interview-questions', label: 'Practice Problems — 110+ LLD questions' },
-            { href: '/features/code-execution',     label: 'Code Execution — run code next to your diagram' },
-            { href: '/features/collaboration',      label: 'Collaboration — design with teammates' },
+            { href: '/features/draft-notation',    label: 'Draft Notation - write UML in plain English' },
+            { href: '/features/interview-mode',     label: 'Interview Mode - timed practice sessions' },
+            { href: '/features/interview-questions', label: 'Practice Problems - 110+ LLD questions' },
+            { href: '/features/code-execution',     label: 'Code Execution - run code next to your diagram' },
+            { href: '/features/collaboration',      label: 'Collaboration - design with teammates' },
           ].map(l => (
             <Link
               key={l.href}

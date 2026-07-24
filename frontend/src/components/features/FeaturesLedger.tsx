@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -15,7 +15,7 @@ interface LedgerRow {
   href: string
 }
 
-// Content is always rendered for every row, regardless of open/closed state —
+// Content is always rendered for every row, regardless of open/closed state -
 // only a wrapping motion.div's height/opacity animates. Crawlers (and users
 // with JS disabled) get the full text either way; this is purely a
 // progressive-disclosure UX affordance, never a content-hiding mechanism.

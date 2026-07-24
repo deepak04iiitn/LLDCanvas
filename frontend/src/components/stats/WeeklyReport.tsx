@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useMemo } from 'react'
 import {
@@ -15,7 +15,7 @@ function fmtTime(s: number) {
   const m = Math.floor((s % 3600) / 60)
   if (h > 0) return `${h}h ${m}m`
   if (m > 0) return `${m}m`
-  return s > 0 ? `${s}s` : '—'
+  return s > 0 ? `${s}s` : '-'
 }
 
 function CustomTooltip({ active, payload, label }: AnyProps) {
@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload, label }: AnyProps) {
       </p>
       <p className="text-violet-600">
         <span className="inline-block w-20 text-ink-faint">Avg time:</span>
-        <span className="font-bold">{mins > 0 ? `${mins}m` : '—'}</span>
+        <span className="font-bold">{mins > 0 ? `${mins}m` : '-'}</span>
       </p>
     </div>
   )
@@ -49,7 +49,7 @@ export function WeeklyReport({ reports }: Props) {
   const data = useMemo(() => {
     const slice = reports.slice(-range)
     return slice.map(r => ({
-      label:    r.weekLabel.split('–')[0].trim(),
+      label:    r.weekLabel.split('-')[0].trim(),
       sessions: r.sessions,
       avgMins:  r.avgTimeSeconds > 0 ? Math.round(r.avgTimeSeconds / 60) : 0,
       problems: r.problemsSolved,
@@ -119,14 +119,14 @@ export function WeeklyReport({ reports }: Props) {
             <div className="px-4 py-3 text-center">
               <p className="text-[10px] text-ink-faint uppercase tracking-wider">Best Week</p>
               <p className="mt-1 text-[11px] font-semibold text-brand leading-snug">
-                {bestWeek ? bestWeek.weekLabel : '—'}
+                {bestWeek ? bestWeek.weekLabel : '-'}
               </p>
             </div>
           </div>
         </>
       ) : (
         <div className="flex h-44 items-center justify-center text-sm text-ink-faint">
-          No session data yet — complete your first practice session
+          No session data yet - complete your first practice session
         </div>
       )}
     </div>

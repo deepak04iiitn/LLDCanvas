@@ -1,4 +1,4 @@
-// ─── React Flow nodes + edges → Draft Notation text ──────────────────────────
+﻿// ─── React Flow nodes + edges → Draft Notation text ──────────────────────────
 
 import type { Node, Edge } from '@xyflow/react'
 import type { UMLNodeData, UMLEdgeData, RelationshipType } from '@/types'
@@ -19,7 +19,7 @@ function visChar(v: string): string {
 
 export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdgeData>[]): string {
   const lines: string[] = [
-    '# Draft Notation — LLDCanvas',
+    '# Draft Notation - LLDCanvas',
     '# Learn more: lldcanvas.com/docs',
     '',
   ]

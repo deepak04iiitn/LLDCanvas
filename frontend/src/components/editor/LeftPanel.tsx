@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
@@ -43,7 +43,7 @@ interface LeftPanelProps {
 
 const PANEL_WIDTH = 220
 
-// Fixed display order — matches the Gang-of-Four grouping used in the
+// Fixed display order - matches the Gang-of-Four grouping used in the
 // command palette, so the two entry points read the same way.
 const PATTERN_CATEGORIES = ['Creational', 'Structural', 'Behavioral'] as const
 
@@ -307,14 +307,14 @@ export function LeftPanel({
             </div>
             <div className="my-2 h-px w-8 bg-hairline" />
 
-            {/* Patterns list needs room to browse — collapsed rail just expands the panel */}
+            {/* Patterns list needs room to browse - collapsed rail just expands the panel */}
             <Tooltip>
               <TooltipTrigger onClick={togglePanel} className={cn(itemBase, itemCollapsed)}>
                 <span className="shrink-0 text-ink-faint transition-colors group-hover:text-brand">
                   <Layers className="h-4 w-4" />
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="right">Design Patterns — expand to browse</TooltipContent>
+              <TooltipContent side="right">Design Patterns - expand to browse</TooltipContent>
             </Tooltip>
 
             <div className="mt-auto">

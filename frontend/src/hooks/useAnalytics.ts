@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
@@ -33,7 +33,7 @@ async function sendHeartbeat(payload: {
       keepalive: true,  // survives tab close
     })
   } catch {
-    // silently ignore — analytics must never break the app
+    // silently ignore - analytics must never break the app
   }
 }
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
@@ -26,10 +26,10 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
   return (
     <div className="overflow-hidden">
 
-      {/* ════════════════════ HERO — Field Guide title page ══════════════════════ */}
+      {/* ════════════════════ HERO - Field Guide title page ══════════════════════ */}
       <section className="relative border-b border-hairline overflow-hidden">
 
-        {/* Faint ruled-lines texture — like notebook paper */}
+        {/* Faint ruled-lines texture - like notebook paper */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.022]"
           style={{
@@ -44,7 +44,7 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
 
           {/* Series label */}
           <p className="mb-5 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-            <span className="text-gold">¶05</span>&nbsp;—&nbsp;Quick Revision · Interview Prep
+            <span className="text-gold">¶05</span>&nbsp;-&nbsp;Quick Revision · Interview Prep
           </p>
 
           {/* Title block with decorative rules */}
@@ -60,8 +60,8 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
           {/* Bottom meta strip */}
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
             <p className="max-w-lg text-[15px] leading-relaxed text-ink-muted">
-              {notes.length} concise revision notes across {groups.length} disciplines — covering
-              LLD design patterns, OOP &amp; SOLID principles, and system design fundamentals —
+              {notes.length} concise revision notes across {groups.length} disciplines - covering
+              LLD design patterns, OOP &amp; SOLID principles, and system design fundamentals -
               each distilled with a real-world analogy for rapid interview recall.
             </p>
             <p className="shrink-0 font-mono text-[11px] text-ink-faint/50">
@@ -93,7 +93,7 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
                   <div className="min-w-0 flex-1">
                     <div className="mb-1.5 h-px bg-hairline-strong" />
                     <p className="font-mono text-[9px] font-bold uppercase tracking-[0.38em] text-ink-faint/60">
-                      Chapter {roman}&nbsp;&nbsp;—&nbsp;&nbsp;{category}
+                      Chapter {roman}&nbsp;&nbsp;-&nbsp;&nbsp;{category}
                     </p>
                   </div>
 
@@ -119,7 +119,7 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
                           {String(ni + 1).padStart(2, '0')}
                         </span>
 
-                        {/* Rarity badge — desktop */}
+                        {/* Rarity badge - desktop */}
                         <span
                           className={cn(
                             'hidden shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[9px] font-bold uppercase ring-1 ring-inset sm:inline-flex',
@@ -129,7 +129,7 @@ export function RevisionNotesIndexClient({ notes, groups }: Props) {
                           {r.dot}&nbsp;{r.label}
                         </span>
 
-                        {/* Rarity dot — mobile */}
+                        {/* Rarity dot - mobile */}
                         <span
                           className={cn(
                             'mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full sm:hidden',

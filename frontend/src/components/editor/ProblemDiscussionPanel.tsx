@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -111,7 +111,7 @@ function ComposeForm({
       <input
         value={title}
         onChange={e => setTitle(e.target.value)}
-        placeholder="Title — e.g. How do I model a Rate Limiter?"
+        placeholder="Title - e.g. How do I model a Rate Limiter?"
         className="mb-2 w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
       />
 

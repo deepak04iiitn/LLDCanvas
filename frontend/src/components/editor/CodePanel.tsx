@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -161,7 +161,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
 
   const currentLang = LANGUAGES.find(l => l.value === lang)!
 
-  // Switch language — reset code to starter snippet
+  // Switch language - reset code to starter snippet
   function switchLang(v: LangValue) {
     setLang(v)
     setCode(STARTERS[v])
@@ -239,7 +239,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     window.addEventListener('mouseup', onUp)
   }, [panelWidth])
 
-  // Vertical drag — resize bottom pane (stdin + output)
+  // Vertical drag - resize bottom pane (stdin + output)
   const startVerticalResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     vResizingRef.current = true
@@ -295,7 +295,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
             style={{ width: panelWidth }}
             className="absolute right-0 top-0 z-50 flex h-full flex-col border-l border-hairline bg-paper-elevated shadow-2xl"
           >
-            {/* Drag handle — left edge */}
+            {/* Drag handle - left edge */}
             <div
               onMouseDown={startResize}
               className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-brand/20 transition-colors z-10 group"
@@ -500,7 +500,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
                 </AnimatePresence>
               </div>
 
-              {/* Output pane — fills remaining bottom space */}
+              {/* Output pane - fills remaining bottom space */}
               <div className="flex flex-1 flex-col overflow-hidden border-t border-hairline bg-paper min-h-0">
               {/* Output header */}
               <div className="flex items-center gap-2 px-4 py-2 border-b border-hairline">
@@ -532,7 +532,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
                 )}
               </div>
 
-              {/* Output content — scrolls within remaining space */}
+              {/* Output content - scrolls within remaining space */}
               <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
                 {running && (
                   <div className="flex items-center gap-2 text-xs text-ink-faint">

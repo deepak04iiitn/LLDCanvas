@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { TrendingDown, TrendingUp, Minus, Clock } from 'lucide-react'
 import {
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils'
 import type { AdvancedStats } from '@/types'
 
 function fmtSeconds(s: number) {
-  if (s <= 0) return '—'
+  if (s <= 0) return '-'
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
