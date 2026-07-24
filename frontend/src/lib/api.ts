@@ -402,4 +402,82 @@ export const api = {
         body: JSON.stringify(payload),
       }),
   },
+
+  blog: {
+    list: (params?: { category?: string; tag?: string; q?: string; sort?: string; page?: number; limit?: number; featured?: boolean }) => {
+      const qs = new URLSearchParams()
+      if (params?.category) qs.set('category', params.category)
+      if (params?.tag)      qs.set('tag',      params.tag)
+      if (params?.q)        qs.set('q',        params.q)
+      if (params?.sort)     qs.set('sort',     params.sort)
+      if (params?.page)     qs.set('page',     String(params.page))
+      if (params?.limit)    qs.set('limit',    String(params.limit))
+      if (params?.featured) qs.set('featured', 'true')
+      const query = qs.toString()
+      return request<{ blogs: BlogSummary[]; total: number; page: number; pages: number }>(`/blog${query ? `?${query}` : ''}`)
+    },
+    get: (slug: string) =>
+      request<{ blog: BlogDetail; related: BlogSummary[] }>(`/blog/${slug}`),
+    categories: () =>
+      request<{ category: string; count: number }[]>('/blog/categories'),
+    tags: () =>
+      request<{ tag: string; count: number }[]>('/blog/tags'),
+    react: (slug: string, type: 'like' | 'dislike') =>
+      request<{ action: string; type: string }>(`/blog/${slug}/react`, { method: 'POST', body: JSON.stringify({ type }) }),
+    myReaction: (slug: string) =>
+      request<{ reaction: 'like' | 'dislike' | null }>(`/blog/${slug}/my-reaction`),
+    listComments: (slug: string) =>
+      request<{ comments: BlogComment[] }>(`/blog/${slug}/comments`),
+    addComment: (slug: string, content: string, parentId?: string) =>
+      request<{ comment: BlogComment }>(`/blog/${slug}/comments`, { method: 'POST', body: JSON.stringify({ content, parentId }) }),
+    updateComment: (id: string, content: string) =>
+      request<{ comment: BlogComment }>(`/blog/comments/${id}`, { method: 'PATCH', body: JSON.stringify({ content }) }),
+    deleteComment: (id: string) =>
+      request<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
+    reportComment: (id: string) =>
+      request<{ ok: boolean }>(`/blog/comments/${id}/report`, { method: 'POST' }),
+  },
+}
+
+// Blog types
+export interface BlogSummary {
+  _id: string
+  slug: string
+  title: string
+  subtitle: string
+  excerpt: string
+  coverImage?: string
+  author: { name: string; role: string; avatar?: string }
+  category: string
+  tags: string[]
+  status: 'draft' | 'published' | 'scheduled'
+  publishedAt?: string
+  isFeatured: boolean
+  readingTime: number
+  views: number
+  likes: number
+  dislikes: number
+  relatedSlugs: string[]
+  seo: { metaTitle: string; metaDescription: string }
+}
+
+export interface BlogDetail extends BlogSummary {
+  content: string
+  faq: { q: string; a: string }[]
+  toc: { id: string; text: string; level: number }[]
+}
+
+export interface BlogComment {
+  _id: string
+  blogId: string
+  parentId?: string
+  authorId: string
+  authorName: string
+  authorImage?: string
+  content: string
+  likes: number
+  isDeleted: boolean
+  createdAt: string
+  updatedAt: string
+  replies?: BlogComment[]
 }

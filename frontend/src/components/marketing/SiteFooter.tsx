@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Share2, MessageCircle, ExternalLink,
+  CreditCard, Layers, Mail, Share2, MessageCircle, ExternalLink, Rss,
 } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
@@ -120,6 +120,7 @@ export function SiteFooter() {
                   <NavLink href="/playground"   Icon={ArrowUpRight}>Playground</NavLink>
                   <NavLink href="/features"     Icon={Layers}>All Features</NavLink>
                   <NavLink href="/pricing"      Icon={CreditCard}>Pricing</NavLink>
+                  <NavLink href="/blog"         Icon={Rss}>Blog</NavLink>
                   {mounted && session && (
                     <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
                   )}

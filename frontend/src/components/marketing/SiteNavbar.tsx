@@ -12,10 +12,10 @@ import { ChevronRight, Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
   { label: 'Features',   href: '/features' },
+  { label: 'Blogs',      href: '/blog' },
   { label: 'Playground', href: '/playground' },
   { label: 'Pricing',    href: '/pricing' },
   { label: 'Docs',       href: '/docs' },
-  { label: 'FAQ',        href: '/#faq' },
 ]
 
 
