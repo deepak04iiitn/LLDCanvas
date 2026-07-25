@@ -14,6 +14,7 @@ import {
   deleteTestimonial,
   testimonialStats,
 } from '../controllers/testimonial.controller'
+import { adminBlogController } from '../controllers/blog.controller'
 
 const router = Router()
 
@@ -85,5 +86,18 @@ router.get   ('/testimonials/stats', testimonialStats)
 router.get   ('/testimonials',       listTestimonials)
 router.patch ('/testimonials/:id',   updateTestimonial)
 router.delete('/testimonials/:id',   deleteTestimonial)
+
+// Blog management
+router.get   ('/blog/analytics',       adminBlogController.analytics)
+router.get   ('/blog/comments',        adminBlogController.listComments)
+router.delete('/blog/comments/:id',    adminBlogController.deleteComment)
+router.get   ('/blog',                 adminBlogController.list)
+router.post  ('/blog',                 adminBlogController.create)
+router.get   ('/blog/:id',             adminBlogController.get)
+router.patch ('/blog/:id',             adminBlogController.update)
+router.patch ('/blog/:id/publish',     adminBlogController.publish)
+router.patch ('/blog/:id/unpublish',   adminBlogController.unpublish)
+router.post  ('/blog/:id/duplicate',   adminBlogController.duplicate)
+router.delete('/blog/:id',             adminBlogController.delete)
 
 export default router

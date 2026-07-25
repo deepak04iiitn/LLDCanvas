@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { motion } from 'framer-motion'
 import { Check, Lock, Rocket, Zap } from 'lucide-react'
@@ -116,7 +116,7 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
                        transition-colors hover:bg-indigo-700 dark:shadow-none"
           >
             <Zap className="h-4 w-4" />
-            Upgrade to Pro — Coming Soon
+            Upgrade to Pro - Coming Soon
           </motion.button>
           <p className="mt-3 text-center text-[11px] text-gray-400">
             Payment integration coming soon. Patterns will unlock for early supporters.

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import {
@@ -85,13 +85,13 @@ function computeGuides(draggedNode: Node, allNodes: Node[]): GuideLines {
     const nw = (node.measured?.width ?? 180)
     const nh = (node.measured?.height ?? 100)
 
-    // Vertical guide — left/right edge or center-x alignment
+    // Vertical guide - left/right edge or center-x alignment
     if (guides.x === undefined) {
       if (Math.abs(dx - nx) < SNAP_THRESHOLD) guides.x = nx
       else if (Math.abs(dx + dw - (nx + nw)) < SNAP_THRESHOLD) guides.x = nx + nw - dw
       else if (Math.abs(dx + dw / 2 - (nx + nw / 2)) < SNAP_THRESHOLD) guides.x = nx + nw / 2 - dw / 2
     }
-    // Horizontal guide — top/bottom edge or center-y alignment
+    // Horizontal guide - top/bottom edge or center-y alignment
     if (guides.y === undefined) {
       if (Math.abs(dy - ny) < SNAP_THRESHOLD) guides.y = ny
       else if (Math.abs(dy + dh - (ny + nh)) < SNAP_THRESHOLD) guides.y = ny + nh - dh
@@ -205,7 +205,7 @@ export function CanvasView({
   const gridVariant =
     theme === 'whiteboard' ? BackgroundVariant.Lines : BackgroundVariant.Dots
 
-  // Throttle guide computation to one state update per animation frame —
+  // Throttle guide computation to one state update per animation frame -
   // without this, setGuides fires on every pointermove (~600 calls/second at
   // 60 fps), causing a full React reconcile on every mouse move tick.
   const onNodeDrag = useCallback(
@@ -229,7 +229,7 @@ export function CanvasView({
       className="relative h-full w-full overflow-hidden"
       data-mode={canvasMode}
     >
-      {/* Force crosshair on the React Flow pane in select mode —
+      {/* Force crosshair on the React Flow pane in select mode -
           React Flow sets cursor:grab on .react-flow__pane internally,
           which overrides any style on the outer wrapper. */}
       {canvasMode === 'select' && (

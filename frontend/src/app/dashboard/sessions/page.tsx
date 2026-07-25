@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -47,7 +47,7 @@ function computeStats(sessions: InterviewSession[]) {
     .map(s => startOfDay(parseISO(s.createdAt)).getTime())
   const uniqueDays = [...new Set(completedDates)].sort((a, b) => b - a)
 
-  // current streak — consecutive days ending today
+  // current streak - consecutive days ending today
   let streak = 0
   let cursor = startOfDay(new Date()).getTime()
   for (const day of uniqueDays) {

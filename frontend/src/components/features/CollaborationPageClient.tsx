@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { ArrowRight, MousePointer2 } from 'lucide-react'
@@ -23,7 +23,7 @@ const ACTS = [
     tag: 'Most popular',
     title: 'The Mock Interview',
     subtitle: 'Design under observation. Get feedback in real time.',
-    body: "One person designs on the canvas — timed, with Interview Mode — while a friend or mentor watches via a Viewer link and leaves feedback through @mention comments. Identical to a real interview observation format. The observer can't modify the canvas, but their presence and comments are felt in real time.",
+    body: "One person designs on the canvas - timed, with Interview Mode - while a friend or mentor watches via a Viewer link and leaves feedback through @mention comments. Identical to a real interview observation format. The observer can't modify the canvas, but their presence and comments are felt in real time.",
     participants: [
       { name: 'You',    role: 'Designer · Editor', color: 'bg-brand'       },
       { name: 'Mentor', role: 'Observer · Viewer',  color: 'bg-violet-500' },
@@ -34,7 +34,7 @@ const ACTS = [
     tag: 'Teams',
     title: 'The Design Review',
     subtitle: 'The whole team. The same canvas. No PNG exports.',
-    body: "Share a diagram with your tech team. Everyone joins as a Viewer or Editor. Comments, annotations, and design changes happen in real time — no need to export a PNG and paste it into Slack. Async feedback and live discussion in the same thread. The canvas is the single source of truth.",
+    body: "Share a diagram with your tech team. Everyone joins as a Viewer or Editor. Comments, annotations, and design changes happen in real time - no need to export a PNG and paste it into Slack. Async feedback and live discussion in the same thread. The canvas is the single source of truth.",
     participants: [
       { name: 'You',  role: 'Owner · Editor',          color: 'bg-brand'       },
       { name: 'Team', role: 'Reviewers · Mixed roles',  color: 'bg-amber-500'  },
@@ -45,7 +45,7 @@ const ACTS = [
     tag: 'Mentorship',
     title: 'The Guided Session',
     subtitle: 'A senior engineer, same canvas, guiding in real time.',
-    body: "A senior engineer joins as an Editor alongside a junior. They can guide by adding nodes, correcting relationships, and leaving detailed comments — working on exactly the same canvas, together, without friction or lag. No screenshare, no out-of-sync copies.",
+    body: "A senior engineer joins as an Editor alongside a junior. They can guide by adding nodes, correcting relationships, and leaving detailed comments - working on exactly the same canvas, together, without friction or lag. No screenshare, no out-of-sync copies.",
     participants: [
       { name: 'Junior', role: 'Learner · Editor', color: 'bg-amber-500' },
       { name: 'Senior', role: 'Guide · Editor',   color: 'bg-brand'      },
@@ -67,27 +67,27 @@ const FAQ = [
   },
   {
     q: 'How do I invite someone to collaborate?',
-    a: "Click the Collaborate button in the editor toolbar. Enter their email address and assign a viewer or editor role. They receive an invitation link — the moment they accept, they appear in the live presence stack and their cursor becomes visible on the canvas.",
+    a: "Click the Collaborate button in the editor toolbar. Enter their email address and assign a viewer or editor role. They receive an invitation link - the moment they accept, they appear in the live presence stack and their cursor becomes visible on the canvas.",
   },
   {
     q: 'Can I control who can edit vs. who can only view?',
-    a: "Yes — two roles are available per invitation: Editor (can modify nodes and relationships) and Viewer (can view and comment, but not modify the canvas). Role changes take effect instantly without a re-invite.",
+    a: "Yes - two roles are available per invitation: Editor (can modify nodes and relationships) and Viewer (can view and comment, but not modify the canvas). Role changes take effect instantly without a re-invite.",
   },
   {
     q: 'Do comments stay attached to the diagram?',
-    a: "Yes — comments in the Discussion panel are tied to the diagram session. You can @mention any collaborator and they'll see a badge count on the Comments button in real time.",
+    a: "Yes - comments in the Discussion panel are tied to the diagram session. You can @mention any collaborator and they'll see a badge count on the Comments button in real time.",
   },
   {
     q: 'Is this useful for mock interviews?',
-    a: "Yes — a very common use case is one person designing on the canvas while a friend, mentor, or senior engineer watches live and leaves questions or feedback via @mention comments — simulating a real whiteboard interview with an observer.",
+    a: "Yes - a very common use case is one person designing on the canvas while a friend, mentor, or senior engineer watches live and leaves questions or feedback via @mention comments - simulating a real whiteboard interview with an observer.",
   },
   {
     q: 'What happens if the collaboration connection drops?',
-    a: "The canvas autosaves your work continuously. If a collaborator disconnects, they can rejoin from the same link — their cursor reappears and the canvas state re-syncs immediately.",
+    a: "The canvas autosaves your work continuously. If a collaborator disconnects, they can rejoin from the same link - their cursor reappears and the canvas state re-syncs immediately.",
   },
   {
     q: 'Can I use collaboration for a team design review?',
-    a: "Yes — invite your whole team (Ultimate plan), share the canvas link, and have everyone annotate via comments simultaneously. It's the same workflow as a Figma review session, but for LLD class diagrams.",
+    a: "Yes - invite your whole team (Ultimate plan), share the canvas link, and have everyone annotate via comments simultaneously. It's the same workflow as a Figma review session, but for LLD class diagrams.",
   },
 ]
 
@@ -97,7 +97,7 @@ export function CollaborationPageClient() {
   return (
     <div className="overflow-hidden">
 
-      {/* ════════════════════ HERO — The Stage ════════════════════════════ */}
+      {/* ════════════════════ HERO - The Stage ════════════════════════════ */}
       <section className="relative overflow-hidden border-b border-hairline">
 
         {/* Spotlight cone from above */}
@@ -115,10 +115,10 @@ export function CollaborationPageClient() {
 
         <div className="relative mx-auto max-w-5xl px-6 pb-16 pt-12 sm:px-8 sm:pt-16">
 
-          {/* Headline — centered, theatrical */}
+          {/* Headline - centered, theatrical */}
           <Reveal>
             <p className="mb-5 text-center font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">¶07</span>&nbsp;—&nbsp;Collaboration
+              <span className="text-gold">¶07</span>&nbsp;-&nbsp;Collaboration
             </p>
             <h1 className="mb-4 text-center font-serif text-[clamp(2rem,5vw,4rem)] font-medium leading-[1.06] tracking-tight text-ink">
               Design under the spotlight.<br />
@@ -126,7 +126,7 @@ export function CollaborationPageClient() {
             </h1>
             <p className="mx-auto mb-10 max-w-xl text-center text-[15px] leading-[1.8] text-ink-muted">
               Real LLD interviews are observed events. Collaboration lets you practice exactly
-              that dynamic — invite a teammate or mentor, design while they watch, and get
+              that dynamic - invite a teammate or mentor, design while they watch, and get
               live @mention feedback. No refresh. No lag.
             </p>
           </Reveal>
@@ -261,7 +261,7 @@ export function CollaborationPageClient() {
               {[
                 { value: '∞',  label: 'collaborators (Ultimate)' },
                 { value: '0',  label: 'refreshes needed'         },
-                { value: '2',  label: 'roles — viewer & editor'  },
+                { value: '2',  label: 'roles - viewer & editor'  },
                 { value: 'ws', label: 'WebSocket real-time sync' },
               ].map(s => (
                 <div key={s.label} className="px-6 py-8 text-center">
@@ -274,19 +274,19 @@ export function CollaborationPageClient() {
         </section>
       </Reveal>
 
-      {/* ════════════════════ CREDITS — capabilities ══════════════════════ */}
+      {/* ════════════════════ CREDITS - capabilities ══════════════════════ */}
       <section className="border-b border-hairline py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§01</span>&nbsp;—&nbsp;Featuring
+              <span className="text-gold">§01</span>&nbsp;-&nbsp;Featuring
             </p>
             <h2 className="mb-10 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
               Everything you need for a real design session with others.
             </h2>
           </Reveal>
 
-          {/* Show credits — dotted leader lines */}
+          {/* Show credits - dotted leader lines */}
           <div className="mx-auto max-w-2xl divide-y divide-hairline">
             {CREDITS.map(({ title, credit }, i) => (
               <Reveal key={title} delay={i * 0.05}>
@@ -305,13 +305,13 @@ export function CollaborationPageClient() {
         </div>
       </section>
 
-      {/* ════════════════════ THREE ACTS — use cases ══════════════════════ */}
+      {/* ════════════════════ THREE ACTS - use cases ══════════════════════ */}
       <section>
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <div className="border-b border-hairline py-10">
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-                <span className="text-gold">§02</span>&nbsp;—&nbsp;Three acts
+                <span className="text-gold">§02</span>&nbsp;-&nbsp;Three acts
               </p>
               <h2 className="mt-2 font-serif text-[clamp(1.5rem,3vw,2.3rem)] font-medium text-ink">
                 Three ways engineers use collaboration for LLD prep.
@@ -334,10 +334,10 @@ export function CollaborationPageClient() {
 
               <div className="relative mx-auto max-w-5xl px-6 sm:px-8">
                 <div className="grid items-start gap-8 lg:grid-cols-2">
-                  {/* Left — editorial description */}
+                  {/* Left - editorial description */}
                   <div>
                     <p className="mb-3 font-mono text-[9px] font-bold uppercase tracking-[0.4em] text-ink-faint/50">
-                      Act {act.roman}&nbsp;&nbsp;—&nbsp;&nbsp;
+                      Act {act.roman}&nbsp;&nbsp;-&nbsp;&nbsp;
                       <span className="text-gold">{act.tag}</span>
                     </p>
                     <h3 className="mb-1 font-serif text-[1.65rem] font-medium leading-tight text-ink">
@@ -349,7 +349,7 @@ export function CollaborationPageClient() {
                     <p className="text-[14px] leading-[1.85] text-ink-muted">{act.body}</p>
                   </div>
 
-                  {/* Right — participant cards */}
+                  {/* Right - participant cards */}
                   <div className="flex flex-col gap-3">
                     {act.participants.map(p => (
                       <div
@@ -384,7 +384,7 @@ export function CollaborationPageClient() {
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-ink-faint/60">
-              <span className="text-gold">§03</span>&nbsp;—&nbsp;How it works
+              <span className="text-gold">§03</span>&nbsp;-&nbsp;How it works
             </p>
             <h2 className="mb-8 font-serif text-[clamp(1.4rem,3vw,2rem)] font-medium text-ink">
               Built on WebSockets for zero-latency sync.
@@ -418,9 +418,9 @@ export function CollaborationPageClient() {
           </p>
           <div className="flex flex-wrap gap-3">
             {[
-              { href: '/features/editor',          label: 'UML Editor — the shared canvas'            },
-              { href: '/features/interview-mode',   label: 'Interview Mode — practice with a watcher'  },
-              { href: '/features/code-execution',   label: 'Code Execution — implement together'       },
+              { href: '/features/editor',          label: 'UML Editor - the shared canvas'            },
+              { href: '/features/interview-mode',   label: 'Interview Mode - practice with a watcher'  },
+              { href: '/features/code-execution',   label: 'Code Execution - implement together'       },
               { href: '/pricing',                   label: 'Compare Pro and Ultimate plans'             },
             ].map(l => (
               <Link

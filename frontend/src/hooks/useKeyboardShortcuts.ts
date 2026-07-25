@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+﻿import { useEffect } from 'react'
 
 interface ShortcutHandlers {
   onAddClass: () => void
@@ -38,7 +38,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         if (e.key === 'v')                 { handlers.onPaste(); return }
       }
 
-      // Single-key shortcuts — skip if user is typing
+      // Single-key shortcuts - skip if user is typing
       if (isEditing) return
 
       switch (e.key) {

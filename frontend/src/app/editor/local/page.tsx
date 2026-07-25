@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -20,7 +20,7 @@ export default function LocalEditorPage() {
   const [ready, setReady] = useState(false)
 
   // ── Redirect authenticated users away from local mode ─────────────────────
-  // (They should use the cloud-backed editor instead) — unless they're
+  // (They should use the cloud-backed editor instead) - unless they're
   // resuming or starting a practice session that has no linked diagram, in
   // which case local mode is exactly where the dashboard and setup modal
   // send them, and bouncing them back to /dashboard would kill the session
@@ -49,7 +49,7 @@ export default function LocalEditorPage() {
     )
   }
 
-  // Auth users with no active practice session are being redirected — render nothing
+  // Auth users with no active practice session are being redirected - render nothing
   if (session && !activeSession) return null
 
   return (

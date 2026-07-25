@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
 import { useInterview } from '@/contexts/InterviewContext'
@@ -61,7 +61,7 @@ export function useInterviewTimer() {
       window.removeEventListener('beforeunload', onBeforeUnload)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  // Empty deps — registered once on mount, refs keep values current
+  // Empty deps - registered once on mount, refs keep values current
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

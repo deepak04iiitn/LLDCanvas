@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -21,7 +21,7 @@ function CollabAcceptInner() {
     if (isPending) return
     if (!token) { setStatus('error'); setMessage('Invalid invite link.'); return }
     if (!session) {
-      // Save intended destination, then send to landing auth modal — same
+      // Save intended destination, then send to landing auth modal - same
       // pattern as the share-link flow in /editor/[id]/page.tsx
       sessionStorage.setItem('postLoginRedirect', `/collab/accept?token=${token}`)
       router.replace('/?auth=1')

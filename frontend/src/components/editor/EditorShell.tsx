@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -204,13 +204,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Browser tab title ────────────────────────────────────────────────────
   useEffect(() => {
-    document.title = `${title} — LLDCanvas`
+    document.title = `${title} - LLDCanvas`
     return () => { document.title = 'LLDCanvas' }
   }, [title])
 
   // ── Offline / online detection ───────────────────────────────────────────
   useEffect(() => {
-    const handleOffline = () => toast('Working offline — changes will sync when reconnected.', { duration: Infinity, id: 'offline' })
+    const handleOffline = () => toast('Working offline - changes will sync when reconnected.', { duration: Infinity, id: 'offline' })
     const handleOnline  = () => { toast.dismiss('offline'); toast.success('Back online') }
     window.addEventListener('offline', handleOffline)
     window.addEventListener('online', handleOnline)
@@ -237,7 +237,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     return () => document.removeEventListener('fullscreenchange', handler)
   }, [])
 
-  // Auto-enter fullscreen the moment a practice session starts — keyed on the
+  // Auto-enter fullscreen the moment a practice session starts - keyed on the
   // session id so it fires once per session, not on every activeSession update
   // (e.g. notes autosave refreshing the object).
   useEffect(() => {
@@ -266,10 +266,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     setCompleting(true)
     try {
       if (activeSession) {
-        // Interview mode — no UserSolution exists; just end the session
+        // Interview mode - no UserSolution exists; just end the session
         await handleEndSession()
       } else {
-        // Practice mode — mark the problem as submitted via UserSolution
+        // Practice mode - mark the problem as submitted via UserSolution
         await api.problems.submit(effectiveProblemSlug!)
       }
       setCompleted(true)
@@ -286,7 +286,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Local-mode persistence → localStorage ────────────────────────────────
   // Run after the autosave effect; only active when diagramId is null (local mode).
-  // Debounced via a simple useEffect — writes are cheap and instant.
+  // Debounced via a simple useEffect - writes are cheap and instant.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!localMode) return
@@ -304,12 +304,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     setNodes(nds => nds.map(n => ({ ...n, selected: false })))
   }, [setNodes])
 
-  // ── Connect — open relationship picker instead of creating edge immediately
+  // ── Connect - open relationship picker instead of creating edge immediately
   const onConnect = useCallback(
     (params: Connection) => {
       // Reject a zero-length loop back onto the exact same handle (an accidental
       // click-and-release on a handle rather than a real drag) and an exact
-      // duplicate of an existing edge (same source/target/handles) — neither is
+      // duplicate of an existing edge (same source/target/handles) - neither is
       // a relationship the user meant to draw, and both would render as a
       // degenerate or invisibly-stacked edge.
       const isSameHandle =
@@ -392,7 +392,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   )
 
   // ── Insert design pattern skeleton ────────────────────────────────────────
-  // Not Pro-gated for now — every pattern is freely insertable until a real
+  // Not Pro-gated for now - every pattern is freely insertable until a real
   // paid plan exists to gate it behind.
   const insertPattern = useCallback(
     (patternKey: string) => {
@@ -436,9 +436,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     [nodes, edges, history, setNodes, setEdges],
   )
 
-  // ── Import a Draft Notation snippet — one-shot, additive (not a live panel) ─
+  // ── Import a Draft Notation snippet - one-shot, additive (not a live panel) ─
   // The editor deliberately only supports importing already-written code, not
-  // authoring it live — that workflow lives in the standalone Playground.
+  // authoring it live - that workflow lives in the standalone Playground.
   const importDraft = useCallback(
     (ast: DraftAST) => {
       const { nodes: parsedNodes, edges: parsedEdges } = renderToFlow(ast)
@@ -765,7 +765,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
 
-          {/* ── Mark as Complete — bottom-left corner, practice problems only ── */}
+          {/* ── Mark as Complete - bottom-left corner, practice problems only ── */}
           {effectiveProblemSlug && !activeSession && !readOnly && (
             <div className="absolute bottom-4 left-4 z-20">
               {completed ? (
@@ -792,7 +792,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           )}
         </main>
 
-        {/* Problem panel — right sidebar when practicing */}
+        {/* Problem panel - right sidebar when practicing */}
         {problemSlug && (
           <ProblemPanel
             slug={problemSlug}

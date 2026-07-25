@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React from 'react'
 import { motion } from 'framer-motion'
@@ -28,7 +28,7 @@ const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
   ultimate: { label: 'Ultimate', cls: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' },
 }
 
-// Distinct per tier — a gate for a Pro-only feature shouldn't show the same
+// Distinct per tier - a gate for a Pro-only feature shouldn't show the same
 // icon as one gating an Ultimate-only feature.
 const PLAN_ICON = { pro: Rocket, ultimate: Crown } as const
 const PLAN_ICON_BOX_CLS: Record<string, string> = {

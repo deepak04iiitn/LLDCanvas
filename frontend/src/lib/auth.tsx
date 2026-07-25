@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react'
 import { signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth'
@@ -25,7 +25,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-// A real 401 means the token itself is invalid/expired — that's a genuine
+// A real 401 means the token itself is invalid/expired - that's a genuine
 // "log the user out" signal. Anything else (a transient 5xx from a cold
 // serverless start, a network blip) must NOT be treated the same way, or a
 // momentary backend hiccup looks identical to being signed out even though
@@ -50,7 +50,7 @@ async function fetchMeOnce(token: string): Promise<FetchMeResult> {
 }
 
 // Retries transient failures (a cold serverless start, a network blip)
-// before giving up — this covers the very first load too, not just
+// before giving up - this covers the very first load too, not just
 // mid-session refetches, so a momentary backend hiccup doesn't need an
 // already-populated user to fall back on to avoid looking like a logout.
 async function fetchMe(): Promise<FetchMeResult> {
@@ -102,11 +102,11 @@ export function useAuth(): AuthContextValue {
 
 // Mirrors better-auth's useSession() shape ({ data: { user }, isPending }) so
 // the many pages that already consumed it didn't need their session-checking
-// logic rewritten — only the import path changed.
+// logic rewritten - only the import path changed.
 export function useSession(): { data: { user: SessionUser } | null; isPending: boolean } {
   const { user, isPending } = useAuth()
   // Memoized so the returned object keeps a stable identity across renders
-  // where user/isPending haven't actually changed — several pages put this
+  // where user/isPending haven't actually changed - several pages put this
   // return value straight into a useEffect dependency array (a pattern
   // carried over from better-auth's referentially-stable session store), and
   // a fresh object literal on every render would refire those effects
@@ -150,7 +150,7 @@ export async function signOut(): Promise<void> {
   try {
     await firebaseSignOut(getFirebaseAuth())
   } catch {
-    // Best-effort — our own token is already cleared regardless.
+    // Best-effort - our own token is already cleared regardless.
   }
 }
 
@@ -164,7 +164,7 @@ export function useSignOut() {
     try { await firebaseSignOut(getFirebaseAuth()) } catch {}
     // Reset auth context so no page sees a stale user
     await refetch()
-    // Hard redirect — clears all in-memory state
+    // Hard redirect - clears all in-memory state
     window.location.href = '/'
   }
 }

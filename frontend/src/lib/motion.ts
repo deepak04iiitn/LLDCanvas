@@ -1,6 +1,6 @@
-export const EASE = 'easeOut' as const
+﻿export const EASE = 'easeOut' as const
 
-// Fade + rise on mount — used for above-the-fold content that should animate
+// Fade + rise on mount - used for above-the-fold content that should animate
 // in immediately (hero copy, page headers).
 export function fadeUpProps(delay = 0) {
   return {
@@ -10,7 +10,7 @@ export function fadeUpProps(delay = 0) {
   }
 }
 
-// Fade + rise on scroll-into-view — used for below-the-fold sections so the
+// Fade + rise on scroll-into-view - used for below-the-fold sections so the
 // page doesn't animate everything at once on load.
 export function inViewProps(delay = 0) {
   return {

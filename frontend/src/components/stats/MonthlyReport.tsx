@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useMemo } from 'react'
 import {
@@ -14,7 +14,7 @@ function fmtTime(s: number) {
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   if (h > 0) return `${h}h ${m}m`
-  return m > 0 ? `${m}m` : (s > 0 ? `${s}s` : '—')
+  return m > 0 ? `${m}m` : (s > 0 ? `${s}s` : '-')
 }
 
 function pct(a: number, b: number) {
@@ -69,7 +69,7 @@ export function MonthlyReport({ reports }: Props) {
   const problemsDelta = last && prev ? pct(last.problemsSolved, prev.problemsSolved) : null
 
   function DeltaBadge({ val }: { val: number | null }) {
-    if (val === null) return <span className="text-ink-faint">—</span>
+    if (val === null) return <span className="text-ink-faint">-</span>
     const pos = val >= 0
     return (
       <span className={cn(
@@ -183,7 +183,7 @@ export function MonthlyReport({ reports }: Props) {
         </>
       ) : (
         <div className="flex h-44 items-center justify-center text-sm text-ink-faint">
-          No monthly data yet — start practicing to see your progress
+          No monthly data yet - start practicing to see your progress
         </div>
       )}
     </div>

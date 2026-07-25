@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils'
 import { CodePanel } from '@/components/editor/CodePanel'
 import { fadeUpProps, inViewProps } from '@/lib/motion'
 
-const PLACEHOLDER = `# Draft Notation — write a design, watch it render
+const PLACEHOLDER = `# Draft Notation - write a design, watch it render
 # Docs: lldcanvas.com/docs
 
 User
@@ -181,7 +181,7 @@ function CodePane({ code, onChange, errors, parsing }: CodePaneProps) {
   )
 }
 
-// ─── Diagram pane (real canvas — same rendering engine as the editor) ─────────
+// ─── Diagram pane (real canvas - same rendering engine as the editor) ─────────
 
 interface DiagramPaneProps {
   nodes: Node[]
@@ -266,10 +266,10 @@ function DiagramPane(props: DiagramPaneProps) {
 // ─── Picture-in-picture thumbnail of whichever view isn't active ──────────────
 // Keeps the other half of the "code ↔ diagram" story always in view, without
 // permanently taking half the screen away from whichever one you're actually
-// looking at — click it to swap focus.
+// looking at - click it to swap focus.
 
 function PipThumbnail({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  // A <div role="button"> rather than a real <button> — the mini preview
+  // A <div role="button"> rather than a real <button> - the mini preview
   // inside (CanvasView) renders its own zoom-control buttons, and a <button>
   // can never contain another <button> without breaking HTML validity /
   // hydration.
@@ -297,7 +297,7 @@ function PipThumbnail({ label, onClick, children }: { label: string; onClick: ()
 }
 
 // Keeps the mini canvas fit to view as nodes change (React Flow's `fitView`
-// prop only ever fits once, on mount — this pane never unmounts while it's
+// prop only ever fits once, on mount - this pane never unmounts while it's
 // the inactive-view thumbnail, so it needs its own continuous re-fit).
 function MiniDiagramFit({ nodeCount }: { nodeCount: number }) {
   const { fitView } = useReactFlow()
@@ -351,7 +351,7 @@ const SYNTAX_TABS = [
     id: 'rel',
     label: 'Relationships',
     code: `User has many Order\nOrder owns OrderItem\nPayment extends BaseEntity\nCartService uses InventoryService`,
-    hint: '"has many", "owns", "extends", "uses" — all render as proper UML arrows.',
+    hint: '"has many", "owns", "extends", "uses" - all render as proper UML arrows.',
   },
   {
     id: 'enum',
@@ -369,11 +369,11 @@ const SYNTAX_TABS = [
     id: 'abs',
     label: 'Abstract',
     code: `abstract BaseService\nBaseService can validate()\nBaseService can process()\n\nUserService extends BaseService\nOrderService extends BaseService`,
-    hint: 'Prefix with "abstract" — shown with italics in the UML box.',
+    hint: 'Prefix with "abstract" - shown with italics in the UML box.',
   },
 ] as const
 
-// ─── §1/§2 data — the whole "drafting table" concept: Draft Notation reads
+// ─── §1/§2 data - the whole "drafting table" concept: Draft Notation reads
 // like a drafting instrument's own onboarding, not a SaaS feature list ───────
 const STATS = [
   { value: '< 1ms', label: 'render latency' },
@@ -388,7 +388,7 @@ const STEPS = [
     icon: Pencil,
     tilt: -3,
     title: 'Write in plain English',
-    body: 'Describe classes, fields, methods and relationships exactly how you think — no angle brackets, no drag-and-drop.',
+    body: 'Describe classes, fields, methods and relationships exactly how you think - no angle brackets, no drag-and-drop.',
   },
   {
     n: '02',
@@ -402,7 +402,7 @@ const STEPS = [
     icon: MousePointer2,
     tilt: -2,
     title: 'Canvas renders',
-    body: 'The AST is fed to the same rendering engine as the full editor — proper UML 2.x boxes, arrows, and cardinality labels.',
+    body: 'The AST is fed to the same rendering engine as the full editor - proper UML 2.x boxes, arrows, and cardinality labels.',
   },
   {
     n: '04',
@@ -467,10 +467,10 @@ function PlaygroundContent() {
   return (
     <div className="overflow-hidden">
 
-      {/* ── §1 Hero — "The Drafting Table" ──────────────────────────────────
+      {/* ── §1 Hero - "The Drafting Table" ──────────────────────────────────
           Draft Notation, taken literally: a drafting table's blueprint grid,
           a ruled top edge like a T-square, and a hand-drawn pencil underline
-          on the headline — the page's own metaphor is the product's name. */}
+          on the headline - the page's own metaphor is the product's name. */}
       <section className="relative overflow-hidden border-b border-hairline">
         {/* blueprint grid */}
         <div
@@ -531,7 +531,7 @@ function PlaygroundContent() {
 
           <motion.p {...fadeUpProps(0.1)} className="mx-auto mt-6 max-w-lg text-base leading-relaxed text-ink-muted">
             No angle brackets, no drag-and-drop. Describe classes, fields, methods and
-            relationships the way you'd say them out loud — Draft Notation parses every
+            relationships the way you'd say them out loud - Draft Notation parses every
             keystroke and draws the diagram itself.
           </motion.p>
 
@@ -578,9 +578,9 @@ function PlaygroundContent() {
         </div>
       </section>
 
-      {/* ── §2 How it works — "Instruments on the table" ─────────────────────
+      {/* ── §2 How it works - "Instruments on the table" ─────────────────────
           Four drafting instruments resting at slightly different angles, as
-          if just set down — tied by a technical dimension line, not a plain
+          if just set down - tied by a technical dimension line, not a plain
           connector rule. */}
       <section className="relative border-b border-hairline bg-paper-elevated/40 py-24">
         <div className="mx-auto max-w-6xl px-6">
@@ -647,7 +647,7 @@ function PlaygroundContent() {
       <section className="py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid items-start gap-12 lg:grid-cols-[1fr_1.3fr]">
-            {/* Left — heading + explanation */}
+            {/* Left - heading + explanation */}
             <div className="lg:sticky lg:top-24">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-hairline px-3 py-1">
                 <span className="font-mono text-[10px] font-bold tracking-widest text-gold uppercase">¶03</span>
@@ -663,7 +663,7 @@ function PlaygroundContent() {
 
               <div className="mt-8 space-y-3">
                 {[
-                  { icon: Zap, label: 'Instant — no build step' },
+                  { icon: Zap, label: 'Instant - no build step' },
                   { icon: GitBranch, label: 'Infers arrow types automatically' },
                   { icon: RefreshCw, label: 'Bi-directional canvas sync' },
                 ].map(({ icon: Icon, label }) => (
@@ -684,7 +684,7 @@ function PlaygroundContent() {
               </Link>
             </div>
 
-            {/* Right — terminal */}
+            {/* Right - terminal */}
             <SyntaxTerminal />
           </div>
         </div>
@@ -748,10 +748,10 @@ export default function PlaygroundPage() {
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div>
               <p className="font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-                <span className="text-gold">¶04</span> — Try it live
+                <span className="text-gold">¶04</span> - Try it live
               </p>
               <p className="mt-1 text-sm text-ink-muted">
-                Edit Draft code on the left — your UML diagram updates in real time. No account needed.
+                Edit Draft code on the left - your UML diagram updates in real time. No account needed.
               </p>
             </div>
             <button
@@ -778,7 +778,7 @@ export default function PlaygroundPage() {
             />
           )}
 
-          {/* Code execution button — bottom-left, mirrors the PiP on the right */}
+          {/* Code execution button - bottom-left, mirrors the PiP on the right */}
           <button
             onClick={() => setCodeOpen(v => !v)}
             className={cn(

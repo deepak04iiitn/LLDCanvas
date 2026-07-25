@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Lock, CheckCircle2, Globe, ChevronRight } from 'lucide-react'
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const res = await publicApi.problems.get(slug)
   if (!res) return { title: 'Question not found' }
   const { problem } = res
-  const title = `Design ${problem.title} — LLD Interview Question | LLDCanvas`
+  const title = `Design ${problem.title} - LLD Interview Question | LLDCanvas`
   return {
     title,
     description: `${problem.description} A ${problem.difficulty} Low-Level Design question asked by ${problem.companies.slice(0, 3).join(', ') || 'top tech companies'}. Includes real-world applications, learning objectives, and a live UML canvas.`,
@@ -69,7 +69,7 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         ],
       }} />
 
-      {/* ══════════════════════════════ LAYER 0 — HERO ══════════════════════════ */}
+      {/* ══════════════════════════════ LAYER 0 - HERO ══════════════════════════ */}
       <section className="relative border-b border-hairline">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.035]"
@@ -142,12 +142,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </Reveal>
       </section>
 
-      {/* ══════════════════════════════ LAYER 1 — WHY ASKED ═════════════════════ */}
+      {/* ══════════════════════════════ LAYER 1 - WHY ASKED ═════════════════════ */}
       {problem.whyAsked && (
         <section className="border-b border-hairline py-20">
           <Reveal className="mx-auto max-w-4xl px-6 sm:px-8">
             <p className="mb-8 text-center font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
-              <span className="text-gold">01</span> &nbsp;—&nbsp; Why interviewers ask this
+              <span className="text-gold">01</span> &nbsp;-&nbsp; Why interviewers ask this
             </p>
             <blockquote className="relative mx-auto max-w-2xl text-center">
               <span className="pointer-events-none absolute left-1/2 top-[-1.2rem] -translate-x-1/2 select-none font-serif text-[7rem] leading-none text-brand/10" aria-hidden>
@@ -161,13 +161,13 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </section>
       )}
 
-      {/* ══════════════════════════════ LAYER 2 — REAL-WORLD ════════════════════ */}
+      {/* ══════════════════════════════ LAYER 2 - REAL-WORLD ════════════════════ */}
       {problem.realWorldApplications.length > 0 && (
         <section className="border-b border-hairline bg-paper-elevated/40 py-20">
           <div className="mx-auto max-w-4xl px-6 sm:px-8">
             <Reveal>
               <p className="mb-3 text-center font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
-                <span className="text-gold">02</span> &nbsp;—&nbsp; Where this system exists in the real world
+                <span className="text-gold">02</span> &nbsp;-&nbsp; Where this system exists in the real world
               </p>
               <p className="mb-12 text-center font-serif text-xl font-medium text-ink">
                 You interact with this design every day.
@@ -189,13 +189,13 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </section>
       )}
 
-      {/* ══════════════════════════════ LAYER 3 — OBJECTIVES ════════════════════ */}
+      {/* ══════════════════════════════ LAYER 3 - OBJECTIVES ════════════════════ */}
       {problem.learningObjectives.length > 0 && (
         <section className="border-b border-hairline py-20">
           <div className="mx-auto max-w-4xl px-6 sm:px-8">
             <Reveal>
               <p className="mb-3 text-center font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
-                <span className="text-gold">03</span> &nbsp;—&nbsp; What you'll master
+                <span className="text-gold">03</span> &nbsp;-&nbsp; What you'll master
               </p>
               <p className="mb-12 text-center font-serif text-xl font-medium text-ink">
                 Solve this once. Know it forever.
@@ -222,12 +222,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </section>
       )}
 
-      {/* ══════════════════════════════ LAYER 4 — REQUIREMENTS ═════════════════ */}
+      {/* ══════════════════════════════ LAYER 4 - REQUIREMENTS ═════════════════ */}
       <section className="border-b border-hairline bg-paper-elevated/40 py-20">
         <div className="mx-auto max-w-4xl px-6 sm:px-8">
           <Reveal>
           <p className="mb-3 text-center font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
-            <span className="text-gold">04</span> &nbsp;—&nbsp; What you'll design
+            <span className="text-gold">04</span> &nbsp;-&nbsp; What you'll design
           </p>
           <p className="mb-12 text-center font-serif text-xl font-medium text-ink">
             {problem.functionalCount} functional · {problem.nonFunctionalCount} non-functional requirements.
@@ -289,12 +289,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </div>
       </section>
 
-      {/* ══════════════════════════════ LAYER 5 — COMPANIES ═════════════════════ */}
+      {/* ══════════════════════════════ LAYER 5 - COMPANIES ═════════════════════ */}
       {problem.companies.length > 0 && (
         <section className="border-b border-hairline py-20">
           <Reveal className="mx-auto max-w-4xl px-6 text-center sm:px-8">
             <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
-              <span className="text-gold">05</span> &nbsp;—&nbsp; Companies that ask this
+              <span className="text-gold">05</span> &nbsp;-&nbsp; Companies that ask this
             </p>
             <p className="mb-10 font-serif text-xl font-medium text-ink">
               You may face this exact question in your next interview.
@@ -316,7 +316,7 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
         </section>
       )}
 
-      {/* ══════════════════════════════ LAYER 6 — CTA ═══════════════════════════ */}
+      {/* ══════════════════════════════ LAYER 6 - CTA ═══════════════════════════ */}
       <section className="py-20">
         <Reveal className="mx-auto max-w-4xl px-6 text-center sm:px-8">
           <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-ink-faint/60">
@@ -327,7 +327,7 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
           </h2>
           <p className="mx-auto mb-10 max-w-lg text-[15px] leading-relaxed text-ink-muted">
             See all requirements, use staged hints, run your code,
-            and compare with community discussions — all on the same canvas.
+            and compare with community discussions - all on the same canvas.
           </p>
           <Link
             href={`/dashboard/problems/${slug}`}

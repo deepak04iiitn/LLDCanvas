@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Flame, CalendarDays, BarChart2, Timer, Zap, BookOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { PersonalBests as PB } from '@/types'
 
 function fmtTime(s: number) {
-  if (s <= 0) return '—'
+  if (s <= 0) return '-'
   const h = Math.floor(s / 3600)
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
@@ -68,7 +68,7 @@ export function PersonalBests({ bests }: Props) {
     {
       icon:        <Flame size={18} />,
       label:       'Longest Streak',
-      value:       bests.longestStreakDays > 0 ? `${bests.longestStreakDays} days` : '—',
+      value:       bests.longestStreakDays > 0 ? `${bests.longestStreakDays} days` : '-',
       sub:         bests.longestStreakDays > 0 ? 'consecutive practice days' : undefined,
       accentClass: 'text-amber-500',
       bgClass:     'bg-amber-50',
@@ -77,7 +77,7 @@ export function PersonalBests({ bests }: Props) {
     {
       icon:        <Timer size={18} />,
       label:       'Longest Session',
-      value:       bests.longestSession ? fmtTime(bests.longestSession.timeSeconds) : '—',
+      value:       bests.longestSession ? fmtTime(bests.longestSession.timeSeconds) : '-',
       sub:         bests.longestSession
                      ? `${bests.longestSession.title} · ${bests.longestSession.date}`
                      : undefined,
@@ -88,7 +88,7 @@ export function PersonalBests({ bests }: Props) {
     {
       icon:        <Zap size={18} />,
       label:       'Fastest Session',
-      value:       bests.fastestSession ? fmtTime(bests.fastestSession.timeSeconds) : '—',
+      value:       bests.fastestSession ? fmtTime(bests.fastestSession.timeSeconds) : '-',
       sub:         bests.fastestSession
                      ? `${bests.fastestSession.title} · ${bests.fastestSession.date}`
                      : undefined,
@@ -99,7 +99,7 @@ export function PersonalBests({ bests }: Props) {
     {
       icon:        <CalendarDays size={18} />,
       label:       'Best Single Day',
-      value:       bests.bestDay ? `${bests.bestDay.sessions} sessions` : '—',
+      value:       bests.bestDay ? `${bests.bestDay.sessions} sessions` : '-',
       sub:         bests.bestDay
                      ? `${bests.bestDay.date} · ${fmtTime(bests.bestDay.timeSeconds)}`
                      : undefined,
@@ -110,7 +110,7 @@ export function PersonalBests({ bests }: Props) {
     {
       icon:        <BarChart2 size={18} />,
       label:       'Best Week',
-      value:       bests.bestWeek ? `${bests.bestWeek.sessions} sessions` : '—',
+      value:       bests.bestWeek ? `${bests.bestWeek.sessions} sessions` : '-',
       sub:         bests.bestWeek
                      ? `${bests.bestWeek.weekLabel} · ${fmtTime(bests.bestWeek.timeSeconds)}`
                      : undefined,

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -232,7 +232,7 @@ export default function AdminCollabPage() {
 
           {invPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-ink-faint">Showing {(invPage - 1) * 20 + 1}–{Math.min(invPage * 20, invTotal)} of {invTotal}</p>
+              <p className="text-xs text-ink-faint">Showing {(invPage - 1) * 20 + 1}-{Math.min(invPage * 20, invTotal)} of {invTotal}</p>
               <div className="flex items-center gap-2">
                 <button onClick={() => loadInvites(invPage - 1)} disabled={invPage <= 1} className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline hover:bg-hairline disabled:opacity-40"><ChevronLeft size={14} /></button>
                 <span className="text-xs text-ink">Page {invPage} of {invPages}</span>
@@ -325,7 +325,7 @@ export default function AdminCollabPage() {
 
           {cmtPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-ink-faint">Showing {(cmtPage - 1) * 20 + 1}–{Math.min(cmtPage * 20, cmtTotal)} of {cmtTotal}</p>
+              <p className="text-xs text-ink-faint">Showing {(cmtPage - 1) * 20 + 1}-{Math.min(cmtPage * 20, cmtTotal)} of {cmtTotal}</p>
               <div className="flex items-center gap-2">
                 <button onClick={() => loadComments(cmtPage - 1)} disabled={cmtPage <= 1} className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline hover:bg-hairline disabled:opacity-40"><ChevronLeft size={14} /></button>
                 <span className="text-xs text-ink">Page {cmtPage} of {cmtPages}</span>

@@ -1,19 +1,19 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { LandingPageClient } from '@/components/marketing/LandingPageClient'
 import { FAQS } from '@/components/marketing/faq-data'
 
 const SITE_URL = 'https://lldcanvas.com'
 
-// A server component so this route can carry its own rich metadata + JSON-LD —
+// A server component so this route can carry its own rich metadata + JSON-LD -
 // the interactive landing page itself is 'use client' (motion, state, hooks)
 // and lives in LandingPageClient, which Next.js can't export page metadata from.
 export const metadata: Metadata = {
-  // `title.absolute` bypasses the root layout's `%s — LLDCanvas` template —
+  // `title.absolute` bypasses the root layout's `%s - LLDCanvas` template -
   // the brand name is already the lead word here, so templating would print
-  // "…Platform — LLDCanvas" twice in the actual <title> tag.
-  title: { absolute: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform' },
+  // "…Platform - LLDCanvas" twice in the actual <title> tag.
+  title: { absolute: 'LLDCanvas - Free LLD & System Design Interview Preparation Platform' },
   description:
-    'Prepare for Low-Level Design (LLD) and system design interviews for free: a UML class diagram editor, 23 pre-wired design patterns, SOLID principles notes, 100+ curated LLD interview questions with community discussion, timed Interview Mode with analytics, a plain-English code↔diagram language, multi-language code execution, and real-time collaboration — all in one platform.',
+    'Prepare for Low-Level Design (LLD) and system design interviews for free: a UML class diagram editor, 23 pre-wired design patterns, SOLID principles notes, 110+ curated LLD interview questions with community discussion, timed Interview Mode with analytics, a plain-English code↔diagram language, multi-language code execution, and real-time collaboration - all in one platform.',
   keywords: [
     'LLD interview', 'low level design interview', 'LLD interview preparation', 'LLD interview practice',
     'LLD course', 'free LLD course', 'learn low level design', 'low level design tutorial',
@@ -26,18 +26,18 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: '/' },
   openGraph: {
-    title: 'LLDCanvas — Free LLD & System Design Interview Preparation Platform',
+    title: 'LLDCanvas - Free LLD & System Design Interview Preparation Platform',
     description:
-      'A UML editor, 23 design patterns, SOLID principles notes, 100+ curated LLD interview questions, timed practice with analytics, revision notes, and runnable code — everything for your next LLD or system design interview.',
+      'A UML editor, 23 design patterns, SOLID principles notes, 110+ curated LLD interview questions, timed practice with analytics, revision notes, and runnable code - everything for your next LLD or system design interview.',
     type: 'website',
     siteName: 'LLDCanvas',
     url: '/',
-    images: [{ url: '/LLDCanvas.png', width: 1774, height: 887, alt: 'LLDCanvas — Low-Level Design interview preparation platform' }],
+    images: [{ url: '/LLDCanvas.png', width: 1774, height: 887, alt: 'LLDCanvas - Low-Level Design interview preparation platform' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LLDCanvas — Free LLD & System Design Interview Prep',
-    description: 'UML editor, design patterns, SOLID principles, LLD interview questions, timed practice, and runnable code — all in one place.',
+    title: 'LLDCanvas - Free LLD & System Design Interview Prep',
+    description: 'UML editor, design patterns, SOLID principles, LLD interview questions, timed practice, and runnable code - all in one place.',
     images: ['/LLDCanvas.png'],
   },
 }
@@ -85,7 +85,7 @@ const JSON_LD = {
       isAccessibleForFree: true,
       publisher: { '@id': `${SITE_URL}/#organization` },
       description:
-        'A free, all-in-one Low-Level Design (LLD) and system design interview-prep platform: a UML class diagram editor, 23 pre-wired Gang-of-Four design patterns, timed Interview Mode with analytics, a curated library of 100+ LLD interview questions with community discussion, SOLID-principles revision notes, a plain-English code↔diagram language (Draft Notation), and multi-language code execution.',
+        'A free, all-in-one Low-Level Design (LLD) and system design interview-prep platform: a UML class diagram editor, 23 pre-wired Gang-of-Four design patterns, timed Interview Mode with analytics, a curated library of 110+ LLD interview questions with community discussion, SOLID-principles revision notes, a plain-English code↔diagram language (Draft Notation), and multi-language code execution.',
       offers: {
         '@type': 'Offer',
         price: '0',
@@ -96,16 +96,16 @@ const JSON_LD = {
         '7 UML relationship types',
         '23 pre-wired Gang-of-Four design pattern skeletons',
         '13 class-role stereotypes for object-oriented design',
-        'Draft Notation — plain-English code to diagram',
-        'Interview Mode — timed LLD and system design practice with streaks and analytics',
-        '100+ curated LLD interview questions with community discussion',
+        'Draft Notation - plain-English code to diagram',
+        'Interview Mode - timed LLD and system design practice with streaks and analytics',
+        '110+ curated LLD interview questions with community discussion',
         'SOLID principles and system design fundamentals revision notes',
         'Multi-language code execution (11 languages)',
         'PNG, SVG, PlantUML, Mermaid, and Draft export',
         'Real-time collaboration with live cursors and threaded @mention comments',
       ],
     },
-    // Course — the free, self-paced LLD/system-design curriculum formed by the
+    // Course - the free, self-paced LLD/system-design curriculum formed by the
     // problems library + revision notes + Interview Mode. Deliberately modest
     // (no fabricated ratings/enrollment counts, no certificate claims) so it
     // stays honest about what's actually offered.
@@ -114,7 +114,7 @@ const JSON_LD = {
       '@id': `${SITE_URL}/#course`,
       name: 'Free Low-Level Design & System Design Interview Preparation',
       description:
-        'A free, self-paced curriculum covering Low-Level Design (LLD) and system-design-adjacent interview fundamentals: SOLID principles, the 23 Gang-of-Four design patterns, 100+ curated LLD interview questions from real companies, and timed practice with analytics.',
+        'A free, self-paced curriculum covering Low-Level Design (LLD) and system-design-adjacent interview fundamentals: SOLID principles, the 23 Gang-of-Four design patterns, 110+ curated LLD interview questions from real companies, and timed practice with analytics.',
       provider: { '@id': `${SITE_URL}/#organization` },
       url: SITE_URL,
       isAccessibleForFree: true,

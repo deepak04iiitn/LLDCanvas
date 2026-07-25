@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { useSession } from '@/lib/auth'
 
-// Every /dashboard/* page previously rendered with zero auth-gating — an
+// Every /dashboard/* page previously rendered with zero auth-gating - an
 // anonymous visitor saw full dashboard chrome around a broken "not found"
 // state (the underlying API calls 401, but nothing redirected). This guard
 // wraps the whole tree once, following the same postLoginRedirect + ?auth=1

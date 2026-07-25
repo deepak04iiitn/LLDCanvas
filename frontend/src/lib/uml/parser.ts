@@ -1,4 +1,4 @@
-import type { UMLAttribute, UMLMethod, Visibility } from '@/types'
+﻿import type { UMLAttribute, UMLMethod, Visibility } from '@/types'
 
 const VISIBILITIES: Visibility[] = ['+', '-', '#', '~']
 
@@ -44,7 +44,7 @@ export function parseMethod(raw: string): Omit<UMLMethod, 'id' | 'isStatic' | 'i
   const parenClose = rest.lastIndexOf(')')
 
   if (parenOpen === -1) {
-    // No parens — treat as method name with no params
+    // No parens - treat as method name with no params
     const colonIdx = rest.lastIndexOf(':')
     return {
       visibility,

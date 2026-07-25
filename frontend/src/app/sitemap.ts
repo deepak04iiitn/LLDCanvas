@@ -16,12 +16,16 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: '/features/revision-notes',      priority: 0.9, changeFrequency: 'weekly' },
   { path: '/features/code-execution',      priority: 0.8, changeFrequency: 'monthly' },
   { path: '/features/collaboration',       priority: 0.8, changeFrequency: 'monthly' },
+  { path: '/blog',                          priority: 0.9, changeFrequency: 'weekly' },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [problemsRes, notesRes] = await Promise.all([
+  const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+
+  const [problemsRes, notesRes, blogsRes] = await Promise.all([
     publicApi.problems.list(),
     publicApi.revisionNotes.list(),
+    fetch(`${BASE}/blog?limit=100`).then(r => r.json()).catch(() => ({ blogs: [] })),
   ])
 
   const now = new Date()
@@ -47,5 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }))
 
-  return [...staticEntries, ...problemEntries, ...noteEntries]
+  const blogEntries: MetadataRoute.Sitemap = (blogsRes?.blogs ?? []).map((b: { slug: string; updatedAt?: string }) => ({
+    url: `${SITE_URL}/blog/${b.slug}`,
+    lastModified: b.updatedAt ? new Date(b.updatedAt) : now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  }))
+
+  return [...staticEntries, ...problemEntries, ...noteEntries, ...blogEntries]
 }

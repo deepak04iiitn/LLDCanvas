@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { X, ChevronLeft, ChevronRight, Bookmark, BookmarkCheck, CheckCircle2, Lightbulb, Code2, BookOpen, RotateCcw } from 'lucide-react'
@@ -94,7 +94,7 @@ export function FlashcardMode({ note, isRevised, bookmarked, onClose, onMarkRevi
             {bookmarked ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
           </button>
 
-          {/* Close — prominent pill button */}
+          {/* Close - prominent pill button */}
           <button
             onClick={onClose}
             className="flex items-center gap-1.5 ml-1 px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-colors text-xs font-medium"

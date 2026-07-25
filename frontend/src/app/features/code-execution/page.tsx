@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CodeExecutionPageClient } from '@/components/features/CodeExecutionPageClient'
 
@@ -7,7 +7,7 @@ import { CodeExecutionPageClient } from '@/components/features/CodeExecutionPage
 export const metadata: Metadata = {
   title: 'Run Code in 12 Languages - Online Code Execution | LLDCanvas',
   description:
-    "Don't just design it — run it. LLDCanvas lets you write and execute real code in 12 languages (Python, Java, Go, Rust, C++, TypeScript, and more) in the same workspace as your UML class diagram. No tab-switching, no local setup, no waiting. Integrated code execution for Low-Level Design practice.",
+    "Don't just design it - run it. LLDCanvas lets you write and execute real code in 12 languages (Python, Java, Go, Rust, C++, TypeScript, and more) in the same workspace as your UML class diagram. No tab-switching, no local setup, no waiting. Integrated code execution for Low-Level Design practice.",
   keywords: [
     'online code execution',
     'run code online',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Code Execution in 12 Languages - LLDCanvas',
     description:
-      'Write and run real code next to your UML diagram. Python, Java, Go, Rust, TypeScript, and 7 more — all in one workspace.',
+      'Write and run real code next to your UML diagram. Python, Java, Go, Rust, TypeScript, and 7 more - all in one workspace.',
     type: 'website',
     url: '/features/code-execution',
   },
@@ -51,7 +51,7 @@ export default function CodeExecutionFeaturePage() {
         name: 'Code Execution - Run Code in 12 Languages | LLDCanvas',
         url: 'https://lldcanvas.com/features/code-execution',
         description:
-          'Write and execute real code in 12 programming languages within the LLDCanvas workspace — no local setup required.',
+          'Write and execute real code in 12 programming languages within the LLDCanvas workspace - no local setup required.',
       }} />
       <JsonLd data={{
         '@context': 'https://schema.org',

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { NotebookPen, CheckCircle2, Loader2, List, ListOrdered, Minus } from 'lucide-react'
@@ -91,7 +91,7 @@ export function ProblemNotesPanel({ open, onClose, slug }: ProblemNotesPanelProp
       .catch(() => { setNotes(''); setLoaded(true) })
   }, [open, slug])
 
-  // Debounced auto-save — 800 ms after last keystroke
+  // Debounced auto-save - 800 ms after last keystroke
   const handleChange = useCallback((val: string) => {
     setNotes(val)
     setSaveState('saving')
@@ -199,7 +199,7 @@ export function ProblemNotesPanel({ open, onClose, slug }: ProblemNotesPanelProp
         {/* ── Description ────────────────────────────────────────────── */}
         <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 py-2.5">
           <p className="text-[11px] leading-relaxed text-ink-muted">
-            Private notes visible only to you — jot down your approach, trade-offs, or anything to remember.
+            Private notes visible only to you - jot down your approach, trade-offs, or anything to remember.
           </p>
         </div>
 

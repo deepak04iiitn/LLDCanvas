@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Search, Trash2, ChevronLeft, ChevronRight, RefreshCw, Layers } from 'lucide-react'
@@ -126,10 +126,10 @@ export default function AdminDiagramsPage() {
                     <td className="px-4 py-3 font-mono text-sm text-ink-muted">{d.nodeCount}</td>
                     <td className="px-4 py-3 font-mono text-sm text-ink-muted">{d.edgeCount}</td>
                     <td className="px-4 py-3 font-mono text-xs text-ink-faint whitespace-nowrap">
-                      {d.createdAt ? format(parseISO(d.createdAt), 'MMM d, yyyy') : '—'}
+                      {d.createdAt ? format(parseISO(d.createdAt), 'MMM d, yyyy') : '-'}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-ink-faint whitespace-nowrap">
-                      {d.updatedAt ? format(parseISO(d.updatedAt), 'MMM d, yyyy') : '—'}
+                      {d.updatedAt ? format(parseISO(d.updatedAt), 'MMM d, yyyy') : '-'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button

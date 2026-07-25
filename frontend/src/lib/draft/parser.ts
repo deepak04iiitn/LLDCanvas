@@ -1,4 +1,4 @@
-// ─── Draft Notation Parser ────────────────────────────────────────────────────
+﻿// ─── Draft Notation Parser ────────────────────────────────────────────────────
 // Converts Draft text → a typed AST
 
 export type Visibility = '+' | '-' | '#' | '~'
@@ -119,7 +119,7 @@ function parseMethodList(rest: string): DraftMethod[] {
       const returnType = afterParen.startsWith(':') ? afterParen.slice(1).trim() : undefined
       return { name, params, returnType, visibility, isStatic, isAbstract }
     }
-    // bare name — treat as method
+    // bare name - treat as method
     const colonIdx = tok.indexOf(':')
     if (colonIdx !== -1) {
       return { name: tok.slice(0, colonIdx).trim(), returnType: tok.slice(colonIdx + 1).trim(), visibility, isStatic, isAbstract }
@@ -247,7 +247,7 @@ export function parse(text: string): ParseResult {
       continue
     }
 
-    // "X has Y" (plain aggregation — after has-many/has-one checked above)
+    // "X has Y" (plain aggregation - after has-many/has-one checked above)
     const has = line.match(/^(\w+)\s+has\s+(.+)$/i)
     if (has) {
       ensureClass(nodes, has[1], lineNum)

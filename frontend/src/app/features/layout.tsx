@@ -1,7 +1,7 @@
-import { SiteNavbar } from '@/components/marketing/SiteNavbar'
+﻿import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
-// Shared marketing shell for the whole /features/** tree — kept as its own
+// Shared marketing shell for the whole /features/** tree - kept as its own
 // nested layout (not the root layout) so /dashboard, /admin, /editor stay
 // untouched. Every page under here is a server component for real SSR/SEO,
 // unlike the client-only dashboard pages.

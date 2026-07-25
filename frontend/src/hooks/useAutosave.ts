@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/lib/api'
 import type { DiagramData, CanvasTheme } from '@/types'
 
@@ -38,7 +38,7 @@ export function useAutosave(
       if (savedTimer.current) clearTimeout(savedTimer.current)
       savedTimer.current = setTimeout(() => setStatus('idle'), 2000)
 
-      // Thumbnail generation — fire once, well after the save, non-blocking
+      // Thumbnail generation - fire once, well after the save, non-blocking
       if (thumbnailTimer.current) clearTimeout(thumbnailTimer.current)
       thumbnailTimer.current = setTimeout(async () => {
         try {
@@ -68,7 +68,7 @@ export function useAutosave(
     const content = JSON.stringify(data)
     if (content === lastSavedContent.current) return
 
-    // Clear any pending debounce — reset the countdown
+    // Clear any pending debounce - reset the countdown
     if (debounceTimer.current) clearTimeout(debounceTimer.current)
 
     debounceTimer.current = setTimeout(() => {

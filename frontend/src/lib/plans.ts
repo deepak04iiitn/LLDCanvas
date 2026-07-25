@@ -1,15 +1,15 @@
-/** Mirror of backend/src/config/plans.ts — keep in sync */
+﻿/** Mirror of backend/src/config/plans.ts - keep in sync */
 
 export type PlanName = 'free' | 'pro' | 'ultimate'
 
 /**
- * Design patterns locked behind Pro — the 5 most frequently tested patterns
+ * Design patterns locked behind Pro - the 5 most frequently tested patterns
  * in real LLD interviews. Everything else is free.
  */
 export const PRO_ONLY_PATTERN_KEYS = new Set([
   'singleton',              // #1 most asked LLD pattern
   'factory-method',         // #1 creational in system design
-  'abstract-factory',       // advanced creational — multi-family objects
+  'abstract-factory',       // advanced creational - multi-family objects
   'observer',               // #1 behavioral in event-driven designs
   'strategy',               // extremely common in OOP design questions
   'decorator',              // frequently asked (middleware, logging, etc.)
@@ -18,7 +18,7 @@ export const PRO_ONLY_PATTERN_KEYS = new Set([
 
 /**
  * FREE_PATTERN_KEYS = all patterns NOT in PRO_ONLY_PATTERN_KEYS.
- * Kept for backward compatibility — computed at import time.
+ * Kept for backward compatibility - computed at import time.
  */
 export const FREE_PATTERN_KEYS = new Set([
   'builder',

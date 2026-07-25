@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { Search, Trash2, ChevronLeft, ChevronRight, RefreshCw, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
@@ -156,7 +156,7 @@ export default function AdminSessionsPage() {
                     <td className="px-4 py-3 font-mono text-xs text-ink-muted">{fmtDuration(s.durationLimit)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-ink-muted">{fmtDuration(s.timeElapsed)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-ink-faint whitespace-nowrap">
-                      {s.startedAt ? format(parseISO(s.startedAt), 'MMM d, yyyy') : '—'}
+                      {s.startedAt ? format(parseISO(s.startedAt), 'MMM d, yyyy') : '-'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => handleDelete(s)} disabled={actionId === s.id}

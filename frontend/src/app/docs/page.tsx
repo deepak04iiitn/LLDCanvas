@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import Link from 'next/link'
@@ -23,7 +23,7 @@ const TOC = [
   { id: 'tips',        label: 'Tips & Tricks' },
 ]
 
-// ── Syntax-ish highlight: very minimal coloring (kept dark — code reads best
+// ── Syntax-ish highlight: very minimal coloring (kept dark - code reads best
 //    on a dark surface regardless of the surrounding page theme) ─────────────
 function highlightDraft(line: string): React.ReactNode {
   if (line.trimStart().startsWith('#')) {
@@ -293,7 +293,7 @@ export default function DocsPage() {
               Draft Notation
             </motion.h1>
             <motion.p className="mb-6 text-lg leading-relaxed text-ink-muted" {...fadeUpProps(0.12)}>
-              A plain-English way to write class diagrams. No angle brackets, no drag-and-drop —
+              A plain-English way to write class diagrams. No angle brackets, no drag-and-drop -
               you describe classes and how they relate, in sentences a teammate could read out loud,
               and the canvas builds itself.
             </motion.p>
@@ -313,7 +313,7 @@ export default function DocsPage() {
             <Eyebrow index="01">quick start</Eyebrow>
             <h2 className="font-serif text-3xl font-medium text-ink">Four things to learn</h2>
             <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
-              That's genuinely the whole language. There's no schema to memorize —
+              That's genuinely the whole language. There's no schema to memorize -
               if you can describe your system out loud, you can already write Draft Notation.
             </p>
 
@@ -342,7 +342,7 @@ User knows id, name: String, email: String
 # Give it behaviours
 User can login(), getProfile(): Profile
 
-# Describe a relationship — this line alone creates the Post class too
+# Describe a relationship - this line alone creates the Post class too
 User has many Post
 `} />
           </section>
@@ -352,7 +352,7 @@ User has many Post
             <Eyebrow index="02">playground</Eyebrow>
             <h2 className="font-serif text-3xl font-medium text-ink">Try it live</h2>
             <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
-              Edit the code on the left — the parsed structure updates on the right in real time.
+              Edit the code on the left - the parsed structure updates on the right in real time.
               Nothing here is sent anywhere; it's the same parser the editor uses.
             </p>
             <LiveWidget />
@@ -364,7 +364,7 @@ User has many Post
               <Eyebrow index="03">the details</Eyebrow>
               <h2 className="font-serif text-3xl font-medium text-ink">Declaring things</h2>
               <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
-                Any capitalised word on its own line becomes a class — that's the default,
+                Any capitalised word on its own line becomes a class - that's the default,
                 so you rarely type <code className="rounded bg-hairline px-1 py-0.5 font-mono text-[13px] text-brand">class</code> at
                 all. Reach for one of these keywords only when you need something more specific:
               </p>
@@ -400,7 +400,7 @@ User has many Post
               <CodeBlock copyable={false} code={`Account knows accountNumber: String, balance: number
 Account can deposit(amount: number), withdraw(amount: number)`} />
               <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
-                Prefix any field or method with a symbol to set its visibility —
+                Prefix any field or method with a symbol to set its visibility -
                 the same private/protected/public concept from any OOP language:
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -425,7 +425,7 @@ Account can deposit(amount: number), withdraw(amount: number)`} />
             <h2 className="font-serif text-3xl font-medium text-ink">Relationships</h2>
             <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
               This is the one place UML jargon actually matters, so here's each verb translated
-              into plain English — what it means, not just what it's called.
+              into plain English - what it means, not just what it's called.
             </p>
 
             <div className="space-y-3">
@@ -437,7 +437,7 @@ Account can deposit(amount: number), withdraw(amount: number)`} />
                 >
                   <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
                     <span className="font-mono text-sm font-semibold text-brand">{r.verb}</span>
-                    <span className="text-xs text-ink-faint">— {r.uml}</span>
+                    <span className="text-xs text-ink-faint">- {r.uml}</span>
                   </div>
                   <p className="mb-3 text-sm leading-relaxed text-ink-muted">{r.plain}</p>
                   <code className="rounded bg-hairline px-2 py-1 font-mono text-xs text-ink">{r.example}</code>
@@ -451,7 +451,7 @@ Account can deposit(amount: number), withdraw(amount: number)`} />
             <Eyebrow index="05">see it in context</Eyebrow>
             <h2 className="font-serif text-3xl font-medium text-ink">Full examples</h2>
             <p className="max-w-2xl text-base leading-relaxed text-ink-muted">
-              Three complete systems, written start to finish — a good way to see how the pieces
+              Three complete systems, written start to finish - a good way to see how the pieces
               combine once there's more than one relationship on the page.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -499,7 +499,7 @@ Account can deposit(amount: number), withdraw(amount: number)`} />
           >
             <h2 className="font-serif text-2xl font-medium text-ink">Ready to design?</h2>
             <p className="text-sm text-ink-muted">
-              Open the Playground and start writing — the diagram builds itself as you type.
+              Open the Playground and start writing - the diagram builds itself as you type.
             </p>
             <Link
               href="/playground"

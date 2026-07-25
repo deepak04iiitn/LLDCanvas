@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -74,7 +74,7 @@ function BanModal({ userId, userName, onConfirm, onCancel }: {
         <textarea
           value={reason}
           onChange={e => setReason(e.target.value)}
-          placeholder="Reason (optional — shown to the user)…"
+          placeholder="Reason (optional - shown to the user)…"
           rows={3}
           className="mb-4 w-full resize-none rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand"
         />
@@ -278,7 +278,7 @@ export default function AdminCodePage() {
                   <StatCard label="Today"         value={stats.todayRuns}    sub={`${stats.todaySuccess} successful`} Icon={Calendar} color="amber" />
                   <StatCard label="Banned Users"  value={stats.bannedCount}  sub="access revoked"    Icon={Ban}      color="red" />
                   <StatCard label="Languages"     value={stats.byLanguage.length} sub="in use"       Icon={Layers} />
-                  <StatCard label="Top Language"  value={stats.byLanguage[0]?._id ?? '—'} sub={`${stats.byLanguage[0]?.total ?? 0} runs`} Icon={TrendingUp} />
+                  <StatCard label="Top Language"  value={stats.byLanguage[0]?._id ?? '-'} sub={`${stats.byLanguage[0]?.total ?? 0} runs`} Icon={TrendingUp} />
                   <StatCard label="Active Users"  value={stats.topUsers.length}  sub="by total runs" Icon={Users} />
                 </div>
 

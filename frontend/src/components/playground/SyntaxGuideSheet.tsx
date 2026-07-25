@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -44,7 +44,7 @@ export function SyntaxGuideSheet({ open, onOpenChange }: Props) {
         <SheetHeader className="border-b border-hairline p-5">
           <SheetTitle className="font-serif text-xl font-medium text-ink">Syntax guide</SheetTitle>
           <SheetDescription className="text-ink-muted">
-            Everything you need to write Draft Notation — no need to leave this panel.
+            Everything you need to write Draft Notation - no need to leave this panel.
           </SheetDescription>
         </SheetHeader>
 
@@ -101,7 +101,7 @@ export function SyntaxGuideSheet({ open, onOpenChange }: Props) {
                 <div key={r.verb} className="rounded-md border border-hairline bg-paper-elevated p-3">
                   <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                     <span className="font-mono text-xs font-semibold text-brand">{r.verb}</span>
-                    <span className="text-[10px] text-ink-faint">— {r.uml}</span>
+                    <span className="text-[10px] text-ink-faint">- {r.uml}</span>
                   </div>
                   <p className="mb-2 text-[11px] leading-relaxed text-ink-muted">{r.plain}</p>
                   <code className="rounded bg-hairline px-1.5 py-0.5 font-mono text-[10px] text-ink">{r.example}</code>

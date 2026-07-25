@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
@@ -225,7 +225,7 @@ function Pagination({
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline bg-paper-elevated/50 px-5 py-3">
       {/* Left: count info */}
       <span className="font-mono text-[11px] text-ink-faint">
-        {from}–{to} of {total} problems
+        {from}-{to} of {total} problems
       </span>
 
       {/* Center: page pills */}
@@ -380,7 +380,7 @@ export function InterviewQuestionsRosterClient({ problems }: { problems: PublicP
             <div>
               <Reveal>
                 <p className="mb-4 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-                  <span className="text-gold">¶04</span> — Practice Problems
+                  <span className="text-gold">¶04</span> - Practice Problems
                 </p>
                 <div className="flex items-end gap-4">
                   <p className="font-mono text-[clamp(4rem,10vw,7rem)] font-black leading-none tracking-tight text-brand tabular-nums">

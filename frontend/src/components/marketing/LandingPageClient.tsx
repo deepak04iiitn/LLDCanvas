@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -65,10 +65,10 @@ function HeroDiagram() {
   )
 }
 
-// ─── Platform spine rail — the "not just a UML drawer" section ────────────────
+// ─── Platform spine rail - the "not just a UML drawer" section ────────────────
 // A feature-grid of icon cards is the obvious move (and a UML box diagram is
 // the obvious move for THIS brand specifically). Instead: seven vertical
-// "spines" — like books on a shelf, or files in a drawer — collapsed to a
+// "spines" - like books on a shelf, or files in a drawer - collapsed to a
 // rotated mono label by default. Click one and it expands to take most of the
 // rail's width while the rest compress, revealing its content. Nothing else
 // on the page moves this way; it reads as an actual shelf you're browsing,
@@ -86,9 +86,9 @@ interface PillarSpine {
 const PILLAR_SPINES: PillarSpine[] = [
   {
     index: '01', title: 'Visual Editor',
-    detail: '5 node types, 7 relationship types, 3 canvas themes — keyboard-first, drag-to-connect.',
+    detail: '5 node types, 7 relationship types, 3 canvas themes - keyboard-first, drag-to-connect.',
     points: [
-      'Every relationship carries real UML semantics — a filled diamond always means composition, not just a line.',
+      'Every relationship carries real UML semantics - a filled diamond always means composition, not just a line.',
       'Undo/redo, alignment guides, and PNG, SVG, PlantUML, and Mermaid export, all reachable from the keyboard.',
     ],
     chips: ['Class', 'Interface', 'Enum', 'Abstract Class', 'Note', 'Inheritance', 'Composition', 'Aggregation'],
@@ -98,7 +98,7 @@ const PILLAR_SPINES: PillarSpine[] = [
     index: '02', title: 'Design Patterns',
     detail: '23 Gang-of-Four patterns and 13 class-role stereotypes, pre-wired and correctly connected.',
     points: [
-      'Every pattern ships with the correct handle sides pre-computed — no arrows crossing through boxes.',
+      'Every pattern ships with the correct handle sides pre-computed - no arrows crossing through boxes.',
       'Insert any of the 23 with a single Ctrl+K search instead of digging through a sidebar.',
     ],
     chips: ['Singleton', 'Factory Method', 'Observer', 'Strategy', 'Decorator', 'Adapter', '+17 more'],
@@ -106,9 +106,9 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '03', title: 'Draft Notation',
-    detail: 'Plain-English sentences in, a live UML diagram out — instantly, as you type.',
+    detail: 'Plain-English sentences in, a live UML diagram out - instantly, as you type.',
     points: [
-      'Round-trips both ways — export any diagram back to Draft Notation text and re-import it later.',
+      'Round-trips both ways - export any diagram back to Draft Notation text and re-import it later.',
       'The same parser powers the standalone Playground and the one-shot importer inside the editor.',
     ],
     chips: ['knows', 'can', 'has many', 'owns', 'is a', 'acts as', 'uses'],
@@ -118,7 +118,7 @@ const PILLAR_SPINES: PillarSpine[] = [
     index: '04', title: 'Interview Mode',
     detail: 'Timed LLD interview practice against a real countdown. Every session becomes a streak, a heatmap, a graph.',
     points: [
-      'Pick 30, 45, 60, 90 minutes, or go unlimited — pause and resume without losing the clock.',
+      'Pick 30, 45, 60, 90 minutes, or go unlimited - pause and resume without losing the clock.',
       'Every session auto-saves a snapshot, so an unfinished attempt is never actually lost.',
     ],
     chips: ['30 min', '45 min', '60 min', 'No limit', 'Pause & resume', 'Session notes'],
@@ -126,7 +126,7 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '05', title: 'Problems + Community',
-    detail: '100+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
+    detail: '110+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
     points: [
       'Three hints unlock one at a time, so you\'re never spoiled all at once.',
       'See how other engineers structured the same design before you settle on your own.',
@@ -136,17 +136,17 @@ const PILLAR_SPINES: PillarSpine[] = [
   },
   {
     index: '06', title: 'Revision Notes',
-    detail: 'Bite-sized theory — bookmarked, tracked, ready for a five-minute refresher.',
+    detail: 'Bite-sized theory - bookmarked, tracked, ready for a five-minute refresher.',
     points: [
       'Each note tracks its own bookmarked and revised state per user, so your list stays accurate.',
-      'Organized by category and difficulty — basic, intermediate, advanced — so revision is never random.',
+      'Organized by category and difficulty - basic, intermediate, advanced - so revision is never random.',
     ],
     chips: ['SOLID Principles', 'Composition vs. Inheritance', 'CAP Theorem', 'Idempotency', 'Thread-Safety'],
     href: '/dashboard/revision', cta: 'Read notes',
   },
   {
     index: '07', title: 'Code Execution',
-    detail: 'Turn the class you just drew into real, runnable code — 11 languages, no separate IDE.',
+    detail: 'Turn the class you just drew into real, runnable code - 11 languages, no separate IDE.',
     points: [
       'The exact same sandbox that powers the standalone Playground\'s Run button.',
       'Rate-limited and abuse-protected server-side, so it stays fast and free for everyone.',
@@ -158,7 +158,7 @@ const PILLAR_SPINES: PillarSpine[] = [
     index: '08', title: 'Live Collaboration',
     detail: 'Invite teammates into the same diagram in real time, and leave threaded comments right on the canvas.',
     points: [
-      'See collaborators\' cursors and edits live — no refresh, no manual merging.',
+      'See collaborators\' cursors and edits live - no refresh, no manual merging.',
       'Comments stay pinned to the exact node they\'re about, tagged with @mentions, not lost in a separate doc.',
     ],
     chips: ['Real-time cursors', 'Threaded comments', '@mentions', 'Invite by email'],
@@ -171,7 +171,7 @@ function PillarSpineRail() {
 
   return (
     <>
-      {/* Desktop / tablet — horizontal expanding spines */}
+      {/* Desktop / tablet - horizontal expanding spines */}
       <div className="hidden h-[440px] gap-px overflow-hidden rounded-md border border-hairline bg-hairline sm:flex">
         {PILLAR_SPINES.map((p, i) => {
           const isActive = i === active
@@ -234,7 +234,7 @@ function PillarSpineRail() {
         })}
       </div>
 
-      {/* Mobile — vertical accordion */}
+      {/* Mobile - vertical accordion */}
       <div className="space-y-2 sm:hidden">
         {PILLAR_SPINES.map((p, i) => {
           const isActive = i === active
@@ -322,7 +322,7 @@ function FeatureChain() {
 
 // ─── Spec strip ───────────────────────────────────────────────────────────────
 const SPECS = [
-  { n: '100+', label: 'Practice problems' },
+  { n: '110+', label: 'Practice problems' },
   { n: '23',  label: 'Design patterns' },
   { n: '13',  label: 'Class roles' },
   { n: '7',   label: 'Relationship types' },
@@ -342,10 +342,10 @@ function SpecStrip() {
   )
 }
 
-// ─── Who it's for — conference ID badges on a lanyard ─────────────────────────
+// ─── Who it's for - conference ID badges on a lanyard ─────────────────────────
 // Three cards in a row is the single most reused shape on the internet. Since
 // this section is literally about identity ("who are you"), it's shown as
-// what identity actually looks like at a professional event — a badge on a
+// what identity actually looks like at a professional event - a badge on a
 // lanyard clip, tilted like it's hanging, straightening up on hover like it's
 // being picked up and read. Nothing else on the page uses this motif.
 const PERSONAS = [
@@ -353,21 +353,21 @@ const PERSONAS = [
     n: '01',
     kicker: 'LLD & system design interviews',
     title: 'Interview candidates',
-    desc: 'Timed practice with real analytics, a problems library tagged by company, staged hints when you\'re stuck, and community discussion once you\'ve submitted — the same pressure you\'ll feel in the actual room.',
+    desc: 'Timed practice with real analytics, a problems library tagged by company, staged hints when you\'re stuck, and community discussion once you\'ve submitted - the same pressure you\'ll feel in the actual room.',
     tilt: '-rotate-3',
   },
   {
     n: '02',
     kicker: 'Design docs & pairing',
     title: 'Engineering teams',
-    desc: 'Invite a teammate into the same diagram in real time, leave threaded @mention comments pinned to the exact node, and export straight into your design doc — PNG, SVG, PlantUML, or Mermaid.',
+    desc: 'Invite a teammate into the same diagram in real time, leave threaded @mention comments pinned to the exact node, and export straight into your design doc - PNG, SVG, PlantUML, or Mermaid.',
     tilt: 'rotate-2',
   },
   {
     n: '03',
     kicker: 'OOP, patterns & fundamentals',
     title: 'Self-taught engineers',
-    desc: 'All 23 design patterns pre-wired, bite-sized revision notes for the fundamentals, Draft Notation to describe a design in plain English, and a sandbox to actually run what you built — no CS degree required.',
+    desc: 'All 23 design patterns pre-wired, bite-sized revision notes for the fundamentals, Draft Notation to describe a design in plain English, and a sandbox to actually run what you built - no CS degree required.',
     tilt: '-rotate-1',
   },
 ]
@@ -430,7 +430,7 @@ function WhoIsItFor() {
   )
 }
 
-// ─── Draft Notation — code ↔ diagram ──────────────────────────────────────────
+// ─── Draft Notation - code ↔ diagram ──────────────────────────────────────────
 const DRAFT_SNIPPET = `User
 User knows id, name: String, email: String
 User can login(), getProfile(): Profile
@@ -442,7 +442,7 @@ User has many Post`
 
 // A copy-left/visual-right split is the same composition Interview Mode, Code
 // Execution, and Collaboration all already use. Draft Notation is fundamentally
-// a transformation — text becoming a diagram — and transformations read as a
+// a transformation - text becoming a diagram - and transformations read as a
 // SEQUENCE, not a side-by-side comparison. So this is one tall vertical
 // artifact, styled like a perforated ticket stub: code typed in at the top,
 // torn along a dashed seam, diagram output at the bottom. The copy sits
@@ -516,7 +516,7 @@ function TypewriterDraftBlock() {
 }
 
 const DRAFT_POINTS = [
-  'Round-trips both ways — export any diagram back to Draft Notation text whenever you need words instead of boxes.',
+  'Round-trips both ways - export any diagram back to Draft Notation text whenever you need words instead of boxes.',
   'The exact same parser powers the standalone Playground and the one-shot Draft importer inside the editor.',
   'Describe a design out loud in an interview the way you\'d actually say it, then watch it become the artifact you submit.',
 ]
@@ -528,7 +528,7 @@ function DraftNotationSection() {
         <motion.p {...inViewProps(0)} className="mb-5 max-w-md text-base leading-relaxed text-ink-muted">
           No angle brackets, no drag-and-drop required. Describe a Low-Level Design in a sentence like{' '}
           <code className="rounded bg-hairline px-1 py-0.5 font-mono text-[13px] text-brand">User has many Post</code>{' '}
-          and the relationship, the arrow, and the multiplicity all render themselves — instantly, live,
+          and the relationship, the arrow, and the multiplicity all render themselves - instantly, live,
           as you type.
         </motion.p>
 
@@ -562,14 +562,14 @@ function DraftNotationSection() {
   )
 }
 
-// ─── Differentiators — a real comparison table, not icon cards ──────────────
+// ─── Differentiators - a real comparison table, not icon cards ──────────────
 const COMPARISON_ROWS = [
-  'UML relationship semantics — enforced, not hand-drawn',
+  'UML relationship semantics - enforced, not hand-drawn',
   'Real class, interface, and enum node types',
   '23 Gang-of-Four design pattern skeletons, pre-wired',
   'Plain-English code ↔ diagram (Draft Notation)',
   'Timed LLD interview practice with streaks & activity analytics',
-  '100+ curated LLD & system design interview questions, hints & community discussion',
+  '110+ curated LLD & system design interview questions, hints & community discussion',
   'Run real code in 11 languages, in the same canvas',
   'Real-time collaboration with live cursors & @mention comments',
 ]
@@ -624,9 +624,9 @@ const PRACTICE_CHIPS = [
 ]
 
 const WHY_IT_WORKS = [
-  'Most candidates only ever practice untimed — the clock is the one part nobody rehearses.',
+  'Most candidates only ever practice untimed - the clock is the one part nobody rehearses.',
   'A visible streak turns "I should probably practice" into something you actually do, daily.',
-  'Every canvas and note is saved automatically the moment you stop — nothing to set up first.',
+  'Every canvas and note is saved automatically the moment you stop - nothing to set up first.',
 ]
 
 const HEATMAP_LEVELS = Array.from({ length: 98 }, (_, i) => {
@@ -726,7 +726,7 @@ function LiveSessionRow() {
           <span className="font-mono text-[9px] font-semibold tracking-widest text-ink-faint uppercase">Live preview</span>
         </div>
         <p className="font-mono text-xs text-ink-muted">{DEMO_QUESTIONS[qIndex]}</p>
-        <p className="mt-0.5 font-mono text-[10px] text-ink-faint italic">sped up — real sessions run the full 45</p>
+        <p className="mt-0.5 font-mono text-[10px] text-ink-faint italic">sped up - real sessions run the full 45</p>
       </div>
       <div className={cn('shrink-0 font-mono text-4xl font-bold tabular-nums transition-colors duration-700 sm:text-5xl', color)}>
         {m}:{s}
@@ -782,8 +782,8 @@ function PracticeDashboardPreview() {
 // The obvious move is a "problem card" next to a "discussion card". Instead:
 // a physical deck of problem tickets, fanned like real cards on a desk (the
 // library is deep, not a single example), with the community's response
-// pinned to the front one like a sticky note — because that's the actual
-// ─── Problems Section — Bento Grid Redesign ──────────────────────────────────
+// pinned to the front one like a sticky note - because that's the actual
+// ─── Problems Section - Bento Grid Redesign ──────────────────────────────────
 // Four distinct panels arranged in an asymmetric 3-column bento grid, each
 // telling a different part of the story: problem list, difficulty breakdown,
 // staged hints, and community discussion. No stacked cards, no left/right split.
@@ -806,14 +806,14 @@ function ProblemsCommunitySection() {
       {/* ── Bento grid ── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 
-        {/* Cell 1 — Problem list (large, col-span-2) */}
+        {/* Cell 1 - Problem list (large, col-span-2) */}
         <motion.div
           {...inViewProps(0)}
           className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5"
         >
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Problem Library</p>
-            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">100+ problems</span>
+            <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">110+ problems</span>
           </div>
           <div className="space-y-1.5">
             {BENTO_PROBLEMS.map((p, i) => (
@@ -860,7 +860,7 @@ function ProblemsCommunitySection() {
           </motion.div>
         </motion.div>
 
-        {/* Cell 2 — Difficulty distribution (small, col-span-1) */}
+        {/* Cell 2 - Difficulty distribution (small, col-span-1) */}
         <motion.div
           {...inViewProps(0.08)}
           className="rounded-2xl border border-hairline bg-paper-elevated p-5"
@@ -899,19 +899,19 @@ function ProblemsCommunitySection() {
           </div>
         </motion.div>
 
-        {/* Cell 3 — Staged hints (small, col-span-1) */}
+        {/* Cell 3 - Staged hints (small, col-span-1) */}
         <motion.div
           {...inViewProps(0.1)}
           className="rounded-2xl border border-hairline bg-paper-elevated p-5"
         >
           <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Staged Hints</p>
           <div className="space-y-2">
-            {/* Hint 1 — locked */}
+            {/* Hint 1 - locked */}
             <div className="flex items-center gap-2 rounded-lg bg-hairline/50 px-3 py-2 opacity-50">
               <Lock className="h-3 w-3 shrink-0 text-ink-faint" />
               <span className="font-mono text-[10px] text-ink-faint">Hint 1 of 3</span>
             </div>
-            {/* Hint 2 — revealed */}
+            {/* Hint 2 - revealed */}
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -921,10 +921,10 @@ function ProblemsCommunitySection() {
             >
               <p className="mb-1 font-mono text-[9px] font-semibold text-brand">Hint 2 of 3 ↓</p>
               <p className="text-[11px] leading-relaxed text-ink">
-                Think about counting requests over a sliding window — not fixed intervals.
+                Think about counting requests over a sliding window - not fixed intervals.
               </p>
             </motion.div>
-            {/* Hint 3 — locked */}
+            {/* Hint 3 - locked */}
             <div className="flex items-center gap-2 rounded-lg bg-hairline/50 px-3 py-2 opacity-50">
               <Lock className="h-3 w-3 shrink-0 text-ink-faint" />
               <span className="font-mono text-[10px] text-ink-faint">Hint 3 of 3</span>
@@ -932,7 +932,7 @@ function ProblemsCommunitySection() {
           </div>
         </motion.div>
 
-        {/* Cell 4 — Community discussion (large, col-span-2) */}
+        {/* Cell 4 - Community discussion (large, col-span-2) */}
         <motion.div
           {...inViewProps(0.12)}
           className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5"
@@ -953,7 +953,7 @@ function ProblemsCommunitySection() {
                 </div>
               </div>
               <p className="text-[11px] leading-relaxed text-ink-muted">
-                Used token bucket over leaky bucket — way simpler to handle burst allowance.
+                Used token bucket over leaky bucket - way simpler to handle burst allowance.
                 Shared my full canvas diagram in the thread ↗
               </p>
             </div>
@@ -990,7 +990,7 @@ function ProblemsCommunitySection() {
 }
 
 // ─── Revision Notes ────────────────────────────────────────────────────────────
-// Revision notes ARE flashcards, conceptually — so show them as real ones.
+// Revision notes ARE flashcards, conceptually - so show them as real ones.
 // A grid of "difficulty + title" cards says nothing you couldn't already
 // guess; a card that physically flips to reveal the actual insight on the
 // back demonstrates the bite-sized-theory pitch instead of describing it.
@@ -1001,11 +1001,11 @@ const DIFF_CARD_STYLE: Record<string, { badge: string; border: string; bg: strin
 }
 
 const REVISION_TOPICS: { title: string; difficulty: string; revised: boolean; insight: string; Icon: LucideIcon }[] = [
-  { title: 'SOLID Principles',        difficulty: 'Basic',        revised: true,  Icon: Layers,          insight: 'Five rules for classes that survive contact with new requirements — start with Single Responsibility, the other four follow from it.' },
-  { title: 'Composition vs. Inheritance', difficulty: 'Basic',   revised: true,  Icon: GitBranch,       insight: 'Favor "has-a" over "is-a" when behavior needs to change at runtime — inheritance locks in a shape at compile time.' },
+  { title: 'SOLID Principles',        difficulty: 'Basic',        revised: true,  Icon: Layers,          insight: 'Five rules for classes that survive contact with new requirements - start with Single Responsibility, the other four follow from it.' },
+  { title: 'Composition vs. Inheritance', difficulty: 'Basic',   revised: true,  Icon: GitBranch,       insight: 'Favor "has-a" over "is-a" when behavior needs to change at runtime - inheritance locks in a shape at compile time.' },
   { title: 'Singleton Thread-Safety', difficulty: 'Intermediate', revised: false, Icon: Lock,            insight: 'Double-checked locking exists because synchronizing the whole getInstance() call is correct but needlessly slow after the first call.' },
   { title: 'REST vs. RPC',            difficulty: 'Intermediate', revised: false, Icon: ArrowLeftRight,  insight: 'REST models resources and state transitions; RPC models actions. Pick RPC when the operation isn\'t naturally a noun.' },
-  { title: 'CAP Theorem',             difficulty: 'Advanced',     revised: false, Icon: BarChart2,       insight: 'Under a network partition you choose Consistency or Availability — you never get to skip that choice, only which side you land on.' },
+  { title: 'CAP Theorem',             difficulty: 'Advanced',     revised: false, Icon: BarChart2,       insight: 'Under a network partition you choose Consistency or Availability - you never get to skip that choice, only which side you land on.' },
   { title: 'Idempotency in APIs',     difficulty: 'Advanced',     revised: false, Icon: Key,             insight: 'An idempotency key lets a client safely retry a POST after a timeout without risking a duplicate charge or write.' },
 ]
 
@@ -1019,7 +1019,7 @@ function FlipCard({ topic, delay }: { topic: typeof REVISION_TOPICS[number]; del
           'absolute inset-0 flex flex-col justify-between overflow-hidden rounded-xl border p-4 [backface-visibility:hidden]',
           s.bg, s.border,
         )}>
-          {/* Decorative large icon — fills the blank space */}
+          {/* Decorative large icon - fills the blank space */}
           <topic.Icon className={cn('absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20', s.icon)} aria-hidden />
 
           <div className="flex items-start justify-between">
@@ -1067,7 +1067,7 @@ function RevisionNotesSection() {
   )
 }
 
-// ─── Code Execution — Studio Window Redesign ────────────────────────────────
+// ─── Code Execution - Studio Window Redesign ────────────────────────────────
 // One cohesive dark "studio" window showing the full pipeline:
 //   UML class diagram (design pane) → generated code (editor pane) → run output (terminal bar)
 // All in one surface, nothing described that isn't shown.
@@ -1169,7 +1169,7 @@ function CodeExecutionSection() {
           <div className="h-2.5 w-2.5 rounded-full bg-yellow-400/60" />
           <div className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
         </div>
-        <span className="font-mono text-[10px] text-white/25 select-none">FeeStrategy — LLDCanvas Studio</span>
+        <span className="font-mono text-[10px] text-white/25 select-none">FeeStrategy - LLDCanvas Studio</span>
         <div className="ml-auto flex flex-wrap items-center gap-1">
           {LANG_SAMPLES.map((s, i) => (
             <button
@@ -1189,7 +1189,7 @@ function CodeExecutionSection() {
       {/* ── Split: design pane + code pane ───────────────────────────────── */}
       <div className="flex min-h-[220px] divide-x divide-white/6 bg-[#0e0d0a]">
 
-        {/* Design pane — hidden on mobile, shown lg+ */}
+        {/* Design pane - hidden on mobile, shown lg+ */}
         <div className="hidden w-44 shrink-0 flex-col items-center justify-center gap-3 bg-[#0a0908]/60 p-5 lg:flex">
           <p className="self-start font-mono text-[9px] uppercase tracking-widest text-white/20">Design</p>
           {/* UML class box */}
@@ -1281,10 +1281,10 @@ function CodeExecutionSection() {
   )
 }
 
-// ─── Live Collaboration — Redesigned ─────────────────────────────────────────
+// ─── Live Collaboration - Redesigned ─────────────────────────────────────────
 // Concept: instead of a left/right split, the section is centred around a
-// full-width "canvas window" mockup — a realistic rendering of the actual editor
-// with live cursors and a pinned comment — so the feature speaks for itself.
+// full-width "canvas window" mockup - a realistic rendering of the actual editor
+// with live cursors and a pinned comment - so the feature speaks for itself.
 // Feature chips sit below the window; no separate "right-side" graphic needed.
 
 function LiveCursorTag({
@@ -1336,7 +1336,7 @@ function CollabDiagram() {
   ]
 
   return (
-    // Height fixed to match SVG viewBox aspect — comment sits safely in the
+    // Height fixed to match SVG viewBox aspect - comment sits safely in the
     // 113 px gap between rows (y:107 → y:220) so it never touches a node.
     <div className="relative h-[318px] w-full select-none overflow-hidden">
       <svg viewBox="0 0 560 318" className="h-full w-full">
@@ -1387,7 +1387,7 @@ function CollabDiagram() {
           </motion.g>
         ))}
 
-        {/* Pinned comment — inside SVG coordinate space so it NEVER
+        {/* Pinned comment - inside SVG coordinate space so it NEVER
             overlaps nodes regardless of container width.
             x:362 = right half gap  |  y:113 = just below row-1 (y:107)
             width:190  height:85    |  bottom = y:198 < row-2 top y:220  */}
@@ -1430,11 +1430,11 @@ function CollabDiagram() {
         </motion.g>
       </svg>
 
-      {/* Cursors — free-floating overlays, approximate node positions are fine */}
+      {/* Cursors - free-floating overlays, approximate node positions are fine */}
       {/* Priya: editing API Gateway (top-left node) */}
       <LiveCursorTag name="Priya" color="#0284c7" bgColor="#e0f2fe" borderColor="#7dd3fc"
         left="8%" top="17%" delay={0} />
-      {/* Alex: near AuthService (top-right) — left the comment on Database below */}
+      {/* Alex: near AuthService (top-right) - left the comment on Database below */}
       <LiveCursorTag name="Alex" color="#7c3aed" bgColor="#ede9fe" borderColor="#c4b5fd"
         left="62%" top="13%" delay={1.3} />
     </div>
@@ -1445,7 +1445,7 @@ const COLLAB_FEATURES = [
   {
     Icon: MousePointer2,
     title: 'Live cursors & presence',
-    desc: 'See every teammate\'s cursor in real time — no refresh, no manual sync.',
+    desc: 'See every teammate\'s cursor in real time - no refresh, no manual sync.',
   },
   {
     Icon: MessageCircle,
@@ -1462,7 +1462,7 @@ const COLLAB_FEATURES = [
 function CollaborationSection() {
   return (
     <div className="space-y-8">
-      {/* Feature list — inline text rows above the canvas */}
+      {/* Feature list - inline text rows above the canvas */}
       <ul className="space-y-3">
         {COLLAB_FEATURES.map(({ Icon, title, desc }, i) => (
           <motion.li
@@ -1474,7 +1474,7 @@ function CollaborationSection() {
               <Icon className="h-3 w-3 text-brand" />
             </div>
             <p className="text-sm leading-relaxed text-ink-muted">
-              <span className="font-semibold text-ink">{title} — </span>
+              <span className="font-semibold text-ink">{title} - </span>
               {desc}
             </p>
           </motion.li>
@@ -1534,7 +1534,7 @@ function CollaborationSection() {
 // ─── FAQ (accordion) ──────────────────────────────────────────────────────────
 // FAQ copy itself lives in faq-data.ts, shared with the FAQPage JSON-LD in
 // app/page.tsx so the structured data always matches what's rendered here
-// verbatim. This file only adds the internal-link overlay below — links are
+// verbatim. This file only adds the internal-link overlay below - links are
 // wrapped around substrings of that same text at render time, so the visible
 // words users read (and what Google indexes as the FAQ answer) never diverge
 // from the JSON-LD.
@@ -1557,7 +1557,7 @@ const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
     ['Docs', '/docs'],
   ],
   'Does LLDCanvas have a library of LLD and system design interview questions?': [
-    ['100+ Low-Level Design problems and interview questions', '/dashboard/problems'],
+    ['110+ Low-Level Design problems and interview questions', '/dashboard/problems'],
   ],
   'Are SOLID principles covered?': [
     ['revision notes', '/dashboard/revision'],
@@ -1680,8 +1680,8 @@ export function LandingPageClient() {
             <motion.p className="mb-9 max-w-md text-lg leading-relaxed text-ink-muted" {...fadeUpProps(0.16)}>
               The complete Low-Level Design (LLD) interview preparation platform: a UML editor
               that understands OOP, 23 pre-wired design patterns, SOLID principles notes, timed
-              practice with real analytics, 100+ curated LLD and system design interview questions
-              with community discussion, and runnable code — all in one canvas, not seven
+              practice with real analytics, 110+ curated LLD and system design interview questions
+              with community discussion, and runnable code - all in one canvas, not seven
               different tools.
             </motion.p>
 
@@ -1725,8 +1725,8 @@ export function LandingPageClient() {
           </h2>
           <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
             Most candidates cobble together a UML diagramming tool, a system design questions
-            site, a timer app, and a notes doc — solo. Here&apos;s the platform that replaces all of
-            them for Low-Level Design and system design interview practice, teammates included —
+            site, a timer app, and a notes doc - solo. Here&apos;s the platform that replaces all of
+            them for Low-Level Design and system design interview practice, teammates included -
             eight surfaces on one shelf. Pick one to open it.
           </p>
           <PillarSpineRail />
@@ -1741,7 +1741,7 @@ export function LandingPageClient() {
             Five interfaces. One canvas.
           </h2>
           <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
-            A UML diagram editor built for Low-Level Design interviews specifically — instant class
+            A UML diagram editor built for Low-Level Design interviews specifically - instant class
             insertion, drag-to-connect relationships, a searchable design-pattern library, and
             export to the formats your design docs actually use.
           </p>
@@ -1752,7 +1752,7 @@ export function LandingPageClient() {
       {/* ─── Draft Notation ─────────────────────────────────────────────────── */}
       <section id="draft-notation" className="scroll-mt-20 px-5 py-16 sm:px-8">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="04">draft notation — code ↔ diagram</Eyebrow>
+          <Eyebrow index="04">draft notation - code ↔ diagram</Eyebrow>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Say it in English. See it as UML.
           </h2>
@@ -1769,7 +1769,7 @@ export function LandingPageClient() {
           </h2>
           <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
             Generic tools draw shapes. LLDCanvas is purpose-built for Low-Level Design and system
-            design interview preparation — here&apos;s exactly what that gets you.
+            design interview preparation - here&apos;s exactly what that gets you.
           </p>
           <ComparisonTable />
         </div>
@@ -1796,7 +1796,7 @@ export function LandingPageClient() {
               </motion.div>
 
               <motion.p {...inViewProps(0.04)} className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-                <span className="text-gold">¶06</span> — timed lld interview practice
+                <span className="text-gold">¶06</span> - timed lld interview practice
               </motion.p>
 
               <motion.h2 {...inViewProps(0.08)} className="mb-5 max-w-md font-serif text-3xl leading-[1.15] font-medium text-ink sm:text-4xl">
@@ -1804,7 +1804,7 @@ export function LandingPageClient() {
               </motion.h2>
 
               <motion.p {...inViewProps(0.12)} className="mb-6 max-w-md text-base leading-relaxed text-ink-muted">
-                Set a timer and design against a real countdown — the exact pressure you&apos;ll
+                Set a timer and design against a real countdown - the exact pressure you&apos;ll
                 feel in an actual LLD or system design interview, so the first time you work under
                 a clock isn&apos;t the day it counts. Every session is then logged automatically:
                 watch a daily streak build, an activity heatmap fill in week by week, and a
@@ -1856,8 +1856,8 @@ export function LandingPageClient() {
             Problems asked by real companies. Solved by a real community.
           </h2>
           <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
-            100+ Low-Level Design and system design interview questions and problems, each tagged
-            by difficulty and the companies known to ask it. Staged hints reveal one at a time —
+            110+ Low-Level Design and system design interview questions and problems, each tagged
+            by difficulty and the companies known to ask it. Staged hints reveal one at a time -
             never all at once. Compare your approach against the community thread when you&apos;re done.
           </p>
           <ProblemsCommunitySection />
@@ -1873,7 +1873,7 @@ export function LandingPageClient() {
           </h2>
           <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
             Bite-sized theory on SOLID principles, composition vs. inheritance, thread-safety, the
-            CAP theorem, and more — bookmark what to revisit, and track what&apos;s actually sunk in.
+            CAP theorem, and more - bookmark what to revisit, and track what&apos;s actually sunk in.
           </p>
           <RevisionNotesSection />
         </div>
@@ -1888,7 +1888,7 @@ export function LandingPageClient() {
           </h2>
           <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
             Sketch the class in the canvas, then execute it in 11 languages without leaving the tab.
-            No copy-paste into a separate IDE — design and code live side by side.
+            No copy-paste into a separate IDE - design and code live side by side.
           </p>
           <CodeExecutionSection />
         </div>
@@ -1902,7 +1902,7 @@ export function LandingPageClient() {
             You don&apos;t design in isolation. Why practice like it?
           </h2>
           <p className="mb-8 max-w-xl text-base leading-relaxed text-ink-muted">
-            Invite a teammate into your diagram and work side by side — live cursors, pinned
+            Invite a teammate into your diagram and work side by side - live cursors, pinned
             comments, and real-time edits, no refresh needed.
           </p>
           <CollaborationSection />

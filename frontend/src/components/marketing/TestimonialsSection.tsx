@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,7 +36,7 @@ const FALLBACK: Testimonial[] = [
   { _id: '7',  name: 'Karan Bhatia',    role: 'CS Student, NIT Trichy',       rating: 5, featured: false, avatar: '', content: 'As a student, having a free tier with 23 design patterns and community discussions is incredibly generous. I use this daily.' },
   { _id: '8',  name: 'Divya Nair',      role: 'Product Engineer @ Razorpay',  rating: 5, featured: false, avatar: '', content: 'The community discussion on each problem is like having LeetCode discussions but specifically for LLD. Absolutely brilliant.' },
   { _id: '9',  name: 'Rohan Verma',     role: 'Principal SDE @ Oracle',       rating: 5, featured: false, avatar: '', content: 'Code execution integrated right into the diagram tool is something I have wanted for years. Finally it exists.' },
-  { _id: '10', name: 'Meera Krishnan',  role: 'Tech Lead @ PhonePe',          rating: 5, featured: false, avatar: '', content: 'My whole interview prep is now centralised — UML diagrams, pattern templates, code, problems — one platform, zero distractions.' },
+  { _id: '10', name: 'Meera Krishnan',  role: 'Tech Lead @ PhonePe',          rating: 5, featured: false, avatar: '', content: 'My whole interview prep is now centralised - UML diagrams, pattern templates, code, problems - one platform, zero distractions.' },
 ]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ function TestimonialCard({ t, accent = false }: { t: Testimonial; accent?: boole
         {t.avatar ? (
           <img
             src={t.avatar}
-            alt={`${t.name}${t.role ? `, ${t.role}` : ''} — LLDCanvas user`}
+            alt={`${t.name}${t.role ? `, ${t.role}` : ''} - LLDCanvas user`}
             className="h-8 w-8 rounded-full object-cover ring-1 ring-hairline"
           />
         ) : (

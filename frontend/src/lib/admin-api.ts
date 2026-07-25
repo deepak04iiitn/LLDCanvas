@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth-token'
+import type { BlogBlock } from './blog-blocks'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -373,6 +374,51 @@ export const adminApi = {
     delete: (id: string) =>
       req<{ ok: boolean }>(`/testimonials/${id}`, { method: 'DELETE' }),
   },
+
+  blog: {
+    analytics: () =>
+      req<AdminBlogAnalytics>('/blog/analytics'),
+
+    list: (params?: { status?: string; q?: string; page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => v != null && qs.set(k, String(v)))
+      return req<{ blogs: AdminBlogSummary[]; total: number; page: number; pages: number }>(
+        `/blog${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+
+    get: (id: string) =>
+      req<AdminBlogDetail>(`/blog/${id}`),
+
+    create: (payload: Partial<AdminBlogDetail>) =>
+      req<AdminBlogDetail>('/blog', { method: 'POST', body: JSON.stringify(payload) }),
+
+    update: (id: string, payload: Partial<AdminBlogDetail>) =>
+      req<AdminBlogDetail>(`/blog/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+
+    publish: (id: string) =>
+      req<AdminBlogDetail>(`/blog/${id}/publish`, { method: 'PATCH' }),
+
+    unpublish: (id: string) =>
+      req<AdminBlogDetail>(`/blog/${id}/unpublish`, { method: 'PATCH' }),
+
+    duplicate: (id: string) =>
+      req<AdminBlogDetail>(`/blog/${id}/duplicate`, { method: 'POST' }),
+
+    delete: (id: string) =>
+      req<{ ok: boolean }>(`/blog/${id}`, { method: 'DELETE' }),
+
+    listComments: (params?: { page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params) Object.entries(params).forEach(([k, v]) => v != null && qs.set(k, String(v)))
+      return req<{ comments: AdminBlogComment[]; total: number; page: number; pages: number }>(
+        `/blog/comments${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+
+    deleteComment: (id: string) =>
+      req<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
+  },
 }
 
 // ─── Admin testimonial type ───────────────────────────────────────────────────
@@ -525,6 +571,71 @@ export interface AdminSubscription {
 export type FeedbackType     = 'bug' | 'feature' | 'improvement' | 'other'
 export type FeedbackStatus   = 'open' | 'in_progress' | 'resolved' | 'closed' | 'duplicate'
 export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical'
+
+// ─── Blog admin types ─────────────────────────────────────────────────────────
+
+export interface AdminBlogSummary {
+  _id:         string
+  slug:        string
+  title:       string
+  excerpt:     string
+  category:    string
+  tags:        string[]
+  status:      'draft' | 'published' | 'scheduled'
+  isFeatured:  boolean
+  readingTime: number
+  views:       number
+  likes:       number
+  dislikes:    number
+  publishedAt: string | null
+  createdAt:   string
+  updatedAt:   string
+}
+
+export interface AdminBlogDetail extends AdminBlogSummary {
+  subtitle:   string
+  content:    BlogBlock[]
+  coverImage?: string
+  coverImageAlt?: string
+  author: { name: string; role: string; avatar?: string }
+  scheduledAt?: string
+  seo: {
+    metaTitle:       string
+    metaDescription: string
+    keywords:        string[]
+    ogImage?:        string
+  }
+  faq:  { q: string; a: string }[]
+  toc:  { id: string; text: string; level: number }[]
+  relatedSlugs: string[]
+}
+
+export interface AdminBlogComment {
+  _id:         string
+  blogId:      string
+  blogTitle?:  string
+  parentId:    string | null
+  authorId:    string
+  authorName:  string
+  authorImage?: string
+  content:     string
+  likes:       number
+  isDeleted:   boolean
+  isReported:  boolean
+  createdAt:   string
+}
+
+export interface AdminBlogAnalytics {
+  totalBlogs:     number
+  publishedBlogs: number
+  draftBlogs:     number
+  totalViews:     number
+  totalLikes:     number
+  totalDislikes:  number
+  totalComments:  number
+  topBlogs:       { _id: string; title: string; views: number; likes: number }[]
+  dailyViews?:    { _id: string; views: number }[]
+}
 
 export interface AdminFeedback {
   _id:         string

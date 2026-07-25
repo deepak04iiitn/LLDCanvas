@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import {
@@ -291,7 +291,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3 text-right font-mono text-sm text-ink-muted">{user.diagramCount}</td>
                     <td className="px-4 py-3 text-right font-mono text-sm text-ink-muted">{user.sessionCount}</td>
                     <td className="px-4 py-3 font-mono text-xs text-ink-faint whitespace-nowrap">
-                      {user.createdAt ? format(parseISO(user.createdAt), 'MMM d, yyyy') : '—'}
+                      {user.createdAt ? format(parseISO(user.createdAt), 'MMM d, yyyy') : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

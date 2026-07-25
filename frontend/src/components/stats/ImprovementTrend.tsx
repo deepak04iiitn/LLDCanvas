@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState } from 'react'
 import {
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import type { TrendPoint } from '@/types'
 
 function fmtMins(m: number) {
-  if (m <= 0) return '—'
+  if (m <= 0) return '-'
   const h = Math.floor(m / 60)
   const rem = Math.round(m % 60)
   if (h > 0) return `${h}h ${rem}m`
@@ -69,7 +69,7 @@ export function ImprovementTrend({ trendData }: Props) {
       <div className="mb-5 flex items-start justify-between">
         <div>
           <h2 className="text-sm font-semibold text-ink">Time Improvement Trend</h2>
-          <p className="mt-0.5 text-[11px] text-ink-faint">Weekly avg session duration — lower is faster</p>
+          <p className="mt-0.5 text-[11px] text-ink-faint">Weekly avg session duration - lower is faster</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           {/* Mode toggle */}

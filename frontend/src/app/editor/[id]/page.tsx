@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +13,7 @@ import type { DiagramFull } from '@/types'
 // ─── Share access states ──────────────────────────────────────────────────────
 type AccessState =
   | { kind: 'loading' }
-  | { kind: 'need-auth' }           // not signed in — must log in first
+  | { kind: 'need-auth' }           // not signed in - must log in first
   | { kind: 'denied'; reason: string }
   | { kind: 'ok' }
 
@@ -37,7 +37,7 @@ export default function EditorPage() {
   useEffect(() => {
     if (!id) return
 
-    // No share token — owner loading their own diagram, or viewing a community
+    // No share token - owner loading their own diagram, or viewing a community
     // solution. Either way, the diagram fetch in step 2 tells us the real
     // permission (owner => edit, community solution => forced view-only).
     if (!shareToken) {
@@ -48,7 +48,7 @@ export default function EditorPage() {
     // Still loading session
     if (sessionLoading) return
 
-    // Not logged in — ask them to sign in
+    // Not logged in - ask them to sign in
     if (!session) {
       setAccess({ kind: 'need-auth' })
       return
@@ -78,7 +78,7 @@ export default function EditorPage() {
       .then(res => {
         setDiagram(res.diagram)
         setLinkedProblemSlug(res.problemSlug)
-        // Owner requests carry no sharePermission — default to edit.
+        // Owner requests carry no sharePermission - default to edit.
         // Shared / community-solution requests carry it explicitly.
         if (!shareToken) setPermission(res.sharePermission ?? 'edit')
       })

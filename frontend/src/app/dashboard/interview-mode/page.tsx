@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -71,7 +71,7 @@ const FEATURES = [
   {
     icon: Infinity,
     title: 'Resume anytime',
-    desc: 'Close the tab mid-session and come back later — the dashboard will let you pick up right where you left off.',
+    desc: 'Close the tab mid-session and come back later - the dashboard will let you pick up right where you left off.',
   },
 ]
 
@@ -194,7 +194,7 @@ export default function InterviewModePage() {
               Practice LLD like a real interview
             </h2>
             <p className="mb-9 text-base leading-relaxed text-ink-muted">
-              Set a timer, design on the infinite canvas, and take notes as you go — then review your
+              Set a timer, design on the infinite canvas, and take notes as you go - then review your
               session history and build a daily streak. Everything you need to walk in ready.
             </p>
 
@@ -259,7 +259,7 @@ export default function InterviewModePage() {
           <section className="mb-16">
             <h3 className="mb-1 font-serif text-xl font-medium text-ink">Timer options</h3>
             <p className="mb-5 text-sm text-ink-faint">
-              Choose what fits your session — from a quick warm-up to a full mock interview.
+              Choose what fits your session - from a quick warm-up to a full mock interview.
             </p>
             <div className="flex flex-wrap gap-2">
               {TIMER_OPTS.map(label => (

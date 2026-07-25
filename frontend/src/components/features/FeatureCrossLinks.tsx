@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -8,7 +8,7 @@ const LINKS = [
   { href: '/features/editor',              label: 'The Editor',          note: 'UML diagram canvas'   },
   { href: '/features/draft-notation',      label: 'Draft Notation',      note: 'Text → diagram'   },
   { href: '/features/interview-mode',      label: 'Interview Mode',      note: 'Timed practice'        },
-  { href: '/features/interview-questions', label: 'Interview Questions', note: '100+ problems'         },
+  { href: '/features/interview-questions', label: 'Interview Questions', note: '110+ problems'         },
   { href: '/features/revision-notes',      label: 'Revision Notes',      note: 'Concept refreshers'    },
   { href: '/features/code-execution',      label: 'Code Execution',      note: '12 languages'          },
   { href: '/features/collaboration',       label: 'Collaboration',       note: 'Real-time sync'        },
@@ -16,7 +16,7 @@ const LINKS = [
   { href: '/docs',                         label: 'Docs',                note: 'Guides & API'          },
 ]
 
-// Rendered near the bottom of every /features/** page — every page links to
+// Rendered near the bottom of every /features/** page - every page links to
 // every other public section, satisfying the "strong internal linking"
 // requirement everywhere, not just from a hub page. A numbered ledger-style
 // grid (hairline-thin dividers via the gap-px/bg-hairline trick) rather than

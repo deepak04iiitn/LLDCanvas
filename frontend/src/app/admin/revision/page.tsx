@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -370,7 +370,7 @@ export default function AdminRevisionPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-faint">
-                  {n.createdAt ? format(parseISO(n.createdAt), 'MMM d, yyyy') : '—'}
+                  {n.createdAt ? format(parseISO(n.createdAt), 'MMM d, yyyy') : '-'}
                 </td>
                 <td className="px-4 py-3">
                   <button onClick={() => handleToggle(n.id)} disabled={toggling === n.id}
@@ -413,7 +413,7 @@ export default function AdminRevisionPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-ink-faint">Showing {(page - 1) * 20 + 1}–{Math.min(page * 20, total)} of {total}</p>
+          <p className="text-xs text-ink-faint">Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => load(page - 1)} disabled={page <= 1}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline transition hover:bg-hairline disabled:opacity-40">
