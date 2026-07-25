@@ -1,5 +1,6 @@
 import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, InterviewAssignedProblem, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
 import { getAuthToken } from './auth-token'
+import type { BlogBlock } from './blog-blocks'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -462,7 +463,7 @@ export interface BlogSummary {
 }
 
 export interface BlogDetail extends BlogSummary {
-  content: string
+  content: BlogBlock[]
   faq: { q: string; a: string }[]
   toc: { id: string; text: string; level: number }[]
 }

@@ -7,8 +7,10 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 async function getBlog(slug: string) {
   try {
+    // no-store: this request also increments the server-side view counter,
+    // so caching it would both under-count views and show stale like/dislike numbers.
     const res = await fetch(`${BASE}/blog/${slug}`, {
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
     if (!res.ok) return null
     return res.json()

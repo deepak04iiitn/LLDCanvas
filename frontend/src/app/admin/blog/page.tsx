@@ -7,7 +7,7 @@ import {
   MessageCircle, Clock, FileEdit, Globe, Trash2,
   Copy, EyeOff, X, Save, ChevronLeft, ChevronRight,
   Star, BookOpen, TrendingUp,
-  ExternalLink, Calendar, Tag, Filter,
+  ExternalLink, Calendar, Tag, Filter, ArrowUp, ArrowDown, GripVertical,
 } from 'lucide-react'
 import { formatDistanceToNow, parseISO, format } from 'date-fns'
 import { toast } from 'sonner'
@@ -18,7 +18,8 @@ import {
   type AdminBlogAnalytics,
 } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
-import { BlogMarkdown } from '@/components/blog/BlogMarkdown'
+import { BlogBlocks } from '@/components/blog/BlogBlocks'
+import { type BlogBlock, BLOG_BLOCK_TYPES } from '@/lib/blog-blocks'
 
 // ─── Shared style constants ───────────────────────────────────────────────────
 
@@ -76,6 +77,165 @@ function StatCard({ label, value, sub, Icon, accent, bg }: {
   )
 }
 
+// ─── Block editor (structured content — no Markdown) ─────────────────────────
+
+const BLOCK_LABELS: Record<BlogBlock['type'], string> = {
+  heading: 'Heading', paragraph: 'Paragraph', bullets: 'Bulleted list', numbered: 'Numbered list',
+  code: 'Code', quote: 'Callout quote', table: 'Table', divider: 'Divider',
+}
+
+function newBlock(type: BlogBlock['type']): BlogBlock {
+  switch (type) {
+    case 'heading':   return { type, level: 2, text: '' }
+    case 'paragraph': return { type, text: '' }
+    case 'bullets':   return { type, items: [''] }
+    case 'numbered':  return { type, items: [''] }
+    case 'code':      return { type, lang: 'java', code: '' }
+    case 'quote':     return { type, text: '' }
+    case 'table':     return { type, headers: ['', ''], rows: [['', '']] }
+    case 'divider':   return { type }
+  }
+}
+
+const TA = 'w-full resize-y rounded-lg border border-hairline-strong bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10'
+
+function BlockFields({ block, onChange }: { block: BlogBlock; onChange: (b: BlogBlock) => void }) {
+  switch (block.type) {
+    case 'heading':
+      return (
+        <div className="flex gap-2">
+          <select
+            value={block.level}
+            onChange={e => onChange({ ...block, level: Number(e.target.value) as 2 | 3 })}
+            className="rounded-lg border border-hairline-strong bg-paper px-2 py-2 text-sm outline-none"
+          >
+            <option value={2}>H2</option>
+            <option value={3}>H3</option>
+          </select>
+          <input
+            value={block.text}
+            onChange={e => onChange({ ...block, text: e.target.value })}
+            placeholder="Heading text…"
+            className={cn(IB, 'flex-1')}
+          />
+        </div>
+      )
+    case 'paragraph':
+    case 'quote':
+      return (
+        <textarea
+          value={block.text}
+          onChange={e => onChange({ ...block, text: e.target.value })}
+          placeholder="Text… use **bold**, `code`, *italic*, [link](url)"
+          rows={3}
+          className={TA}
+        />
+      )
+    case 'bullets':
+    case 'numbered':
+      return (
+        <textarea
+          value={block.items.join('\n')}
+          onChange={e => onChange({ ...block, items: e.target.value.split('\n') })}
+          placeholder={'One item per line…'}
+          rows={4}
+          className={TA}
+        />
+      )
+    case 'code':
+      return (
+        <div className="space-y-2">
+          <input
+            value={block.lang}
+            onChange={e => onChange({ ...block, lang: e.target.value })}
+            placeholder="Language (e.g. java, text)"
+            className={cn(IB, 'w-40 font-mono text-[12px]')}
+          />
+          <textarea
+            value={block.code}
+            onChange={e => onChange({ ...block, code: e.target.value })}
+            rows={8}
+            className={cn(TA, 'font-mono text-[12px] leading-relaxed')}
+          />
+        </div>
+      )
+    case 'table':
+      return (
+        <div className="space-y-2">
+          <input
+            value={block.headers.join(', ')}
+            onChange={e => onChange({ ...block, headers: e.target.value.split(',').map(s => s.trim()) })}
+            placeholder="Header 1, Header 2, …"
+            className={cn(IB, 'font-mono text-[12px]')}
+          />
+          <textarea
+            value={block.rows.map(r => r.join(', ')).join('\n')}
+            onChange={e => onChange({ ...block, rows: e.target.value.split('\n').map(r => r.split(',').map(s => s.trim())) })}
+            placeholder="One row per line, comma-separated cells…"
+            rows={4}
+            className={cn(TA, 'font-mono text-[12px]')}
+          />
+        </div>
+      )
+    case 'divider':
+      return <p className="text-[11px] italic text-ink-faint">A horizontal rule — no content needed.</p>
+  }
+}
+
+function BlockEditor({ blocks, onChange }: { blocks: BlogBlock[]; onChange: (b: BlogBlock[]) => void }) {
+  function update(i: number, block: BlogBlock) {
+    onChange(blocks.map((b, j) => (j === i ? block : b)))
+  }
+  function remove(i: number) {
+    onChange(blocks.filter((_, j) => j !== i))
+  }
+  function move(i: number, dir: -1 | 1) {
+    const j = i + dir
+    if (j < 0 || j >= blocks.length) return
+    const next = [...blocks]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onChange(next)
+  }
+  function add(type: BlogBlock['type']) {
+    onChange([...blocks, newBlock(type)])
+  }
+
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, i) => (
+        <div key={i} className="rounded-xl border border-hairline bg-paper-elevated p-4">
+          <div className="mb-2.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
+              <GripVertical className="h-3 w-3" /> {BLOCK_LABELS[block.type]}
+            </span>
+            <div className="flex items-center gap-1">
+              <button onClick={() => move(i, -1)} disabled={i === 0} className="rounded p-1 text-ink-faint hover:bg-hairline disabled:opacity-30">
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => move(i, 1)} disabled={i === blocks.length - 1} className="rounded p-1 text-ink-faint hover:bg-hairline disabled:opacity-30">
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => remove(i)} className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <BlockFields block={block} onChange={b => update(i, b)} />
+        </div>
+      ))}
+
+      <div className="flex flex-wrap gap-1.5 rounded-xl border border-dashed border-hairline-strong p-3">
+        <span className="mr-1 self-center text-[11px] font-semibold uppercase tracking-wider text-ink-faint">Add:</span>
+        {BLOG_BLOCK_TYPES.map(t => (
+          <button key={t} onClick={() => add(t)} className={BS}>
+            <Plus className="mr-1 inline h-3 w-3" />{BLOCK_LABELS[t]}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── Blog Editor / Detail Drawer ─────────────────────────────────────────────
 
 function BlogDrawer({
@@ -91,7 +251,7 @@ function BlogDrawer({
 }) {
   const isNew = blog === null
   const [form, setForm] = useState<Partial<AdminBlogDetail>>(blog ?? {
-    title: '', subtitle: '', slug: '', excerpt: '', content: '',
+    title: '', subtitle: '', slug: '', excerpt: '', content: [],
     category: '', tags: [], status: 'draft', isFeatured: false,
     author: { name: 'LLDCanvas Team', role: 'Engineering', avatar: '' },
     seo: { metaTitle: '', metaDescription: '', keywords: [] },
@@ -277,21 +437,15 @@ function BlogDrawer({
             </Field>
 
             {/* Content */}
-            <Field label="Content (Markdown)">
-              <textarea
-                value={form.content ?? ''}
-                onChange={e => set('content', e.target.value)}
-                placeholder="Write your blog content in Markdown…"
-                rows={20}
-                className={cn(IB, 'resize-y font-mono text-[12px] leading-relaxed')}
-              />
+            <Field label="Content">
+              <BlockEditor blocks={form.content ?? []} onChange={c => set('content', c)} />
               <p className="mt-1.5 text-[10px] leading-relaxed text-ink-faint">
-                Standard Markdown — <code className="rounded bg-hairline px-1">## Heading</code>,{' '}
-                <code className="rounded bg-hairline px-1">- item</code> or{' '}
-                <code className="rounded bg-hairline px-1">1. item</code> for lists,{' '}
-                <code className="rounded bg-hairline px-1">**bold**</code>,{' '}
-                <code className="rounded bg-hairline px-1">```lang</code> for code blocks. Leave a blank line between
-                blocks (lists included) or they won&rsquo;t render correctly. Check the <b>Preview</b> tab before publishing.
+                Build the article from typed blocks — headings, paragraphs, lists, code, callouts, and tables always
+                render correctly since there&rsquo;s no text format to get wrong. Within a paragraph, bullet item, or
+                callout, you can still use <code className="rounded bg-hairline px-1">**bold**</code>,{' '}
+                <code className="rounded bg-hairline px-1">`code`</code>,{' '}
+                <code className="rounded bg-hairline px-1">*italic*</code>, and{' '}
+                <code className="rounded bg-hairline px-1">[link](url)</code>. Check the <b>Preview</b> tab before publishing.
               </p>
             </Field>
 
@@ -331,10 +485,10 @@ function BlogDrawer({
               <p className="mt-3 font-serif text-lg italic leading-relaxed text-ink-muted">{form.subtitle}</p>
             )}
             <div className="mt-8 border-t border-hairline pt-8">
-              {form.content?.trim() ? (
-                <BlogMarkdown content={form.content} />
+              {form.content && form.content.length > 0 ? (
+                <BlogBlocks blocks={form.content} />
               ) : (
-                <p className="text-sm text-ink-faint">Nothing to preview yet — write some content first.</p>
+                <p className="text-sm text-ink-faint">Nothing to preview yet — add some blocks first.</p>
               )}
             </div>
             {form.faq && form.faq.length > 0 && (

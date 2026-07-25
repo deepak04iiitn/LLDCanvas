@@ -51,7 +51,6 @@ export const analyticsController = {
             userAgent:   req.headers['user-agent'] ?? '',
             pageViews:   1,
             pages:       [page],
-            totalDurationSeconds: 0,
           },
           $set: {
             lastHeartbeat: now,

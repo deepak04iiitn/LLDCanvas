@@ -1,4 +1,5 @@
 import { Schema, model, Document } from 'mongoose'
+import { BlogBlock } from '../types/blog-content'
 
 export interface IBlogToc {
   id:    string
@@ -16,7 +17,7 @@ export interface IBlog extends Document {
   title:       string
   subtitle:    string
   excerpt:     string
-  content:     string        // Markdown
+  content:     BlogBlock[]
   coverImage?: string
   coverImageAlt?: string
 
@@ -64,7 +65,7 @@ const blogSchema = new Schema<IBlog>(
     title:   { type: String, required: true },
     subtitle: { type: String, default: '' },
     excerpt: { type: String, default: '' },
-    content: { type: String, required: true },
+    content: { type: [Schema.Types.Mixed], required: true } as unknown as { type: BlogBlock[] },
     coverImage:    { type: String },
     coverImageAlt: { type: String },
 
@@ -108,6 +109,6 @@ blogSchema.index({ tags: 1 })
 blogSchema.index({ isFeatured: 1 })
 blogSchema.index({ views: -1 })
 blogSchema.index({ likes: -1 })
-blogSchema.index({ title: 'text', content: 'text', tags: 'text' })
+blogSchema.index({ title: 'text', excerpt: 'text', tags: 'text' })
 
 export const Blog = model<IBlog>('Blog', blogSchema)

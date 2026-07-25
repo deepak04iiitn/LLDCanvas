@@ -12,7 +12,7 @@ import { api, type BlogDetail, type BlogSummary, type BlogComment } from '@/lib/
 import { cn } from '@/lib/utils'
 import { useSession } from '@/lib/auth'
 import { toast } from 'sonner'
-import { BlogMarkdown } from './BlogMarkdown'
+import { BlogBlocks } from './BlogBlocks'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -91,18 +91,6 @@ function ProgressRail({ pct }: { pct: number }) {
 // ─── Table of contents ────────────────────────────────────────────────────────
 
 interface TocItem { id: string; text: string; level: number }
-
-function buildToc(md: string): TocItem[] {
-  return md.split('\n').reduce<TocItem[]>((acc, line) => {
-    const m = line.match(/^(#{1,4})\s+(.+)/)
-    if (m) {
-      const text = m[2].replace(/\*\*/g, '').replace(/`/g, '').trim()
-      const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      acc.push({ id, text, level: m[1].length })
-    }
-    return acc
-  }, [])
-}
 
 function ChaptersRail({ items, activeId }: { items: TocItem[]; activeId: string }) {
   if (!items.length) return null
@@ -424,7 +412,7 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
   const [newComment, setNewComment] = useState('')
   const [posting,    setPosting]    = useState(false)
   const [activeId,   setActiveId]   = useState('')
-  const toc = buildToc(blog.content)
+  const toc = blog.toc
   const a = catAccent(blog.category)
   const { pct, pastHero } = useReaderScroll()
 
@@ -448,7 +436,7 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
     )
     hs.forEach(h => obs.observe(h))
     return () => obs.disconnect()
-  }, [blog.content])
+  }, [blog.toc])
 
   async function handleReact(type: 'like' | 'dislike') {
     if (!session) { toast.error('Sign in to react'); return }
@@ -634,7 +622,7 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
               </details>
             )}
 
-            <BlogMarkdown content={blog.content} />
+            <BlogBlocks blocks={blog.content} />
 
             {blog.faq && blog.faq.length > 0 && <FaqAccordion faq={blog.faq} />}
 

@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth-token'
+import type { BlogBlock } from './blog-blocks'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -593,7 +594,7 @@ export interface AdminBlogSummary {
 
 export interface AdminBlogDetail extends AdminBlogSummary {
   subtitle:   string
-  content:    string
+  content:    BlogBlock[]
   coverImage?: string
   coverImageAlt?: string
   author: { name: string; role: string; avatar?: string }

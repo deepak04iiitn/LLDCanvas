@@ -1,13 +1,25 @@
 import { Request, Response, NextFunction } from 'express'
+import { z } from 'zod'
 import { Blog } from '../models/blog.model'
 import { BlogComment } from '../models/blog-comment.model'
 import { BlogReaction } from '../models/blog-reaction.model'
+import { BLOG_BLOCK_TYPES } from '../types/blog-content'
+import { calcReadingTime, buildTocAndIds } from '../utils/blog-content'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function calcReadingTime(content: string): number {
-  const words = content.trim().split(/\s+/).length
-  return Math.max(1, Math.ceil(words / 200))
+const blogBlockSchema = z.object({ type: z.enum(BLOG_BLOCK_TYPES) }).passthrough()
+const blogContentSchema = z.array(blogBlockSchema)
+
+/** Validates + normalises req.body.content in place, computing toc/readingTime. Returns an error message, or null if OK. */
+function prepareContent(data: Record<string, unknown>): string | null {
+  const parsed = blogContentSchema.safeParse(data.content)
+  if (!parsed.success) return 'Invalid content: expected an array of typed blocks'
+  const { blocks, toc } = buildTocAndIds(parsed.data as never)
+  data.content = blocks
+  data.toc = toc
+  data.readingTime = calcReadingTime(blocks as never)
+  return null
 }
 
 const PUBLIC_FIELDS = {
@@ -293,7 +305,8 @@ export const adminBlogController = {
   create: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = req.body
-      data.readingTime = calcReadingTime(data.content ?? '')
+      const error = prepareContent(data)
+      if (error) { res.status(400).json({ error }); return }
       const blog = await Blog.create(data)
       res.status(201).json({ blog })
     } catch (err) { next(err) }
@@ -302,7 +315,10 @@ export const adminBlogController = {
   update: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = req.body
-      if (data.content) data.readingTime = calcReadingTime(data.content)
+      if (data.content) {
+        const error = prepareContent(data)
+        if (error) { res.status(400).json({ error }); return }
+      }
       const blog = await Blog.findByIdAndUpdate(req.params.id, { $set: data }, { new: true })
       if (!blog) { res.status(404).json({ error: 'Not found' }); return }
       res.json({ blog })
