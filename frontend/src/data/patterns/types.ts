@@ -7,13 +7,14 @@ export interface PatternNode {
   data: UMLNodeData
 }
 
-// Must match the real handle ids declared on UMLClassNode (top/right/bottom/left).
-// Without these, React Flow can't tell which of a node's four handles an edge
-// is meant to leave from / arrive at, and silently falls back to the first
-// one it finds (top) for every edge - which is exactly how a pattern with
-// nodes arranged left-right-and-down ends up with every arrow bunched at the
-// top of each box, crossing over everything else.
-export type HandleSide = 'top' | 'right' | 'bottom' | 'left'
+// Must match the real handle ids declared on UMLClassNode.
+// The four basic sides ('top'|'right'|'bottom'|'left') address the centre
+// handle on each edge.  When two edges share the same side of a node and
+// their markers would otherwise overlap, use a percentage handle such as
+// 'bottom@25' or 'bottom@75'  — UMLClassNode generates handles at every 5 %
+// increment (5, 10, … 95) with ids in the form "<side>@<pct>", so any of
+// those strings are valid here.
+export type HandleSide = string
 
 export interface PatternEdge {
   id: string

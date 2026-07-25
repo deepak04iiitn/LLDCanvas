@@ -8,7 +8,6 @@ import {
   Controls,
   Panel,
   ConnectionMode,
-  ConnectionLineType,
   SelectionMode,
   useViewport,
   type Node,
@@ -18,6 +17,7 @@ import {
   type OnConnect,
   type OnNodesDelete,
   type ReactFlowInstance,
+  type OnConnectStart,
 } from '@xyflow/react'
 import { Trash2, CopyPlus } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
@@ -25,6 +25,11 @@ import { useEditor } from '@/contexts/EditorContext'
 import { nodeTypes } from './nodes'
 import { edgeTypes } from './edges'
 import { UMLMarkers } from './UMLMarkers'
+import { DraftConnectionLine } from './edges/DraftConnectionLine'
+import { EraserState } from '@/lib/eraserState'
+
+// SVG eraser cursor encoded as a data URI (20 × 20 px, hotspot at bottom-left)
+const ERASER_CURSOR = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21'/%3E%3Cpath d='M22 21H7'/%3E%3Cpath d='m5 11 9 9'/%3E%3C/svg%3E") 0 20, crosshair`
 
 // ─── Alignment guide overlay ──────────────────────────────────────────────────
 
@@ -169,13 +174,16 @@ interface CanvasViewProps {
   onNodesChange: OnNodesChange
   onEdgesChange: OnEdgesChange
   onConnect: OnConnect
+  onConnectStart?: OnConnectStart
   onInit: (instance: ReactFlowInstance) => void
   onNodesDelete?: OnNodesDelete
-  canvasMode: 'pan' | 'select'
+  canvasMode: 'pan' | 'select' | 'eraser'
   selectedCount: number
   onDuplicate: () => void
   onDelete: () => void
   onClearSelection: () => void
+  onEraseNode?: (nodeId: string) => void
+  onEraseEdge?: (edgeId: string) => void
   readOnly?: boolean
 }
 
@@ -185,6 +193,7 @@ export function CanvasView({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onConnectStart,
   onInit,
   onNodesDelete,
   canvasMode,
@@ -192,11 +201,16 @@ export function CanvasView({
   onDuplicate,
   onDelete,
   onClearSelection,
+  onEraseNode,
+  onEraseEdge,
   readOnly,
 }: CanvasViewProps) {
   const { theme } = useEditor()
   const [guides, setGuides] = useState<GuideLines>({})
   const dragRaf = useRef<number | null>(null)
+
+  // Track whether the primary mouse button is held (for drag-to-erase)
+  const isMouseDownRef = useRef(false)
 
   const canvasBg =
     theme === 'dark' ? '#111111' : theme === 'whiteboard' ? '#FFFFFF' : '#F8F8F8'
@@ -224,16 +238,74 @@ export function CanvasView({
     setGuides({})
   }, [])
 
+  // ── Eraser handlers ───────────────────────────────────────────────────────
+  const isEraser = canvasMode === 'eraser'
+
+  const onNodeMouseEnter = useCallback(
+    (_: unknown, node: Node) => {
+      if (!isEraser) return
+      EraserState.setHoveredId(node.id)
+      if (isMouseDownRef.current) onEraseNode?.(node.id)
+    },
+    [isEraser, onEraseNode],
+  )
+
+  const onNodeMouseLeave = useCallback(
+    (_: unknown, node: Node) => {
+      if (!isEraser) return
+      if (EraserState.hoveredId === node.id) EraserState.setHoveredId(null)
+    },
+    [isEraser],
+  )
+
+  const onNodeClick = useCallback(
+    (_: unknown, node: Node) => {
+      if (!isEraser) return
+      onEraseNode?.(node.id)
+    },
+    [isEraser, onEraseNode],
+  )
+
+  const onEdgeMouseEnter = useCallback(
+    (_: unknown, edge: Edge) => {
+      if (!isEraser) return
+      EraserState.setHoveredId(edge.id)
+      if (isMouseDownRef.current) onEraseEdge?.(edge.id)
+    },
+    [isEraser, onEraseEdge],
+  )
+
+  const onEdgeMouseLeave = useCallback(
+    (_: unknown, edge: Edge) => {
+      if (!isEraser) return
+      if (EraserState.hoveredId === edge.id) EraserState.setHoveredId(null)
+    },
+    [isEraser],
+  )
+
+  const onEdgeClick = useCallback(
+    (_: unknown, edge: Edge) => {
+      if (!isEraser) return
+      onEraseEdge?.(edge.id)
+    },
+    [isEraser, onEraseEdge],
+  )
+
   return (
     <div
       className="relative h-full w-full overflow-hidden"
       data-mode={canvasMode}
+      onMouseDown={(e) => { if (e.button === 0) isMouseDownRef.current = true }}
+      onMouseUp={() => { isMouseDownRef.current = false }}
     >
-      {/* Force crosshair on the React Flow pane in select mode -
+      {/* Force cursor on the React Flow pane based on active tool.
           React Flow sets cursor:grab on .react-flow__pane internally,
           which overrides any style on the outer wrapper. */}
       {canvasMode === 'select' && (
         <style>{`.react-flow__pane { cursor: crosshair !important; }`}</style>
+      )}
+      {canvasMode === 'eraser' && (
+        <style>{`.react-flow__pane, .react-flow__node, .react-flow__edge { cursor: ${ERASER_CURSOR} !important; }`}</style>
       )}
       <UMLMarkers />
       <ReactFlow
@@ -241,7 +313,8 @@ export function CanvasView({
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onConnect={isEraser ? undefined : onConnect}
+        onConnectStart={isEraser ? undefined : onConnectStart}
         onInit={onInit}
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
@@ -252,22 +325,28 @@ export function CanvasView({
         deleteKeyCode={null}
         // In select mode: left-drag box-selects; right/middle-drag pans.
         // In pan mode: left-drag pans; Shift+drag still box-selects.
+        // In eraser mode: no drag interaction (only hover + click to erase).
         selectionOnDrag={canvasMode === 'select'}
-        panOnDrag={canvasMode === 'select' ? [1, 2] : true}
+        panOnDrag={canvasMode === 'select' ? [1, 2] : isEraser ? false : true}
         selectionMode={SelectionMode.Partial}
         selectionKeyCode="Shift"
         multiSelectionKeyCode="Shift"
-        onNodeDrag={onNodeDrag}
-        onNodeDragStop={onNodeDragStop}
+        onNodeDrag={isEraser ? undefined : onNodeDrag}
+        onNodeDragStop={isEraser ? undefined : onNodeDragStop}
+        onNodeMouseEnter={onNodeMouseEnter}
+        onNodeMouseLeave={onNodeMouseLeave}
+        onNodeClick={onNodeClick}
+        onEdgeMouseEnter={onEdgeMouseEnter}
+        onEdgeMouseLeave={onEdgeMouseLeave}
+        onEdgeClick={onEdgeClick}
         style={{ background: canvasBg }}
         proOptions={{ hideAttribution: true }}
-        nodesDraggable={!readOnly}
-        nodesConnectable={!readOnly}
-        elementsSelectable={!readOnly}
+        nodesDraggable={!readOnly && !isEraser}
+        nodesConnectable={!readOnly && !isEraser}
+        elementsSelectable={!readOnly && !isEraser}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        connectionLineStyle={{ stroke: '#6366F1', strokeWidth: 1.5, strokeDasharray: '6 3' }}
+        connectionLineComponent={DraftConnectionLine}
       >
         <Background
           variant={gridVariant}

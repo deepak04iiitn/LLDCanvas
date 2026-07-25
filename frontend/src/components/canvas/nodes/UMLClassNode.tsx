@@ -36,23 +36,17 @@ import {
 import type { UMLNodeData, UMLAttribute, UMLMethod, Visibility } from '@/types'
 import { formatAttribute, formatMethod } from '@/lib/uml/parser'
 import { cn } from '@/lib/utils'
+import { useEraserHighlight } from '@/lib/eraserState'
 
-// ─── Handle appearance ────────────────────────────────────────────────────────
-const HANDLE_CLS =
-  '!h-3 !w-3 !rounded-full !border-2 !border-white !bg-indigo-500 ' +
-  '!opacity-0 !transition-all !duration-150 group-hover:!opacity-100 hover:!opacity-100 ' +
-  'hover:!scale-125 !shadow-sm'
-
-// Several attachment points along each side (not just the center) so a
-// connection can originate/land anywhere along a node's border. The 50%
-// point on each side keeps the plain 'top'/'right'/'bottom'/'left' id so
-// diagrams and pattern/template data saved before this change still resolve
-// to the same spot.
+// ─── Handle layout ─────────────────────────────────────────────────────────────
+// Every 5% along each side gives 19 slots per side (76 total). The midpoint (50%)
+// keeps the legacy id 'top'/'right'/etc. so that previously-saved diagrams and
+// pattern data still resolve to the correct handle.
 type Side = 'top' | 'right' | 'bottom' | 'left'
 const SIDE_POSITION: Record<Side, Position> = {
   top: Position.Top, right: Position.Right, bottom: Position.Bottom, left: Position.Left,
 }
-const SIDE_OFFSETS = [20, 35, 50, 65, 80] as const
+const SIDE_OFFSETS = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95] as const
 
 function sideHandleStyle(side: Side, pct: number): CSSProperties {
   return side === 'top' || side === 'bottom' ? { left: `${pct}%` } : { top: `${pct}%` }
@@ -65,6 +59,53 @@ const HANDLE_POSITIONS = (['top', 'right', 'bottom', 'left'] as Side[]).flatMap(
     style: sideHandleStyle(side, pct),
   })),
 )
+
+// ─── Handle CSS ─────────────────────────────────────────────────────────────────
+const HANDLE_BASE =
+  '!h-2.5 !w-2.5 !rounded-full !border-[1.5px] !border-white !bg-indigo-500 ' +
+  '!shadow-sm !transition-[opacity,transform] !duration-100'
+
+/** Snap a 0-100 value to the nearest multiple of 5, clamped to [5, 95]. */
+function snap5(v: number): number {
+  return Math.max(5, Math.min(95, Math.round(v / 5) * 5))
+}
+
+/** Given screen-space mouse coordinates + the node's bounding rect, return
+ *  the id of the nearest handle within the border hover-zone, or null if
+ *  the cursor is in the node interior. */
+function nearestHandleId(
+  clientX: number, clientY: number,
+  rect: DOMRect,
+  zone = 14,
+): string | null {
+  const mx = clientX - rect.left
+  const my = clientY - rect.top
+  const w  = rect.width
+  const h  = rect.height
+
+  const dTop    = my
+  const dBottom = h - my
+  const dLeft   = mx
+  const dRight  = w - mx
+  const closest = Math.min(dTop, dBottom, dLeft, dRight)
+
+  if (closest > zone) return null
+
+  if (closest === dTop) {
+    const p = snap5(mx / w * 100)
+    return p === 50 ? 'top' : `top@${p}`
+  }
+  if (closest === dBottom) {
+    const p = snap5(mx / w * 100)
+    return p === 50 ? 'bottom' : `bottom@${p}`
+  }
+  if (closest === dLeft) {
+    const p = snap5(my / h * 100)
+    return p === 50 ? 'left' : `left@${p}`
+  }
+  const p = snap5(my / h * 100)
+  return p === 50 ? 'right' : `right@${p}`
+}
 
 // ─── Type autocomplete list ───────────────────────────────────────────────────
 const COMMON_TYPES = [
@@ -593,6 +634,9 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const nameInputRef = useRef<HTMLInputElement>(null)
   const updateNodeInternals = useUpdateNodeInternals()
   const { setNodes, getNodes, setEdges } = useReactFlow()
+  const [activeHandle, setActiveHandle] = useState<string | null>(null)
+  const movRafRef = useRef<number | null>(null)
+  const isEraserTarget = useEraserHighlight(id)
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft]     = useState(data.name)
 
@@ -701,6 +745,22 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     setEdges(eds => eds.filter(e => e.source !== id && e.target !== id))
   }
 
+  // ── Border-proximity tracking for the floating connection indicator ──────
+  const onBorderMouseMove = useCallback((e: { clientX: number; clientY: number }) => {
+    const { clientX, clientY } = e
+    if (movRafRef.current !== null) cancelAnimationFrame(movRafRef.current)
+    movRafRef.current = requestAnimationFrame(() => {
+      const rect = nodeRef.current?.getBoundingClientRect()
+      if (rect) setActiveHandle(nearestHandleId(clientX, clientY, rect))
+      movRafRef.current = null
+    })
+  }, [])
+
+  const onBorderMouseLeave = useCallback(() => {
+    if (movRafRef.current !== null) { cancelAnimationFrame(movRafRef.current); movRafRef.current = null }
+    setActiveHandle(null)
+  }, [])
+
   const isInterface = data.nodeType === 'interface'
   const isAbstract  = data.nodeType === 'abstract-class'
   const isEnum      = data.nodeType === 'enum'
@@ -712,18 +772,42 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     'group relative min-w-[200px] rounded-lg border bg-white text-gray-900',
     'shadow-sm dark:bg-[#1E1E1E] dark:text-gray-100',
     isInterface ? 'border-dashed' : 'border-solid',
-    selected
-      ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
-      : 'border-slate-200 dark:border-slate-600',
+    isEraserTarget
+      ? 'border-2 border-red-500 opacity-60 shadow-[0_0_0_3px_rgba(239,68,68,0.25)]'
+      : selected
+        ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
+        : 'border-slate-200 dark:border-slate-600',
   )
 
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        <div ref={nodeRef} className={containerCls}>
-          {HANDLE_POSITIONS.map(({ id: hid, position, style }) => (
-            <Handle key={hid} id={hid} type="source" position={position} style={style} className={HANDLE_CLS} />
-          ))}
+        <div
+          ref={nodeRef}
+          className={containerCls}
+          onMouseMove={onBorderMouseMove}
+          onMouseLeave={onBorderMouseLeave}
+        >
+          {HANDLE_POSITIONS.map(({ id: hid, position, style }) => {
+            // Only the handle nearest the cursor is visible — giving a
+            // "floating indicator" effect that implies free placement.
+            const visible = hid === activeHandle
+            return (
+              <Handle
+                key={hid}
+                id={hid}
+                type="source"
+                position={position}
+                style={style}
+                className={
+                  HANDLE_BASE +
+                  (visible
+                    ? ' opacity-100! hover:scale-125!'
+                    : ' opacity-0!')
+                }
+              />
+            )
+          })}
 
           {/* ── Header ─────────────────────────────────────────────────── */}
           <div className="px-3 pt-2 pb-2 text-center">

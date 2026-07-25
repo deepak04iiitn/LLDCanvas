@@ -55,6 +55,8 @@ import { exportPNG, exportSVG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
 import { toMermaid } from '@/lib/export/toMermaid'
 import { serializeToDraft, renderToFlow, type DraftAST } from '@/lib/draft'
+import { resetConnectionDraft, getConnectionDraftWaypoints } from '@/lib/connectionDraft'
+import { EraserState } from '@/lib/eraserState'
 
 interface EditorShellProps {
   diagramId: string | null
@@ -297,7 +299,33 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Derived: selection count ──────────────────────────────────────────────
   const selectedCount = nodes.filter(n => n.selected).length
-  const [canvasMode, setCanvasMode] = useState<'pan' | 'select'>('pan')
+  const [canvasMode, setCanvasMode] = useState<'pan' | 'select' | 'eraser'>('pan')
+
+  // Keep the module-level EraserState in sync so node/edge components can
+  // react to eraser hover without prop-drilling or context overhead.
+  useEffect(() => {
+    EraserState.setActive(canvasMode === 'eraser')
+  }, [canvasMode])
+
+  // ── Erase handlers (used by CanvasView in eraser mode) ───────────────────
+  const handleEraseNode = useCallback(
+    (nodeId: string) => {
+      history.push({ nodes, edges })
+      setNodes(nds => nds.filter(n => n.id !== nodeId))
+      setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId))
+      EraserState.setHoveredId(null)
+    },
+    [history, nodes, edges, setNodes, setEdges],
+  )
+
+  const handleEraseEdge = useCallback(
+    (edgeId: string) => {
+      history.push({ nodes, edges })
+      setEdges(eds => eds.filter(e => e.id !== edgeId))
+      EraserState.setHoveredId(null)
+    },
+    [history, nodes, edges, setEdges],
+  )
 
   // ── Clear selection ───────────────────────────────────────────────────────
   const handleClearSelection = useCallback(() => {
@@ -305,6 +333,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   }, [setNodes])
 
   // ── Connect - open relationship picker instead of creating edge immediately
+  // Reset the draft-waypoint tracker at the start of every new drag
+  const onConnectStart = useCallback(() => {
+    resetConnectionDraft()
+  }, [])
+
   const onConnect = useCallback(
     (params: Connection) => {
       // Reject a zero-length loop back onto the exact same handle (an accidental
@@ -353,6 +386,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const onRelationshipPick = useCallback(
     (relType: RelationshipType) => {
       if (!pendingConn) return
+      // Capture any bend waypoints that were accumulated while the user dragged,
+      // then clear the draft store so the next connection starts fresh.
+      const waypoints = getConnectionDraftWaypoints()
+      resetConnectionDraft()
+
       history.push({ nodes, edges })
       setEdges(eds =>
         addEdge(
@@ -364,6 +402,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
               relationshipType: relType,
               sourceMultiplicity: undefined,
               targetMultiplicity: undefined,
+              waypoints: waypoints.length > 0 ? waypoints : undefined,
             } satisfies UMLEdgeData,
           },
           eds,
@@ -481,6 +520,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     setNodes(nds => nds.filter(n => !selectedIds.has(n.id)))
     setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)))
   }, [getNodes, history, nodes, edges, setNodes, setEdges])
+
+  const handleClearEditor = useCallback(() => {
+    if (nodes.length === 0 && edges.length === 0) return
+    history.push({ nodes, edges })
+    setNodes([])
+    setEdges([])
+  }, [history, nodes, edges, setNodes, setEdges])
 
   const onNodesDelete: OnNodesDelete = useCallback(
     deleted => { if (deleted.length > 0) history.push({ nodes, edges }) },
@@ -622,6 +668,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     onAddInterface:       () => insertNode('interface'),
     onAddEnum:            () => insertNode('enum'),
     onAddAbstract:        () => insertNode('abstract-class'),
+    onClearEditor:        handleClearEditor,
     onDelete:             handleDelete,
     onDuplicate:          handleDuplicate,
     onUndo:               handleUndo,
@@ -632,6 +679,21 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     onCopy:               handleCopy,
     onPaste:              handlePaste,
   })
+
+  // Tool-switch shortcuts: H = pan, S = select, R = eraser
+  useEffect(() => {
+    if (readOnly) return
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return
+      if (e.key === 'h' || e.key === 'H') setCanvasMode('pan')
+      if (e.key === 's' || e.key === 'S') setCanvasMode('select')
+      if (e.key === 'r' || e.key === 'R') setCanvasMode('eraser')
+      if (e.key === 'Escape' && canvasMode === 'eraser') setCanvasMode('pan')
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [readOnly, canvasMode])
 
   // ── Command palette actions ───────────────────────────────────────────────
   const paletteActions: CommandPaletteActions = {
@@ -670,7 +732,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         selectedCount={selectedCount}
         onClearSelection={handleClearSelection}
         canvasMode={canvasMode}
-        onCanvasModeChange={setCanvasMode}
+        onCanvasModeChange={(m) => setCanvasMode(m)}
         onStartInterview={() => router.push('/dashboard/interview-mode')}
         onEndInterview={handleEndSession}
         isFullscreen={isFullscreen}
@@ -697,6 +759,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onAddInterface={() => insertNode('interface')}
             onAddEnum={() => insertNode('enum')}
             onAddAbstract={() => insertNode('abstract-class')}
+            onClearEditor={handleClearEditor}
             onAddStereotype={insertStereotype}
             onInsertPattern={insertPattern}
           />
@@ -712,6 +775,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onNodesChange={readOnly ? () => {} : onNodesChange}
             onEdgesChange={readOnly ? () => {} : onEdgesChange}
             onConnect={readOnly ? () => {} : onConnect}
+            onConnectStart={readOnly ? undefined : onConnectStart}
             onInit={inst => { rfInstance.current = inst }}
             onNodesDelete={readOnly ? () => {} : onNodesDelete}
             canvasMode={canvasMode}
@@ -719,6 +783,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onDuplicate={handleDuplicate}
             onDelete={handleDelete}
             onClearSelection={handleClearSelection}
+            onEraseNode={readOnly ? undefined : handleEraseNode}
+            onEraseEdge={readOnly ? undefined : handleEraseEdge}
             readOnly={readOnly}
           />
 

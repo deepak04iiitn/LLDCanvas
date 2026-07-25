@@ -5,7 +5,7 @@ import {
   Undo2, Redo2, Sun, Moon, Clipboard,
   ChevronDown, Share2, PenLine,
   Image, FileCode2, Check, Loader2, AlertCircle,
-  Hand, MousePointer2, Mic, Eye,
+  Hand, MousePointer2, Eraser, Mic, Eye,
   Pause, Play, StickyNote, StopCircle,
   Maximize2, Minimize2, FileInput, Code2,
   MessageSquareText, ArrowUpDown, Download, Upload, UserPlus, Lock, NotebookPen,
@@ -48,8 +48,8 @@ interface TopbarProps {
   onRetrySave: () => void
   selectedCount: number
   onClearSelection: () => void
-  canvasMode: 'pan' | 'select'
-  onCanvasModeChange: (m: 'pan' | 'select') => void
+  canvasMode: 'pan' | 'select' | 'eraser'
+  onCanvasModeChange: (m: 'pan' | 'select' | 'eraser') => void
   onStartInterview: () => void
   onEndInterview: () => void
   isFullscreen: boolean
@@ -425,7 +425,7 @@ export function Topbar({
           <div className="mx-1 h-5 w-px bg-gray-200 dark:bg-[#3C3C3E]" />
         )}
 
-        {/* Pan / Select mode toggle */}
+        {/* Pan / Select / Eraser mode toggle */}
         <div className="mr-1 flex items-center gap-0.5 rounded-lg border border-gray-200
                         bg-gray-50 p-0.5 dark:border-[#3C3C3E] dark:bg-[#2C2C2E]">
           <Tooltip>
@@ -440,7 +440,7 @@ export function Topbar({
             >
               <Hand className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">Pan - drag to move canvas</TooltipContent>
+            <TooltipContent side="bottom">Pan (H) - drag to move canvas</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger
@@ -454,7 +454,21 @@ export function Topbar({
             >
               <MousePointer2 className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">Select - drag to box-select nodes</TooltipContent>
+            <TooltipContent side="bottom">Select (S) - drag to box-select nodes</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => onCanvasModeChange('eraser')}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-md transition-all duration-100',
+                canvasMode === 'eraser'
+                  ? 'bg-white text-red-500 shadow-sm dark:bg-[#3C3C3E] dark:text-red-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <Eraser className="h-3.5 w-3.5" />
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Eraser (R) - click or drag to delete</TooltipContent>
           </Tooltip>
         </div>
 

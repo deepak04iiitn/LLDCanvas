@@ -132,7 +132,7 @@ const PILLAR_SPINES: PillarSpine[] = [
       'See how other engineers structured the same design before you settle on your own.',
     ],
     chips: ['Amazon', 'Uber', 'Stripe', 'Meta', 'Easy', 'Medium', 'Hard'],
-    href: '/dashboard/problems', cta: 'Browse problems',
+    href: '/features/interview-questions', cta: 'Browse problems',
   },
   {
     index: '06', title: 'Revision Notes',
@@ -142,7 +142,7 @@ const PILLAR_SPINES: PillarSpine[] = [
       'Organized by category and difficulty - basic, intermediate, advanced - so revision is never random.',
     ],
     chips: ['SOLID Principles', 'Composition vs. Inheritance', 'CAP Theorem', 'Idempotency', 'Thread-Safety'],
-    href: '/dashboard/revision', cta: 'Read notes',
+    href: '/features/revision-notes', cta: 'Read notes',
   },
   {
     index: '07', title: 'Code Execution',
@@ -162,7 +162,7 @@ const PILLAR_SPINES: PillarSpine[] = [
       'Comments stay pinned to the exact node they\'re about, tagged with @mentions, not lost in a separate doc.',
     ],
     chips: ['Real-time cursors', 'Threaded comments', '@mentions', 'Invite by email'],
-    href: '/dashboard/collaborations', cta: 'View collaborations',
+    href: '/features/collaboration', cta: 'View collaborations',
   },
 ]
 
@@ -979,7 +979,7 @@ function ProblemsCommunitySection() {
       {/* CTA */}
       <motion.div {...inViewProps(0.2)} className="pt-2">
         <Link
-          href="/dashboard/problems"
+          href="/features/interview-questions"
           className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
         >
           Browse the library <ArrowRight className="h-4 w-4" />
@@ -1484,7 +1484,7 @@ function CollaborationSection() {
       {/* CTA */}
       <motion.div {...inViewProps(0.15)} className="flex">
         <Link
-          href="/dashboard/collaborations"
+          href="/features/collaboration"
           className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
         >
           Start collaborating <ArrowRight className="h-4 w-4" />
@@ -1544,7 +1544,7 @@ const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
     ['code execution sandbox', '/features/code-execution'],
   ],
   'What is Low-Level Design (LLD)?': [
-    ['SOLID principles', '/dashboard/revision'],
+    ['SOLID principles', '/features/revision-notes'],
   ],
   'What is the difference between Low-Level Design (LLD) and System Design (HLD) interviews?': [
     ['revision notes library', '/features/revision-notes'],
@@ -1557,20 +1557,20 @@ const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
     ['Docs', '/docs'],
   ],
   'Does LLDCanvas have a library of LLD and system design interview questions?': [
-    ['110+ Low-Level Design problems and interview questions', '/dashboard/problems'],
+    ['110+ Low-Level Design problems and interview questions', '/features/interview-questions'],
   ],
   'Are SOLID principles covered?': [
-    ['revision notes', '/dashboard/revision'],
+    ['revision notes', '/features/revision-notes'],
   ],
   'Can I run code, not just draw diagrams?': [
     ['Playground', '/playground'],
   ],
   'Is LLDCanvas a free LLD course, or just a diagramming tool?': [
-    ['the full problems library', '/dashboard/problems'],
+    ['the full problems library', '/features/interview-questions'],
   ],
   'Do I need a CS degree or prior experience to learn Low-Level Design here?': [
-    ['Basic-tier revision notes', '/dashboard/revision'],
-    ['Easy problems in the library', '/dashboard/problems'],
+    ['Basic-tier revision notes', '/features/revision-notes'],
+    ['Easy problems in the library', '/features/interview-questions'],
     ['Draft Notation', '/features/draft-notation'],
   ],
 }

@@ -230,12 +230,18 @@ export type RelationshipType =
 
 export type EdgeLineStyle = 'step' | 'straight'
 
+export interface Waypoint {
+  x: number
+  y: number
+}
+
 export interface UMLEdgeData {
   relationshipType: RelationshipType
   sourceMultiplicity?: string   // '1', '0..1', '1..*', '0..*'
   targetMultiplicity?: string
   label?: string
-  lineStyle?: EdgeLineStyle    // defaults to 'step' (elbow) when unset
+  lineStyle?: EdgeLineStyle    // 'step' = elbow; undefined/'straight' = straight with manual waypoints
+  waypoints?: Waypoint[]      // manual bend points for straight routing
   [key: string]: unknown
 }
 

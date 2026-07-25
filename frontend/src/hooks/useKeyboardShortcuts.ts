@@ -5,6 +5,7 @@ interface ShortcutHandlers {
   onAddInterface: () => void
   onAddEnum: () => void
   onAddAbstract: () => void
+  onClearEditor: () => void
   onDelete: () => void
   onDuplicate: () => void
   onUndo: () => void
@@ -46,6 +47,7 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         case 'i': case 'I': handlers.onAddInterface(); break
         case 'e': case 'E': handlers.onAddEnum(); break
         case 'a': case 'A': handlers.onAddAbstract(); break
+        case 'x': case 'X': handlers.onClearEditor(); break
         case 'f': case 'F': handlers.onFitView(); break
         case '[':            handlers.onTogglePanel(); break
         case 'Delete':

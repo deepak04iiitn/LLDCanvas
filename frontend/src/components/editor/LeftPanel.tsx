@@ -15,6 +15,7 @@ import {
   Layers,
   Tag,
   Lock,
+  Trash2,
 } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useEditor } from '@/contexts/EditorContext'
@@ -37,6 +38,7 @@ interface LeftPanelProps {
   onAddInterface: () => void
   onAddEnum: () => void
   onAddAbstract: () => void
+  onClearEditor: () => void
   onAddStereotype: (stereotype: string) => void
   onInsertPattern: (key: string) => void
 }
@@ -142,6 +144,7 @@ export function LeftPanel({
   onAddInterface,
   onAddEnum,
   onAddAbstract,
+  onClearEditor,
   onAddStereotype,
   onInsertPattern,
 }: LeftPanelProps) {
@@ -178,6 +181,21 @@ export function LeftPanel({
                   {insertItems.map(item => (
                     <InsertButton key={item.label} item={item} collapsed={false} />
                   ))}
+                </div>
+                <div className="mx-1 mt-2 mb-1 h-px bg-hairline" />
+                <div className="px-2">
+                  <button
+                    onClick={onClearEditor}
+                    className={cn(itemBase, 'text-red-400 hover:bg-red-50 hover:text-red-500')}
+                  >
+                    <span className="shrink-0 transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1 truncate">Clear Editor</span>
+                    <kbd className="ml-auto rounded bg-hairline px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
+                      X
+                    </kbd>
+                  </button>
                 </div>
               </section>
 
@@ -304,6 +322,19 @@ export function LeftPanel({
               {insertItems.map(item => (
                 <InsertButton key={item.label} item={item} collapsed />
               ))}
+              <div className="my-1 h-px w-8 bg-hairline mx-auto" />
+              <Tooltip>
+                <TooltipTrigger
+                  onClick={onClearEditor}
+                  className={cn(
+                    'group relative flex w-full items-center justify-center rounded-lg px-2 py-2',
+                    'text-sm font-medium transition-all duration-150 text-red-400 hover:bg-red-50 hover:text-red-600',
+                  )}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent side="right">Clear Editor</TooltipContent>
+              </Tooltip>
             </div>
             <div className="my-2 h-px w-8 bg-hairline" />
 
