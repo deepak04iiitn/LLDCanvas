@@ -1,0 +1,62 @@
+# LLDCanvas
+
+> LLDCanvas is a complete Low-Level Design (LLD) interview preparation platform. It combines a professional UML class diagram editor, 110+ curated LLD and system design interview problems, revision notes, timed interview mode, live collaboration, a Draft Notation language, and a multi-language code execution sandbox — all in one place.
+
+LLDCanvas is designed for software engineers preparing for LLD and system design interviews at top tech companies. It covers Low-Level Design (LLD), Object-Oriented Design (OOD), design patterns, SOLID principles, and system design concepts.
+
+## Core Features
+
+- [UML Class Diagram Editor](/features/draft-notation): A keyboard-first visual editor supporting 5 node types (Class, Interface, Abstract Class, Enum, Note), 7 UML relationship types (Association, Inheritance, Realization, Aggregation, Composition, Dependency, Bidirectional), 3 canvas themes, undo/redo, and export to PNG, SVG, PlantUML, and Mermaid. Includes 23 pre-wired Gang-of-Four design patterns and 13 class-role stereotypes.
+- [Draft Notation](/features/draft-notation): A plain-English sentence syntax for generating UML diagrams instantly. Write sentences like "Order has many Items" or "PaymentService uses IPaymentGateway" and get a live diagram. Supports round-trip export back to text.
+- [Interview Questions Library](/features/interview-questions): 110+ curated LLD and system design interview problems organized by company (Amazon, Google, Meta, Uber, Stripe) and difficulty (Easy, Medium, Hard). Each problem includes a problem brief, staged hints, community discussion threads, and solution diagrams.
+- [Revision Notes](/features/revision-notes): Bite-sized theory notes covering SOLID principles, design patterns, OOP concepts, ACID vs BASE, CAP Theorem, idempotency, thread safety, and more. Organized by category and difficulty.
+- [Interview Mode](/features/interview-mode): Timed LLD interview practice with a real countdown (30, 45, 60, 90 minutes or unlimited). Generates heatmaps, streak tracking, and session history. Every session auto-saves.
+- [Code Execution Sandbox](/features/code-execution): Run code in 11 languages (Python, Java, C++, Go, Rust, TypeScript, JavaScript, C#, Kotlin, Swift, PHP) directly inside the editor without an external IDE.
+- [Live Collaboration](/features/collaboration): Real-time multiplayer diagram editing with live cursors, threaded comments pinned to canvas nodes, and @mentions.
+- [Blog](/blog): Long-form SEO-optimized articles on Low-Level Design, System Design, design patterns, SOLID principles, OOP, and software engineering interview preparation.
+
+## Pricing
+
+- **Free**: Access to the UML editor, Draft Notation, playground, 10 easy practice problems, basic revision notes, and select design pattern templates.
+- **Pro**: All free features plus all easy problems, 10 curated medium problems, full revision notes library, timed interview mode, and code execution sandbox.
+- **Ultimate**: Everything in Pro plus all medium and hard problems, live collaboration, priority support. Monthly: INR 399 / USD 13. Yearly: INR 3,999 / USD 130.
+
+See full pricing at [/pricing](/pricing).
+
+## Target Audience
+
+Software engineers (junior to senior) preparing for:
+- Low-Level Design (LLD) interviews
+- Object-Oriented Design (OOD) interviews
+- System Design interviews
+- SDE-1, SDE-2, SDE-3, and Staff Engineer roles
+- FAANG/MAANG and top tech company interviews
+
+## Key URLs
+
+- Homepage: https://lldcanvas.com
+- Pricing: https://lldcanvas.com/pricing
+- Documentation: https://lldcanvas.com/docs
+- Playground (code + Draft Notation): https://lldcanvas.com/playground
+- Blog: https://lldcanvas.com/blog
+- Features overview: https://lldcanvas.com/features
+- UML Editor feature: https://lldcanvas.com/features/draft-notation
+- Interview Questions: https://lldcanvas.com/features/interview-questions
+- Revision Notes: https://lldcanvas.com/features/revision-notes
+- Interview Mode: https://lldcanvas.com/features/interview-mode
+- Code Execution: https://lldcanvas.com/features/code-execution
+- Collaboration: https://lldcanvas.com/features/collaboration
+
+## Technical Details
+
+- Frontend: Next.js (App Router), React, Tailwind CSS
+- Canvas: React Flow (@xyflow/react) with custom UML node and edge components
+- Backend: Node.js, Express.js, MongoDB
+- Real-time: WebSocket-based live collaboration
+- Code execution: Server-side sandboxed multi-language execution
+- Auth: JWT-based with Google OAuth support
+
+## Contact
+
+- Support: support.lldcanvas@gmail.com
+- Website: https://lldcanvas.com
