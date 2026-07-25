@@ -254,8 +254,9 @@ function WaypointHandle({ x, y, index, dark, onMove, onRemove }: WaypointHandleP
       style={{ cursor: 'move' }}
       onMouseDown={onMouseDown}
       onDoubleClick={e => { e.stopPropagation(); onRemove(index) }}
-      title="Drag to move — double-click to remove"
-    />
+    >
+      <title>Drag to move - double-click to remove</title>
+    </circle>
   )
 }
 
