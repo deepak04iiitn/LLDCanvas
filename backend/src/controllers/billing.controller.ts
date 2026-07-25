@@ -277,8 +277,18 @@ export async function handleWebhook(req: Request, res: Response) {
         dbSub.cancelledAt = new Date()
         await dbSub.save()
 
-        // Downgrade user to free
-        await User.findByIdAndUpdate(dbSub.userId, { plan: 'free' })
+        // Only downgrade to free if the user has NO other active subscription.
+        // This guards against a race condition where the old subscription's
+        // cancelled webhook fires after the user has already paid for a new
+        // (upgraded/downgraded) plan and their new subscription is active.
+        const hasActiveSub = await Subscription.exists({
+          userId: dbSub.userId,
+          _id:    { $ne: dbSub._id },
+          status: { $in: ['active', 'authenticated'] },
+        })
+        if (!hasActiveSub) {
+          await User.findByIdAndUpdate(dbSub.userId, { plan: 'free' })
+        }
         break
       }
 

@@ -161,8 +161,6 @@ function SubmitPanel({ onClose }: { onClose: () => void }) {
       transition={{ type: 'spring', stiffness: 340, damping: 36 }}
       className="fixed right-0 top-0 z-50 flex h-full w-[440px] max-w-[100vw] flex-col border-l border-hairline bg-paper shadow-2xl"
     >
-      {/* Decorative top bar */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-brand/50 via-brand to-emerald-400/50" />
 
       {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-6 pt-5 pb-4">
@@ -389,27 +387,23 @@ export function TestimonialsSection() {
               </p>
             </div>
 
-            {/* Right side: rating badge + CTA */}
-            <div className="flex shrink-0 items-center gap-3">
-              <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-paper-elevated px-4 py-3 shadow-sm">
-                <div className="text-center">
-                  <p className="text-2xl font-black text-ink">4.9</p>
-                  <StarRow rating={5} />
-                </div>
-                <div className="h-8 w-px bg-hairline" />
-                <div>
-                  <p className="text-[11px] font-semibold text-ink">Avg. Rating</p>
-                  <p className="text-[10px] text-ink-faint">{testimonials.length}+ reviews</p>
-                </div>
+            {/* Right side: rating + CTA */}
+            <div className="flex shrink-0 flex-col items-end gap-2.5">
+              {/* Compact rating pill */}
+              <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1.5 shadow-sm">
+                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                <span className="text-sm font-bold text-ink">4.9</span>
+                <span className="text-[11px] text-ink-faint">· {testimonials.length}+ reviews</span>
               </div>
 
+              {/* Write a review button */}
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setPanelOpen(true)}
-                className="flex items-center gap-2 rounded-xl border border-brand/30 bg-brand/5 px-4 py-3 text-sm font-semibold text-brand shadow-sm hover:bg-brand/10 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 hover:bg-brand/90 transition-colors"
               >
-                <PenLine className="h-4 w-4" />
+                <PenLine className="h-3.5 w-3.5" />
                 Write a review
               </motion.button>
             </div>
