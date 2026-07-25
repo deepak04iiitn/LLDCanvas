@@ -30,5 +30,6 @@ const schema = new Schema<IBlogComment>(
 )
 
 schema.index({ blogId: 1, parentId: 1, createdAt: -1 })
+schema.index({ parentId: 1, createdAt: 1 })
 
 export const BlogComment = model<IBlogComment>('BlogComment', schema)

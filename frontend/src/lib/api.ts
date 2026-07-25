@@ -427,8 +427,12 @@ export const api = {
       request<{ action: string; type: string }>(`/blog/${slug}/react`, { method: 'POST', body: JSON.stringify({ type }) }),
     myReaction: (slug: string) =>
       request<{ reaction: 'like' | 'dislike' | null }>(`/blog/${slug}/my-reaction`),
-    listComments: (slug: string) =>
-      request<{ comments: BlogComment[] }>(`/blog/${slug}/comments`),
+    listComments: (slug: string, page = 1, limit = 8) =>
+      request<{ comments: BlogComment[]; total: number; page: number; pages: number }>(
+        `/blog/${slug}/comments?page=${page}&limit=${limit}`,
+      ),
+    listReplies: (commentId: string, skip: number, limit = 3) =>
+      request<{ replies: BlogComment[]; total: number }>(`/blog/comments/${commentId}/replies?skip=${skip}&limit=${limit}`),
     addComment: (slug: string, content: string, parentId?: string) =>
       request<{ comment: BlogComment }>(`/blog/${slug}/comments`, { method: 'POST', body: JSON.stringify({ content, parentId }) }),
     updateComment: (id: string, content: string) =>
@@ -481,4 +485,5 @@ export interface BlogComment {
   createdAt: string
   updatedAt: string
   replies?: BlogComment[]
+  repliesTotal?: number
 }

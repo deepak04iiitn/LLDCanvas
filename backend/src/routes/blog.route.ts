@@ -10,6 +10,7 @@ router.get ('/categories',            blogController.categories)
 router.get ('/tags',                  blogController.tags)
 router.get ('/:slug',                 blogController.get)
 router.get ('/:slug/comments',        blogController.listComments)
+router.get ('/comments/:id/replies',  blogController.listReplies)
 
 // Auth-required routes
 router.post('/:slug/react',           requireAuth, blogController.react)

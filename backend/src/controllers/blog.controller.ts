@@ -28,6 +28,9 @@ const PUBLIC_FIELDS = {
 
 const LIST_SELECT = 'slug title subtitle excerpt coverImage author category tags status publishedAt isFeatured readingTime views likes dislikes seo.metaTitle seo.metaDescription relatedSlugs'
 
+const COMMENTS_PAGE_SIZE = 8
+const REPLIES_PAGE_SIZE  = 3
+
 // ─── Public endpoints ─────────────────────────────────────────────────────────
 
 export const blogController = {
@@ -174,35 +177,54 @@ export const blogController = {
 
   // ─── Comments ──────────────────────────────────────────────────────────────
 
-  /** GET /blog/:slug/comments */
+  /** GET /blog/:slug/comments?page=&limit=  — paginated top-level comments, each with its first page of replies */
   listComments: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const blog = await Blog.findOne({ slug: req.params.slug }).select('_id').lean()
-      if (!blog) { res.json({ comments: [] }); return }
+      if (!blog) { res.json({ comments: [], total: 0, page: 1, pages: 0 }); return }
 
-      const comments = await BlogComment.find({ blogId: blog._id, parentId: null, isDeleted: false })
-        .sort({ createdAt: -1 })
-        .lean()
+      const page  = Math.max(1, parseInt(req.query.page as string) || 1)
+      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || COMMENTS_PAGE_SIZE))
 
-      // Attach replies
+      const filter = { blogId: blog._id, parentId: null, isDeleted: false }
+      const [comments, total] = await Promise.all([
+        BlogComment.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+        BlogComment.countDocuments(filter),
+      ])
+
+      // First page of replies per comment on this page, plus each comment's total reply count —
+      // bounded by this page's comments, not the whole post's reply history.
       const ids = comments.map(c => c._id)
-      const replies = await BlogComment.find({ blogId: blog._id, parentId: { $in: ids }, isDeleted: false })
-        .sort({ createdAt: 1 })
-        .lean()
+      const replyGroups = ids.length ? await BlogComment.aggregate([
+        { $match: { parentId: { $in: ids }, isDeleted: false } },
+        { $sort: { createdAt: 1 } },
+        { $group: { _id: '$parentId', total: { $sum: 1 }, replies: { $push: '$$ROOT' } } },
+        { $project: { total: 1, replies: { $slice: ['$replies', REPLIES_PAGE_SIZE] } } },
+      ]) : []
+      const replyMap = new Map(replyGroups.map(g => [g._id.toString(), g]))
 
-      const replyMap = new Map<string, typeof replies>()
-      for (const r of replies) {
-        const key = r.parentId!.toString()
-        if (!replyMap.has(key)) replyMap.set(key, [])
-        replyMap.get(key)!.push(r)
-      }
+      const result = comments.map(c => {
+        const g = replyMap.get(c._id.toString())
+        return { ...c, replies: g?.replies ?? [], repliesTotal: g?.total ?? 0 }
+      })
 
-      const result = comments.map(c => ({
-        ...c,
-        replies: replyMap.get(c._id.toString()) ?? [],
-      }))
+      res.json({ comments: result, total, page, pages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
 
-      res.json({ comments: result })
+  /** GET /blog/comments/:id/replies?skip=&limit=  — further replies under one comment */
+  listReplies: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const skip  = Math.max(0, parseInt(req.query.skip as string) || 0)
+      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || REPLIES_PAGE_SIZE))
+      const filter = { parentId: req.params.id, isDeleted: false }
+
+      const [replies, total] = await Promise.all([
+        BlogComment.find(filter).sort({ createdAt: 1 }).skip(skip).limit(limit).lean(),
+        BlogComment.countDocuments(filter),
+      ])
+
+      res.json({ replies, total })
     } catch (err) { next(err) }
   },
 
@@ -298,7 +320,7 @@ export const adminBlogController = {
     try {
       const blog = await Blog.findById(req.params.id).lean()
       if (!blog) { res.status(404).json({ error: 'Not found' }); return }
-      res.json({ blog })
+      res.json(blog)
     } catch (err) { next(err) }
   },
 
@@ -308,7 +330,7 @@ export const adminBlogController = {
       const error = prepareContent(data)
       if (error) { res.status(400).json({ error }); return }
       const blog = await Blog.create(data)
-      res.status(201).json({ blog })
+      res.status(201).json(blog)
     } catch (err) { next(err) }
   },
 
@@ -321,7 +343,7 @@ export const adminBlogController = {
       }
       const blog = await Blog.findByIdAndUpdate(req.params.id, { $set: data }, { new: true })
       if (!blog) { res.status(404).json({ error: 'Not found' }); return }
-      res.json({ blog })
+      res.json(blog)
     } catch (err) { next(err) }
   },
 
@@ -333,7 +355,7 @@ export const adminBlogController = {
         { new: true },
       )
       if (!blog) { res.status(404).json({ error: 'Not found' }); return }
-      res.json({ blog })
+      res.json(blog)
     } catch (err) { next(err) }
   },
 
@@ -341,7 +363,7 @@ export const adminBlogController = {
     try {
       const blog = await Blog.findByIdAndUpdate(req.params.id, { $set: { status: 'draft' } }, { new: true })
       if (!blog) { res.status(404).json({ error: 'Not found' }); return }
-      res.json({ blog })
+      res.json(blog)
     } catch (err) { next(err) }
   },
 
@@ -367,7 +389,7 @@ export const adminBlogController = {
         status: 'draft',
         publishedAt: null,
       })
-      res.status(201).json({ blog: copy })
+      res.status(201).json(copy)
     } catch (err) { next(err) }
   },
 

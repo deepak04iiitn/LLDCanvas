@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils'
 import { useSession } from '@/lib/auth'
 import { toast } from 'sonner'
 import { BlogBlocks } from './BlogBlocks'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -284,6 +286,9 @@ function RelatedStrip({ items }: { items: BlogSummary[] }) {
 
 // ─── Comment item (marginalia thread) ────────────────────────────────────────
 
+const REPLIES_STEP  = 3
+const COMMENTS_STEP = 8
+
 function CommentItem({ comment, blogSlug, onRefresh, depth = 0 }: {
   comment: BlogComment; blogSlug: string; onRefresh: () => void; depth?: number
 }) {
@@ -293,8 +298,33 @@ function CommentItem({ comment, blogSlug, onRefresh, depth = 0 }: {
   const [replying,     setReplying]     = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [loading,      setLoading]      = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting,    setDeleting]    = useState(false)
+  const [extraReplies, setExtraReplies] = useState<BlogComment[]>([])
+  const [loadingReplies, setLoadingReplies] = useState(false)
   const isOwn = session?.user?.id === comment.authorId
   const ring = avatarColor(comment.authorName)
+
+  // The server only sends the first page of replies per comment; extraReplies holds
+  // anything fetched afterward via "Show more replies". A fresh comment.replies
+  // reference (from a refresh) means we're back to page one, so drop what we'd loaded —
+  // adjusted during render (React's documented pattern), not in an effect.
+  const [prevReplies, setPrevReplies] = useState(comment.replies)
+  if (comment.replies !== prevReplies) {
+    setPrevReplies(comment.replies)
+    setExtraReplies([])
+  }
+  const replies = [...(comment.replies ?? []), ...extraReplies]
+  const repliesTotal = comment.repliesTotal ?? replies.length
+  const hasMoreReplies = replies.length < repliesTotal
+
+  async function showMoreReplies() {
+    setLoadingReplies(true)
+    try {
+      const r = await api.blog.listReplies(comment._id, replies.length, REPLIES_STEP)
+      setExtraReplies(prev => [...prev, ...r.replies])
+    } catch { toast.error('Failed to load replies') } finally { setLoadingReplies(false) }
+  }
 
   const save = async () => {
     if (!editContent.trim()) return
@@ -304,9 +334,9 @@ function CommentItem({ comment, blogSlug, onRefresh, depth = 0 }: {
   }
 
   const del = async () => {
-    if (!confirm('Delete this comment?')) return
-    try { await api.blog.deleteComment(comment._id); onRefresh() }
-    catch { toast.error('Failed to delete') }
+    setDeleting(true)
+    try { await api.blog.deleteComment(comment._id); setConfirmOpen(false); onRefresh() }
+    catch { toast.error('Failed to delete') } finally { setDeleting(false) }
   }
 
   const report = async () => {
@@ -321,82 +351,125 @@ function CommentItem({ comment, blogSlug, onRefresh, depth = 0 }: {
     catch { toast.error('Sign in to comment') } finally { setLoading(false) }
   }
 
-  if (comment.isDeleted) return (
-    <div className={cn('py-3', depth > 0 && 'ml-8 border-l-2 border-dashed border-hairline pl-6')}>
-      <p className="text-xs italic text-ink-faint/50">[deleted]</p>
-      {comment.replies?.map(r => <CommentItem key={r._id} comment={r} blogSlug={blogSlug} onRefresh={onRefresh} depth={depth + 1} />)}
+  const body = comment.isDeleted ? (
+    <p className="text-xs italic text-ink-faint/50">[deleted]</p>
+  ) : (
+    <div className="flex items-start gap-3">
+      <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-2 ring-offset-2', depth === 0 ? 'ring-offset-white' : 'ring-offset-paper-elevated', ring)}>
+        {comment.authorName[0].toUpperCase()}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-0.5 flex items-center gap-2">
+          <span className="text-[13px] font-semibold text-ink">{comment.authorName}</span>
+          <span className="text-[11px] text-ink-faint">{timeAgo(comment.createdAt)}</span>
+        </div>
+        {editing ? (
+          <>
+            <textarea
+              value={editContent}
+              onChange={e => setEditContent(e.target.value)}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-hairline-strong bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+            />
+            <div className="mt-2 flex gap-2">
+              <button onClick={save} disabled={loading} className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Save</button>
+              <button onClick={() => setEditing(false)} className="rounded-md border border-hairline px-3 py-1.5 text-xs text-ink-muted">Cancel</button>
+            </div>
+          </>
+        ) : (
+          <p className="text-[13px] leading-relaxed text-ink-muted">{comment.content}</p>
+        )}
+        <div className="mt-1.5 flex items-center gap-3.5">
+          {depth === 0 && session && (
+            <button onClick={() => setReplying(!replying)} className="flex items-center gap-1 text-[11px] font-medium text-ink-faint/70 transition-colors hover:text-ink">
+              <MessageCircle className="h-3 w-3" /> Reply
+            </button>
+          )}
+          {isOwn && (
+            <>
+              <button onClick={() => setEditing(true)} className="flex items-center gap-1 text-[11px] font-medium text-ink-faint/70 transition-colors hover:text-ink">
+                <Pencil className="h-3 w-3" /> Edit
+              </button>
+              <button onClick={() => setConfirmOpen(true)} className="flex items-center gap-1 text-[11px] font-medium text-red-400/80 transition-colors hover:text-red-600">
+                <Trash2 className="h-3 w-3" /> Delete
+              </button>
+            </>
+          )}
+          {!isOwn && session && (
+            <button onClick={report} className="flex items-center gap-1 text-[11px] font-medium text-ink-faint/40 transition-colors hover:text-ink-faint">
+              <Flag className="h-3 w-3" /> Report
+            </button>
+          )}
+        </div>
+        {replying && (
+          <div className="mt-3">
+            <textarea
+              value={replyContent}
+              onChange={e => setReplyContent(e.target.value)}
+              placeholder="Write a reply…"
+              rows={3}
+              className="w-full resize-none rounded-lg border border-hairline-strong bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
+            />
+            <div className="mt-2 flex gap-2">
+              <button onClick={reply} disabled={loading} className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+                <Send className="h-3 w-3" /> Reply
+              </button>
+              <button onClick={() => setReplying(false)} className="rounded-md border border-hairline px-3 py-1.5 text-xs text-ink-muted">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-0 shadow-xl sm:max-w-sm">
+            <div className="p-6">
+              <DialogHeader className="mb-2">
+                <DialogTitle className="font-serif text-lg font-medium text-ink">Delete this comment?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-ink-muted">This cannot be undone.</p>
+              <DialogFooter className="pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setConfirmOpen(false)}
+                  className="border-hairline-strong transition-all active:scale-[0.97]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={del}
+                  disabled={deleting}
+                  className="bg-red-600 text-white transition-all hover:bg-red-700 active:scale-[0.97]"
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   )
 
+  if (depth > 0) return body
+
   return (
-    <div className={cn('py-4', depth > 0 && 'ml-8 border-l-2 border-dashed border-hairline pl-6')}>
-      <div className="flex items-start gap-3">
-        <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-2 ring-offset-2 ring-offset-paper', ring)}>
-          {comment.authorName[0].toUpperCase()}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-sm font-semibold text-ink">{comment.authorName}</span>
-            <span className="text-[11px] text-ink-faint">{timeAgo(comment.createdAt)}</span>
-          </div>
-          {editing ? (
-            <>
-              <textarea
-                value={editContent}
-                onChange={e => setEditContent(e.target.value)}
-                rows={3}
-                className="w-full resize-none rounded-lg border border-hairline-strong bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-              />
-              <div className="mt-2 flex gap-2">
-                <button onClick={save} disabled={loading} className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">Save</button>
-                <button onClick={() => setEditing(false)} className="rounded-md border border-hairline px-3 py-1.5 text-xs text-ink-muted">Cancel</button>
-              </div>
-            </>
-          ) : (
-            <p className="text-sm leading-relaxed text-ink-muted">{comment.content}</p>
-          )}
-          <div className="mt-2 flex items-center gap-3">
-            {depth === 0 && session && (
-              <button onClick={() => setReplying(!replying)} className="flex items-center gap-1 text-[11px] text-ink-faint transition-colors hover:text-ink">
-                <MessageCircle className="h-3 w-3" /> Reply
-              </button>
-            )}
-            {isOwn && (
-              <>
-                <button onClick={() => setEditing(true)} className="flex items-center gap-1 text-[11px] text-ink-faint transition-colors hover:text-ink">
-                  <Pencil className="h-3 w-3" /> Edit
-                </button>
-                <button onClick={del} className="flex items-center gap-1 text-[11px] text-red-400 transition-colors hover:text-red-600">
-                  <Trash2 className="h-3 w-3" /> Delete
-                </button>
-              </>
-            )}
-            {!isOwn && session && (
-              <button onClick={report} className="flex items-center gap-1 text-[11px] text-ink-faint/50 transition-colors hover:text-ink-faint">
-                <Flag className="h-3 w-3" /> Report
-              </button>
-            )}
-          </div>
-          {replying && (
-            <div className="mt-3">
-              <textarea
-                value={replyContent}
-                onChange={e => setReplyContent(e.target.value)}
-                placeholder="Write a reply…"
-                rows={3}
-                className="w-full resize-none rounded-lg border border-hairline-strong bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
-              />
-              <div className="mt-2 flex gap-2">
-                <button onClick={reply} disabled={loading} className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
-                  <Send className="h-3 w-3" /> Reply
-                </button>
-                <button onClick={() => setReplying(false)} className="rounded-md border border-hairline px-3 py-1.5 text-xs text-ink-muted">Cancel</button>
-              </div>
-            </div>
+    <div className="rounded-2xl border border-hairline bg-white p-4">
+      {body}
+      {replies.length > 0 && (
+        <div className="mt-3 space-y-3 border-t border-hairline pl-11 pt-3">
+          {replies.map(r => (
+            <CommentItem key={r._id} comment={r} blogSlug={blogSlug} onRefresh={onRefresh} depth={depth + 1} />
+          ))}
+          {hasMoreReplies && (
+            <button
+              onClick={showMoreReplies}
+              disabled={loadingReplies}
+              className="text-[11px] font-semibold text-brand hover:underline disabled:opacity-50"
+            >
+              {loadingReplies ? 'Loading…' : `Show ${repliesTotal - replies.length} more ${repliesTotal - replies.length === 1 ? 'reply' : 'replies'}`}
+            </button>
           )}
         </div>
-      </div>
-      {comment.replies?.map(r => <CommentItem key={r._id} comment={r} blogSlug={blogSlug} onRefresh={onRefresh} depth={depth + 1} />)}
+      )}
     </div>
   )
 }
@@ -408,7 +481,10 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
   const [reaction,   setReaction]   = useState<'like' | 'dislike' | null>(null)
   const [likes,      setLikes]      = useState(blog.likes)
   const [dislikes,   setDislikes]   = useState(blog.dislikes)
-  const [comments,   setComments]   = useState<BlogComment[]>([])
+  const [comments,      setComments]      = useState<BlogComment[]>([])
+  const [commentsTotal, setCommentsTotal] = useState(0)
+  const [loadedComments, setLoadedComments] = useState(COMMENTS_STEP)
+  const [commentsLoading, setCommentsLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [posting,    setPosting]    = useState(false)
   const [activeId,   setActiveId]   = useState('')
@@ -421,11 +497,23 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
     api.blog.myReaction(blog.slug).then(r => setReaction(r.reaction)).catch(() => {})
   }, [session, blog.slug])
 
-  const loadComments = useCallback(async () => {
-    api.blog.listComments(blog.slug).then(r => setComments(r.comments)).catch(() => {})
-  }, [blog.slug])
+  // Always re-fetches page 1 up to `loadedComments` items — bumping loadedComments
+  // (via "Show more") both loads the next page and re-syncs after a post/edit/delete.
+  // commentsLoading starts true and is only ever flipped inside the .then/.finally
+  // continuation below (not synchronously in the effect) so this can't cascade-render.
+  const loadComments = useCallback(() => {
+    api.blog.listComments(blog.slug, 1, loadedComments)
+      .then(r => { setComments(r.comments); setCommentsTotal(r.total) })
+      .catch(() => { /* keep whatever was already loaded */ })
+      .finally(() => setCommentsLoading(false))
+  }, [blog.slug, loadedComments])
 
   useEffect(() => { loadComments() }, [loadComments])
+
+  function showMoreComments() {
+    setCommentsLoading(true)
+    setLoadedComments(n => Math.min(50, n + COMMENTS_STEP))
+  }
 
   // TOC active heading
   useEffect(() => {
@@ -679,7 +767,7 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
             <section id="comments" className="mt-14 border-t border-hairline pt-10 scroll-mt-20">
               <h2 className="mb-6 flex items-center gap-2 font-serif text-2xl font-bold text-ink">
                 <MessageCircle className="h-5 w-5 text-ink-faint" />
-                Reader&rsquo;s Notes ({comments.length})
+                Reader&rsquo;s Notes ({commentsTotal})
               </h2>
 
               {session ? (
@@ -712,11 +800,28 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
               )}
 
               {comments.length === 0 ? (
-                <p className="py-10 text-center text-sm text-ink-faint">No notes yet — be the first to share your thoughts!</p>
+                <p className="py-10 text-center text-sm text-ink-faint">
+                  {commentsLoading ? 'Loading notes…' : 'No notes yet — be the first to share your thoughts!'}
+                </p>
               ) : (
-                <div className="divide-y divide-hairline">
-                  {comments.map(c => <CommentItem key={c._id} comment={c} blogSlug={blog.slug} onRefresh={loadComments} />)}
-                </div>
+                <>
+                  <div className="space-y-3">
+                    {comments.map(c => (
+                      <CommentItem key={c._id} comment={c} blogSlug={blog.slug} onRefresh={loadComments} />
+                    ))}
+                  </div>
+                  {comments.length < commentsTotal && (
+                    <button
+                      onClick={showMoreComments}
+                      disabled={commentsLoading}
+                      className="mt-4 w-full rounded-xl border border-hairline bg-white py-2.5 text-sm font-semibold text-ink-muted transition-colors hover:border-brand/30 hover:text-brand disabled:opacity-50"
+                    >
+                      {commentsLoading
+                        ? 'Loading…'
+                        : `Show ${Math.min(COMMENTS_STEP, commentsTotal - comments.length)} more of ${commentsTotal - comments.length} remaining`}
+                    </button>
+                  )}
+                </>
               )}
             </section>
           </main>
