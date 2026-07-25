@@ -521,6 +521,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)))
   }, [getNodes, history, nodes, edges, setNodes, setEdges])
 
+  const handleClearEditor = useCallback(() => {
+    if (nodes.length === 0 && edges.length === 0) return
+    history.push({ nodes, edges })
+    setNodes([])
+    setEdges([])
+  }, [history, nodes, edges, setNodes, setEdges])
+
   const onNodesDelete: OnNodesDelete = useCallback(
     deleted => { if (deleted.length > 0) history.push({ nodes, edges }) },
     [history, nodes, edges],
@@ -661,6 +668,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     onAddInterface:       () => insertNode('interface'),
     onAddEnum:            () => insertNode('enum'),
     onAddAbstract:        () => insertNode('abstract-class'),
+    onClearEditor:        handleClearEditor,
     onDelete:             handleDelete,
     onDuplicate:          handleDuplicate,
     onUndo:               handleUndo,
@@ -672,7 +680,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     onPaste:              handlePaste,
   })
 
-  // Tool-switch shortcuts: H = pan, S = select, E = eraser
+  // Tool-switch shortcuts: H = pan, S = select, R = eraser
   useEffect(() => {
     if (readOnly) return
     const handler = (e: KeyboardEvent) => {
@@ -680,7 +688,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return
       if (e.key === 'h' || e.key === 'H') setCanvasMode('pan')
       if (e.key === 's' || e.key === 'S') setCanvasMode('select')
-      if (e.key === 'e' || e.key === 'E') setCanvasMode('eraser')
+      if (e.key === 'r' || e.key === 'R') setCanvasMode('eraser')
       if (e.key === 'Escape' && canvasMode === 'eraser') setCanvasMode('pan')
     }
     window.addEventListener('keydown', handler)
@@ -751,6 +759,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onAddInterface={() => insertNode('interface')}
             onAddEnum={() => insertNode('enum')}
             onAddAbstract={() => insertNode('abstract-class')}
+            onClearEditor={handleClearEditor}
             onAddStereotype={insertStereotype}
             onInsertPattern={insertPattern}
           />

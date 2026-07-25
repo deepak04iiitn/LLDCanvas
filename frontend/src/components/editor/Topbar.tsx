@@ -468,7 +468,7 @@ export function Topbar({
             >
               <Eraser className="h-3.5 w-3.5" />
             </TooltipTrigger>
-            <TooltipContent side="bottom">Eraser (E) - click or drag to delete</TooltipContent>
+            <TooltipContent side="bottom">Eraser (R) - click or drag to delete</TooltipContent>
           </Tooltip>
         </div>
 
