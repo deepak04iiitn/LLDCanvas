@@ -11,6 +11,7 @@ import {
 } from '@xyflow/react'
 import { useEditor } from '@/contexts/EditorContext'
 import type { UMLEdgeData, RelationshipType, Waypoint } from '@/types'
+import { useEraserHighlight } from '@/lib/eraserState'
 
 // ─── Marker resolution ────────────────────────────────────────────────────────
 
@@ -285,12 +286,14 @@ export function UMLEdge({
   const dark = theme === 'dark'
   const { setEdges, screenToFlowPosition } = useReactFlow()
   const [hovered, setHovered] = useState(false)
+  const isEraserTarget = useEraserHighlight(id)
 
   const edgeColor = dark ? '#9CA3AF' : '#374151'
   const hoverColor = dark ? '#A5B4FC' : '#818CF8'
   const selectedColor = '#6366F1'
-  const stroke = selected ? selectedColor : hovered ? hoverColor : edgeColor
-  const strokeWidth = selected ? 2 : hovered ? 2 : 1.5
+  const eraserColor = '#EF4444'
+  const stroke = isEraserTarget ? eraserColor : selected ? selectedColor : hovered ? hoverColor : edgeColor
+  const strokeWidth = isEraserTarget ? 2.5 : selected ? 2 : hovered ? 2 : 1.5
 
   const markers = getMarkers(relType, dark)
 

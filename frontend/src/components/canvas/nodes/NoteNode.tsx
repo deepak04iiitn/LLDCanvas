@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/context-menu'
 import type { UMLNodeData } from '@/types'
 import { cn } from '@/lib/utils'
+import { useEraserHighlight } from '@/lib/eraserState'
 
 // Every 5% along each side = 19 slots per side (76 total). The midpoint (50%)
 // keeps the legacy id 'top'/'right'/etc. for backward compat.
@@ -71,6 +72,7 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
   const { setNodes, setEdges } = useReactFlow()
   const [activeHandle, setActiveHandle] = useState<string | null>(null)
   const movRafRef = useRef<number | null>(null)
+  const isEraserTarget = useEraserHighlight(id)
 
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState((data.noteText as string | undefined) ?? '')
@@ -174,7 +176,8 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
               editing
                 ? 'opacity-100 scale-100 pointer-events-auto'
                 : 'opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto',
-              selected ? 'border-indigo-300' : 'border-gray-200',
+              isEraserTarget ? 'border-red-400 opacity-60 shadow-[0_0_0_3px_rgba(239,68,68,0.25)]'
+                : selected ? 'border-indigo-300' : 'border-gray-200',
             )}
             // Prevent the card's own hover from bubbling weirdly
             onMouseDown={e => e.stopPropagation()}
@@ -223,9 +226,11 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
               'h-5 w-5 rounded-full border flex items-center justify-center',
               'cursor-default select-none transition-colors duration-150',
               'shadow-sm',
-              selected
-                ? 'border-indigo-400 bg-indigo-50'
-                : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:bg-gray-50',
+              isEraserTarget
+                ? 'border-red-400 bg-red-50'
+                : selected
+                  ? 'border-indigo-400 bg-indigo-50'
+                  : 'border-gray-300 bg-white group-hover:border-gray-400 group-hover:bg-gray-50',
             )}
           >
             <span className="font-mono text-[8px] font-bold leading-none text-gray-400">{'/'}</span>

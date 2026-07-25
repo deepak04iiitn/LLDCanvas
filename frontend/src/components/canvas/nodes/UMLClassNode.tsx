@@ -36,6 +36,7 @@ import {
 import type { UMLNodeData, UMLAttribute, UMLMethod, Visibility } from '@/types'
 import { formatAttribute, formatMethod } from '@/lib/uml/parser'
 import { cn } from '@/lib/utils'
+import { useEraserHighlight } from '@/lib/eraserState'
 
 // ─── Handle layout ─────────────────────────────────────────────────────────────
 // Every 5% along each side gives 19 slots per side (76 total). The midpoint (50%)
@@ -635,6 +636,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const { setNodes, getNodes, setEdges } = useReactFlow()
   const [activeHandle, setActiveHandle] = useState<string | null>(null)
   const movRafRef = useRef<number | null>(null)
+  const isEraserTarget = useEraserHighlight(id)
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft]     = useState(data.name)
 
@@ -770,9 +772,11 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     'group relative min-w-[200px] rounded-lg border bg-white text-gray-900',
     'shadow-sm dark:bg-[#1E1E1E] dark:text-gray-100',
     isInterface ? 'border-dashed' : 'border-solid',
-    selected
-      ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
-      : 'border-slate-200 dark:border-slate-600',
+    isEraserTarget
+      ? 'border-2 border-red-500 opacity-60 shadow-[0_0_0_3px_rgba(239,68,68,0.25)]'
+      : selected
+        ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
+        : 'border-slate-200 dark:border-slate-600',
   )
 
   return (
