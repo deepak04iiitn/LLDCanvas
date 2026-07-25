@@ -19,15 +19,13 @@ import {
 import type { UMLNodeData } from '@/types'
 import { cn } from '@/lib/utils'
 
-// A few attachment points per side (the pin is tiny, so fewer than the class
-// node) so a connection can land somewhere other than the dead center. The
-// 50% point keeps the plain 'top'/'right'/'bottom'/'left' id for backward
-// compatibility with previously-saved diagrams.
+// Every 5% along each side = 19 slots per side (76 total). The midpoint (50%)
+// keeps the legacy id 'top'/'right'/etc. for backward compat.
 type Side = 'top' | 'right' | 'bottom' | 'left'
 const SIDE_POSITION: Record<Side, Position> = {
   top: Position.Top, right: Position.Right, bottom: Position.Bottom, left: Position.Left,
 }
-const SIDE_OFFSETS = [30, 50, 70] as const
+const SIDE_OFFSETS = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95] as const
 
 function sideHandleStyle(side: Side, pct: number): CSSProperties {
   return side === 'top' || side === 'bottom' ? { left: `${pct}%` } : { top: `${pct}%` }
@@ -41,14 +39,38 @@ const SIDES = (['top', 'right', 'bottom', 'left'] as Side[]).flatMap(side =>
   })),
 )
 
-const HANDLE_CLS =
-  '!h-2 !w-2 !rounded-full !border !border-white !bg-indigo-400 ' +
-  '!opacity-0 !transition-opacity group-hover:!opacity-100'
+const HANDLE_BASE =
+  '!h-2.5 !w-2.5 !rounded-full !border-[1.5px] !border-white !bg-indigo-500 ' +
+  '!shadow-sm !transition-[opacity,transform] !duration-100'
+
+function snap5(v: number): number {
+  return Math.max(5, Math.min(95, Math.round(v / 5) * 5))
+}
+
+function nearestHandleId(
+  clientX: number, clientY: number,
+  rect: DOMRect, zone = 14,
+): string | null {
+  const mx = clientX - rect.left
+  const my = clientY - rect.top
+  const w  = rect.width
+  const h  = rect.height
+  const dTop = my, dBottom = h - my, dLeft = mx, dRight = w - mx
+  const closest = Math.min(dTop, dBottom, dLeft, dRight)
+  if (closest > zone) return null
+  if (closest === dTop)    { const p = snap5(mx / w * 100); return p === 50 ? 'top'    : `top@${p}`    }
+  if (closest === dBottom) { const p = snap5(mx / w * 100); return p === 50 ? 'bottom' : `bottom@${p}` }
+  if (closest === dLeft)   { const p = snap5(my / h * 100); return p === 50 ? 'left'   : `left@${p}`   }
+  const p = snap5(my / h * 100); return p === 50 ? 'right' : `right@${p}`
+}
 
 export function NoteNode({ id, data: rawData, selected }: NodeProps) {
   const data = rawData as UMLNodeData
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const pinRef = useRef<HTMLDivElement>(null)
   const { setNodes, setEdges } = useReactFlow()
+  const [activeHandle, setActiveHandle] = useState<string | null>(null)
+  const movRafRef = useRef<number | null>(null)
 
   const [editing, setEditing] = useState(false)
   const [draft,   setDraft]   = useState((data.noteText as string | undefined) ?? '')
@@ -96,16 +118,50 @@ export function NoteNode({ id, data: rawData, selected }: NodeProps) {
     setTimeout(() => textareaRef.current?.focus(), 0)
   }
 
+  const onBorderMouseMove = useCallback((e: { clientX: number; clientY: number }) => {
+    const { clientX, clientY } = e
+    if (movRafRef.current !== null) cancelAnimationFrame(movRafRef.current)
+    movRafRef.current = requestAnimationFrame(() => {
+      const rect = pinRef.current?.getBoundingClientRect()
+      if (rect) setActiveHandle(nearestHandleId(clientX, clientY, rect))
+      movRafRef.current = null
+    })
+  }, [])
+
+  const onBorderMouseLeave = useCallback(() => {
+    if (movRafRef.current !== null) { cancelAnimationFrame(movRafRef.current); movRafRef.current = null }
+    setActiveHandle(null)
+  }, [])
+
   return (
     <ContextMenu>
       <ContextMenuTrigger>
-        {/* ── group: CSS-only hover - no state change, so dragging stays smooth ── */}
-        <div className="group relative" style={{ width: 20, height: 20 }}>
+        {/* ── group: CSS-only hover on the card, pointer tracking on the pin ── */}
+        <div
+          ref={pinRef}
+          className="group relative"
+          style={{ width: 20, height: 20 }}
+          onMouseMove={onBorderMouseMove}
+          onMouseLeave={onBorderMouseLeave}
+        >
 
           {/* Handles */}
-          {SIDES.map(({ id: hId, position, style }) => (
-            <Handle key={hId} id={hId} type="source" position={position} style={style} className={HANDLE_CLS} />
-          ))}
+          {SIDES.map(({ id: hId, position, style }) => {
+            const visible = hId === activeHandle
+            return (
+              <Handle
+                key={hId}
+                id={hId}
+                type="source"
+                position={position}
+                style={style}
+                className={
+                  HANDLE_BASE +
+                  (visible ? ' opacity-100! hover:scale-125!' : ' opacity-0!')
+                }
+              />
+            )
+          })}
 
           {/* ── Floating card - pure CSS show/hide via group-hover + editing override ── */}
           <div

@@ -8,7 +8,6 @@ import {
   Controls,
   Panel,
   ConnectionMode,
-  ConnectionLineType,
   SelectionMode,
   useViewport,
   type Node,
@@ -18,6 +17,7 @@ import {
   type OnConnect,
   type OnNodesDelete,
   type ReactFlowInstance,
+  type OnConnectStart,
 } from '@xyflow/react'
 import { Trash2, CopyPlus } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
@@ -25,6 +25,7 @@ import { useEditor } from '@/contexts/EditorContext'
 import { nodeTypes } from './nodes'
 import { edgeTypes } from './edges'
 import { UMLMarkers } from './UMLMarkers'
+import { DraftConnectionLine } from './edges/DraftConnectionLine'
 
 // ─── Alignment guide overlay ──────────────────────────────────────────────────
 
@@ -169,6 +170,7 @@ interface CanvasViewProps {
   onNodesChange: OnNodesChange
   onEdgesChange: OnEdgesChange
   onConnect: OnConnect
+  onConnectStart?: OnConnectStart
   onInit: (instance: ReactFlowInstance) => void
   onNodesDelete?: OnNodesDelete
   canvasMode: 'pan' | 'select'
@@ -185,6 +187,7 @@ export function CanvasView({
   onNodesChange,
   onEdgesChange,
   onConnect,
+  onConnectStart,
   onInit,
   onNodesDelete,
   canvasMode,
@@ -242,6 +245,7 @@ export function CanvasView({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onConnectStart={onConnectStart}
         onInit={onInit}
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
@@ -266,8 +270,7 @@ export function CanvasView({
         elementsSelectable={!readOnly}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        connectionLineStyle={{ stroke: '#6366F1', strokeWidth: 1.5, strokeDasharray: '6 3' }}
+        connectionLineComponent={DraftConnectionLine}
       >
         <Background
           variant={gridVariant}

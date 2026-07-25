@@ -55,6 +55,7 @@ import { exportPNG, exportSVG } from '@/lib/export/toPNG'
 import { toPlantUML } from '@/lib/export/toPlantUML'
 import { toMermaid } from '@/lib/export/toMermaid'
 import { serializeToDraft, renderToFlow, type DraftAST } from '@/lib/draft'
+import { resetConnectionDraft, getConnectionDraftWaypoints } from '@/lib/connectionDraft'
 
 interface EditorShellProps {
   diagramId: string | null
@@ -305,6 +306,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   }, [setNodes])
 
   // ── Connect - open relationship picker instead of creating edge immediately
+  // Reset the draft-waypoint tracker at the start of every new drag
+  const onConnectStart = useCallback(() => {
+    resetConnectionDraft()
+  }, [])
+
   const onConnect = useCallback(
     (params: Connection) => {
       // Reject a zero-length loop back onto the exact same handle (an accidental
@@ -353,6 +359,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const onRelationshipPick = useCallback(
     (relType: RelationshipType) => {
       if (!pendingConn) return
+      // Capture any bend waypoints that were accumulated while the user dragged,
+      // then clear the draft store so the next connection starts fresh.
+      const waypoints = getConnectionDraftWaypoints()
+      resetConnectionDraft()
+
       history.push({ nodes, edges })
       setEdges(eds =>
         addEdge(
@@ -364,6 +375,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
               relationshipType: relType,
               sourceMultiplicity: undefined,
               targetMultiplicity: undefined,
+              waypoints: waypoints.length > 0 ? waypoints : undefined,
             } satisfies UMLEdgeData,
           },
           eds,
@@ -712,6 +724,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onNodesChange={readOnly ? () => {} : onNodesChange}
             onEdgesChange={readOnly ? () => {} : onEdgesChange}
             onConnect={readOnly ? () => {} : onConnect}
+            onConnectStart={readOnly ? undefined : onConnectStart}
             onInit={inst => { rfInstance.current = inst }}
             onNodesDelete={readOnly ? () => {} : onNodesDelete}
             canvasMode={canvasMode}
