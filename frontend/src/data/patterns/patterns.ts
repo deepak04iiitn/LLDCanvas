@@ -1,5 +1,5 @@
 ﻿import type { PatternData, HandleSide } from './types'
-import type { UMLAttribute, UMLMethod, Visibility, RelationshipType } from '@/types'
+import type { UMLAttribute, UMLEdgeData, UMLMethod, Visibility, RelationshipType } from '@/types'
 
 // ─── Compact builders (fill required id / isStatic / isAbstract) ─────────────
 let _seq = 0
@@ -53,8 +53,9 @@ function edge(
   type: RelationshipType,
   sourceHandle: HandleSide,
   targetHandle: HandleSide,
+  extras?: Partial<UMLEdgeData>,
 ) {
-  return { id, source, target, type, sourceHandle, targetHandle, data: { relationshipType: type } }
+  return { id, source, target, type, sourceHandle, targetHandle, data: { relationshipType: type, ...extras } }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -217,15 +218,22 @@ const composite: PatternData = {
   category: 'Structural',
   description: 'Composes objects into tree structures and lets clients treat individual objects and groups uniformly.',
   nodes: [
-    iface('component-iface', 'Component', 300, 40, [m('+', 'operation', '', 'void')]),
-    cls('leaf', 'Leaf', 80, 300, [], [m('+', 'operation', '', 'void')]),
-    cls('composite-class', 'Composite', 520, 300, [a('-', 'children', 'List<Component>')],
+    // Component is centred above Leaf and Composite for a clean hierarchy.
+    iface('component-iface', 'Component', 260, 40, [m('+', 'operation', '', 'void')]),
+    cls('leaf', 'Leaf', 40, 300, [], [m('+', 'operation', '', 'void')]),
+    cls('composite-class', 'Composite', 480, 300, [a('-', 'children', 'List<Component>')],
       [m('+', 'operation', '', 'void'), m('+', 'add', 'c: Component', 'void'), m('+', 'remove', 'c: Component', 'void')]),
   ],
   edges: [
+    // Leaf and Composite both realize Component via clean upward diagonals.
     edge('e-leaf', 'leaf', 'component-iface', 'realization', 'top', 'bottom'),
     edge('e-comp-realize', 'composite-class', 'component-iface', 'realization', 'top', 'bottom'),
-    edge('e-comp-tree', 'composite-class', 'component-iface', 'aggregation', 'left', 'right'),
+    // Aggregation: Composite (whole) ◇ holds Component* (parts).
+    // Diamond goes at markerEnd = target, so target must be composite-class.
+    // lineStyle 'step' (getSmoothStepPath) produces a clean right-angle elbow
+    // automatically from the actual handle positions, regardless of where the
+    // pattern is dropped — safe because it uses no absolute coordinates.
+    edge('e-comp-tree', 'component-iface', 'composite-class', 'aggregation', 'right', 'right', { lineStyle: 'step' }),
   ],
 }
 
@@ -366,16 +374,27 @@ const interpreter: PatternData = {
   category: 'Behavioral',
   description: 'Defines a grammar for a language and an interpreter that evaluates sentences in it.',
   nodes: [
-    iface('expression-iface', 'Expression', 300, 40, [m('+', 'interpret', 'ctx: Context', 'int')]),
-    cls('terminal-expr', 'TerminalExpression', 80, 300, [a('-', 'value', 'int')], [m('+', 'interpret', 'ctx: Context', 'int')]),
-    cls('nonterminal-expr', 'NonterminalExpression', 520, 300,
+    // Expression centred above both concrete classes for a clean hierarchy.
+    iface('expression-iface', 'Expression', 280, 40, [m('+', 'interpret', 'ctx: Context', 'int')]),
+    cls('terminal-expr', 'TerminalExpression', 40, 300, [a('-', 'value', 'int')], [m('+', 'interpret', 'ctx: Context', 'int')]),
+    cls('nonterminal-expr', 'NonterminalExpression', 500, 300,
       [a('-', 'left', 'Expression'), a('-', 'right', 'Expression')], [m('+', 'interpret', 'ctx: Context', 'int')]),
-    cls('context', 'Context', 300, 540, [a('-', 'variables', 'Map<String, int>')], []),
+    cls('context', 'Context', 240, 560, [a('-', 'variables', 'Map<String, int>')], []),
   ],
   edges: [
-    edge('e-term', 'terminal-expr', 'expression-iface', 'realization', 'top', 'bottom'),
-    edge('e-nonterm', 'nonterminal-expr', 'expression-iface', 'realization', 'top', 'bottom'),
-    edge('e-tree', 'nonterminal-expr', 'expression-iface', 'aggregation', 'left', 'right'),
+    // Route Terminal → Expression to the LEFT quarter of Expression's bottom,
+    // and Nonterminal → Expression to the RIGHT quarter — keeps the two
+    // realization triangles visually separated instead of piling on top of each other.
+    edge('e-term',    'terminal-expr',    'expression-iface', 'realization', 'top', 'bottom@25'),
+    edge('e-nonterm', 'nonterminal-expr', 'expression-iface', 'realization', 'top', 'bottom@75'),
+    // Aggregation: NonterminalExpression (whole) ◇ holds Expression* (parts).
+    // Diamond at markerEnd = target → target must be nonterminal-expr.
+    // lineStyle 'step' produces a clean right-angle elbow automatically from
+    // the actual handle positions, keeping it on the right side of the diagram
+    // and completely clear of the two realization arrows.
+    edge('e-tree', 'expression-iface', 'nonterminal-expr', 'aggregation', 'right', 'right', { lineStyle: 'step' }),
+    // Terminal uses Context (dependency): bottom of Terminal → top of Context,
+    // a clean short diagonal since Context sits directly below-center.
     edge('e-ctx', 'terminal-expr', 'context', 'dependency', 'bottom', 'top'),
   ],
 }
