@@ -1,4 +1,4 @@
-import { readdirSync } from 'fs'
+import { readdirSync, type Dirent } from 'fs'
 import { join } from 'path'
 import type { MetadataRoute } from 'next'
 import { publicApi } from '@/lib/public-api'
@@ -39,9 +39,9 @@ function discoverStaticRoutes(appDir: string): string[] {
   const routes: string[] = []
 
   function walk(dir: string, urlPath: string) {
-    let entries: ReturnType<typeof readdirSync>
+    let entries: Dirent<string>[]
     try {
-      entries = readdirSync(dir, { withFileTypes: true })
+      entries = readdirSync(dir, { withFileTypes: true }) as Dirent<string>[]
     } catch {
       return
     }

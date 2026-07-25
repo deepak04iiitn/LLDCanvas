@@ -62,8 +62,6 @@ export function TestimonialModal({ open, onClose }: Props) {
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             className="fixed left-1/2 top-1/2 z-50 w-[480px] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-hairline bg-paper shadow-2xl"
           >
-            {/* Decorative gradient top */}
-            <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-brand/60 via-brand to-emerald-400/60" />
 
             {/* Header */}
             <div className="flex items-start justify-between px-6 pt-6 pb-4">

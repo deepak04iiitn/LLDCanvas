@@ -20,6 +20,7 @@ import { DiagramStage, DiagramNode, DiagramBox, type DiagramEdge } from '@/compo
 import { FAQS } from '@/components/marketing/faq-data'
 import { EASE, fadeUpProps, inViewProps } from '@/lib/motion'
 import { cn } from '@/lib/utils'
+import { useSession } from '@/lib/auth'
 
 // ─── Full-page canvas backdrop ────────────────────────────────────────────────
 function CanvasBackdrop() {
@@ -1649,6 +1650,7 @@ export function LandingPageClient() {
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
   function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
   function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
+  const { data: session } = useSession()
 
   return (
     <div className="min-h-screen text-ink">
@@ -1689,9 +1691,11 @@ export function LandingPageClient() {
               <Link href="/editor/local" className="inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 font-semibold text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
                 Start for free
               </Link>
-              <button onClick={openSignin} className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
-                Sign in
-              </button>
+              {!session?.user && (
+                <button onClick={openSignin} className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
+                  Sign in
+                </button>
+              )}
             </motion.div>
 
             <motion.p className="mt-4 font-mono text-xs text-ink-faint" {...fadeUpProps(0.3)}>
