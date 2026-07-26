@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Check, ChevronDown, Copy, Eye, Link2, Loader2,
-  Mail, Pencil, Trash2, Users, X,
+  Lock, Mail, Pencil, Trash2, Users, X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,13 +12,26 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import type { CollabInvite } from '@/types'
+import { getAuthToken } from '@/lib/auth-token'
+import { usePlan } from '@/hooks/usePlan'
+import Link from 'next/link'
+import { Zap } from 'lucide-react'
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
 async function apiFetch(path: string, opts?: RequestInit) {
-  const res = await fetch(`${BASE}${path}`, { credentials: 'include', ...opts })
+  const token = getAuthToken()
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: 'include',
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...opts?.headers,
+    },
+  })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error ?? 'Request failed')
@@ -89,12 +102,19 @@ function InviteRow({
 }) {
   const [confirming, setConfirming] = useState(false)
   const [revoking,   setRevoking]   = useState(false)
+  const [copied,     setCopied]     = useState(false)
 
   async function confirmRevoke() {
     setRevoking(true)
     await onRevoke(invite._id)
     setRevoking(false)
     setConfirming(false)
+  }
+
+  function copyInviteLink() {
+    navigator.clipboard.writeText(getInviteUrl(invite.token))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -115,6 +135,16 @@ function InviteRow({
           <p className="truncate text-xs font-medium text-ink">{invite.email}</p>
           <p className="text-[10px] capitalize text-ink-faint">{invite.status}</p>
         </div>
+
+        {invite.status === 'pending' && (
+          <button
+            onClick={copyInviteLink}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-brand-tint hover:text-brand"
+            title="Copy invite link"
+          >
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+          </button>
+        )}
 
         <RolePill role={invite.role} onChange={r => onRoleChange(invite._id, r)} />
 
@@ -167,13 +197,18 @@ function InviteRow({
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
 interface CollabModalProps {
-  open:         boolean
-  onOpenChange: (v: boolean) => void
-  diagramId:    string
-  diagramTitle: string
+  open:              boolean
+  onOpenChange:      (v: boolean) => void
+  diagramId:         string
+  diagramTitle:      string
+  onInvitesChange?:  (count: number) => void
 }
 
-export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: CollabModalProps) {
+export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInvitesChange }: CollabModalProps) {
+  const { limits, isUltimate } = usePlan()
+  // maxCollaborators includes the owner, so max invites = maxCollaborators - 1
+  const maxInvites = limits.maxCollaborators === Infinity ? Infinity : Math.max(0, limits.maxCollaborators - 1)
+
   const [invites,     setInvites]     = useState<CollabInvite[]>([])
   const [loading,     setLoading]     = useState(false)
   const [email,       setEmail]       = useState('')
@@ -188,10 +223,12 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: Col
     setLoading(true)
     try {
       const data = await apiFetch(`/collab/${diagramId}/invites`)
-      setInvites(data.invites ?? [])
+      const list = data.invites ?? []
+      setInvites(list)
+      onInvitesChange?.(list.length)
     } catch { /* silently fail */ }
     finally { setLoading(false) }
-  }, [diagramId])
+  }, [diagramId, onInvitesChange])
 
   const loadLinkStatus = useCallback(async () => {
     try {
@@ -238,7 +275,9 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: Col
 
   async function handleRevoke(inviteId: string) {
     await apiFetch(`/collab/${diagramId}/${inviteId}`, { method: 'DELETE' })
-    setInvites(prev => prev.filter(i => i._id !== inviteId))
+    const next = invites.filter(i => i._id !== inviteId)
+    setInvites(next)
+    onInvitesChange?.(next.length)
     toast.success('Access revoked')
   }
 
@@ -273,6 +312,7 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: Col
   }
 
   const collabUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/collab/join/${diagramId}`
+  const atLimit = maxInvites !== Infinity && invites.length >= maxInvites
 
   return (
     <AnimatePresence>
@@ -322,29 +362,56 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: Col
 
               {/* ── Invite by email ──────────────────────────────────────── */}
               <div className="border-b border-hairline px-5 py-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-faint">Invite by email</p>
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Mail size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && handleInvite()}
-                      placeholder="colleague@company.com"
-                      className="h-9 w-full rounded-lg border border-hairline bg-paper-elevated pl-9 pr-3 text-sm outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/10"
-                    />
-                  </div>
-                  <RolePill role={inviteRole} onChange={setInviteRole} />
-                  <button
-                    onClick={handleInvite}
-                    disabled={inviting || !email.trim()}
-                    className="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-4 text-xs font-medium text-brand-foreground transition-all hover:bg-brand-hover disabled:opacity-50"
-                  >
-                    {inviting ? <Loader2 size={12} className="animate-spin" /> : null}
-                    Invite
-                  </button>
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Invite by email</p>
+                  {maxInvites !== Infinity && (
+                    <p className={cn('text-[10px] font-medium', atLimit ? 'text-red-500' : 'text-ink-faint')}>
+                      {invites.length}/{maxInvites} seats used
+                    </p>
+                  )}
                 </div>
+
+                {atLimit ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+                    <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                      <Zap size={14} className="text-amber-600" />
+                    </div>
+                    <p className="text-xs font-semibold text-amber-800">Collaborator limit reached</p>
+                    <p className="mt-0.5 text-[11px] text-amber-700">
+                      Your plan allows {maxInvites} {maxInvites === 1 ? 'collaborator' : 'collaborators'} (+ you). Upgrade to invite more.
+                    </p>
+                    <Link
+                      href="/pricing"
+                      onClick={() => onOpenChange(false)}
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-amber-600"
+                    >
+                      <Zap size={11} /> Upgrade plan
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Mail size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleInvite()}
+                        placeholder="colleague@company.com"
+                        className="h-9 w-full rounded-lg border border-hairline bg-paper-elevated pl-9 pr-3 text-sm outline-none placeholder:text-ink-faint focus:border-brand focus:ring-2 focus:ring-brand/10"
+                      />
+                    </div>
+                    <RolePill role={inviteRole} onChange={setInviteRole} />
+                    <button
+                      onClick={handleInvite}
+                      disabled={inviting || !email.trim()}
+                      className="flex h-9 items-center gap-1.5 rounded-lg bg-brand px-4 text-xs font-medium text-brand-foreground transition-all hover:bg-brand-hover disabled:opacity-50"
+                    >
+                      {inviting ? <Loader2 size={12} className="animate-spin" /> : null}
+                      Invite
+                    </button>
+                  </div>
+                )}
 
                 {/* Latest invite link */}
                 {latestToken && (
@@ -398,28 +465,41 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle }: Col
                 )}
               </div>
 
-              {/* ── Public collab link ───────────────────────────────────── */}
+              {/* ── Public collab link (Ultimate only) ──────────────────── */}
               <div className="px-5 py-5">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-faint">Link sharing</p>
 
-                <div className="flex items-center justify-between rounded-xl border border-hairline bg-paper-elevated px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Link2 size={14} className="text-ink-muted" />
-                    <p className="text-xs font-medium text-ink">Anyone with the link</p>
+                {!isUltimate ? (
+                  <div className="flex items-center justify-between rounded-xl border border-hairline bg-paper-elevated px-4 py-3 opacity-60">
+                    <div className="flex items-center gap-2">
+                      <Link2 size={14} className="text-ink-muted" />
+                      <div>
+                        <p className="text-xs font-medium text-ink">Anyone with the link</p>
+                        <p className="text-[10px] text-ink-faint">Ultimate plan only</p>
+                      </div>
+                    </div>
+                    <Lock size={13} className="text-amber-400" />
                   </div>
-                  <button
-                    onClick={() => toggleLink(!linkEnabled)}
-                    className={cn(
-                      'relative flex h-5 w-9 items-center rounded-full transition-colors duration-200',
-                      linkEnabled ? 'bg-brand' : 'bg-hairline-strong',
-                    )}
-                  >
-                    <span className={cn(
-                      'absolute h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200',
-                      linkEnabled ? 'translate-x-4' : 'translate-x-0.5',
-                    )} />
-                  </button>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-xl border border-hairline bg-paper-elevated px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Link2 size={14} className="text-ink-muted" />
+                      <p className="text-xs font-medium text-ink">Anyone with the link</p>
+                    </div>
+                    <button
+                      onClick={() => toggleLink(!linkEnabled)}
+                      className={cn(
+                        'relative flex h-5 w-9 items-center rounded-full transition-colors duration-200',
+                        linkEnabled ? 'bg-brand' : 'bg-hairline-strong',
+                      )}
+                    >
+                      <span className={cn(
+                        'absolute h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200',
+                        linkEnabled ? 'translate-x-4' : 'translate-x-0.5',
+                      )} />
+                    </button>
+                  </div>
+                )}
 
                 <AnimatePresence>
                   {linkEnabled && (

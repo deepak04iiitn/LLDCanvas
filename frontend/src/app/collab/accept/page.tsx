@@ -6,6 +6,7 @@ import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
+import { getAuthToken } from '@/lib/auth-token'
 
 function CollabAcceptInner() {
   const searchParams = useSearchParams()
@@ -29,7 +30,14 @@ function CollabAcceptInner() {
     }
 
     const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    fetch(`${BASE}/collab/accept/${token}`, { method: 'POST', credentials: 'include' })
+    const authToken = getAuthToken()
+    fetch(`${BASE}/collab/accept/${token}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+    })
       .then(async r => {
         const data = await r.json()
         if (!r.ok) throw new Error(data.error ?? 'Failed')

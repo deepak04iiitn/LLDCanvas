@@ -62,69 +62,38 @@ function edge(
 // CREATIONAL
 // ════════════════════════════════════════════════════════════════════════════
 
-// ─── Singleton ────────────────────────────────────────────────────────────────
+// ─── Singleton, Factory Method, Abstract Factory ─────────────────────────────
+// These 3 are Pro-only (see PRO_ONLY_PATTERN_KEYS in lib/plans.ts). Their full
+// node/edge skeletons are NOT shipped in the client bundle — they're fetched
+// on demand from GET /patterns/:key, which re-checks the plan server-side
+// (backend/src/data/pro-patterns.ts + controllers/pattern.controller.ts).
+// Only the display metadata needed for the locked sidebar/palette entry lives
+// here; `nodes`/`edges` are empty stubs.
 const singleton: PatternData = {
   key: 'singleton',
   name: 'Singleton',
   category: 'Creational',
   description: 'Ensures only one instance of a class exists and provides a global access point.',
-  nodes: [
-    cls('singleton-class', 'Singleton', 200, 150,
-      [a('-', 'instance', 'Singleton', true)],
-      [
-        m('-', 'Singleton', '', 'void', false, false, true),
-        m('+', 'getInstance', '', 'Singleton', true),
-        m('+', 'businessLogic', '', 'void'),
-      ]),
-  ],
+  nodes: [],
   edges: [],
 }
 
-// ─── Factory Method ───────────────────────────────────────────────────────────
 const factoryMethod: PatternData = {
   key: 'factory-method',
   name: 'Factory Method',
   category: 'Creational',
   description: 'Defines an interface for creating objects, letting subclasses decide which class to instantiate.',
-  nodes: [
-    abstractCls('creator', 'Creator', 80, 50, [],
-      [m('+', 'createProduct', '', 'Product', false, true), m('+', 'doSomething', '', 'void')]),
-    cls('concrete-creator', 'ConcreteCreator', 80, 300, [],
-      [m('+', 'createProduct', '', 'Product')]),
-    iface('product-iface', 'Product', 480, 50,
-      [m('+', 'operation', '', 'string')]),
-    cls('concrete-product', 'ConcreteProduct', 480, 300, [],
-      [m('+', 'operation', '', 'string')]),
-  ],
-  edges: [
-    edge('e-creator-dep', 'creator', 'product-iface', 'dependency', 'right', 'left'),
-    edge('e-cc-inherit', 'concrete-creator', 'creator', 'inheritance', 'top', 'bottom'),
-    edge('e-cp-realize', 'concrete-product', 'product-iface', 'realization', 'top', 'bottom'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
-// ─── Abstract Factory ─────────────────────────────────────────────────────────
 const abstractFactory: PatternData = {
   key: 'abstract-factory',
   name: 'Abstract Factory',
   category: 'Creational',
   description: 'Provides an interface for creating families of related objects without specifying concrete classes.',
-  nodes: [
-    iface('abs-factory', 'AbstractFactory', 300, 40,
-      [m('+', 'createProductA', '', 'AbstractProductA'), m('+', 'createProductB', '', 'AbstractProductB')]),
-    cls('factory1', 'ConcreteFactory1', 80, 300, [],
-      [m('+', 'createProductA', '', 'AbstractProductA'), m('+', 'createProductB', '', 'AbstractProductB')]),
-    cls('factory2', 'ConcreteFactory2', 520, 300, [],
-      [m('+', 'createProductA', '', 'AbstractProductA'), m('+', 'createProductB', '', 'AbstractProductB')]),
-    iface('abs-product-a', 'AbstractProductA', 750, 40, [m('+', 'operationA', '', 'string')]),
-    iface('abs-product-b', 'AbstractProductB', 750, 260, [m('+', 'operationB', '', 'string')]),
-  ],
-  edges: [
-    edge('e-f1', 'factory1', 'abs-factory', 'realization', 'top', 'bottom'),
-    edge('e-f2', 'factory2', 'abs-factory', 'realization', 'top', 'bottom'),
-    edge('e-dep-a', 'abs-factory', 'abs-product-a', 'dependency', 'right', 'left'),
-    edge('e-dep-b', 'abs-factory', 'abs-product-b', 'dependency', 'right', 'left'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
 // ─── Builder ──────────────────────────────────────────────────────────────────
@@ -238,23 +207,14 @@ const composite: PatternData = {
 }
 
 // ─── Decorator ────────────────────────────────────────────────────────────────
+// Pro-only — see note above the Singleton stub; content is fetched on demand.
 const decorator: PatternData = {
   key: 'decorator',
   name: 'Decorator',
   category: 'Structural',
   description: 'Attaches additional responsibilities to an object dynamically without changing its interface.',
-  nodes: [
-    iface('component-iface2', 'Component', 300, 40, [m('+', 'operation', '', 'string')]),
-    cls('concrete-component', 'ConcreteComponent', 80, 300, [], [m('+', 'operation', '', 'string')]),
-    abstractCls('decorator-abs', 'Decorator', 520, 300, [a('#', 'component', 'Component')], [m('+', 'operation', '', 'string')]),
-    cls('concrete-decorator', 'ConcreteDecorator', 520, 540, [], [m('+', 'operation', '', 'string'), m('+', 'addedBehavior', '', 'void')]),
-  ],
-  edges: [
-    edge('e-cc', 'concrete-component', 'component-iface2', 'realization', 'top', 'bottom'),
-    edge('e-da', 'decorator-abs', 'component-iface2', 'realization', 'top', 'bottom'),
-    edge('e-dec-wraps', 'decorator-abs', 'component-iface2', 'aggregation', 'left', 'right'),
-    edge('e-cd', 'concrete-decorator', 'decorator-abs', 'inheritance', 'top', 'bottom'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
 // ─── Facade ───────────────────────────────────────────────────────────────────
@@ -325,26 +285,14 @@ const proxy: PatternData = {
 // ════════════════════════════════════════════════════════════════════════════
 
 // ─── Chain of Responsibility ──────────────────────────────────────────────────
+// Pro-only — see note above the Singleton stub; content is fetched on demand.
 const chainOfResponsibility: PatternData = {
   key: 'chain-of-responsibility',
   name: 'Chain of Responsibility',
   category: 'Behavioral',
   description: 'Passes a request along a chain of handlers until one of them handles it.',
-  nodes: [
-    abstractCls('handler-abs', 'Handler', 300, 40, [a('-', 'successor', 'Handler')],
-      [m('+', 'setNext', 'h: Handler', 'void'), m('+', 'handle', 'req: Request', 'void', false, true)]),
-    cls('handler-a', 'ConcreteHandlerA', 80, 300, [], [m('+', 'handle', 'req: Request', 'void')]),
-    cls('handler-b', 'ConcreteHandlerB', 300, 300, [], [m('+', 'handle', 'req: Request', 'void')]),
-    cls('handler-c', 'ConcreteHandlerC', 520, 300, [], [m('+', 'handle', 'req: Request', 'void')]),
-    cls('request', 'Request', 750, 40, [a('-', 'level', 'int')], []),
-  ],
-  edges: [
-    edge('e-ha', 'handler-a', 'handler-abs', 'inheritance', 'top', 'bottom'),
-    edge('e-hb', 'handler-b', 'handler-abs', 'inheritance', 'top', 'bottom'),
-    edge('e-hc', 'handler-c', 'handler-abs', 'inheritance', 'top', 'bottom'),
-    edge('e-chain', 'handler-abs', 'handler-abs', 'aggregation', 'right', 'bottom'),
-    edge('e-req', 'handler-abs', 'request', 'dependency', 'right', 'left'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
 // ─── Command ──────────────────────────────────────────────────────────────────
@@ -461,26 +409,14 @@ const memento: PatternData = {
 }
 
 // ─── Observer ─────────────────────────────────────────────────────────────────
+// Pro-only — see note above the Singleton stub; content is fetched on demand.
 const observer: PatternData = {
   key: 'observer',
   name: 'Observer',
   category: 'Behavioral',
   description: 'Defines a one-to-many dependency; when one object changes state, all dependents are notified.',
-  nodes: [
-    iface('subject-iface2', 'Subject', 80, 40,
-      [m('+', 'subscribe', 'o: Observer', 'void'), m('+', 'unsubscribe', 'o: Observer', 'void'), m('+', 'notifyObservers', '', 'void')]),
-    iface('observer-iface', 'Observer', 500, 40, [m('+', 'update', 'subject: Subject', 'void')]),
-    cls('concrete-subject', 'ConcreteSubject', 80, 300,
-      [a('-', 'observers', 'List<Observer>'), a('-', 'state', 'String')],
-      [m('+', 'getState', '', 'String'), m('+', 'setState', 'state: String', 'void')]),
-    cls('concrete-observer', 'ConcreteObserver', 500, 300, [a('-', 'name', 'String')],
-      [m('+', 'update', 'subject: Subject', 'void')]),
-  ],
-  edges: [
-    edge('e-cs', 'concrete-subject', 'subject-iface2', 'realization', 'top', 'bottom'),
-    edge('e-co', 'concrete-observer', 'observer-iface', 'realization', 'top', 'bottom'),
-    edge('e-dep', 'subject-iface2', 'observer-iface', 'association', 'right', 'left'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -504,23 +440,14 @@ const state: PatternData = {
 }
 
 // ─── Strategy ─────────────────────────────────────────────────────────────────
+// Pro-only — see note above the Singleton stub; content is fetched on demand.
 const strategy: PatternData = {
   key: 'strategy',
   name: 'Strategy',
   category: 'Behavioral',
   description: 'Defines a family of algorithms, encapsulates each one, and makes them interchangeable.',
-  nodes: [
-    iface('strategy-iface', 'Strategy', 280, 40, [m('+', 'execute', 'context: Context', 'void')]),
-    cls('concrete-a', 'ConcreteStrategyA', 80, 300, [], [m('+', 'execute', 'context: Context', 'void')]),
-    cls('concrete-b', 'ConcreteStrategyB', 430, 300, [], [m('+', 'execute', 'context: Context', 'void')]),
-    cls('context', 'Context', 680, 180, [a('-', 'strategy', 'Strategy')],
-      [m('+', 'setStrategy', 's: Strategy', 'void'), m('+', 'executeStrategy', '', 'void')]),
-  ],
-  edges: [
-    edge('e-ca', 'concrete-a', 'strategy-iface', 'realization', 'top', 'bottom'),
-    edge('e-cb', 'concrete-b', 'strategy-iface', 'realization', 'top', 'bottom'),
-    edge('e-ctx', 'context', 'strategy-iface', 'association', 'left', 'right'),
-  ],
+  nodes: [],
+  edges: [],
 }
 
 // ─── Template Method ─────────────────────────────────────────────────────────

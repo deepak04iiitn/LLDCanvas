@@ -341,6 +341,7 @@ export interface CollabInvite {
   email:     string
   role:      'editor' | 'viewer'
   status:    'pending' | 'accepted' | 'revoked'
+  token:     string
   createdAt: string
 }
 

@@ -1,6 +1,7 @@
 import { DiagramSummary, DiagramFull, DiagramData, InterviewSession, InterviewAssignedProblem, PracticeStats, AdvancedStats, ShareSettings, ProblemSummary, ProblemDetail, UserSolution, CommunitySolution, RevisionNoteSummary, RevisionNoteDetail, RevisionStats, ProblemPost, PostReply } from '@/types'
 import { getAuthToken } from './auth-token'
 import type { BlogBlock } from './blog-blocks'
+import type { PatternData } from '@/data/patterns'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -73,6 +74,14 @@ export const api = {
 
     delete: (id: string) =>
       request<{ ok: boolean }>(`/diagrams/${id}`, { method: 'DELETE' }),
+
+    // Server-side plan check (from a fresh DB-backed plan, not the cached
+    // client copy) that must pass before any export format is generated.
+    authorizeExport: (format: 'png' | 'svg' | 'plantuml' | 'mermaid' | 'draft') =>
+      request<{ authorized: boolean }>('/diagrams/export-authorize', {
+        method: 'POST',
+        body: JSON.stringify({ format }),
+      }),
   },
 
   interview: {
@@ -391,6 +400,14 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+  },
+
+  patterns: {
+    // Fetches the full node/edge skeleton for a Pro-locked pattern. Gated
+    // server-side by plan — free-tier patterns never call this, they're
+    // already bundled with full content in @/data/patterns.
+    getOne: (key: string) =>
+      request<{ pattern: PatternData }>(`/patterns/${key}`),
   },
 
   testimonials: {

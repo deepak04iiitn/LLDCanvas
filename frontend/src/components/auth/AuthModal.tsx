@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { Eye, EyeOff } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -164,9 +165,8 @@ export function AuthModal({ open, onOpenChange, defaultMode = 'signin' }: AuthMo
               placeholder="you@example.com"
               required
             />
-            <LabeledInput
+            <PasswordInput
               label="Password"
-              type="password"
               value={password}
               onChange={setPassword}
               autoComplete={isSignup ? 'new-password' : 'current-password'}
@@ -228,6 +228,50 @@ function LabeledInput({
         className="h-9 border-hairline-strong bg-paper text-sm transition-all
                    focus:border-brand focus:ring-brand/10"
       />
+    </div>
+  )
+}
+
+// ─── PasswordInput - LabeledInput with a show/hide toggle ───────────────────
+function PasswordInput({
+  label, value, onChange, placeholder, autoComplete, required,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  autoComplete?: string
+  required?: boolean
+}) {
+  const [visible, setVisible] = useState(false)
+
+  return (
+    <div className="space-y-1">
+      <label className="block font-mono text-[10px] font-medium tracking-widest text-ink-faint uppercase">
+        {label}
+      </label>
+      <div className="relative">
+        <Input
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required={required}
+          className="h-9 border-hairline-strong bg-paper pr-9 text-sm transition-all
+                     focus:border-brand focus:ring-brand/10"
+        />
+        <button
+          type="button"
+          onClick={() => setVisible(v => !v)}
+          tabIndex={-1}
+          className="absolute right-0 top-0 flex h-9 w-9 items-center justify-center
+                     text-ink-faint transition-colors hover:text-ink"
+          aria-label={visible ? 'Hide password' : 'Show password'}
+        >
+          {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
     </div>
   )
 }
