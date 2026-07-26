@@ -161,6 +161,60 @@ function DeleteAccountDialog({
   )
 }
 
+// ─── Cancel subscription confirmation dialog ─────────────────────────────────
+function CancelSubscriptionDialog({
+  open,
+  onClose,
+  onConfirm,
+  loading,
+}: {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  loading: boolean
+}) {
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+          </div>
+          <DialogTitle className="text-left text-base font-semibold text-ink">
+            Cancel your subscription?
+          </DialogTitle>
+          <DialogDescription className="text-left">
+            You&apos;ll keep access to all paid features until the end of the
+            current billing period. You can resubscribe anytime.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="mt-3 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1"
+          >
+            Keep subscription
+          </Button>
+          <Button
+            onClick={onConfirm}
+            disabled={loading}
+            className="flex-1 bg-red-600 text-white hover:bg-red-700"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Cancel subscription'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Settings page ────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const router = useRouter()
@@ -176,6 +230,7 @@ export default function SettingsPage() {
 
   const [deleteOpen, setDeleteOpen]       = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [cancelOpen, setCancelOpen]       = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
 
   useEffect(() => { document.title = 'Settings · LLDCanvas' }, [])
@@ -213,12 +268,6 @@ export default function SettingsPage() {
   }
 
   async function handleCancelSubscription() {
-    if (
-      !confirm(
-        'Cancel your subscription? You will keep access until the end of the current billing period.',
-      )
-    )
-      return
     setCancelLoading(true)
     try {
       await api.billing.cancel()
@@ -228,6 +277,7 @@ export default function SettingsPage() {
       toast.error((err as Error).message ?? 'Failed to cancel subscription')
     } finally {
       setCancelLoading(false)
+      setCancelOpen(false)
     }
   }
 
@@ -419,7 +469,7 @@ export default function SettingsPage() {
                         </Link>
                         {subscription && !subscription.cancelAtPeriodEnd && (
                           <button
-                            onClick={handleCancelSubscription}
+                            onClick={() => setCancelOpen(true)}
                             disabled={cancelLoading}
                             className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
                           >
@@ -488,6 +538,13 @@ export default function SettingsPage() {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDeleteAccount}
         loading={deleteLoading}
+      />
+
+      <CancelSubscriptionDialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        onConfirm={handleCancelSubscription}
+        loading={cancelLoading}
       />
     </AppShell>
   )
