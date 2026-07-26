@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { NotebookPen, CheckCircle2, Loader2, List, ListOrdered, Minus } from 'lucide-react'
+import { NotebookPen, CheckCircle2, Loader2, List, ListOrdered, Minus, X } from 'lucide-react'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -194,6 +194,13 @@ export function ProblemNotesPanel({ open, onClose, slug }: ProblemNotesPanelProp
               <><CheckCircle2 className="h-3 w-3 text-brand" /> saved</>
             )}
           </span>
+
+          <button
+            onClick={onClose}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-ink-faint transition-colors hover:bg-hairline hover:text-ink"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {/* ── Description ────────────────────────────────────────────── */}

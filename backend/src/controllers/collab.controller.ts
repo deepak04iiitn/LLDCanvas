@@ -5,6 +5,10 @@ import { CollabInvite } from '../models/collab-invite.model'
 import { Comment } from '../models/comment.model'
 import { DiagramVersion } from '../models/diagram-version.model'
 import { createError } from '../middleware/error'
+import { getLimits } from '../config/plans'
+import { User } from '../models/user.model'
+
+const VALID_ROLES = new Set(['editor', 'viewer'])
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,20 +42,36 @@ export const collabController = {
     try {
       const { email, role = 'editor' } = req.body as { email: string; role?: string }
       if (!email) throw createError('Email is required', 400)
+      if (!VALID_ROLES.has(role)) throw createError('Invalid role', 400)
 
       const diagram = await assertDiagramOwner(req.params.diagramId, req.user!.id)
 
-      // Check if already invited
+      // Check if already invited — if so, just update role and return early
+      // (re-invites don't count against the limit)
       const existing = await CollabInvite.findOne({
         diagramId: req.params.diagramId,
         email: email.toLowerCase(),
         status: { $ne: 'revoked' },
       })
       if (existing) {
-        // Update role if changed
         existing.role = role as 'editor' | 'viewer'
         await existing.save()
-        return res.json({ invite: existing, updated: true })
+        return res.json({ invite: existing, token: existing.token, updated: true })
+      }
+
+      // Enforce per-plan collaborator limit (owner counts as 1).
+      // Re-count AFTER the existing-invite check to avoid a race where two
+      // concurrent requests both pass and both create new invites.
+      const limits = getLimits(req.user!.plan)
+      if (limits.maxCollaborators !== Infinity) {
+        const maxInvites = Math.max(0, limits.maxCollaborators - 1)
+        const currentCount = await CollabInvite.countDocuments({
+          diagramId: req.params.diagramId,
+          status: { $ne: 'revoked' },
+        })
+        if (currentCount >= maxInvites) {
+          throw createError(`Your plan allows up to ${limits.maxCollaborators} people (including you). Upgrade to invite more collaborators.`, 403)
+        }
       }
 
       const token = randomBytes(24).toString('base64url')
@@ -76,6 +96,7 @@ export const collabController = {
   updateRole: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { role } = req.body as { role: 'editor' | 'viewer' }
+      if (!VALID_ROLES.has(role)) throw createError('Invalid role', 400)
       await assertDiagramOwner(req.params.diagramId, req.user!.id)
       const invite = await CollabInvite.findByIdAndUpdate(
         req.params.inviteId,
@@ -104,7 +125,7 @@ export const collabController = {
 
       // Verify the accepting user's email matches the invite
       if (req.user!.email.toLowerCase() !== invite.email) {
-        throw createError(`This invite was sent to ${invite.email}. Please sign in with that account.`, 403)
+        throw createError('This invite was sent to a different email address. Please sign in with the correct account.', 403)
       }
 
       invite.status   = 'accepted'
@@ -119,6 +140,15 @@ export const collabController = {
   updateLink: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { enabled, role = 'viewer' } = req.body as { enabled: boolean; role?: string }
+      if (role && !VALID_ROLES.has(role)) throw createError('Invalid role', 400)
+
+      // Public link sharing is an Ultimate-only feature — it bypasses per-invite
+      // limits, so Free and Pro users cannot enable it.
+      const limits = getLimits(req.user!.plan)
+      if (enabled && limits.maxCollaborators !== Infinity) {
+        throw createError('Public link sharing requires an Ultimate plan.', 403)
+      }
+
       const diagram = await assertDiagramOwner(req.params.diagramId, req.user!.id)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const d = diagram as any
@@ -273,6 +303,10 @@ export const collabController = {
   // GET /collab/activity — recent activity timeline for the current user's collab diagrams
   activity: async (req: Request, res: Response, next: NextFunction) => {
     try {
+      if (!getLimits(req.user!.plan).activityTimeline) {
+        throw createError('The activity timeline requires an Ultimate plan.', 403)
+      }
+
       const userId = req.user!.id
       const email  = req.user!.email.toLowerCase()
 
@@ -357,6 +391,10 @@ export const collabController = {
   // GET /collab/versions/:diagramId — version history for a diagram
   versions: async (req: Request, res: Response, next: NextFunction) => {
     try {
+      if (!getLimits(req.user!.plan).versionHistory) {
+        throw createError('Version history requires an Ultimate plan.', 403)
+      }
+
       const { diagramId } = req.params
       const userId = req.user!.id
       const email  = req.user!.email.toLowerCase()

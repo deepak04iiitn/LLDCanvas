@@ -4,6 +4,8 @@ import { startOfWeek, endOfWeek, startOfMonth, endOfMonth,
 import { PracticeStats } from '../models/practice-stats.model'
 import { InterviewSession } from '../models/interview-session.model'
 import { UserSolution } from '../models/user-solution.model'
+import { createError } from '../middleware/error'
+import { getLimits } from '../config/plans'
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10)
@@ -39,6 +41,10 @@ export async function getStats(req: Request, res: Response, next: NextFunction) 
 export async function getAdvancedStats(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.id
+    const analyticsLevel = getLimits(req.user!.plan).analyticsLevel
+    if (analyticsLevel === 'none') {
+      throw createError('Advanced analytics requires a Pro or Ultimate plan.', 403)
+    }
 
     const [stats, sessions, totalProblems] = await Promise.all([
       PracticeStats.findOne({ userId }).lean(),
@@ -50,16 +56,17 @@ export async function getAdvancedStats(req: Request, res: Response, next: NextFu
     ])
 
     const activity = stats?.dailyActivity ?? []
+    const isFullAccess = analyticsLevel === 'full'
 
     // ── Helper: ISO week key ──────────────────────────────────────────────────
     function weekKey(d: Date) {
       return `${getYear(d)}-W${String(getISOWeek(d)).padStart(2, '0')}`
     }
 
-    // ── Weekly reports (last 12 weeks) ────────────────────────────────────────
+    // ── Weekly reports (last 12 weeks) — Ultimate-only, skip the queries for Pro ──
     const now = new Date()
     const weeklyReports = []
-    for (let i = 11; i >= 0; i--) {
+    for (let i = 11; isFullAccess && i >= 0; i--) {
       const ref   = subWeeks(now, i)
       const start = startOfWeek(ref, { weekStartsOn: 1 })
       const end   = endOfWeek(ref, { weekStartsOn: 1 })
@@ -86,9 +93,9 @@ export async function getAdvancedStats(req: Request, res: Response, next: NextFu
       })
     }
 
-    // ── Monthly reports (last 12 months) ─────────────────────────────────────
+    // ── Monthly reports (last 12 months) — Ultimate-only, skip the queries for Pro ──
     const monthlyReports = []
-    for (let i = 11; i >= 0; i--) {
+    for (let i = 11; isFullAccess && i >= 0; i--) {
       const ref   = subMonths(now, i)
       const start = startOfMonth(ref)
       const end   = endOfMonth(ref)
@@ -179,15 +186,17 @@ export async function getAdvancedStats(req: Request, res: Response, next: NextFu
     const bestWeekData = weeklyReports.reduce<typeof weeklyReports[0] | null>((best, w) =>
       !best || w.timeSeconds > best.timeSeconds ? w : best, null)
 
+    // weeklyReports / monthlyReports / personalBests are Ultimate-only per plans.ts;
+    // Pro (analyticsLevel: 'basic') only gets the avg-time/trend fields.
     res.json({
       avgTimePerSession,
       avgTimeThisWeek,
       avgTimeLastWeek,
       improvementPercent,
-      weeklyReports,
-      monthlyReports,
       trendData,
-      personalBests: {
+      weeklyReports: isFullAccess ? weeklyReports : [],
+      monthlyReports: isFullAccess ? monthlyReports : [],
+      personalBests: isFullAccess ? {
         longestStreakDays:  stats?.longestStreakDays ?? 0,
         longestSession: longestSession ? {
           timeSeconds: longestSession.timeElapsed,
@@ -206,7 +215,7 @@ export async function getAdvancedStats(req: Request, res: Response, next: NextFu
           timeSeconds: bestWeekData.timeSeconds,
         } : null,
         totalProblems,
-      },
+      } : null,
     })
   } catch (err) {
     next(err)

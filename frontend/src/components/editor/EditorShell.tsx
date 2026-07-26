@@ -48,6 +48,7 @@ import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { api } from '@/lib/api'
 import { CheckCircle2 } from 'lucide-react'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
+import { PRO_ONLY_PATTERN_KEYS } from '@/lib/plans'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAutosave } from '@/hooks/useAutosave'
 import type { DiagramData, UMLNodeData, UMLEdgeData, RelationshipType, CanvasTheme } from '@/types'
@@ -146,6 +147,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   )
   const [importDraftOpen,    setImportDraftOpen]    = useState(false)
   const [collabModalOpen,    setCollabModalOpen]    = useState(false)
+  const [collabInviteCount,  setCollabInviteCount]  = useState(0)
   const [discussionPanelOpen, setDiscussionPanelOpen] = useState(false)
   const [codePanelOpen,             setCodePanelOpen]             = useState(false)
   const [problemDiscussionOpen,     setProblemDiscussionOpen]     = useState(false)
@@ -431,12 +433,26 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   )
 
   // ── Insert design pattern skeleton ────────────────────────────────────────
-  // Not Pro-gated for now - every pattern is freely insertable until a real
-  // paid plan exists to gate it behind.
+  // This is the single chokepoint every UI entry point (LeftPanel, Command
+  // Palette) funnels through, so the Pro gate lives here rather than being
+  // duplicated per-caller. Pro-locked patterns ship with empty nodes/edges in
+  // the client bundle (see data/patterns/patterns.ts) — their real content is
+  // fetched from a server-side-gated endpoint, re-checked against the DB
+  // plan, not the client's cached copy.
   const insertPattern = useCallback(
-    (patternKey: string) => {
-      const pattern: PatternData | undefined = PATTERN_BY_KEY.get(patternKey)
+    async (patternKey: string) => {
+      let pattern: PatternData | undefined = PATTERN_BY_KEY.get(patternKey)
       if (!pattern) return
+
+      if (PRO_ONLY_PATTERN_KEYS.has(patternKey)) {
+        try {
+          const { pattern: fullPattern } = await api.patterns.getOne(patternKey)
+          pattern = fullPattern
+        } catch {
+          toast.error('Upgrade to Pro to insert this pattern')
+          return
+        }
+      }
 
       const centre = rfInstance.current
         ? rfInstance.current.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 })
@@ -621,27 +637,46 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   )
 
   // ── Export ────────────────────────────────────────────────────────────────
+  // Every format must clear a fresh, server-side plan check first (from the
+  // DB-backed req.user.plan, not the client's cached plan) — otherwise a
+  // Free/Pro user could get an entitled-only format by calling these export
+  // helpers directly from devtools with no server round-trip at all.
+  const authorizeExport = useCallback(async (format: 'png' | 'svg' | 'plantuml' | 'mermaid' | 'draft') => {
+    try {
+      const { authorized } = await api.diagrams.authorizeExport(format)
+      return authorized
+    } catch {
+      toast.error('Upgrade your plan to export in this format')
+      return false
+    }
+  }, [])
+
   const handleExportPNG = useCallback(async () => {
+    if (!(await authorizeExport('png'))) return
     try { await exportPNG(theme, title); toast.success('Exported as PNG') }
     catch { toast.error('PNG export failed') }
-  }, [theme, title])
+  }, [theme, title, authorizeExport])
 
   const handleExportSVG = useCallback(async () => {
+    if (!(await authorizeExport('svg'))) return
     try { await exportSVG(theme, title); toast.success('Exported as SVG') }
     catch { toast.error('SVG export failed') }
-  }, [theme, title])
+  }, [theme, title, authorizeExport])
 
-  const handleExportPlantUML = useCallback(() => {
+  const handleExportPlantUML = useCallback(async () => {
+    if (!(await authorizeExport('plantuml'))) return
     const text = toPlantUML(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
     navigator.clipboard.writeText(text).then(() => toast.success('PlantUML copied to clipboard'))
-  }, [nodes, edges])
+  }, [nodes, edges, authorizeExport])
 
-  const handleExportMermaid = useCallback(() => {
+  const handleExportMermaid = useCallback(async () => {
+    if (!(await authorizeExport('mermaid'))) return
     const text = toMermaid(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
     navigator.clipboard.writeText(text).then(() => toast.success('Mermaid copied to clipboard'))
-  }, [nodes, edges])
+  }, [nodes, edges, authorizeExport])
 
-  const handleExportDraft = useCallback(() => {
+  const handleExportDraft = useCallback(async () => {
+    if (!(await authorizeExport('draft'))) return
     const text = serializeToDraft(nodes as RFNode<UMLNodeData>[], edges as RFEdge<UMLEdgeData>[])
     const blob = new Blob([text], { type: 'text/plain' })
     const url  = URL.createObjectURL(blob)
@@ -651,7 +686,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     a.click()
     URL.revokeObjectURL(url)
     toast.success('Exported as .draft file')
-  }, [nodes, edges, title])
+  }, [nodes, edges, title, authorizeExport])
 
   // ── Rename ────────────────────────────────────────────────────────────────
   const handleRename = useCallback(
@@ -831,9 +866,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             onClose={() => { setPickerOpen(false); setPendingConn(null) }}
           />
 
-          {/* ── Mark as Complete - bottom-left corner, practice problems only ── */}
+          {/* ── Mark as Complete - bottom-left corner, practice problems only ──
+              Bumped up when the collab presence dock (also bottom-left) is
+              showing, so the two don't overlap. */}
           {effectiveProblemSlug && !activeSession && !readOnly && (
-            <div className="absolute bottom-4 left-4 z-20">
+            <div className={`absolute left-4 z-20 ${diagramId && collaborators.length > 0 ? 'bottom-16' : 'bottom-4'}`}>
               {completed ? (
                 <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 shadow-sm">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -906,6 +943,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           onOpenChange={setCollabModalOpen}
           diagramId={diagramId}
           diagramTitle={title}
+          onInvitesChange={setCollabInviteCount}
         />
       )}
     </div>

@@ -396,7 +396,8 @@ export function Topbar({
       {/* LEFT - Logo + title */}
       <div className="flex min-w-0 items-center">
         <Link href="/" className="flex shrink-0 items-center select-none">
-          <Wordmark height={22} priority />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/LLDCanvas_Logo_Only.png" alt="LLDCanvas" height={28} style={{ height: 28, width: 'auto' }} />
         </Link>
         <div className="mx-2 h-5 w-px shrink-0 bg-gray-200 dark:bg-[#3C3C3E]" />
         <EditableTitle value={title} onChange={onRename} readOnly={readOnly} />

@@ -2,6 +2,8 @@ import { Server, Socket } from 'socket.io'
 import { Diagram } from '../models/diagram.model'
 import { CollabInvite } from '../models/collab-invite.model'
 import { Comment } from '../models/comment.model'
+import { User } from '../models/user.model'
+import { getLimits } from '../config/plans'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,12 +56,38 @@ async function resolveRole(
     email: email.toLowerCase(),
     status: 'accepted',
   }).lean()
-  if (invite) return invite.role as 'editor' | 'viewer'
+  if (invite) {
+    // Re-validate the owner's current seat limit live — the invite-time check
+    // only guaranteed the limit held at invite creation, but the owner's plan
+    // may have since downgraded (subscription lapse/cancellation).
+    const owner = await User.findById(diagram.userId).select('plan').lean()
+    const limits = getLimits((owner?.plan ?? 'free') as Parameters<typeof getLimits>[0])
+    if (limits.maxCollaborators !== Infinity) {
+      const maxInvites = Math.max(0, limits.maxCollaborators - 1)
+      // Rank this invite among all accepted invites by acceptance order — the
+      // same first-come-first-served semantics used when invites are created.
+      const acceptedUpToThis = await CollabInvite.countDocuments({
+        diagramId,
+        status: 'accepted',
+        createdAt: { $lte: invite.createdAt },
+      })
+      if (acceptedUpToThis > maxInvites) return null
+    }
+    return invite.role as 'editor' | 'viewer'
+  }
 
-  // Check link-based access stored on diagram (collabLinkEnabled)
+  // Check link-based access — only valid if the owner's plan supports it (Ultimate only)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const d = diagram as any
-  if (d.collabLinkEnabled) return d.collabLinkRole ?? 'viewer'
+  if (d.collabLinkEnabled) {
+    const owner = await User.findById(diagram.userId).select('plan').lean()
+    const limits = getLimits((owner?.plan ?? 'free') as Parameters<typeof getLimits>[0])
+    if (limits.maxCollaborators === Infinity) {
+      return d.collabLinkRole ?? 'viewer'
+    }
+    // Owner's plan no longer supports link sharing — deny access
+    return null
+  }
 
   return null
 }

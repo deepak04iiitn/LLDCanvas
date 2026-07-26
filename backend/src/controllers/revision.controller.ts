@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { RevisionNote } from '../models/revision-note.model'
 import { UserRevision } from '../models/user-revision.model'
 import { createError } from '../middleware/error'
+import { getLimits } from '../config/plans'
 
 export const revisionController = {
 
@@ -115,6 +116,10 @@ export const revisionController = {
   // POST /revision-notes/:slug/bookmark — toggle bookmark
   toggleBookmark: async (req: Request, res: Response, next: NextFunction) => {
     try {
+      if (!getLimits(req.user!.plan).revisionBookmarks) {
+        throw createError('Bookmarking revision notes requires a Pro or Ultimate plan.', 403)
+      }
+
       const userId = req.user!.id
       const note = await RevisionNote.findOne({ slug: req.params.slug }).select('_id').lean()
       if (!note) throw createError('Note not found', 404)
