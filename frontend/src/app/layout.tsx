@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from 'next'
+import Script from 'next/script'
 import { Geist, Geist_Mono, Fraunces } from 'next/font/google'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
@@ -86,6 +87,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="h-full overflow-x-hidden bg-paper text-ink">
+        <Script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="+8W3PqOnffbn5zUEuksJKQ"
+          strategy="afterInteractive"
+        />
         <AuthProvider>
           <InterviewProvider>
             <TooltipProvider>
