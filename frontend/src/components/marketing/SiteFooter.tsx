@@ -5,7 +5,8 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Share2, MessageCircle, ExternalLink, Rss,
+  CreditCard, Layers, Mail, Rss,
+  Briefcase,
 } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
@@ -144,35 +145,13 @@ export function SiteFooter() {
                   </li>
                   <li>
                     <a
-                      href="https://github.com/lldcanvas"
+                      href="https://www.linkedin.com/company/lldcanvas"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                     >
-                      <ExternalLink size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
-                      GitHub
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="https://twitter.com/lldcanvas"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
-                    >
-                      <Share2 size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
-                      Twitter / X
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="https://discord.gg/lldcanvas"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
-                    >
-                      <MessageCircle size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
-                      Discord
+                      <Briefcase size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
+                      LinkedIn
                     </a>
                   </li>
                 </ul>
