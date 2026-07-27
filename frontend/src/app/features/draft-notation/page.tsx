@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { DraftNotationPageClient } from '@/components/features/DraftNotationPageClient'
 import { JsonLd } from '@/components/seo/JsonLd'
 

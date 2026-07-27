@@ -1,8 +1,8 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CollaborationPageClient } from '@/components/features/CollaborationPageClient'
 
-// --- SEO Metadata -------------------------------------------------------------
+// ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
   title: 'Real-Time Collaboration for LLD - Work Together on UML Diagrams | LLDCanvas',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
 }
 
-// --- Page ---------------------------------------------------------------------
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CollaborationFeaturePage() {
   return (
