@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { ArrowLeft, ArrowRight, BookOpen, Lock, ChevronRight } from 'lucide-react'
@@ -101,9 +101,9 @@ export default async function RevisionNoteDetailPage({
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
-          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.com/features/revision-notes' },
-          { '@type': 'ListItem', position: 3, name: note.title, item: `https://lldcanvas.com/features/revision-notes/${note.categorySlug}/${slug}` },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.in/features/revision-notes' },
+          { '@type': 'ListItem', position: 3, name: note.title, item: `https://lldcanvas.in/features/revision-notes/${note.categorySlug}/${slug}` },
         ],
       }} />
 

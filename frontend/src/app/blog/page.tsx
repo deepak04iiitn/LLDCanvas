@@ -26,12 +26,12 @@ export default function BlogIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'Blog',
         name: 'LLDCanvas Blog',
-        url: 'https://lldcanvas.com/blog',
+        url: 'https://lldcanvas.in/blog',
         description: 'Expert articles on System Design, LLD, Design Patterns, and Software Engineering Interview Preparation.',
         publisher: {
           '@type': 'Organization',
           name: 'LLDCanvas',
-          url: 'https://lldcanvas.com',
+          url: 'https://lldcanvas.in',
         },
       }} />
       <BlogListingClient />

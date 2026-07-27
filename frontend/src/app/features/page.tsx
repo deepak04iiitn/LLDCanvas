@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { publicApi } from '@/lib/public-api'
@@ -39,15 +39,15 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Which design patterns come up most often in LLD interviews?',
-    a: 'Strategy, Factory, Singleton, Observer, Decorator, and Builder appear constantly, usually because a stated requirement - "support multiple payment methods," "notify users on status change" - maps directly onto one of them. LLDCanvas’s revision notes cover all 23 classic design patterns, each with a concrete analogy.',
+    a: 'Strategy, Factory, Singleton, Observer, Decorator, and Builder appear constantly, usually because a stated requirement - "support multiple payment methods," "notify users on status change" - maps directly onto one of them. LLDCanvas�s revision notes cover all 23 classic design patterns, each with a concrete analogy.',
   },
   {
     q: 'How should I prepare for a machine coding round?',
-    a: 'Practice under a timer, out loud, the way the real round runs: read the requirements, identify the entities, choose relationships and patterns deliberately, then generate working code. LLDCanvas’s Interview Mode and 110+ practice problems are built specifically around that loop.',
+    a: 'Practice under a timer, out loud, the way the real round runs: read the requirements, identify the entities, choose relationships and patterns deliberately, then generate working code. LLDCanvas�s Interview Mode and 110+ practice problems are built specifically around that loop.',
   },
   {
     q: 'Which companies ask Low-Level Design interview questions?',
-    a: 'Amazon, Uber, Flipkart, Swiggy, Ola, Walmart, and most Series B+ product companies run a dedicated LLD or machine coding round, often as the deciding round for SDE-2 and senior roles. Every problem in LLDCanvas’s library is tagged by the companies known to ask it.',
+    a: 'Amazon, Uber, Flipkart, Swiggy, Ola, Walmart, and most Series B+ product companies run a dedicated LLD or machine coding round, often as the deciding round for SDE-2 and senior roles. Every problem in LLDCanvas�s library is tagged by the companies known to ask it.',
   },
   {
     q: 'Is LLDCanvas free to use?',
@@ -55,7 +55,7 @@ const FAQ_ITEMS = [
   },
 ]
 
-// Seven nodes hand-placed around a center hub, angle-stepped by 360/7° at a
+// Seven nodes hand-placed around a center hub, angle-stepped by 360/7� at a
 // fixed radius (computed once, not guessed) - DiagramStage measures the real
 // rendered boxes and draws the connectors, so these coordinates only need to
 // be "roughly a ring," never pixel-perfect.
@@ -88,8 +88,8 @@ export default async function FeaturesHubPage() {
   const noteCount    = notesRes?.notes.length ?? 0
 
   const orbitNodes = [
-    { id: 'editor',    name: 'The Editor',       field: '5 node types · 23 patterns',        href: '/features/editor' },
-    { id: 'draft',     name: 'Draft Notation',   field: 'Plain English → UML',                href: '/features/draft-notation' },
+    { id: 'editor',    name: 'The Editor',       field: '5 node types � 23 patterns',        href: '/features/editor' },
+    { id: 'draft',     name: 'Draft Notation',   field: 'Plain English ? UML',                href: '/features/draft-notation' },
     { id: 'code',      name: 'Code Execution',   field: '12 languages, live',                 href: '/features/code-execution' },
     { id: 'interview', name: 'Interview Mode',   field: 'Timed sessions + streaks',            href: '/features/interview-mode' },
     { id: 'collab',    name: 'Collaboration',    field: 'Live cursors + comments',             href: '/features/collaboration' },
@@ -145,7 +145,7 @@ export default async function FeaturesHubPage() {
       n: '06', title: 'Code Execution',
       teaser: 'Turn your diagram into compiling code in 12 languages.',
       body: 'Generate real, runnable scaffolding from your class diagram and execute it in-browser against Python, Java, C++, C#, Go, Rust, TypeScript, and more - so the diagram you drew is provably a design that actually compiles, not just a picture.',
-      chips: ['12 languages', 'Live execution', 'Diagram → code'],
+      chips: ['12 languages', 'Live execution', 'Diagram ? code'],
       href: '/features/code-execution',
     },
     {
@@ -164,14 +164,14 @@ export default async function FeaturesHubPage() {
         '@type': 'CollectionPage',
         name: 'LLDCanvas Features',
         description: 'A UML class diagram editor, Draft Notation, timed Interview Mode, LLD interview questions, revision notes, multi-language code execution, and real-time collaboration for Low-Level Design interview preparation.',
-        url: 'https://lldcanvas.com/features',
+        url: 'https://lldcanvas.in/features',
         mainEntity: {
           '@type': 'ItemList',
           itemListElement: orbitNodes.map((n, i) => ({
             '@type': 'ListItem',
             position: i + 1,
             name: n.name,
-            url: `https://lldcanvas.com${n.href}`,
+            url: `https://lldcanvas.in${n.href}`,
           })),
         },
       }} />
@@ -179,15 +179,15 @@ export default async function FeaturesHubPage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lldcanvas.com/' },
-          { '@type': 'ListItem', position: 2, name: 'Features', item: 'https://lldcanvas.com/features' },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lldcanvas.in/' },
+          { '@type': 'ListItem', position: 2, name: 'Features', item: 'https://lldcanvas.in/features' },
         ],
       }} />
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       {/* HERO - headline + the platform's own feature set drawn as a UML     */}
       {/* diagram of itself: one hub, seven connected nodes.                  */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       <section className="relative border-b border-hairline">
         <div
           className="pointer-events-none absolute inset-0"
@@ -200,7 +200,7 @@ export default async function FeaturesHubPage() {
 
         <Reveal className="relative mx-auto max-w-4xl px-6 pt-10 pb-8 text-center sm:px-10 sm:pt-14" y={16}>
           <p className="mb-6 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
-            <span className="text-gold">¶00</span> &nbsp;·&nbsp; LLDCanvas Platform
+            <span className="text-gold">�00</span> &nbsp;�&nbsp; LLDCanvas Platform
           </p>
           <h1 className="mx-auto font-serif text-[clamp(2.3rem,5vw,4rem)] font-medium leading-[1.05] tracking-tight text-ink">
             Master LLD interviews
@@ -212,7 +212,7 @@ export default async function FeaturesHubPage() {
           </p>
         </Reveal>
 
-        {/* ── The orbit diagram: real DiagramStage, real DOM, real links ──── */}
+        {/* -- The orbit diagram: real DiagramStage, real DOM, real links ---- */}
         {/* md+ only - seven fixed-size boxes need real room to breathe, and a
             phone-width square can't give them that without shrinking boxes
             past legibility. Below md, the plain grid further down takes over. */}
@@ -255,7 +255,7 @@ export default async function FeaturesHubPage() {
           </div>
         </div>
 
-        {/* ── Mobile/tablet fallback: same seven links, plain card grid ───── */}
+        {/* -- Mobile/tablet fallback: same seven links, plain card grid ----- */}
         <div className="relative mx-auto grid max-w-lg grid-cols-1 gap-3 px-6 pb-4 sm:grid-cols-2 md:hidden">
           {orbitNodes.map((n, i) => (
             <Reveal key={n.id} delay={i * 0.06} y={14}>
@@ -277,14 +277,14 @@ export default async function FeaturesHubPage() {
         </Reveal>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       {/* WHAT IS LLD - informational content carrying the keyword weight so */}
       {/* the hero copy above can stay purely editorial, not keyword-stuffed. */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       <section className="border-b border-hairline bg-paper-elevated py-20 sm:py-24">
         <Reveal className="mx-auto max-w-3xl px-6 sm:px-10">
           <p className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
-            <span className="text-gold">¶01</span> &nbsp;·&nbsp; What Is Low-Level Design?
+            <span className="text-gold">�01</span> &nbsp;�&nbsp; What Is Low-Level Design?
           </p>
           <h2 className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">
             The round that grades your design, not your syntax.
@@ -309,14 +309,14 @@ export default async function FeaturesHubPage() {
         </Reveal>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       {/* LEDGER - one continuous expanding index, replacing repeated strips  */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       <section className="border-b border-hairline bg-paper py-20 sm:py-28">
         <div className="mx-auto max-w-5xl px-6 sm:px-10">
           <Reveal>
             <p className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
-              <span className="text-gold">¶02</span> &nbsp;·&nbsp; The Full Manifest
+              <span className="text-gold">�02</span> &nbsp;�&nbsp; The Full Manifest
             </p>
             <h2 className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">
               Seven entries. Read any one.
@@ -333,13 +333,13 @@ export default async function FeaturesHubPage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       {/* CLOSING - light, brand-tinted (no dark section)                     */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------- */}
       <section className="border-b border-hairline bg-brand-tint py-24 sm:py-28">
         <Reveal className="mx-auto max-w-2xl px-6 text-center sm:px-10">
           <p className="mb-6 font-mono text-[10px] font-bold tracking-[0.25em] text-brand uppercase">
-            <span className="text-gold">¶03</span> &nbsp;·&nbsp; Why We Built This
+            <span className="text-gold">�03</span> &nbsp;�&nbsp; Why We Built This
           </p>
           <blockquote className="font-serif text-2xl font-medium leading-snug tracking-tight text-ink sm:text-3xl">
             &ldquo;Most LLD prep is a PDF of questions and a blank whiteboard.

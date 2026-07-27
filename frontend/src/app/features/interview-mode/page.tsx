@@ -48,7 +48,7 @@ export default function InterviewModeFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Interview Mode - Timed LLD Practice',
-        url: 'https://lldcanvas.com/features/interview-mode',
+        url: 'https://lldcanvas.in/features/interview-mode',
         description:
           'Timed practice sessions with streaks, activity calendar, and analytics for LLD interview preparation.',
       }} />
@@ -56,8 +56,8 @@ export default function InterviewModeFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
-          { '@type': 'ListItem', position: 2, name: 'Interview Mode', item: 'https://lldcanvas.com/features/interview-mode' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Interview Mode', item: 'https://lldcanvas.in/features/interview-mode' },
         ],
       }} />
 

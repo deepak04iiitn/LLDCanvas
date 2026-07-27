@@ -1,14 +1,14 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { publicApi, type PublicRevisionNoteSummary } from '@/lib/public-api'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { RevisionNotesIndexClient } from '@/components/features/RevisionNotesIndexClient'
 
-// ─── SEO Metadata ─────────────────────────────────────────────────────────────
+// --- SEO Metadata -------------------------------------------------------------
 
 export const metadata: Metadata = {
   title: 'LLD Revision Notes - Design Patterns, SOLID & OOP for Interviews | LLDCanvas',
   description:
-    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer…), OOP principles, SOLID, and system design fundamentals - each with a real-world analogy and runnable code examples.',
+    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer�), OOP principles, SOLID, and system design fundamentals - each with a real-world analogy and runnable code examples.',
   keywords: [
     'LLD revision notes',
     'low level design notes',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// --- Helpers ------------------------------------------------------------------
 
 function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   const groups = new Map<string, PublicRevisionNoteSummary[]>()
@@ -53,7 +53,7 @@ function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   return [...groups.entries()]
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 
 export default async function RevisionNotesIndexPage() {
   const res = await publicApi.revisionNotes.list()
@@ -66,7 +66,7 @@ export default async function RevisionNotesIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: 'LLD Revision Notes - Design Patterns, SOLID & OOP',
-        url: 'https://lldcanvas.com/features/revision-notes',
+        url: 'https://lldcanvas.in/features/revision-notes',
         description: 'Concise revision notes for Low-Level Design interviews covering design patterns, OOP, SOLID principles, and system design fundamentals.',
         numberOfItems: notes.length,
         hasPart: groups.map(([category, categoryNotes]) => ({
@@ -79,8 +79,8 @@ export default async function RevisionNotesIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
-          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.com/features/revision-notes' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.in/features/revision-notes' },
         ],
       }} />
 

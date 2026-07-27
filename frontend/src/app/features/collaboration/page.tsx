@@ -1,8 +1,8 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CollaborationPageClient } from '@/components/features/CollaborationPageClient'
 
-// ─── SEO Metadata ─────────────────────────────────────────────────────────────
+// --- SEO Metadata -------------------------------------------------------------
 
 export const metadata: Metadata = {
   title: 'Real-Time Collaboration for LLD - Work Together on UML Diagrams | LLDCanvas',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 
 export default function CollaborationFeaturePage() {
   return (
@@ -50,7 +50,7 @@ export default function CollaborationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Real-Time Collaboration - LLDCanvas',
-        url: 'https://lldcanvas.com/features/collaboration',
+        url: 'https://lldcanvas.in/features/collaboration',
         description:
           'Real-time collaboration for UML class diagrams with live cursors, @mention comments, and role-based access.',
       }} />
@@ -58,8 +58,8 @@ export default function CollaborationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
-          { '@type': 'ListItem', position: 2, name: 'Collaboration', item: 'https://lldcanvas.com/features/collaboration' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Collaboration', item: 'https://lldcanvas.in/features/collaboration' },
         ],
       }} />
 

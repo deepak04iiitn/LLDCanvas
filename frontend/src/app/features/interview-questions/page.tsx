@@ -56,7 +56,7 @@ export default async function InterviewQuestionsIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: 'LLD Interview Questions',
-        url: 'https://lldcanvas.com/features/interview-questions',
+        url: 'https://lldcanvas.in/features/interview-questions',
         description: '110+ curated Low-Level Design interview problems with difficulty, companies, and community discussions.',
         numberOfItems: problems.length,
       }} />

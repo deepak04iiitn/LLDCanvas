@@ -34,18 +34,18 @@ Software engineers (junior to senior) preparing for:
 
 ## Key URLs
 
-- Homepage: https://lldcanvas.com
-- Pricing: https://lldcanvas.com/pricing
-- Documentation: https://lldcanvas.com/docs
-- Playground (code + Draft Notation): https://lldcanvas.com/playground
-- Blog: https://lldcanvas.com/blog
-- Features overview: https://lldcanvas.com/features
-- UML Editor feature: https://lldcanvas.com/features/draft-notation
-- Interview Questions: https://lldcanvas.com/features/interview-questions
-- Revision Notes: https://lldcanvas.com/features/revision-notes
-- Interview Mode: https://lldcanvas.com/features/interview-mode
-- Code Execution: https://lldcanvas.com/features/code-execution
-- Collaboration: https://lldcanvas.com/features/collaboration
+- Homepage: https://lldcanvas.in
+- Pricing: https://lldcanvas.in/pricing
+- Documentation: https://lldcanvas.in/docs
+- Playground (code + Draft Notation): https://lldcanvas.in/playground
+- Blog: https://lldcanvas.in/blog
+- Features overview: https://lldcanvas.in/features
+- UML Editor feature: https://lldcanvas.in/features/draft-notation
+- Interview Questions: https://lldcanvas.in/features/interview-questions
+- Revision Notes: https://lldcanvas.in/features/revision-notes
+- Interview Mode: https://lldcanvas.in/features/interview-mode
+- Code Execution: https://lldcanvas.in/features/code-execution
+- Collaboration: https://lldcanvas.in/features/collaboration
 
 ## Technical Details
 
@@ -59,4 +59,4 @@ Software engineers (junior to senior) preparing for:
 ## Contact
 
 - Support: support.lldcanvas@gmail.com
-- Website: https://lldcanvas.com
+- Website: https://lldcanvas.in

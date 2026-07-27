@@ -1,8 +1,8 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CodeExecutionPageClient } from '@/components/features/CodeExecutionPageClient'
 
-// ─── SEO Metadata ─────────────────────────────────────────────────────────────
+// --- SEO Metadata -------------------------------------------------------------
 
 export const metadata: Metadata = {
   title: 'Run Code in 12 Languages - Online Code Execution | LLDCanvas',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---------------------------------------------------------------------
 
 export default function CodeExecutionFeaturePage() {
   return (
@@ -49,7 +49,7 @@ export default function CodeExecutionFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Code Execution - Run Code in 12 Languages | LLDCanvas',
-        url: 'https://lldcanvas.com/features/code-execution',
+        url: 'https://lldcanvas.in/features/code-execution',
         description:
           'Write and execute real code in 12 programming languages within the LLDCanvas workspace - no local setup required.',
       }} />
@@ -57,8 +57,8 @@ export default function CodeExecutionFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.com/features' },
-          { '@type': 'ListItem', position: 2, name: 'Code Execution', item: 'https://lldcanvas.com/features/code-execution' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Code Execution', item: 'https://lldcanvas.in/features/code-execution' },
         ],
       }} />
 
