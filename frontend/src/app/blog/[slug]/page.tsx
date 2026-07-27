@@ -61,11 +61,11 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
     '@type': 'Article',
     headline: blog.title,
     description: blog.excerpt,
-    author: { '@type': 'Organization', name: blog.author?.name ?? 'LLDCanvas Team', url: 'https://lldcanvas.com' },
-    publisher: { '@type': 'Organization', name: 'LLDCanvas', url: 'https://lldcanvas.com' },
+    author: { '@type': 'Organization', name: blog.author?.name ?? 'LLDCanvas Team', url: 'https://lldcanvas.in' },
+    publisher: { '@type': 'Organization', name: 'LLDCanvas', url: 'https://lldcanvas.in' },
     datePublished: blog.publishedAt,
     dateModified: blog.updatedAt,
-    url: `https://lldcanvas.com/blog/${blog.slug}`,
+    url: `https://lldcanvas.in/blog/${blog.slug}`,
     ...(blog.coverImage ? { image: blog.coverImage } : {}),
     articleSection: blog.category,
     keywords: blog.tags?.join(', '),
@@ -88,9 +88,9 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lldcanvas.com' },
-          { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://lldcanvas.com/blog' },
-          { '@type': 'ListItem', position: 3, name: blog.title, item: `https://lldcanvas.com/blog/${blog.slug}` },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lldcanvas.in' },
+          { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://lldcanvas.in/blog' },
+          { '@type': 'ListItem', position: 3, name: blog.title, item: `https://lldcanvas.in/blog/${blog.slug}` },
         ],
       }} />
       <BlogDetailClient blog={blog} related={related ?? []} />

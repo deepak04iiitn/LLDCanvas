@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Lock, CheckCircle2, Globe, ChevronRight } from 'lucide-react'
@@ -64,8 +64,8 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://lldcanvas.com/features/interview-questions' },
-          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://lldcanvas.com/features/interview-questions/${slug}` },
+          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://lldcanvas.in/features/interview-questions' },
+          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://lldcanvas.in/features/interview-questions/${slug}` },
         ],
       }} />
 

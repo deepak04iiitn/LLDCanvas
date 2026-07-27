@@ -1,4 +1,4 @@
-﻿// ─── React Flow nodes + edges → Draft Notation text ──────────────────────────
+// --- React Flow nodes + edges ? Draft Notation text --------------------------
 
 import type { Node, Edge } from '@xyflow/react'
 import type { UMLNodeData, UMLEdgeData, RelationshipType } from '@/types'
@@ -20,7 +20,7 @@ function visChar(v: string): string {
 export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdgeData>[]): string {
   const lines: string[] = [
     '# Draft Notation - LLDCanvas',
-    '# Learn more: lldcanvas.com/docs',
+    '# Learn more: lldcanvas.in/docs',
     '',
   ]
 
@@ -28,14 +28,14 @@ export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdge
     const d = node.data
     if (!d) continue
 
-    // ── Note ──────────────────────────────────────────────────────────────────
+    // -- Note ------------------------------------------------------------------
     if (d.nodeType === 'note') {
       lines.push(`note "${d.noteText ?? ''}"`)
       lines.push('')
       continue
     }
 
-    // ── Node header ───────────────────────────────────────────────────────────
+    // -- Node header -----------------------------------------------------------
     const prefix =
       d.nodeType === 'interface'      ? 'interface ' :
       d.nodeType === 'abstract-class' ? 'abstract '  :
@@ -43,14 +43,14 @@ export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdge
 
     lines.push(`${prefix}${d.name}`)
 
-    // ── Enum values ───────────────────────────────────────────────────────────
+    // -- Enum values -----------------------------------------------------------
     if (d.nodeType === 'enum' && d.attributes.length > 0) {
       lines.push(`  ${d.attributes.map(a => a.name).join(', ')}`)
       lines.push('')
       continue
     }
 
-    // ── Fields ────────────────────────────────────────────────────────────────
+    // -- Fields ----------------------------------------------------------------
     if (d.attributes.length > 0) {
       const fieldParts = d.attributes.map(a => {
         const vis    = a.visibility !== '+' ? `${visChar(a.visibility)} ` : ''
@@ -61,7 +61,7 @@ export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdge
       lines.push(`${d.name} knows ${fieldParts.join(', ')}`)
     }
 
-    // ── Methods ───────────────────────────────────────────────────────────────
+    // -- Methods ---------------------------------------------------------------
     if (d.methods.length > 0) {
       const methodParts = d.methods.map(m => {
         const vis    = m.visibility !== '+' ? `${visChar(m.visibility)} ` : ''
@@ -77,7 +77,7 @@ export function serializeToDraft(nodes: Node<UMLNodeData>[], edges: Edge<UMLEdge
     lines.push('')
   }
 
-  // ── Relationships ─────────────────────────────────────────────────────────
+  // -- Relationships ---------------------------------------------------------
   if (edges.length > 0) {
     lines.push('# Relationships')
     for (const edge of edges) {

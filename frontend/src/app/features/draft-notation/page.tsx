@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { DraftNotationPageClient } from '@/components/features/DraftNotationPageClient'
 import { JsonLd } from '@/components/seo/JsonLd'
 
@@ -26,7 +26,7 @@ export default function DraftNotationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Draft Notation - Plain-English UML',
-        url: 'https://lldcanvas.com/features/draft-notation',
+        url: 'https://lldcanvas.in/features/draft-notation',
         description: 'LLDCanvas\'s own plain-English UML diagramming language.',
       }} />
       <DraftNotationPageClient />

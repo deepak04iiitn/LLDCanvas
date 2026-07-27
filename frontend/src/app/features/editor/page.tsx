@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Check, Shapes, GitBranch, Layers, Download, Keyboard, Palette } from 'lucide-react'
 import { FeatureFaq } from '@/components/features/FeatureFaq'
@@ -31,13 +31,13 @@ const NODE_TYPES = [
 ]
 
 const RELATIONSHIP_TYPES = [
-  { name: 'Association',    desc: 'A general "uses" link between two classes', line: 'solid',  marker: 'arrow',         ex: 'Order → Customer' },
-  { name: 'Aggregation',    desc: '"Has-a" - the part can outlive the whole',  line: 'solid',  marker: 'diamond-open',  ex: 'Team ◇→ Player' },
-  { name: 'Composition',   desc: '"Owns-a" - the part dies with the whole',   line: 'solid',  marker: 'diamond-filled', ex: 'House ◆→ Room' },
-  { name: 'Inheritance',   desc: 'Subclass extends a superclass',              line: 'solid',  marker: 'triangle',      ex: 'Dog ▷ Animal' },
-  { name: 'Realization',   desc: 'Class implements an interface',              line: 'dashed', marker: 'triangle',      ex: 'List ▷ Collection' },
-  { name: 'Dependency',    desc: 'Temporary usage between classes',            line: 'dashed', marker: 'arrow',         ex: 'UserService → Email' },
-  { name: 'Bidirectional', desc: 'Two-way association',                        line: 'solid',  marker: 'both',          ex: 'User ↔ Address' },
+  { name: 'Association',    desc: 'A general "uses" link between two classes', line: 'solid',  marker: 'arrow',         ex: 'Order ? Customer' },
+  { name: 'Aggregation',    desc: '"Has-a" - the part can outlive the whole',  line: 'solid',  marker: 'diamond-open',  ex: 'Team ?? Player' },
+  { name: 'Composition',   desc: '"Owns-a" - the part dies with the whole',   line: 'solid',  marker: 'diamond-filled', ex: 'House ?? Room' },
+  { name: 'Inheritance',   desc: 'Subclass extends a superclass',              line: 'solid',  marker: 'triangle',      ex: 'Dog ? Animal' },
+  { name: 'Realization',   desc: 'Class implements an interface',              line: 'dashed', marker: 'triangle',      ex: 'List ? Collection' },
+  { name: 'Dependency',    desc: 'Temporary usage between classes',            line: 'dashed', marker: 'arrow',         ex: 'UserService ? Email' },
+  { name: 'Bidirectional', desc: 'Two-way association',                        line: 'solid',  marker: 'both',          ex: 'User ? Address' },
 ]
 
 const EXPORT_FORMATS = [
@@ -61,15 +61,15 @@ const FAQ = [
   },
   {
     q: 'How are the 23 design patterns inserted?',
-    a: 'Through a command palette. Press Ctrl+K (or ⌘K on Mac) inside the editor, search for a pattern by name, and the correct class skeleton drops into your canvas - all nodes pre-connected with the right relationship types.',
+    a: 'Through a command palette. Press Ctrl+K (or ?K on Mac) inside the editor, search for a pattern by name, and the correct class skeleton drops into your canvas - all nodes pre-connected with the right relationship types.',
   },
   {
     q: 'What does "correct relationship semantics" mean?',
-    a: 'A filled diamond (◆) always means composition - the contained object cannot outlive its container. An open diamond (◇) always means aggregation. An open triangle always means inheritance. LLDCanvas never lets you draw an ambiguous arrow that could be misread as any of those - which is the mistake generic diagramming tools all make.',
+    a: 'A filled diamond (?) always means composition - the contained object cannot outlive its container. An open diamond (?) always means aggregation. An open triangle always means inheritance. LLDCanvas never lets you draw an ambiguous arrow that could be misread as any of those - which is the mistake generic diagramming tools all make.',
   },
   {
     q: 'What are class-role stereotypes?',
-    a: 'Labels like «entity», «service», «repository», «factory», or «controller» that annotate a class\'s architectural role. LLDCanvas supports 13 stereotypes rendered in standard UML angle-bracket notation - the same way «interface» is typically shown.',
+    a: 'Labels like �entity�, �service�, �repository�, �factory�, or �controller� that annotate a class\'s architectural role. LLDCanvas supports 13 stereotypes rendered in standard UML angle-bracket notation - the same way �interface� is typically shown.',
   },
   {
     q: 'Can I import a diagram from PlantUML or Mermaid?',
@@ -88,7 +88,7 @@ export default function EditorFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
         name: 'LLDCanvas UML Class Diagram Editor',
-        url: 'https://lldcanvas.com/features/editor',
+        url: 'https://lldcanvas.in/features/editor',
         applicationCategory: 'DesignApplication',
         operatingSystem: 'Any',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
@@ -98,7 +98,7 @@ export default function EditorFeaturePage() {
         ],
       }} />
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
+      {/* -- Hero ------------------------------------------------------------ */}
       <section className="relative overflow-hidden border-b border-hairline">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.04]"
@@ -110,7 +110,7 @@ export default function EditorFeaturePage() {
             {/* Left */}
             <div>
               <p className="mb-4 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-                <span className="text-gold">¶01</span> - The Editor
+                <span className="text-gold">�01</span> - The Editor
               </p>
               <h1 className="font-serif text-4xl font-medium leading-[1.1] tracking-tight text-ink sm:text-5xl">
                 A UML editor that speaks{' '}
@@ -164,7 +164,7 @@ export default function EditorFeaturePage() {
                 {/* Relationship indicator */}
                 <div className="flex items-center gap-2 px-4">
                   <div className="h-px flex-1 border-b border-dashed border-brand/40" />
-                  <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] text-brand">◆ owns</span>
+                  <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] text-brand">? owns</span>
                   <div className="h-px flex-1 border-b border-dashed border-brand/40" />
                 </div>
                 {/* Level */}
@@ -179,7 +179,7 @@ export default function EditorFeaturePage() {
                 </div>
                 {/* Stats strip on mockup */}
                 <div className="mt-2 flex items-center justify-between rounded-lg border border-hairline bg-paper px-4 py-2">
-                  <span className="font-mono text-[9px] text-ink-faint">5 nodes · 3 edges</span>
+                  <span className="font-mono text-[9px] text-ink-faint">5 nodes � 3 edges</span>
                   <span className="rounded-full bg-emerald-50 px-2 py-0.5 font-mono text-[9px] text-emerald-600">Saved</span>
                 </div>
               </div>
@@ -188,7 +188,7 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Stats bar ─────────────────────────────────────────────────────── */}
+      {/* -- Stats bar ------------------------------------------------------- */}
       <section className="border-b border-hairline bg-paper-elevated/60">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <div className="grid grid-cols-2 divide-x divide-y divide-hairline sm:grid-cols-4 sm:divide-y-0">
@@ -207,17 +207,17 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Node types ────────────────────────────────────────────────────── */}
+      {/* -- Node types ------------------------------------------------------ */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§1</span> - Node types
+          <span className="text-gold">�1</span> - Node types
         </p>
         <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
           Five node types. Every UML class diagram need covered.
         </h2>
         <p className="mb-8 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-          Each node renders its stereotype in standard UML notation - «interface», «abstract»,
-          «enum» - so your diagram communicates the same vocabulary your interviewer uses,
+          Each node renders its stereotype in standard UML notation - �interface�, �abstract�,
+          �enum� - so your diagram communicates the same vocabulary your interviewer uses,
           without manual formatting.
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -233,11 +233,11 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Relationship types ────────────────────────────────────────────── */}
+      {/* -- Relationship types ---------------------------------------------- */}
       <section className="border-y border-hairline bg-paper-elevated/40 py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§2</span> - Relationship types
+            <span className="text-gold">�2</span> - Relationship types
           </p>
           <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
             Seven relationship types. Drawn correctly, every time.
@@ -282,10 +282,10 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Design patterns ───────────────────────────────────────────────── */}
+      {/* -- Design patterns ------------------------------------------------- */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§3</span> - Design patterns
+          <span className="text-gold">�3</span> - Design patterns
         </p>
         <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
           All 23 Gang-of-Four patterns, pre-wired and interview-ready.
@@ -313,16 +313,16 @@ export default function EditorFeaturePage() {
         <p className="mt-4 text-[13px] text-ink-muted">
           Looking for a deep-dive on any of these?{' '}
           <Link href="/features/revision-notes" className="text-brand hover:underline">
-            Browse the revision notes →
+            Browse the revision notes ?
           </Link>
         </p>
       </section>
 
-      {/* ── Export formats ────────────────────────────────────────────────── */}
+      {/* -- Export formats -------------------------------------------------- */}
       <section className="border-t border-hairline bg-paper-elevated/40 py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-            <span className="text-gold">§4</span> - Export formats
+            <span className="text-gold">�4</span> - Export formats
           </p>
           <h2 className="mb-3 font-serif text-2xl font-medium text-ink">
             Five export formats. Your diagram goes where you go.
@@ -350,10 +350,10 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Editor capabilities ───────────────────────────────────────────── */}
+      {/* -- Editor capabilities --------------------------------------------- */}
       <section className="mx-auto max-w-5xl px-6 py-16 sm:px-8">
         <p className="mb-3 font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-          <span className="text-gold">§5</span> - Built for speed
+          <span className="text-gold">�5</span> - Built for speed
         </p>
         <h2 className="mb-8 font-serif text-2xl font-medium text-ink">
           Keyboard-first, drag-to-connect, and blazing fast.
@@ -380,7 +380,7 @@ export default function EditorFeaturePage() {
         </div>
       </section>
 
-      {/* ── Dark CTA ──────────────────────────────────────────────────────── */}
+      {/* -- Dark CTA -------------------------------------------------------- */}
       <section className="border-y border-hairline bg-[#14130f] py-16">
         <div className="mx-auto max-w-5xl px-6 sm:px-8">
           <div className="flex flex-col items-center gap-6 text-center lg:flex-row lg:text-left lg:gap-12">
@@ -409,7 +409,7 @@ export default function EditorFeaturePage() {
             </div>
             <div className="hidden lg:block">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 font-mono text-sm">
-                <p className="text-emerald-400">// Ctrl+K → "Observer"</p>
+                <p className="text-emerald-400">// Ctrl+K ? "Observer"</p>
                 <p className="mt-2 text-white/40">class <span className="text-amber-300">EventEmitter</span> {'{'}</p>
                 <p className="ml-4 text-white/40">- listeners: Map</p>
                 <p className="ml-4 text-white/60">+ subscribe(event, fn)</p>

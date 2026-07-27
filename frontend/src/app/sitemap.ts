@@ -3,7 +3,7 @@ import { join } from 'path'
 import type { MetadataRoute } from 'next'
 import { publicApi } from '@/lib/public-api'
 
-const SITE_URL = 'https://lldcanvas.com'
+const SITE_URL = 'https://lldcanvas.in'
 
 // Auth-required or internal directories — excluded from public sitemap.
 // Simply add a directory name here to keep it out of search engines.
