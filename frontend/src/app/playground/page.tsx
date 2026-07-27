@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -58,7 +58,7 @@ Order owns OrderItem
 
 type View = 'code' | 'diagram'
 
-// --- Code pane ----------------------------------------------------------------
+// ─── Code pane ────────────────────────────────────────────────────────────────
 
 interface CodePaneProps {
   code: string
@@ -173,7 +173,7 @@ function CodePane({ code, onChange, errors, parsing }: CodePaneProps) {
           </div>
         ) : (
           <div className="px-4 py-2">
-            <p className="font-mono text-[10px] text-white/25">Diagram updates as you type � 400ms debounce</p>
+            <p className="font-mono text-[10px] text-white/25">Diagram updates as you type · 400ms debounce</p>
           </div>
         )}
       </div>
@@ -181,7 +181,7 @@ function CodePane({ code, onChange, errors, parsing }: CodePaneProps) {
   )
 }
 
-// --- Diagram pane (real canvas - same rendering engine as the editor) ---------
+// ─── Diagram pane (real canvas - same rendering engine as the editor) ─────────
 
 interface DiagramPaneProps {
   nodes: Node[]
@@ -263,8 +263,8 @@ function DiagramPane(props: DiagramPaneProps) {
   )
 }
 
-// --- Picture-in-picture thumbnail of whichever view isn't active --------------
-// Keeps the other half of the "code ? diagram" story always in view, without
+// ─── Picture-in-picture thumbnail of whichever view isn't active ──────────────
+// Keeps the other half of the "code ↔ diagram" story always in view, without
 // permanently taking half the screen away from whichever one you're actually
 // looking at - click it to swap focus.
 
@@ -289,7 +289,7 @@ function PipThumbnail({ label, onClick, children }: { label: string; onClick: ()
                        bg-black/70 px-2 py-1 backdrop-blur-sm">
         <span className="text-[10px] font-medium text-white">{label}</span>
         <span className="text-[10px] text-white/70 opacity-0 transition-opacity group-hover:opacity-100">
-          Click to view ?
+          Click to view →
         </span>
       </div>
     </div>
@@ -338,7 +338,7 @@ function MiniCodePreview({ code }: { code: string }) {
   )
 }
 
-// --- Playground content sections ----------------------------------------------
+// ─── Playground content sections ──────────────────────────────────────────────
 
 const SYNTAX_TABS = [
   {
@@ -373,8 +373,8 @@ const SYNTAX_TABS = [
   },
 ] as const
 
-// --- �1/�2 data - the whole "drafting table" concept: Draft Notation reads
-// like a drafting instrument's own onboarding, not a SaaS feature list -------
+// ─── §1/§2 data - the whole "drafting table" concept: Draft Notation reads
+// like a drafting instrument's own onboarding, not a SaaS feature list ───────
 const STATS = [
   { value: '< 1ms', label: 'render latency' },
   { value: '6+',    label: 'UML constructs' },
@@ -467,7 +467,7 @@ function PlaygroundContent() {
   return (
     <div className="overflow-hidden">
 
-      {/* -- �1 Hero - "The Drafting Table" ----------------------------------
+      {/* ── §1 Hero - "The Drafting Table" ──────────────────────────────────
           Draft Notation, taken literally: a drafting table's blueprint grid,
           a ruled top edge like a T-square, and a hand-drawn pencil underline
           on the headline - the page's own metaphor is the product's name. */}
@@ -506,7 +506,7 @@ function PlaygroundContent() {
               style={{ clipPath: 'polygon(1.5% 4%, 98.5% 0%, 100% 96%, 0.5% 100%)' }}
             >
               <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-gold/90 uppercase">
-                �01 � Draft Notation
+                ¶01 · Draft Notation
               </span>
             </div>
           </motion.div>
@@ -578,7 +578,7 @@ function PlaygroundContent() {
         </div>
       </section>
 
-      {/* -- �2 How it works - "Instruments on the table" ---------------------
+      {/* ── §2 How it works - "Instruments on the table" ─────────────────────
           Four drafting instruments resting at slightly different angles, as
           if just set down - tied by a technical dimension line, not a plain
           connector rule. */}
@@ -587,7 +587,7 @@ function PlaygroundContent() {
           <motion.div {...inViewProps(0)} className="mb-16 text-center">
             <div className="mb-3 inline-flex items-center gap-2">
               <Ruler size={13} className="text-gold" />
-              <span className="font-mono text-[11px] font-bold tracking-widest text-gold uppercase">�02 � How it works</span>
+              <span className="font-mono text-[11px] font-bold tracking-widest text-gold uppercase">¶02 · How it works</span>
             </div>
             <h2 className="font-serif text-2xl font-medium tracking-tight text-ink sm:text-3xl">
               Four instruments, one straight line from prose to diagram.
@@ -643,14 +643,14 @@ function PlaygroundContent() {
         </div>
       </section>
 
-      {/* -- �3 Interactive syntax terminal ---------------------------------- */}
+      {/* ── §3 Interactive syntax terminal ────────────────────────────────── */}
       <section className="py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid items-start gap-12 lg:grid-cols-[1fr_1.3fr]">
             {/* Left - heading + explanation */}
             <div className="lg:sticky lg:top-24">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-hairline px-3 py-1">
-                <span className="font-mono text-[10px] font-bold tracking-widest text-gold uppercase">�03</span>
+                <span className="font-mono text-[10px] font-bold tracking-widest text-gold uppercase">¶03</span>
                 <span className="text-[11px] text-ink-faint">Syntax at a glance</span>
               </div>
               <h2 className="text-2xl font-bold tracking-tight text-ink">
@@ -694,7 +694,7 @@ function PlaygroundContent() {
   )
 }
 
-// --- Page ----------------------------------------------------------------------
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function PlaygroundPage() {
   const [view, setView]           = useState<View>('code')
@@ -740,15 +740,15 @@ export default function PlaygroundPage() {
       <div className="flex min-h-screen flex-col text-ink">
         <SiteNavbar alwaysSolid />
 
-        {/* -- Content sections --------------------------------------------- */}
+        {/* ── Content sections ───────────────────────────────────────────── */}
         <PlaygroundContent />
 
-        {/* -- Live playground workspace ------------------------------------ */}
+        {/* ── Live playground workspace ──────────────────────────────────── */}
         <div className="border-y border-hairline-strong bg-paper-elevated/30 px-6 py-5">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
             <div>
               <p className="font-mono text-[11px] font-medium tracking-[0.2em] text-ink-faint uppercase">
-                <span className="text-gold">�04</span> - Try it live
+                <span className="text-gold">¶04</span> - Try it live
               </p>
               <p className="mt-1 text-sm text-ink-muted">
                 Edit Draft code on the left - your UML diagram updates in real time. No account needed.

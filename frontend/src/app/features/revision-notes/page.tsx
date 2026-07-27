@@ -1,14 +1,14 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { publicApi, type PublicRevisionNoteSummary } from '@/lib/public-api'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { RevisionNotesIndexClient } from '@/components/features/RevisionNotesIndexClient'
 
-// --- SEO Metadata -------------------------------------------------------------
+// ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
   title: 'LLD Revision Notes - Design Patterns, SOLID & OOP for Interviews | LLDCanvas',
   description:
-    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer�), OOP principles, SOLID, and system design fundamentals - each with a real-world analogy and runnable code examples.',
+    'Quick-revision notes for Low-Level Design interviews. Covers design patterns (Singleton, Factory, Observer…), OOP principles, SOLID, and system design fundamentals - each with a real-world analogy and runnable code examples.',
   keywords: [
     'LLD revision notes',
     'low level design notes',
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   },
 }
 
-// --- Helpers ------------------------------------------------------------------
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   const groups = new Map<string, PublicRevisionNoteSummary[]>()
@@ -53,7 +53,7 @@ function groupByCategory(notes: PublicRevisionNoteSummary[]) {
   return [...groups.entries()]
 }
 
-// --- Page ---------------------------------------------------------------------
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function RevisionNotesIndexPage() {
   const res = await publicApi.revisionNotes.list()

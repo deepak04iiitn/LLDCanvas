@@ -1,8 +1,8 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { CodeExecutionPageClient } from '@/components/features/CodeExecutionPageClient'
 
-// --- SEO Metadata -------------------------------------------------------------
+// ─── SEO Metadata ─────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
   title: 'Run Code in 12 Languages - Online Code Execution | LLDCanvas',
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   },
 }
 
-// --- Page ---------------------------------------------------------------------
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CodeExecutionFeaturePage() {
   return (
