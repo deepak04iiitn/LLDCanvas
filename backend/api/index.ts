@@ -31,6 +31,8 @@ import billingRouter     from '../src/routes/billing.route'
 import feedbackRouter    from '../src/routes/feedback.route'
 import testimonialRouter from '../src/routes/testimonial.route'
 import publicRouter       from '../src/routes/public.route'
+import blogRouter         from '../src/routes/blog.route'
+import patternRouter      from '../src/routes/pattern.route'
 import { startSubscriptionExpiryJob } from '../src/jobs/expire-subscriptions'
 
 const app        = express()
@@ -105,9 +107,11 @@ app.use('/revision-notes', revisionRouter)
 app.use('/public',         publicRouter)
 app.use('/collab',         collabRouter)
 app.use('/code',           codeRouter)
+app.use('/patterns',       patternRouter)
 app.use('/billing',        billingRouter)
 app.use('/feedback',       feedbackRouter)
 app.use('/testimonials',   testimonialRouter)
+app.use('/blog',           blogRouter)
 
 app.use(errorHandler)
 
