@@ -7,6 +7,7 @@ import { publicApi, DIFF_META } from '@/lib/public-api'
 import { FeatureCrossLinks } from '@/components/features/FeatureCrossLinks'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { Reveal } from '@/components/features/Reveal'
+import { AuthGatedLink } from '@/components/auth/AuthGatedLink'
 
 // ─── Difficulty colour tokens ─────────────────────────────────────────────────
 
@@ -129,12 +130,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
 
           {/* Quick CTA */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
+            <AuthGatedLink
               href={`/dashboard/problems/${slug}`}
               className="flex items-center gap-2 rounded-xl bg-brand px-7 py-3 text-sm font-semibold text-brand-foreground shadow-lg shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98]"
             >
               Start Solving <ArrowRight size={14} />
-            </Link>
+            </AuthGatedLink>
             <span className="font-mono text-[11px] text-ink-faint">
               {problem.functionalCount}F + {problem.nonFunctionalCount}NF requirements inside
             </span>
@@ -275,12 +276,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
                       Sign in to unlock the full brief and start designing
                     </p>
                   </div>
-                  <Link
+                  <AuthGatedLink
                     href={`/dashboard/problems/${slug}`}
                     className="flex items-center gap-2 rounded-xl bg-brand px-6 py-2.5 text-[13px] font-semibold text-brand-foreground transition-all hover:bg-brand-hover"
                   >
                     Unlock Requirements <ArrowRight size={13} />
-                  </Link>
+                  </AuthGatedLink>
                 </div>
               </div>
             </div>
@@ -329,12 +330,12 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
             See all requirements, use staged hints, run your code,
             and compare with community discussions - all on the same canvas.
           </p>
-          <Link
+          <AuthGatedLink
             href={`/dashboard/problems/${slug}`}
             className="inline-flex items-center gap-2.5 rounded-2xl bg-brand px-10 py-4 text-base font-semibold text-brand-foreground shadow-xl shadow-brand/25 transition-all hover:bg-brand-hover hover:shadow-brand/30 active:scale-[0.98]"
           >
             Start Solving <ArrowRight size={16} />
-          </Link>
+          </AuthGatedLink>
         </Reveal>
       </section>
 

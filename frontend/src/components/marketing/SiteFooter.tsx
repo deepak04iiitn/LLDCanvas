@@ -8,9 +8,9 @@ import {
   CreditCard, Layers, Mail, Rss,
   Briefcase,
 } from 'lucide-react'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
+import { useAuthModal } from '@/lib/auth-modal-store'
 
 // ─── Feature links ────────────────────────────────────────────────────────────
 
@@ -43,15 +43,14 @@ function NavLink({ href, Icon, children }: { href: string; Icon: React.ElementTy
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SiteFooter() {
-  const [authOpen, setAuthOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
-  const [mounted,  setMounted]  = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { data: session } = useSession()
+  const { openAuthModal } = useAuthModal()
 
   useEffect(() => { setMounted(true) }, [])
 
-  function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
-  function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
+  function openSignin() { openAuthModal(undefined, 'signin') }
+  function openSignup() { openAuthModal(undefined, 'signup') }
 
   return (
     <>
@@ -227,8 +226,6 @@ export function SiteFooter() {
           </p>
         </div>
       </footer>
-
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </>
   )
 }

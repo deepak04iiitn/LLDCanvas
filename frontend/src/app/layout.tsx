@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/sonner'
 import { InterviewProvider } from '@/contexts/InterviewContext'
 import { AuthProvider } from '@/lib/auth'
+import { AuthModalProvider } from '@/lib/auth-modal-store'
 import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 import './globals.css'
@@ -95,6 +96,7 @@ export default function RootLayout({
       </head>
       <body className="h-full overflow-x-hidden bg-paper text-ink">
         <AuthProvider>
+          <AuthModalProvider>
           <InterviewProvider>
             <TooltipProvider>
               <AnalyticsProvider />
@@ -102,6 +104,7 @@ export default function RootLayout({
               <FeedbackWidget />
             </TooltipProvider>
           </InterviewProvider>
+          </AuthModalProvider>
         </AuthProvider>
         {/* Forced light: there's no dark-mode toggle anywhere in the app shell,
             so the Toaster must not fall back to next-themes' "system" default
