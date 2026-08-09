@@ -7,6 +7,7 @@ import { publicApi, NOTE_DIFF_META } from '@/lib/public-api'
 import { FeatureCrossLinks } from '@/components/features/FeatureCrossLinks'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { Reveal } from '@/components/features/Reveal'
+import { AuthGatedLink } from '@/components/auth/AuthGatedLink'
 
 // ─── Field-guide rarity config ────────────────────────────────────────────────
 
@@ -270,12 +271,12 @@ export default async function RevisionNoteDetailPage({
                       Sign in to read every key point in full
                     </p>
                   </div>
-                  <Link
+                  <AuthGatedLink
                     href="/dashboard/revision"
                     className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-[13px] font-semibold text-brand-foreground transition-all hover:bg-brand-hover"
                   >
                     Unlock Full Note <ArrowRight size={13} />
-                  </Link>
+                  </AuthGatedLink>
                 </div>
               </div>
             )}
@@ -298,12 +299,12 @@ export default async function RevisionNoteDetailPage({
                 Sign in to read every field observation in full, including a runnable code example
                 and side-by-side comparisons with related patterns.
               </p>
-              <Link
+              <AuthGatedLink
                 href="/dashboard/revision"
                 className="inline-flex items-center gap-2 rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-brand-foreground shadow-lg shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98]"
               >
                 Read Full Notes <ArrowRight size={14} />
-              </Link>
+              </AuthGatedLink>
             </div>
           </div>
         </section>

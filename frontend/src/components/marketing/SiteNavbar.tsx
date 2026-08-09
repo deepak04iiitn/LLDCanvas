@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
+import { useAuthModal } from '@/lib/auth-modal-store'
 import { useScrolled } from '@/hooks/useScrolled'
 import { cn } from '@/lib/utils'
 import { ChevronRight, Menu, X } from 'lucide-react'
@@ -115,15 +115,14 @@ function MobileMenu({
 
 // ─── Site-wide nav ────────────────────────────────────────────────────────────
 export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
-  const [authOpen, setAuthOpen]   = useState(false)
-  const [authMode, setAuthMode]   = useState<'signin' | 'signup'>('signin')
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: session } = useSession()
+  const { openAuthModal } = useAuthModal()
   const scrolledPast = useScrolled()
   const scrolled = alwaysSolid || scrolledPast
 
-  function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
-  function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
+  function openSignin() { openAuthModal(undefined, 'signin') }
+  function openSignup() { openAuthModal(undefined, 'signup') }
 
   return (
     <>
@@ -194,8 +193,6 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
         onSignup={openSignup}
         session={!!session}
       />
-
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </>
   )
 }
