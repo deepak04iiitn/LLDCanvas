@@ -17,6 +17,17 @@ const RARITY: Record<string, { label: string; color: string; bg: string; ring: s
   hard:   { label: 'Advanced',     color: 'text-red-700',     bg: 'bg-red-50',     ring: 'ring-red-200',     dot: '★' },
 }
 
+// Full-length blog guide for each revision-note category — surfaced as a
+// single orientation link on every note page in that category, since notes
+// themselves are gated summaries and the blog guide is the deep-dive.
+const CATEGORY_GUIDE: Record<string, { href: string; label: string; secondaryHref?: string; secondaryLabel?: string }> = {
+  'Design Patterns':        { href: '/blog/design-patterns-guide',         label: 'Read the full Design Patterns guide', secondaryHref: '/blog/design-patterns-cheat-sheet', secondaryLabel: 'Or jump to the cheat sheet' },
+  'SOLID Principles':       { href: '/blog/solid-principles-explained',    label: 'Read the full SOLID Principles guide' },
+  'OOP Principles':         { href: '/blog/oop-concepts-for-interviews',   label: 'Read the full OOP Concepts guide' },
+  'System Design Concepts': { href: '/blog/system-design-interview-guide', label: 'Read the full System Design Interview guide' },
+  'Interview Tips':         { href: '/blog/lld-interview-roadmap',         label: 'Read the full LLD Interview Roadmap' },
+}
+
 // ─── Static params ────────────────────────────────────────────────────────────
 
 export async function generateStaticParams() {
@@ -163,6 +174,23 @@ export default async function RevisionNoteDetailPage({
 
           {/* Summary */}
           <p className="mt-5 text-[16px] leading-[1.8] text-ink-muted">{note.summary}</p>
+
+          {/* Full guide orientation link */}
+          {CATEGORY_GUIDE[note.category] && (
+            <p className="mt-4 font-mono text-[11px] text-ink-faint">
+              <Link href={CATEGORY_GUIDE[note.category].href} className="text-brand underline-offset-2 hover:underline">
+                {CATEGORY_GUIDE[note.category].label} →
+              </Link>
+              {CATEGORY_GUIDE[note.category].secondaryHref && (
+                <>
+                  {' · '}
+                  <Link href={CATEGORY_GUIDE[note.category].secondaryHref!} className="text-brand underline-offset-2 hover:underline">
+                    {CATEGORY_GUIDE[note.category].secondaryLabel} →
+                  </Link>
+                </>
+              )}
+            </p>
+          )}
 
           {/* Tags - specimen labels */}
           {note.tags.length > 0 && (

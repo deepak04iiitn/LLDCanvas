@@ -27,6 +27,15 @@ const blog1Content: BlogBlock[] = [
     "text": "Before you start: if you want to practice what you learn here, [LLDCanvas's Interview Mode](/features/interview-mode) gives you a timed canvas, structured problem briefs, and analytics on your performance across 110+ real LLD and HLD questions."
   },
   {
+    "type": "heading",
+    "level": 2,
+    "text": "Is Your Round HLD or LLD?"
+  },
+  {
+    "type": "paragraph",
+    "text": "This guide covers **System Design (HLD)** interviews specifically - the round where you architect a full system out of services, data stores, and queues. If your prompt is a single, bounded feature instead - \"design a Parking Lot,\" \"design an Elevator,\" \"design an LRU Cache\" - you're in an **LLD round**, and this framework won't be the right tool for it. Start with [HLD vs LLD: Key Differences Explained](/blog/hld-vs-lld-explained) to confirm which one you're facing, then head straight to the [LLD Interview Roadmap](/blog/lld-interview-roadmap) and [110+ LLD practice problems](/features/interview-questions)."
+  },
+  {
     "type": "divider"
   },
   {
@@ -431,28 +440,34 @@ const blog2Content: BlogBlock[] = [
     "type": "table",
     "headers": [
       "Principle",
-      "One-line Summary"
+      "One-line Summary",
+      "Full Note"
     ],
     "rows": [
       [
         "**S**ingle Responsibility",
-        "One class, one reason to change"
+        "One class, one reason to change",
+        "[Read note](/features/revision-notes/solid-principles/solid-srp)"
       ],
       [
         "**O**pen/Closed",
-        "Open for extension, closed for modification"
+        "Open for extension, closed for modification",
+        "[Read note](/features/revision-notes/solid-principles/solid-ocp)"
       ],
       [
         "**L**iskov Substitution",
-        "A subclass must be usable anywhere its parent is used, without surprises"
+        "A subclass must be usable anywhere its parent is used, without surprises",
+        "[Read note](/features/revision-notes/solid-principles/solid-lsp)"
       ],
       [
         "**I**nterface Segregation",
-        "Prefer several small, focused interfaces over one fat interface"
+        "Prefer several small, focused interfaces over one fat interface",
+        "[Read note](/features/revision-notes/solid-principles/solid-isp)"
       ],
       [
         "**D**ependency Inversion",
-        "Depend on abstractions, not concrete implementations"
+        "Depend on abstractions, not concrete implementations",
+        "[Read note](/features/revision-notes/solid-principles/solid-dip)"
       ]
     ]
   },
@@ -479,7 +494,7 @@ const blog2Content: BlogBlock[] = [
   },
   {
     "type": "paragraph",
-    "text": "**Singleton** guarantees exactly one instance of a class exists, with a single global access point. It shows up whenever you model a shared resource like a database connection pool or a configuration registry."
+    "text": "[Singleton](/features/revision-notes/design-patterns/singleton-pattern) guarantees exactly one instance of a class exists, with a single global access point. It shows up whenever you model a shared resource like a database connection pool or a configuration registry."
   },
   {
     "type": "code",
@@ -493,8 +508,8 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "**Factory Method** - Let subclasses decide which concrete class to instantiate.",
-      "**Builder** - Construct a complex object step by step, useful when a constructor would otherwise need ten optional parameters."
+      "[Factory Method](/features/revision-notes/design-patterns/factory-pattern) - Let subclasses decide which concrete class to instantiate.",
+      "[Builder](/features/revision-notes/design-patterns/builder-pattern) - Construct a complex object step by step, useful when a constructor would otherwise need ten optional parameters."
     ]
   },
   {
@@ -505,9 +520,9 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "**Decorator** - Attach new behavior to an object at runtime without subclassing it.",
-      "**Facade** - Offer a simplified interface over a complex subsystem.",
-      "**Composite** - Treat individual objects and compositions of objects uniformly, ideal for tree-shaped data like a file system or a UI layout."
+      "[Decorator](/features/revision-notes/design-patterns/decorator-pattern) - Attach new behavior to an object at runtime without subclassing it.",
+      "[Facade](/features/revision-notes/design-patterns/facade-pattern) - Offer a simplified interface over a complex subsystem.",
+      "[Composite](/features/revision-notes/design-patterns/composite-pattern) - Treat individual objects and compositions of objects uniformly, ideal for tree-shaped data like a file system or a UI layout."
     ]
   },
   {
@@ -517,7 +532,7 @@ const blog2Content: BlogBlock[] = [
   },
   {
     "type": "paragraph",
-    "text": "**Observer** defines a one-to-many dependency so that when one object changes state, all its dependents are notified automatically. It is the backbone of event systems, pub/sub, and UI state management."
+    "text": "[Observer](/features/revision-notes/design-patterns/observer-pattern) defines a one-to-many dependency so that when one object changes state, all its dependents are notified automatically. It is the backbone of event systems, pub/sub, and UI state management."
   },
   {
     "type": "code",
@@ -527,9 +542,9 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "**Strategy** - Make an algorithm swappable at runtime by encapsulating each variant behind a common interface.",
-      "**Command** - Encapsulate a request (and its undo logic) as a standalone object.",
-      "**State** - Let an object change its behavior when its internal state changes, replacing sprawling conditional logic with state classes."
+      "[Strategy](/features/revision-notes/design-patterns/strategy-pattern) - Make an algorithm swappable at runtime by encapsulating each variant behind a common interface.",
+      "[Command](/features/revision-notes/design-patterns/command-pattern) - Encapsulate a request (and its undo logic) as a standalone object.",
+      "[State](/features/revision-notes/design-patterns/state-pattern) - Let an object change its behavior when its internal state changes, replacing sprawling conditional logic with state classes."
     ]
   },
   {
@@ -583,9 +598,9 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "[Parking Lot](/dashboard/problems/parking-lot) - entity modeling and simple allocation strategy",
-      "[Vending Machine](/dashboard/problems/vending-machine) - a clean introduction to the State pattern",
-      "[Library Management](/dashboard/problems/library-management) - relationships and basic inventory tracking"
+      "[Parking Lot](/features/interview-questions/parking-lot) - entity modeling and simple allocation strategy",
+      "[Vending Machine](/features/interview-questions/vending-machine) - a clean introduction to the State pattern",
+      "[Library Management](/features/interview-questions/library-management) - relationships and basic inventory tracking"
     ]
   },
   {
@@ -596,10 +611,10 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "[LRU Cache](/dashboard/problems/simple-lru-cache) - data structure design under strict time-complexity constraints",
-      "[Elevator System](/dashboard/problems/elevator-system) - scheduling logic and concurrent requests",
-      "[Hotel Booking](/dashboard/problems/hotel-booking) - inventory management with date-range overlaps",
-      "[ATM Machine](/dashboard/problems/atm-machine) - State pattern plus transactional integrity"
+      "[LRU Cache](/features/interview-questions/simple-lru-cache) - data structure design under strict time-complexity constraints",
+      "[Elevator System](/features/interview-questions/elevator-system) - scheduling logic and concurrent requests",
+      "[Hotel Booking](/features/interview-questions/hotel-booking) - inventory management with date-range overlaps",
+      "[ATM Machine](/features/interview-questions/atm-machine) - State pattern plus transactional integrity"
     ]
   },
   {
@@ -610,9 +625,9 @@ const blog2Content: BlogBlock[] = [
   {
     "type": "bullets",
     "items": [
-      "[Splitwise](/dashboard/problems/splitwise) - graph-based debt simplification across multiple actors",
-      "[Chess Game](/dashboard/problems/chess-game) - complex rule validation and move-generation logic",
-      "[Stock Exchange](/dashboard/problems/online-stock-brokerage) - order matching and high-concurrency correctness"
+      "[Splitwise](/features/interview-questions/splitwise) - graph-based debt simplification across multiple actors",
+      "[Chess Game](/features/interview-questions/chess-game) - complex rule validation and move-generation logic",
+      "[Stock Exchange](/features/interview-questions/online-stock-brokerage) - order matching and high-concurrency correctness"
     ]
   },
   {
@@ -791,6 +806,22 @@ const blog3Content: BlogBlock[] = [
   {
     "type": "heading",
     "level": 2,
+    "text": "HLD vs LLD Example, Side by Side"
+  },
+  {
+    "type": "paragraph",
+    "text": "To see the difference between HLD and LLD as one concrete example rather than two abstract definitions, look back at the Instagram walkthrough above: the **HLD example** traces a request through independently scalable services - `User Service`, `Post Service`, `Feed Service` - each backed by whichever data store fits its access pattern. The **LLD example** for the exact same feature designs the `Post` class itself - what `MediaContent` types it can hold, how `PostVisibility` is enforced, and which design pattern (`MediaFactory`) creates each media type."
+  },
+  {
+    "type": "paragraph",
+    "text": "That's the difference in one sentence: the HLD example answers *\"which services exist and how do they talk to each other,\"* the LLD example answers *\"how is this one class built so it stays extensible.\"* Same feature, two completely different deliverables - which is exactly why interviewers run them as separate rounds."
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "heading",
+    "level": 2,
     "text": "How to Tell Which Round You're In"
   },
   {
@@ -911,6 +942,10 @@ const blog4Content: BlogBlock[] = [
     "code": "public class ParkingSpot {\n  private SpotType type;\n  private boolean occupied;\n  private Vehicle currentVehicle;\n\n  public boolean canFit(Vehicle vehicle) {\n    return !occupied && type.accommodates(vehicle.getType());\n  }\n\n  public void parkVehicle(Vehicle vehicle) {\n    this.currentVehicle = vehicle;\n    this.occupied = true;\n  }\n}"
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Parking Lot on LLDCanvas](/features/interview-questions/parking-lot) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -937,6 +972,10 @@ const blog4Content: BlogBlock[] = [
     "type": "code",
     "lang": "java",
     "code": "public class LRUCache<K, V> {\n  private final int capacity;\n  private final Map<K, Node<K, V>> map = new HashMap<>();\n  private final Node<K, V> head = new Node<>(null, null);\n  private final Node<K, V> tail = new Node<>(null, null);\n\n  public LRUCache(int capacity) {\n    this.capacity = capacity;\n    head.next = tail;\n    tail.prev = head;\n  }\n\n  public V get(K key) {\n    Node<K, V> node = map.get(key);\n    if (node == null) return null;\n    moveToFront(node);\n    return node.value;\n  }\n\n  public void put(K key, V value) {\n    if (map.containsKey(key)) {\n      map.get(key).value = value;\n      moveToFront(map.get(key));\n      return;\n    }\n    if (map.size() == capacity) {\n      Node<K, V> lru = tail.prev;\n      remove(lru);\n      map.remove(lru.key);\n    }\n    Node<K, V> node = new Node<>(key, value);\n    map.put(key, node);\n    addToFront(node);\n  }\n}"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an LRU Cache on LLDCanvas](/features/interview-questions/simple-lru-cache) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -967,6 +1006,10 @@ const blog4Content: BlogBlock[] = [
     "code": "public interface ElevatorState {\n  void handleRequest(ElevatorController controller, int floor);\n}\n\npublic class MovingUpState implements ElevatorState {\n  public void handleRequest(ElevatorController controller, int floor) {\n    if (floor > controller.getCurrentFloor()) {\n      controller.addStop(floor);\n    } else {\n      controller.queueForNextDirection(floor);\n    }\n  }\n}\n\npublic class ElevatorController {\n  private ElevatorState state = new IdleState();\n\n  public void setState(ElevatorState state) {\n    this.state = state;\n  }\n}"
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an Elevator System on LLDCanvas](/features/interview-questions/elevator-system) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -993,6 +1036,10 @@ const blog4Content: BlogBlock[] = [
     "type": "code",
     "lang": "java",
     "code": "public interface VendingState {\n  void insertCoin(VendingMachine machine, Coin coin);\n  void selectProduct(VendingMachine machine, String code);\n  void dispense(VendingMachine machine);\n}\n\npublic class IdleState implements VendingState {\n  public void insertCoin(VendingMachine machine, Coin coin) {\n    machine.addBalance(coin.getValue());\n    machine.setState(new HasMoneyState());\n  }\n\n  public void selectProduct(VendingMachine machine, String code) {\n    throw new IllegalStateException(\"Insert coin first\");\n  }\n\n  public void dispense(VendingMachine machine) {\n    throw new IllegalStateException(\"Insert coin first\");\n  }\n}"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Vending Machine on LLDCanvas](/features/interview-questions/vending-machine) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1022,6 +1069,10 @@ const blog4Content: BlogBlock[] = [
     "text": "The modeling decision that matters most here is separating `Book` from `BookItem`. `Book` is the catalog entry -- title, author, ISBN -- while `BookItem` is one physical, borrowable copy with its own barcode and status. Collapse these into a single class and you can't represent a popular title with five copies, three of which are checked out; keep them separate and reservations, fines, and availability all fall out naturally."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Library Management System on LLDCanvas](/features/interview-questions/library-management) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1043,6 +1094,10 @@ const blog4Content: BlogBlock[] = [
   {
     "type": "paragraph",
     "text": "Treat the ATM itself as a state machine first -- it's what stops your code from allowing a withdrawal before a PIN has been entered. Then treat cash dispensing as a Chain of Responsibility: a handler for 2000-rupee notes hands off the remainder to a handler for 500s, which hands off to 100s, so adding a new denomination never touches the withdrawal logic itself."
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an ATM Machine on LLDCanvas](/features/interview-questions/atm-machine) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1068,6 +1123,10 @@ const blog4Content: BlogBlock[] = [
     "text": "Every `Piece` subclass should implement its own `getValidMoves(Board board)` -- that's the whole exercise. If you find yourself writing a big switch statement inside `Board` to figure out how a bishop moves, you've missed the point of the question; the polymorphism has to live on the piece, not on the board."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Chess Game on LLDCanvas](/features/interview-questions/chess-game) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1089,6 +1148,10 @@ const blog4Content: BlogBlock[] = [
   {
     "type": "paragraph",
     "text": "The trip itself is a state machine -- `REQUESTED` -> `MATCHED` -> `IN_PROGRESS` -> `COMPLETED`/`CANCELLED` -- and interviewers expect you to enumerate those states unprompted. The harder part they're actually probing for is the matching strategy: can you describe, even at a high level, how you'd find the nearest available driver using a geospatial index like a grid or geohash, instead of scanning every driver in the city?"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Ride-Sharing Backend on LLDCanvas](/features/interview-questions/ride-sharing-backend) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1114,6 +1177,10 @@ const blog4Content: BlogBlock[] = [
     "text": "This question is really a concurrency question wearing a modeling costume. The core requirement is guaranteeing that no two guests can book the same room for overlapping dates -- which means your availability check and your booking write must be atomic (a database transaction with proper locking, or an optimistic-concurrency version check), not two separate steps that can race each other."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Hotel Booking System on LLDCanvas](/features/interview-questions/hotel-booking) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1135,104 +1202,121 @@ const blog4Content: BlogBlock[] = [
       "#",
       "Problem",
       "Top Patterns",
-      "Key Insight"
+      "Key Insight",
+      "Practice"
     ],
     "rows": [
       [
         "10",
         "Pub-Sub System",
         "Observer, Strategy, Factory",
-        "Decide push vs. pull delivery up front -- it shapes everything else"
+        "Decide push vs. pull delivery up front -- it shapes everything else",
+        "[Try it](/features/interview-questions/pub-sub-system)"
       ],
       [
         "11",
         "Snake and Ladder",
         "State, Command",
-        "Board state is immutable; only player position changes each turn"
+        "Board state is immutable; only player position changes each turn",
+        "[Try it](/features/interview-questions/snake-and-ladder)"
       ],
       [
         "12",
         "Splitwise",
         "Graph, Strategy",
-        "Simplify group debts with a min-cash-flow algorithm"
+        "Simplify group debts with a min-cash-flow algorithm",
+        "[Try it](/features/interview-questions/splitwise)"
       ],
       [
         "13",
         "Movie Ticket Booking",
         "Factory, Strategy, Command",
-        "Seat locks need a short expiry, or inventory gets stuck"
+        "Seat locks need a short expiry, or inventory gets stuck",
+        "[Try it](/features/interview-questions/movie-ticket-booking)"
       ],
       [
         "14",
         "Food Delivery",
         "State, Observer, Strategy",
-        "Order status is a state machine; notify every watcher on transition"
+        "Order status is a state machine; notify every watcher on transition",
+        "[Try it](/features/interview-questions/food-delivery)"
       ],
       [
         "15",
         "LinkedIn Clone",
         "Composite, Observer",
-        "Model connections as a graph, not a flat list"
+        "Model connections as a graph, not a flat list",
+        "[Try it](/features/interview-questions/linkedin)"
       ],
       [
         "16",
         "Online Auction",
         "Observer, Strategy, State",
-        "The auction itself is a state machine: open, bidding, closed"
+        "The auction itself is a state machine: open, bidding, closed",
+        "[Try it](/features/interview-questions/online-auction-system)"
       ],
       [
         "17",
         "Car Rental",
         "Factory, Strategy, Command",
-        "Track availability as a matrix of vehicle x date range"
+        "Track availability as a matrix of vehicle x date range",
+        "[Try it](/features/interview-questions/car-rental)"
       ],
       [
         "18",
         "Course Registration",
         "Factory, Observer, Composite",
-        "Prerequisites form a directed graph, not a flat list"
+        "Prerequisites form a directed graph, not a flat list",
+        "[Try it](/features/interview-questions/course-registration)"
       ],
       [
         "19",
         "Task Manager",
         "Observer, Command, Composite",
-        "Tasks are state machines that can contain subtasks"
+        "Tasks are state machines that can contain subtasks",
+        "[Try it](/features/interview-questions/task-management)"
       ],
       [
         "20",
         "Inventory System",
         "Observer, Strategy, Factory",
-        "Low-stock triggers should be event-driven, not polled"
+        "Low-stock triggers should be event-driven, not polled",
+        "[Try it](/features/interview-questions/inventory-management)"
       ],
       [
         "21",
         "Stock Exchange",
         "Command, Observer, Strategy",
-        "The real challenge is the order-matching engine"
+        "The real challenge is the order-matching engine",
+        "[Try it](/features/interview-questions/online-stock-brokerage)"
       ],
       [
         "22",
         "Coffee Vending Machine",
         "State, Factory",
-        "Same shape as the vending machine, but ingredient stock replaces coins"
+        "Same shape as the vending machine, but ingredient stock replaces coins",
+        "[Try it](/features/interview-questions/coffee-vending-machine)"
       ],
       [
         "23",
         "Hospital Management",
         "Factory, Observer, Strategy",
-        "Patient triage needs priority-based scheduling, not FIFO"
+        "Patient triage needs priority-based scheduling, not FIFO",
+        "[Try it](/features/interview-questions/hospital-appointment-scheduling)"
       ],
       [
         "24",
         "Restaurant Management",
         "Observer, Decorator, State",
-        "Order customization (extra cheese, no onions) suits Decorator well"
+        "Order customization (extra cheese, no onions) suits Decorator well",
+        "[Try it](/features/interview-questions/restaurant-management)"
       ],
       [
         "25",
         "Airline Management",
         "State, Factory, Strategy",
-        "Booking uses a hold-then-confirm two-step flow, not a single write"
+        "Booking uses a hold-then-confirm two-step flow, not a single write",
+        "[Try it](/features/interview-questions/airline-management)"
       ]
     ]
   },
@@ -1454,6 +1538,21 @@ const blog5Content: BlogBlock[] = [
   {
     "type": "quote",
     "text": "Curious how these five principles show up inside real interview problems, not isolated snippets? Browse [LLDCanvas's practice problems](/features/interview-questions) to apply SOLID to full class designs."
+  },
+  {
+    "type": "heading",
+    "level": 3,
+    "text": "Quick Links: Revision Note for Each Principle"
+  },
+  {
+    "type": "bullets",
+    "items": [
+      "[Single Responsibility Principle](/features/revision-notes/solid-principles/solid-srp)",
+      "[Open/Closed Principle](/features/revision-notes/solid-principles/solid-ocp)",
+      "[Liskov Substitution Principle](/features/revision-notes/solid-principles/solid-lsp)",
+      "[Interface Segregation Principle](/features/revision-notes/solid-principles/solid-isp)",
+      "[Dependency Inversion Principle](/features/revision-notes/solid-principles/solid-dip)"
+    ]
   },
   {
     "type": "divider"
@@ -1706,6 +1805,23 @@ const blog6Content: BlogBlock[] = [
   {
     "type": "quote",
     "text": "**See patterns in real problems:** browse [LLDCanvas's interview question bank](/features/interview-questions) to see which pattern fits problems like Parking Lot, Elevator System, and Rate Limiter."
+  },
+  {
+    "type": "quote",
+    "text": "**Need a scannable review pass?** The [Design Patterns Cheat Sheet](/blog/design-patterns-cheat-sheet) puts all 23 patterns, their intent, and a real-world example on one page."
+  },
+  {
+    "type": "heading",
+    "level": 3,
+    "text": "Quick Links: Revision Note for Each Pattern"
+  },
+  {
+    "type": "bullets",
+    "items": [
+      "[Singleton](/features/revision-notes/design-patterns/singleton-pattern), [Factory Method](/features/revision-notes/design-patterns/factory-pattern), [Builder](/features/revision-notes/design-patterns/builder-pattern), [Prototype](/features/revision-notes/design-patterns/prototype-pattern), [Abstract Factory](/features/revision-notes/design-patterns/abstract-factory-pattern) - Creational",
+      "[Decorator](/features/revision-notes/design-patterns/decorator-pattern), [Facade](/features/revision-notes/design-patterns/facade-pattern), [Composite](/features/revision-notes/design-patterns/composite-pattern), [Adapter](/features/revision-notes/design-patterns/adapter-pattern), [Proxy](/features/revision-notes/design-patterns/proxy-pattern), [Bridge](/features/revision-notes/design-patterns/bridge-pattern) - Structural",
+      "[Observer](/features/revision-notes/design-patterns/observer-pattern), [Strategy](/features/revision-notes/design-patterns/strategy-pattern), [Command](/features/revision-notes/design-patterns/command-pattern), [State](/features/revision-notes/design-patterns/state-pattern), [Chain of Responsibility](/features/revision-notes/design-patterns/chain-of-responsibility), [Template Method](/features/revision-notes/design-patterns/template-method-pattern), [Iterator](/features/revision-notes/design-patterns/iterator-pattern), [Memento](/features/revision-notes/design-patterns/memento-pattern) - Behavioral"
+    ]
   },
   {
     "type": "heading",
@@ -2764,6 +2880,99 @@ const blog10Content: BlogBlock[] = [
 
 // ─── Blog metadata + content ──────────────────────────────────────────────────
 
+const blog11Content: BlogBlock[] = [
+  {
+    "type": "paragraph",
+    "text": "This is a scannable, one-page reference to all 23 Gang of Four design patterns - what each one does, a one-line real-world example, and a link to the full revision note where one exists. Use it the night before an interview to jog your memory, not as your first introduction to any pattern - if a name here is unfamiliar, read the [complete Design Patterns guide](/blog/design-patterns-guide) first."
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "text": "Creational Patterns"
+  },
+  {
+    "type": "paragraph",
+    "text": "Concerned with *how* objects get created, so the rest of the system doesn't depend on concrete classes."
+  },
+  {
+    "type": "table",
+    "headers": ["Pattern", "Intent", "Example", "Full Note"],
+    "rows": [
+      ["Singleton", "Exactly one instance, one global access point", "A database connection pool", "[Read note](/features/revision-notes/design-patterns/singleton-pattern)"],
+      ["Factory Method", "Let subclasses decide which concrete class to instantiate", "A `VehicleFactory` that returns `Car`, `Bike`, or `Truck`", "[Read note](/features/revision-notes/design-patterns/factory-pattern)"],
+      ["Abstract Factory", "Produce families of related objects without specifying concrete classes", "A UI toolkit that creates matching buttons and checkboxes per theme", "[Read note](/features/revision-notes/design-patterns/abstract-factory-pattern)"],
+      ["Builder", "Construct a complex object step by step", "Assembling an HTTP request with many optional headers", "[Read note](/features/revision-notes/design-patterns/builder-pattern)"],
+      ["Prototype", "Create new objects by copying an existing instance", "Cloning a pre-configured game character template", "[Read note](/features/revision-notes/design-patterns/prototype-pattern)"]
+    ]
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "text": "Structural Patterns"
+  },
+  {
+    "type": "paragraph",
+    "text": "Concerned with how classes and objects are composed into larger structures."
+  },
+  {
+    "type": "table",
+    "headers": ["Pattern", "Intent", "Example", "Full Note"],
+    "rows": [
+      ["Adapter", "Convert one interface into another that a client expects", "Wrapping a legacy payment API to match a new interface", "[Read note](/features/revision-notes/design-patterns/adapter-pattern)"],
+      ["Bridge", "Decouple an abstraction from its implementation so both can vary independently", "A `RemoteControl` abstraction that works with any `Device` implementation", "[Read note](/features/revision-notes/design-patterns/bridge-pattern)"],
+      ["Composite", "Treat individual objects and compositions of objects uniformly", "A file system of files and folders, both traversable the same way", "[Read note](/features/revision-notes/design-patterns/composite-pattern)"],
+      ["Decorator", "Attach new behavior to an object at runtime without subclassing", "Adding scroll bars or borders to a UI component dynamically", "[Read note](/features/revision-notes/design-patterns/decorator-pattern)"],
+      ["Facade", "Offer a simplified interface over a complex subsystem", "A single `checkout()` call that hides inventory, payment, and shipping calls", "[Read note](/features/revision-notes/design-patterns/facade-pattern)"],
+      ["Flyweight", "Share common state across many objects to save memory", "Reusing glyph objects across millions of characters in a text editor", "Not yet published"],
+      ["Proxy", "Provide a stand-in that controls access to another object", "A lazy-loading image placeholder that fetches the real image on demand", "[Read note](/features/revision-notes/design-patterns/proxy-pattern)"]
+    ]
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "text": "Behavioral Patterns"
+  },
+  {
+    "type": "paragraph",
+    "text": "Concerned with how objects communicate and distribute responsibility."
+  },
+  {
+    "type": "table",
+    "headers": ["Pattern", "Intent", "Example", "Full Note"],
+    "rows": [
+      ["Observer", "Notify all dependents automatically when one object's state changes", "Event listeners in a pub/sub system", "[Read note](/features/revision-notes/design-patterns/observer-pattern)"],
+      ["Strategy", "Make an algorithm swappable at runtime behind a common interface", "Choosing a pricing strategy by day, weekend, or holiday rate", "[Read note](/features/revision-notes/design-patterns/strategy-pattern)"],
+      ["Command", "Encapsulate a request, and its undo logic, as a standalone object", "Undo/redo stacks in a text editor", "[Read note](/features/revision-notes/design-patterns/command-pattern)"],
+      ["State", "Let an object change its behavior when its internal state changes", "A vending machine's Idle / HasMoney / Dispense states", "[Read note](/features/revision-notes/design-patterns/state-pattern)"],
+      ["Chain of Responsibility", "Pass a request along a chain of handlers until one handles it", "HTTP middleware and authentication pipelines", "[Read note](/features/revision-notes/design-patterns/chain-of-responsibility)"],
+      ["Template Method", "Define an algorithm's skeleton, let subclasses override individual steps", "A `DataParser` base class with format-specific `parse()` overrides", "[Read note](/features/revision-notes/design-patterns/template-method-pattern)"],
+      ["Iterator", "Access elements of a collection sequentially without exposing its structure", "Every `for-each` loop in every language", "[Read note](/features/revision-notes/design-patterns/iterator-pattern)"],
+      ["Mediator", "Centralize complex communication between objects into one mediator", "An air-traffic-control style coordinator between planes", "Not yet published"],
+      ["Memento", "Capture and externalize an object's state so it can be restored later", "Undo history and save/restore snapshots", "[Read note](/features/revision-notes/design-patterns/memento-pattern)"],
+      ["Visitor", "Add new operations to a group of related classes without modifying them", "A tax-calculation visitor applied across different `Product` subclasses", "Not yet published"],
+      ["Interpreter", "Define a grammar representation and an interpreter to evaluate it", "Simple rule engines and expression parsers", "Not yet published"]
+    ]
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "heading",
+    "level": 2,
+    "text": "Which Ones Actually Matter for Interviews"
+  },
+  {
+    "type": "paragraph",
+    "text": "You will not be asked to recite all 23. In practice, **Singleton, Factory Method, Builder, Decorator, Facade, Observer, Strategy, Command, and State** cover the overwhelming majority of LLD interview problems - see the [full breakdown in the Design Patterns guide](/blog/design-patterns-guide) for why those nine dominate, and [practice them directly](/features/interview-questions) on real problems like Parking Lot, Vending Machine, and Elevator System."
+  }
+]
+
 const BLOGS = [
   {
     slug: "system-design-interview-guide",
@@ -2774,7 +2983,7 @@ const BLOGS = [
     tags: ["System Design","Interview Prep","FAANG","Software Engineering","Architecture"],
     isFeatured: true,
     relatedSlugs: ["lld-interview-roadmap","hld-vs-lld-explained","most-asked-system-design-questions","crack-system-design-faang"],
-    seo: {"metaTitle":"Complete System Design Interview Guide 2025 | LLDCanvas","metaDescription":"Master system design interviews with our complete 2025 guide. Covers HLD, LLD, scalability, databases, caching, load balancing, and a proven answer framework.","keywords":["system design interview","system design guide","how to crack system design","HLD interview","LLD interview"]},
+    seo: {"metaTitle":"System Design Interview Guide (HLD): 6-Step Framework for FAANG | LLDCanvas","metaDescription":"A 6-step framework for System Design (HLD) interviews at FAANG - requirements, scale estimation, API design, architecture, and trade-offs. Not sure if you need HLD or LLD? We help you check first.","keywords":["system design interview","system design guide","how to crack system design","HLD interview","LLD interview"]},
     faq: [{"q":"How long are system design interviews?","a":"Typically 45-60 minutes. You spend ~5 min on clarification, 35-40 min designing, and 5 min on trade-offs."},{"q":"Do I need to memorize architectures?","a":"No. Interviewers care about your reasoning process. Understand the core building blocks deeply and you can derive any architecture."},{"q":"What is the difference between HLD and LLD?","a":"High-Level Design focuses on overall architecture - services, databases, APIs. Low-Level Design focuses on class structure, design patterns, and object-oriented modeling."}],
     content: blog1Content,
   },
@@ -2787,7 +2996,7 @@ const BLOGS = [
     tags: ["LLD","Low-Level Design","OOP","Design Patterns","Interview Roadmap","SOLID"],
     isFeatured: true,
     relatedSlugs: ["solid-principles-explained","design-patterns-guide","lld-interview-questions","oop-concepts-for-interviews"],
-    seo: {"metaTitle":"Ultimate LLD Interview Roadmap 2025 | Low-Level Design Guide | LLDCanvas","metaDescription":"Complete Low-Level Design (LLD) roadmap for software engineering interviews. Master OOP, SOLID principles, 23 design patterns, and a proven framework for solving LLD problems.","keywords":["LLD interview","low level design roadmap","LLD preparation","machine coding round"]},
+    seo: {"metaTitle":"LLD Interview Roadmap 2026: Step-by-Step Plan to Crack Low-Level Design | LLDCanvas","metaDescription":"A structured, week-by-week roadmap to prepare for LLD interviews - OOP, SOLID, design patterns, and 15+ practice problems like Parking Lot and Splitwise. Start free on LLDCanvas.","keywords":["LLD interview","low level design roadmap","LLD preparation","machine coding round","lld roadmap"]},
     faq: [{"q":"What is Low-Level Design (LLD)?","a":"LLD focuses on the detailed design of a software component - class structure, interfaces, design patterns, and object relationships."},{"q":"How long does it take to prepare for LLD interviews?","a":"With focused daily practice of 1-2 hours, most engineers are interview-ready in 4-8 weeks."}],
     content: blog2Content,
   },
@@ -2801,7 +3010,7 @@ const BLOGS = [
     isFeatured: false,
     relatedSlugs: ["system-design-interview-guide","lld-interview-roadmap","lld-interview-questions"],
     seo: {"metaTitle":"HLD vs LLD: Differences Explained with Examples | LLDCanvas","metaDescription":"Understand the difference between High-Level Design (HLD) and Low-Level Design (LLD) in software engineering interviews. Examples, diagrams, and preparation tips.","keywords":["HLD vs LLD","high level design vs low level design","system design interview types"]},
-    faq: [{"q":"Which is harder, HLD or LLD?","a":"They test different skills. HLD requires broad architectural knowledge. LLD requires deep OOP and design pattern knowledge."},{"q":"Do all companies ask both HLD and LLD?","a":"Not necessarily. Product companies typically ask both. Service-based companies often focus more on LLD."}],
+    faq: [{"q":"Which is harder, HLD or LLD?","a":"They test different skills. HLD requires broad architectural knowledge. LLD requires deep OOP and design pattern knowledge."},{"q":"Do all companies ask both HLD and LLD?","a":"Not necessarily. Product companies typically ask both. Service-based companies often focus more on LLD."},{"q":"What is the difference between HLD and LLD?","a":"HLD designs the system's architecture - which services exist, how they communicate, and how data is stored and scaled. LLD designs the internals of one component - its classes, interfaces, and design patterns. HLD answers 'what pieces make up this system'; LLD answers 'how is this one piece built.'"},{"q":"What is an example of HLD vs LLD for the same system?","a":"For Instagram: the HLD example traces requests through independently scalable services (User Service, Post Service, Feed Service), each backed by its own data store. The LLD example designs the Post class itself - its media types, visibility rules, and the Factory pattern used to create each media type. See the worked examples above for the full breakdown."}],
     content: blog3Content,
   },
   {
@@ -2838,7 +3047,7 @@ const BLOGS = [
     category: "Design Patterns",
     tags: ["Design Patterns","Gang of Four","OOP","Software Engineering","GoF"],
     isFeatured: false,
-    relatedSlugs: ["solid-principles-explained","lld-interview-roadmap","oop-concepts-for-interviews"],
+    relatedSlugs: ["design-patterns-cheat-sheet","solid-principles-explained","lld-interview-roadmap","oop-concepts-for-interviews"],
     seo: {"metaTitle":"Design Patterns Every Software Engineer Must Know | LLDCanvas","metaDescription":"Complete guide to the 23 Gang of Four design patterns with real-world examples, code samples, and interview applications.","keywords":["design patterns","gang of four patterns","creational patterns","behavioral patterns"]},
     faq: [{"q":"How many design patterns are there?","a":"The GoF book defines 23 patterns. These form the foundation; there are many more beyond GoF."},{"q":"Which patterns are most asked in interviews?","a":"Singleton, Factory, Observer, Strategy, Decorator, Command, Template Method, Composite, and Facade are asked most frequently."}],
     content: blog6Content,
@@ -2894,6 +3103,19 @@ const BLOGS = [
     seo: {"metaTitle":"Most Asked System Design Interview Questions 2025 | LLDCanvas","metaDescription":"Top system design questions at Google, Meta, Amazon, Uber, and Netflix with key architecture insights and what interviewers look for.","keywords":["most asked system design questions","top system design interview questions","system design questions 2025"]},
     faq: [{"q":"How many system design questions should I prepare?","a":"Prepare 15-20 questions deeply. Most problems share common patterns (caching, queues, databases, CDNs)."}],
     content: blog10Content,
+  },
+  {
+    slug: "design-patterns-cheat-sheet",
+    title: "Design Patterns Cheat Sheet: All 23 GoF Patterns, One Page",
+    subtitle: "Every Gang of Four pattern with a one-line intent, a real-world example, and a link to the full note",
+    excerpt: "A scannable, one-page cheat sheet for all 23 Gang of Four design patterns - category, intent, and a one-line example for each. Bookmark this for a final interview review pass.",
+    category: "Design Patterns",
+    tags: ["Design Patterns","Cheat Sheet","Gang of Four","OOP","GoF","Quick Reference"],
+    isFeatured: false,
+    relatedSlugs: ["design-patterns-guide","solid-principles-explained","lld-interview-roadmap"],
+    seo: {"metaTitle":"Design Patterns Cheat Sheet - All 23 Patterns Explained Simply | LLDCanvas","metaDescription":"A one-page cheat sheet for all 23 Gang of Four design patterns - category, intent, and a one-line example for each. Bookmark this for interviews.","keywords":["design pattern cheat sheet","design patterns quick reference","gof design patterns list","design patterns list"]},
+    faq: [{"q":"How many design patterns are there?","a":"The Gang of Four book defines 23 patterns across three categories: Creational, Structural, and Behavioral."},{"q":"Do I need to know all 23 for an interview?","a":"No. Singleton, Factory Method, Builder, Decorator, Facade, Observer, Strategy, Command, and State cover most LLD interview problems - focus there first."}],
+    content: blog11Content,
   },
 ]
 
