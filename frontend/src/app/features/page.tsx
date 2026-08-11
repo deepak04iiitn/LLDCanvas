@@ -164,14 +164,14 @@ export default async function FeaturesHubPage() {
         '@type': 'CollectionPage',
         name: 'LLDCanvas Features',
         description: 'A UML class diagram editor, Draft Notation, timed Interview Mode, LLD interview questions, revision notes, multi-language code execution, and real-time collaboration for Low-Level Design interview preparation.',
-        url: 'https://lldcanvas.in/features',
+        url: 'https://www.lldcanvas.in/features',
         mainEntity: {
           '@type': 'ItemList',
           itemListElement: orbitNodes.map((n, i) => ({
             '@type': 'ListItem',
             position: i + 1,
             name: n.name,
-            url: `https://lldcanvas.in${n.href}`,
+            url: `https://www.lldcanvas.in${n.href}`,
           })),
         },
       }} />
@@ -179,8 +179,8 @@ export default async function FeaturesHubPage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lldcanvas.in/' },
-          { '@type': 'ListItem', position: 2, name: 'Features', item: 'https://lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.lldcanvas.in/' },
+          { '@type': 'ListItem', position: 2, name: 'Features', item: 'https://www.lldcanvas.in/features' },
         ],
       }} />
 

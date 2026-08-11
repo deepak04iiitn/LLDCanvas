@@ -65,8 +65,8 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://lldcanvas.in/features/interview-questions' },
-          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://lldcanvas.in/features/interview-questions/${slug}` },
+          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://www.lldcanvas.in/features/interview-questions' },
+          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://www.lldcanvas.in/features/interview-questions/${slug}` },
         ],
       }} />
 

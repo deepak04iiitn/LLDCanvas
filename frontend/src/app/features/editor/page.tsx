@@ -88,7 +88,7 @@ export default function EditorFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
         name: 'LLDCanvas UML Class Diagram Editor',
-        url: 'https://lldcanvas.in/features/editor',
+        url: 'https://www.lldcanvas.in/features/editor',
         applicationCategory: 'DesignApplication',
         operatingSystem: 'Any',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
