@@ -27,6 +27,15 @@ const blog1Content: BlogBlock[] = [
     "text": "Before you start: if you want to practice what you learn here, [LLDCanvas's Interview Mode](/features/interview-mode) gives you a timed canvas, structured problem briefs, and analytics on your performance across 110+ real LLD and HLD questions."
   },
   {
+    "type": "heading",
+    "level": 2,
+    "text": "Is Your Round HLD or LLD?"
+  },
+  {
+    "type": "paragraph",
+    "text": "This guide covers **System Design (HLD)** interviews specifically - the round where you architect a full system out of services, data stores, and queues. If your prompt is a single, bounded feature instead - \"design a Parking Lot,\" \"design an Elevator,\" \"design an LRU Cache\" - you're in an **LLD round**, and this framework won't be the right tool for it. Start with [HLD vs LLD: Key Differences Explained](/blog/hld-vs-lld-explained) to confirm which one you're facing, then head straight to the [LLD Interview Roadmap](/blog/lld-interview-roadmap) and [110+ LLD practice problems](/features/interview-questions)."
+  },
+  {
     "type": "divider"
   },
   {
@@ -791,6 +800,22 @@ const blog3Content: BlogBlock[] = [
   {
     "type": "heading",
     "level": 2,
+    "text": "HLD vs LLD Example, Side by Side"
+  },
+  {
+    "type": "paragraph",
+    "text": "To see the difference between HLD and LLD as one concrete example rather than two abstract definitions, look back at the Instagram walkthrough above: the **HLD example** traces a request through independently scalable services - `User Service`, `Post Service`, `Feed Service` - each backed by whichever data store fits its access pattern. The **LLD example** for the exact same feature designs the `Post` class itself - what `MediaContent` types it can hold, how `PostVisibility` is enforced, and which design pattern (`MediaFactory`) creates each media type."
+  },
+  {
+    "type": "paragraph",
+    "text": "That's the difference in one sentence: the HLD example answers *\"which services exist and how do they talk to each other,\"* the LLD example answers *\"how is this one class built so it stays extensible.\"* Same feature, two completely different deliverables - which is exactly why interviewers run them as separate rounds."
+  },
+  {
+    "type": "divider"
+  },
+  {
+    "type": "heading",
+    "level": 2,
     "text": "How to Tell Which Round You're In"
   },
   {
@@ -911,6 +936,10 @@ const blog4Content: BlogBlock[] = [
     "code": "public class ParkingSpot {\n  private SpotType type;\n  private boolean occupied;\n  private Vehicle currentVehicle;\n\n  public boolean canFit(Vehicle vehicle) {\n    return !occupied && type.accommodates(vehicle.getType());\n  }\n\n  public void parkVehicle(Vehicle vehicle) {\n    this.currentVehicle = vehicle;\n    this.occupied = true;\n  }\n}"
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Parking Lot on LLDCanvas](/features/interview-questions/parking-lot) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -937,6 +966,10 @@ const blog4Content: BlogBlock[] = [
     "type": "code",
     "lang": "java",
     "code": "public class LRUCache<K, V> {\n  private final int capacity;\n  private final Map<K, Node<K, V>> map = new HashMap<>();\n  private final Node<K, V> head = new Node<>(null, null);\n  private final Node<K, V> tail = new Node<>(null, null);\n\n  public LRUCache(int capacity) {\n    this.capacity = capacity;\n    head.next = tail;\n    tail.prev = head;\n  }\n\n  public V get(K key) {\n    Node<K, V> node = map.get(key);\n    if (node == null) return null;\n    moveToFront(node);\n    return node.value;\n  }\n\n  public void put(K key, V value) {\n    if (map.containsKey(key)) {\n      map.get(key).value = value;\n      moveToFront(map.get(key));\n      return;\n    }\n    if (map.size() == capacity) {\n      Node<K, V> lru = tail.prev;\n      remove(lru);\n      map.remove(lru.key);\n    }\n    Node<K, V> node = new Node<>(key, value);\n    map.put(key, node);\n    addToFront(node);\n  }\n}"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an LRU Cache on LLDCanvas](/features/interview-questions/simple-lru-cache) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -967,6 +1000,10 @@ const blog4Content: BlogBlock[] = [
     "code": "public interface ElevatorState {\n  void handleRequest(ElevatorController controller, int floor);\n}\n\npublic class MovingUpState implements ElevatorState {\n  public void handleRequest(ElevatorController controller, int floor) {\n    if (floor > controller.getCurrentFloor()) {\n      controller.addStop(floor);\n    } else {\n      controller.queueForNextDirection(floor);\n    }\n  }\n}\n\npublic class ElevatorController {\n  private ElevatorState state = new IdleState();\n\n  public void setState(ElevatorState state) {\n    this.state = state;\n  }\n}"
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an Elevator System on LLDCanvas](/features/interview-questions/elevator-system) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -993,6 +1030,10 @@ const blog4Content: BlogBlock[] = [
     "type": "code",
     "lang": "java",
     "code": "public interface VendingState {\n  void insertCoin(VendingMachine machine, Coin coin);\n  void selectProduct(VendingMachine machine, String code);\n  void dispense(VendingMachine machine);\n}\n\npublic class IdleState implements VendingState {\n  public void insertCoin(VendingMachine machine, Coin coin) {\n    machine.addBalance(coin.getValue());\n    machine.setState(new HasMoneyState());\n  }\n\n  public void selectProduct(VendingMachine machine, String code) {\n    throw new IllegalStateException(\"Insert coin first\");\n  }\n\n  public void dispense(VendingMachine machine) {\n    throw new IllegalStateException(\"Insert coin first\");\n  }\n}"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Vending Machine on LLDCanvas](/features/interview-questions/vending-machine) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1022,6 +1063,10 @@ const blog4Content: BlogBlock[] = [
     "text": "The modeling decision that matters most here is separating `Book` from `BookItem`. `Book` is the catalog entry -- title, author, ISBN -- while `BookItem` is one physical, borrowable copy with its own barcode and status. Collapse these into a single class and you can't represent a popular title with five copies, three of which are checked out; keep them separate and reservations, fines, and availability all fall out naturally."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Library Management System on LLDCanvas](/features/interview-questions/library-management) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1043,6 +1088,10 @@ const blog4Content: BlogBlock[] = [
   {
     "type": "paragraph",
     "text": "Treat the ATM itself as a state machine first -- it's what stops your code from allowing a withdrawal before a PIN has been entered. Then treat cash dispensing as a Chain of Responsibility: a handler for 2000-rupee notes hands off the remainder to a handler for 500s, which hands off to 100s, so adding a new denomination never touches the withdrawal logic itself."
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design an ATM Machine on LLDCanvas](/features/interview-questions/atm-machine) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1068,6 +1117,10 @@ const blog4Content: BlogBlock[] = [
     "text": "Every `Piece` subclass should implement its own `getValidMoves(Board board)` -- that's the whole exercise. If you find yourself writing a big switch statement inside `Board` to figure out how a bishop moves, you've missed the point of the question; the polymorphism has to live on the piece, not on the board."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Chess Game on LLDCanvas](/features/interview-questions/chess-game) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1089,6 +1142,10 @@ const blog4Content: BlogBlock[] = [
   {
     "type": "paragraph",
     "text": "The trip itself is a state machine -- `REQUESTED` -> `MATCHED` -> `IN_PROGRESS` -> `COMPLETED`/`CANCELLED` -- and interviewers expect you to enumerate those states unprompted. The harder part they're actually probing for is the matching strategy: can you describe, even at a high level, how you'd find the nearest available driver using a geospatial index like a grid or geohash, instead of scanning every driver in the city?"
+  },
+  {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Ride-Sharing Backend on LLDCanvas](/features/interview-questions/ride-sharing-backend) - full brief, staged hints, and a live UML canvas."
   },
   {
     "type": "divider"
@@ -1114,6 +1171,10 @@ const blog4Content: BlogBlock[] = [
     "text": "This question is really a concurrency question wearing a modeling costume. The core requirement is guaranteeing that no two guests can book the same room for overlapping dates -- which means your availability check and your booking write must be atomic (a database transaction with proper locking, or an optimistic-concurrency version check), not two separate steps that can race each other."
   },
   {
+    "type": "paragraph",
+    "text": "**Practice this one:** [Design a Hotel Booking System on LLDCanvas](/features/interview-questions/hotel-booking) - full brief, staged hints, and a live UML canvas."
+  },
+  {
     "type": "divider"
   },
   {
@@ -1135,104 +1196,121 @@ const blog4Content: BlogBlock[] = [
       "#",
       "Problem",
       "Top Patterns",
-      "Key Insight"
+      "Key Insight",
+      "Practice"
     ],
     "rows": [
       [
         "10",
         "Pub-Sub System",
         "Observer, Strategy, Factory",
-        "Decide push vs. pull delivery up front -- it shapes everything else"
+        "Decide push vs. pull delivery up front -- it shapes everything else",
+        "[Try it](/features/interview-questions/pub-sub-system)"
       ],
       [
         "11",
         "Snake and Ladder",
         "State, Command",
-        "Board state is immutable; only player position changes each turn"
+        "Board state is immutable; only player position changes each turn",
+        "[Try it](/features/interview-questions/snake-and-ladder)"
       ],
       [
         "12",
         "Splitwise",
         "Graph, Strategy",
-        "Simplify group debts with a min-cash-flow algorithm"
+        "Simplify group debts with a min-cash-flow algorithm",
+        "[Try it](/features/interview-questions/splitwise)"
       ],
       [
         "13",
         "Movie Ticket Booking",
         "Factory, Strategy, Command",
-        "Seat locks need a short expiry, or inventory gets stuck"
+        "Seat locks need a short expiry, or inventory gets stuck",
+        "[Try it](/features/interview-questions/movie-ticket-booking)"
       ],
       [
         "14",
         "Food Delivery",
         "State, Observer, Strategy",
-        "Order status is a state machine; notify every watcher on transition"
+        "Order status is a state machine; notify every watcher on transition",
+        "[Try it](/features/interview-questions/food-delivery)"
       ],
       [
         "15",
         "LinkedIn Clone",
         "Composite, Observer",
-        "Model connections as a graph, not a flat list"
+        "Model connections as a graph, not a flat list",
+        "[Try it](/features/interview-questions/linkedin)"
       ],
       [
         "16",
         "Online Auction",
         "Observer, Strategy, State",
-        "The auction itself is a state machine: open, bidding, closed"
+        "The auction itself is a state machine: open, bidding, closed",
+        "[Try it](/features/interview-questions/online-auction-system)"
       ],
       [
         "17",
         "Car Rental",
         "Factory, Strategy, Command",
-        "Track availability as a matrix of vehicle x date range"
+        "Track availability as a matrix of vehicle x date range",
+        "[Try it](/features/interview-questions/car-rental)"
       ],
       [
         "18",
         "Course Registration",
         "Factory, Observer, Composite",
-        "Prerequisites form a directed graph, not a flat list"
+        "Prerequisites form a directed graph, not a flat list",
+        "[Try it](/features/interview-questions/course-registration)"
       ],
       [
         "19",
         "Task Manager",
         "Observer, Command, Composite",
-        "Tasks are state machines that can contain subtasks"
+        "Tasks are state machines that can contain subtasks",
+        "[Try it](/features/interview-questions/task-management)"
       ],
       [
         "20",
         "Inventory System",
         "Observer, Strategy, Factory",
-        "Low-stock triggers should be event-driven, not polled"
+        "Low-stock triggers should be event-driven, not polled",
+        "[Try it](/features/interview-questions/inventory-management)"
       ],
       [
         "21",
         "Stock Exchange",
         "Command, Observer, Strategy",
-        "The real challenge is the order-matching engine"
+        "The real challenge is the order-matching engine",
+        "[Try it](/features/interview-questions/online-stock-brokerage)"
       ],
       [
         "22",
         "Coffee Vending Machine",
         "State, Factory",
-        "Same shape as the vending machine, but ingredient stock replaces coins"
+        "Same shape as the vending machine, but ingredient stock replaces coins",
+        "[Try it](/features/interview-questions/coffee-vending-machine)"
       ],
       [
         "23",
         "Hospital Management",
         "Factory, Observer, Strategy",
-        "Patient triage needs priority-based scheduling, not FIFO"
+        "Patient triage needs priority-based scheduling, not FIFO",
+        "[Try it](/features/interview-questions/hospital-appointment-scheduling)"
       ],
       [
         "24",
         "Restaurant Management",
         "Observer, Decorator, State",
-        "Order customization (extra cheese, no onions) suits Decorator well"
+        "Order customization (extra cheese, no onions) suits Decorator well",
+        "[Try it](/features/interview-questions/restaurant-management)"
       ],
       [
         "25",
         "Airline Management",
         "State, Factory, Strategy",
-        "Booking uses a hold-then-confirm two-step flow, not a single write"
+        "Booking uses a hold-then-confirm two-step flow, not a single write",
+        "[Try it](/features/interview-questions/airline-management)"
       ]
     ]
   },
@@ -2774,7 +2852,7 @@ const BLOGS = [
     tags: ["System Design","Interview Prep","FAANG","Software Engineering","Architecture"],
     isFeatured: true,
     relatedSlugs: ["lld-interview-roadmap","hld-vs-lld-explained","most-asked-system-design-questions","crack-system-design-faang"],
-    seo: {"metaTitle":"Complete System Design Interview Guide 2025 | LLDCanvas","metaDescription":"Master system design interviews with our complete 2025 guide. Covers HLD, LLD, scalability, databases, caching, load balancing, and a proven answer framework.","keywords":["system design interview","system design guide","how to crack system design","HLD interview","LLD interview"]},
+    seo: {"metaTitle":"System Design Interview Guide (HLD): 6-Step Framework for FAANG | LLDCanvas","metaDescription":"A 6-step framework for System Design (HLD) interviews at FAANG - requirements, scale estimation, API design, architecture, and trade-offs. Not sure if you need HLD or LLD? We help you check first.","keywords":["system design interview","system design guide","how to crack system design","HLD interview","LLD interview"]},
     faq: [{"q":"How long are system design interviews?","a":"Typically 45-60 minutes. You spend ~5 min on clarification, 35-40 min designing, and 5 min on trade-offs."},{"q":"Do I need to memorize architectures?","a":"No. Interviewers care about your reasoning process. Understand the core building blocks deeply and you can derive any architecture."},{"q":"What is the difference between HLD and LLD?","a":"High-Level Design focuses on overall architecture - services, databases, APIs. Low-Level Design focuses on class structure, design patterns, and object-oriented modeling."}],
     content: blog1Content,
   },
@@ -2801,7 +2879,7 @@ const BLOGS = [
     isFeatured: false,
     relatedSlugs: ["system-design-interview-guide","lld-interview-roadmap","lld-interview-questions"],
     seo: {"metaTitle":"HLD vs LLD: Differences Explained with Examples | LLDCanvas","metaDescription":"Understand the difference between High-Level Design (HLD) and Low-Level Design (LLD) in software engineering interviews. Examples, diagrams, and preparation tips.","keywords":["HLD vs LLD","high level design vs low level design","system design interview types"]},
-    faq: [{"q":"Which is harder, HLD or LLD?","a":"They test different skills. HLD requires broad architectural knowledge. LLD requires deep OOP and design pattern knowledge."},{"q":"Do all companies ask both HLD and LLD?","a":"Not necessarily. Product companies typically ask both. Service-based companies often focus more on LLD."}],
+    faq: [{"q":"Which is harder, HLD or LLD?","a":"They test different skills. HLD requires broad architectural knowledge. LLD requires deep OOP and design pattern knowledge."},{"q":"Do all companies ask both HLD and LLD?","a":"Not necessarily. Product companies typically ask both. Service-based companies often focus more on LLD."},{"q":"What is the difference between HLD and LLD?","a":"HLD designs the system's architecture - which services exist, how they communicate, and how data is stored and scaled. LLD designs the internals of one component - its classes, interfaces, and design patterns. HLD answers 'what pieces make up this system'; LLD answers 'how is this one piece built.'"},{"q":"What is an example of HLD vs LLD for the same system?","a":"For Instagram: the HLD example traces requests through independently scalable services (User Service, Post Service, Feed Service), each backed by its own data store. The LLD example designs the Post class itself - its media types, visibility rules, and the Factory pattern used to create each media type. See the worked examples above for the full breakdown."}],
     content: blog3Content,
   },
   {

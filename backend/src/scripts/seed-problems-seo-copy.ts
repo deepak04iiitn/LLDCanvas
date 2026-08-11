@@ -21,16 +21,18 @@ const SEO_COPY: SeoCopy[] = [
   // ─── EASY ─────────────────────────────────────────────────────────────────
   {
     slug: 'parking-lot',
-    whyAsked: 'It\'s the canonical "warm-up" LLD question — small enough to finish in 30-45 minutes, but rich enough to test whether you reach for interfaces and the Strategy pattern instead of hardcoding vehicle types.',
+    whyAsked: 'It\'s the canonical "warm-up" LLD question — small enough to finish in 30-45 minutes, but rich enough to test whether you reach for interfaces and the Strategy pattern instead of hardcoding vehicle types. Interviewers commonly extend it mid-round with a follow-up like "now add EV charging spots" or "now support a fourth floor reserved for VIP members" specifically to see whether your original class design survives a new requirement without a rewrite.',
     realWorldApplications: [
       'Airport and mall multi-level parking management systems',
       'Automated valet parking used by dealerships and hotels',
       'Smart city curbside parking meters with dynamic pricing',
+      'EV-charging-enabled parking garages that reserve and price charging-capable spots separately from standard ones',
     ],
     learningObjectives: [
       'Model a shared, contended resource (slots) safely',
       'Use Strategy for pluggable fee-calculation rules',
       'Practice entity design before jumping to code',
+      'Extend the design for a new spot type (EV charging, reserved/VIP) without touching existing `ParkingSpot` or `ParkingLot` logic — the Open/Closed Principle in practice',
     ],
   },
   {
