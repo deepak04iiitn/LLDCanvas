@@ -50,7 +50,7 @@ export default function CollaborationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Real-Time Collaboration - LLDCanvas',
-        url: 'https://lldcanvas.in/features/collaboration',
+        url: 'https://www.lldcanvas.in/features/collaboration',
         description:
           'Real-time collaboration for UML class diagrams with live cursors, @mention comments, and role-based access.',
       }} />
@@ -58,8 +58,8 @@ export default function CollaborationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
-          { '@type': 'ListItem', position: 2, name: 'Collaboration', item: 'https://lldcanvas.in/features/collaboration' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://www.lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Collaboration', item: 'https://www.lldcanvas.in/features/collaboration' },
         ],
       }} />
 

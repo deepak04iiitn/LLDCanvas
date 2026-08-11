@@ -26,7 +26,7 @@ export default function DraftNotationFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Draft Notation - Plain-English UML',
-        url: 'https://lldcanvas.in/features/draft-notation',
+        url: 'https://www.lldcanvas.in/features/draft-notation',
         description: 'LLDCanvas\'s own plain-English UML diagramming language.',
       }} />
       <DraftNotationPageClient />

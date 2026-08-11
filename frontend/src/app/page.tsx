@@ -2,7 +2,7 @@
 import { LandingPageClient } from '@/components/marketing/LandingPageClient'
 import { FAQS } from '@/components/marketing/faq-data'
 
-const SITE_URL = 'https://lldcanvas.in'
+const SITE_URL = 'https://www.lldcanvas.in'
 
 // A server component so this route can carry its own rich metadata + JSON-LD -
 // the interactive landing page itself is 'use client' (motion, state, hooks)
