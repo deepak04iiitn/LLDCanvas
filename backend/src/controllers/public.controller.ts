@@ -73,6 +73,8 @@ export const publicController = {
           realWorldApplications: problem.realWorldApplications,
           learningObjectives: problem.learningObjectives,
           whyAsked: problem.whyAsked,
+          seoTitle: problem.seoTitle ?? null,
+          seoDescription: problem.seoDescription ?? null,
         },
         related: related.map(p => ({ slug: p.slug, title: p.title, difficulty: p.difficulty })),
       })

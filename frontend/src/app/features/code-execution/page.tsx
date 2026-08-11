@@ -49,7 +49,7 @@ export default function CodeExecutionFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: 'Code Execution - Run Code in 12 Languages | LLDCanvas',
-        url: 'https://lldcanvas.in/features/code-execution',
+        url: 'https://www.lldcanvas.in/features/code-execution',
         description:
           'Write and execute real code in 12 programming languages within the LLDCanvas workspace - no local setup required.',
       }} />
@@ -57,8 +57,8 @@ export default function CodeExecutionFeaturePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
-          { '@type': 'ListItem', position: 2, name: 'Code Execution', item: 'https://lldcanvas.in/features/code-execution' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://www.lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Code Execution', item: 'https://www.lldcanvas.in/features/code-execution' },
         ],
       }} />
 

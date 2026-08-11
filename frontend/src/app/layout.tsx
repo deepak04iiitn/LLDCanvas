@@ -32,7 +32,7 @@ const fraunces = Fraunces({
 // (across this file and every page's own metadata export) into an absolute
 // URL. Without it, Next.js falls back to http://localhost:3000 for OG/Twitter
 // image tags in production - silently breaking link-preview cards everywhere.
-const SITE_URL = 'https://lldcanvas.in'
+const SITE_URL = 'https://www.lldcanvas.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -66,7 +66,7 @@ export default async function RevisionNotesIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
         name: 'LLD Revision Notes - Design Patterns, SOLID & OOP',
-        url: 'https://lldcanvas.in/features/revision-notes',
+        url: 'https://www.lldcanvas.in/features/revision-notes',
         description: 'Concise revision notes for Low-Level Design interviews covering design patterns, OOP, SOLID principles, and system design fundamentals.',
         numberOfItems: notes.length,
         hasPart: groups.map(([category, categoryNotes]) => ({
@@ -79,8 +79,8 @@ export default async function RevisionNotesIndexPage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://lldcanvas.in/features' },
-          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://lldcanvas.in/features/revision-notes' },
+          { '@type': 'ListItem', position: 1, name: 'Features', item: 'https://www.lldcanvas.in/features' },
+          { '@type': 'ListItem', position: 2, name: 'Revision Notes', item: 'https://www.lldcanvas.in/features/revision-notes' },
         ],
       }} />
 

@@ -39,6 +39,8 @@ export interface PublicProblemDetail {
   realWorldApplications: string[]
   learningObjectives: string[]
   whyAsked: string
+  seoTitle: string | null
+  seoDescription: string | null
 }
 
 export interface PublicRelatedProblem {

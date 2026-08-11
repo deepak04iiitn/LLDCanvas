@@ -20,6 +20,12 @@ export interface IProblem extends Document {
   learningObjectives:    string[]   // 3-4 short bullets
   whyAsked:              string     // 1-2 sentence paragraph
 
+  // Optional overrides for the generated `Design {title} - LLD Interview
+  // Question | LLDCanvas` title/description template — used for problems
+  // where search demand favors different phrasing than the title itself.
+  seoTitle?:       string
+  seoDescription?: string
+
   createdAt:  Date
   updatedAt:  Date
 }
@@ -42,6 +48,9 @@ const schema = new Schema<IProblem>(
     realWorldApplications: { type: [String], default: [] },
     learningObjectives:    { type: [String], default: [] },
     whyAsked:               { type: String, default: '' },
+
+    seoTitle:       { type: String },
+    seoDescription: { type: String },
   },
   { timestamps: true },
 )

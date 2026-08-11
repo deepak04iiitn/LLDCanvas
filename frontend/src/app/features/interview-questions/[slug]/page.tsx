@@ -38,10 +38,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const res = await publicApi.problems.get(slug)
   if (!res) return { title: 'Question not found' }
   const { problem } = res
-  const title = `Design ${problem.title} - LLD Interview Question | LLDCanvas`
+  const title = problem.seoTitle || `Design ${problem.title} - LLD Interview Question | LLDCanvas`
+  const description = problem.seoDescription
+    || `${problem.description} A ${problem.difficulty} Low-Level Design question asked by ${problem.companies.slice(0, 3).join(', ') || 'top tech companies'}. Includes real-world applications, learning objectives, and a live UML canvas.`
   return {
     title,
-    description: `${problem.description} A ${problem.difficulty} Low-Level Design question asked by ${problem.companies.slice(0, 3).join(', ') || 'top tech companies'}. Includes real-world applications, learning objectives, and a live UML canvas.`,
+    description,
     keywords: [`design ${problem.title.toLowerCase()}`, 'LLD interview question', 'low level design', problem.category, ...problem.tags, ...problem.companies.slice(0, 4)],
     alternates: { canonical: `/features/interview-questions/${slug}` },
     openGraph: { title, type: 'article', url: `/features/interview-questions/${slug}` },
@@ -65,8 +67,8 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
       <JsonLd data={{
         '@context': 'https://schema.org', '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://lldcanvas.in/features/interview-questions' },
-          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://lldcanvas.in/features/interview-questions/${slug}` },
+          { '@type': 'ListItem', position: 1, name: 'Interview Questions', item: 'https://www.lldcanvas.in/features/interview-questions' },
+          { '@type': 'ListItem', position: 2, name: problem.title, item: `https://www.lldcanvas.in/features/interview-questions/${slug}` },
         ],
       }} />
 
@@ -115,6 +117,14 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
           {/* Description */}
           <p className="mx-auto mt-8 max-w-2xl text-[16px] leading-[1.8] text-ink-muted">
             {problem.description}
+          </p>
+
+          {/* LLD vs HLD orientation link */}
+          <p className="mx-auto mt-4 max-w-2xl font-mono text-[11px] text-ink-faint">
+            This is a Low-Level Design (LLD) problem.{' '}
+            <Link href="/blog/hld-vs-lld-explained" className="text-brand underline-offset-2 hover:underline">
+              New to LLD vs HLD? Start here.
+            </Link>
           </p>
 
           {/* Tags strip */}
