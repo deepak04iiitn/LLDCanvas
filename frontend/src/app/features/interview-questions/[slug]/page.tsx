@@ -119,6 +119,14 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
             {problem.description}
           </p>
 
+          {/* LLD vs HLD orientation link */}
+          <p className="mx-auto mt-4 max-w-2xl font-mono text-[11px] text-ink-faint">
+            This is a Low-Level Design (LLD) problem.{' '}
+            <Link href="/blog/hld-vs-lld-explained" className="text-brand underline-offset-2 hover:underline">
+              New to LLD vs HLD? Start here.
+            </Link>
+          </p>
+
           {/* Tags strip */}
           {problem.tags.length > 0 && (
             <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
