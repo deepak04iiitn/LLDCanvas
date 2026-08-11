@@ -2787,7 +2787,7 @@ const BLOGS = [
     tags: ["LLD","Low-Level Design","OOP","Design Patterns","Interview Roadmap","SOLID"],
     isFeatured: true,
     relatedSlugs: ["solid-principles-explained","design-patterns-guide","lld-interview-questions","oop-concepts-for-interviews"],
-    seo: {"metaTitle":"Ultimate LLD Interview Roadmap 2025 | Low-Level Design Guide | LLDCanvas","metaDescription":"Complete Low-Level Design (LLD) roadmap for software engineering interviews. Master OOP, SOLID principles, 23 design patterns, and a proven framework for solving LLD problems.","keywords":["LLD interview","low level design roadmap","LLD preparation","machine coding round"]},
+    seo: {"metaTitle":"LLD Interview Roadmap 2026: Step-by-Step Plan to Crack Low-Level Design | LLDCanvas","metaDescription":"A structured, week-by-week roadmap to prepare for LLD interviews - OOP, SOLID, design patterns, and 15+ practice problems like Parking Lot and Splitwise. Start free on LLDCanvas.","keywords":["LLD interview","low level design roadmap","LLD preparation","machine coding round","lld roadmap"]},
     faq: [{"q":"What is Low-Level Design (LLD)?","a":"LLD focuses on the detailed design of a software component - class structure, interfaces, design patterns, and object relationships."},{"q":"How long does it take to prepare for LLD interviews?","a":"With focused daily practice of 1-2 hours, most engineers are interview-ready in 4-8 weeks."}],
     content: blog2Content,
   },
