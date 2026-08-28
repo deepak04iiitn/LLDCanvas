@@ -18,6 +18,7 @@ function blockText(block: BlogBlock): string {
     case 'table':     return [...block.headers, ...block.rows.flat()].join(' ')
     case 'code':      return ''
     case 'divider':   return ''
+    case 'youtube':   return block.title + (block.caption ?? '')
   }
 }
 

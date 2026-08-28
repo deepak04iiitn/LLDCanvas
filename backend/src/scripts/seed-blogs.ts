@@ -2973,6 +2973,251 @@ const blog11Content: BlogBlock[] = [
   }
 ]
 
+// ─── Blog 12: best-lld-youtube-playlist ─────────────────────────────────────
+const blog12Content: BlogBlock[] = [
+  {
+    type: "paragraph",
+    text: "If you are preparing for Low-Level Design (LLD) interviews, you already know that reading theory alone is not enough. You need to see how an experienced engineer thinks through a class hierarchy, picks a design pattern, and evolves a diagram from scratch. That is exactly what a great YouTube playlist gives you — and this one is the best free LLD course available today."
+  },
+  {
+    type: "quote",
+    text: "While you watch, keep [LLDCanvas's UML editor](/features/editor) open in a side tab. Pause the video, draw what you see, then compare. Active recall and visual practice is the fastest path to LLD fluency."
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Why Video Learning Works Especially Well for LLD"
+  },
+  {
+    type: "paragraph",
+    text: "LLD is a visual discipline. Class diagrams, relationships, inheritance trees, and design pattern structures are far easier to internalize when you watch them being built live rather than reading a static description. Here is why video outperforms text for LLD specifically:"
+  },
+  {
+    type: "bullets",
+    items: [
+      "You see the thinking process, not just the final answer — the best LLD videos show the instructor making mistakes, reconsidering choices, and refactoring. That is the exact cognitive process interviewers are evaluating.",
+      "Diagrams come alive — watching a UML class diagram grow edge by edge makes relationships far more memorable than a finished image in a book.",
+      "Design pattern motivation becomes clear — it is one thing to read the definition of the Observer pattern; it is another to watch an instructor show you the messy code it replaces.",
+      "You build mental templates — after watching 10 problems solved on video, your brain starts pattern-matching new problems to known solution shapes.",
+      "Pace control — you can pause, rewatch the tricky parts, and skip what you already know. Textbooks cannot do that."
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "The Best Free LLD Playlist on YouTube"
+  },
+  {
+    type: "paragraph",
+    text: "This playlist is the most comprehensive, structured, and interview-focused free LLD course on the internet. It covers everything from OOP fundamentals and SOLID principles to all 23 Gang of Four design patterns, machine coding problems, and LLD interview strategy — in a single, sequenced playlist."
+  },
+  {
+    type: "youtube",
+    playlistId: "PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT",
+    title: "System Design Full Course — Best LLD Playlist on YouTube",
+    caption: "Full LLD course playlist — covers OOP, SOLID, all 23 design patterns, and LLD problem walkthroughs. Free on YouTube."
+  },
+  {
+    type: "paragraph",
+    text: "What makes this playlist stand out from dozens of other LLD videos on YouTube is its structured progression. It does not dump information at random — it builds your understanding layer by layer, starting with the OOP foundation that every LLD interview assumes, moving through SOLID principles, then into design patterns, and finally applying everything to real LLD problems. Each video builds directly on the previous one."
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "What This Playlist Covers"
+  },
+  {
+    type: "paragraph",
+    text: "Here is a breakdown of the major topic areas covered in the playlist and what you will take away from each section:"
+  },
+  {
+    type: "table",
+    headers: ["Topic Area", "What You Will Learn", "Practice on LLDCanvas"],
+    rows: [
+      ["OOP Fundamentals", "Classes, objects, encapsulation, inheritance, polymorphism, abstraction with examples", "[OOP revision notes](/features/revision-notes)"],
+      ["SOLID Principles", "All 5 SOLID principles with before/after code examples and real refactoring demos", "[SOLID Notes](/features/revision-notes)"],
+      ["Creational Patterns", "Singleton, Factory Method, Abstract Factory, Builder, Prototype — when and why to use each", "[Design Pattern Notes](/features/revision-notes)"],
+      ["Structural Patterns", "Adapter, Decorator, Facade, Composite, Proxy, Bridge, Flyweight — with UML diagrams", "[Draw patterns in the editor](/features/editor)"],
+      ["Behavioral Patterns", "Observer, Strategy, Command, Template Method, State, Iterator, Chain of Responsibility", "[Practice with problems](/features/interview-questions)"],
+      ["LLD Problem Walkthroughs", "Parking Lot, Elevator, Splitwise, BookMyShow, Snake and Ladder and more solved from scratch", "[110+ LLD problems](/features/interview-questions)"],
+      ["Machine Coding Round", "How to approach a 90-minute machine coding round: requirements, design, code, edge cases", "[Timed Interview Mode](/features/interview-mode)"]
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "How to Watch This Playlist Effectively"
+  },
+  {
+    type: "paragraph",
+    text: "Most people watch LLD tutorials passively and wonder why they cannot solve problems in their actual interview. The issue is not the content — it is the consumption method. Here is the right way to use this playlist:"
+  },
+  {
+    type: "numbered",
+    items: [
+      "Watch once without pausing — get the big picture of what the video is teaching. Do not take notes yet.",
+      "Rewatch and pause at every class or interface — open the [LLDCanvas UML editor](/features/editor) and draw each class as the instructor introduces it. Build the diagram yourself rather than just observing.",
+      "Cover the screen and redo from memory — after the video ends, close your diagram, open a blank canvas, and rebuild it from scratch. This is the most powerful memorization technique for LLD.",
+      "Immediately try a related problem — after every design pattern video, go to the [LLDCanvas problem list](/features/interview-questions) and find a problem that uses that pattern. Solve it in timed mode.",
+      "Review the revision notes — LLDCanvas has structured [design pattern and SOLID principle notes](/features/revision-notes) that complement each video section. Read the relevant note after each video.",
+      "Do not binge — one topic per day is faster than three topics in one sitting. Spaced practice beats cramming for LLD."
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Your 4-Week LLD Study Plan Using This Playlist"
+  },
+  {
+    type: "paragraph",
+    text: "Here is a concrete week-by-week plan that combines this playlist with hands-on practice on LLDCanvas. At roughly 1 to 2 hours per day, this schedule will take you from zero to interview-ready in four weeks."
+  },
+  {
+    type: "table",
+    headers: ["Week", "Playlist Focus", "LLDCanvas Practice", "Goal by End of Week"],
+    rows: [
+      ["Week 1", "OOP Fundamentals and SOLID Principles (all 5)", "Read [SOLID revision notes](/features/revision-notes). Draw UML for 1 OOP example per day in the [editor](/features/editor).", "Confidently explain all 5 SOLID principles with a code example each"],
+      ["Week 2", "Creational and Structural Design Patterns (GoF)", "After each pattern video, draw its UML in the [LLDCanvas editor](/features/editor). Read the matching [pattern note](/features/revision-notes).", "Identify which pattern to use given a problem description"],
+      ["Week 3", "Behavioral Design Patterns and First LLD Problems", "Solve 2 to 3 LLD problems per day from [the problem list](/features/interview-questions) — start with Easy difficulty. Use [Interview Mode](/features/interview-mode) with timer.", "Solve any Easy or Medium LLD problem within 45 minutes"],
+      ["Week 4", "Machine Coding Round Strategy and Hard Problems", "Solve 1 to 2 Hard problems daily using [timed Interview Mode](/features/interview-mode). Do mock interviews.", "Confidently solve any LLD problem in a 90-minute machine coding round"]
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Design Pattern to Practice Problem Map"
+  },
+  {
+    type: "paragraph",
+    text: "Design patterns are the hardest part of LLD to retain purely from video. The key is to immediately ground each pattern in a real LLD problem. Here is a pattern-to-problem map to use alongside the playlist:"
+  },
+  {
+    type: "table",
+    headers: ["Pattern Covered in Video", "Immediately Practice With", "LLDCanvas Link"],
+    rows: [
+      ["Observer Pattern", "Notification Service — multiple subscribers react to system events", "[Notification Service](/features/interview-questions/notification-service)"],
+      ["Strategy Pattern", "Ride-sharing Backend — different pricing and matching strategies at runtime", "[Ride-Sharing Backend](/features/interview-questions/ride-sharing-backend)"],
+      ["Factory and Abstract Factory", "Payment Gateway — different payment processors behind a common interface", "[Payment Gateway](/features/interview-questions/payment-gateway)"],
+      ["Singleton and Builder", "Logger / Logging Framework — single shared logger, fluent builder for log entries", "[Logging Framework](/features/interview-questions/logging-framework)"],
+      ["Decorator", "Digital Wallet — stacking fee calculators, validators, and notifications", "[Digital Wallet](/features/interview-questions/digital-wallet)"],
+      ["Command Pattern", "Vending Machine — user actions as encapsulated command objects with undo", "[Vending Machine](/features/interview-questions/vending-machine)"],
+      ["Template Method", "Chess Game — game loop as template, subclasses fill in specifics", "[Chess Game](/features/interview-questions/chess-game)"],
+      ["State Pattern", "Elevator System — elevator behaviour changes completely based on current state", "[Cab Booking](/features/interview-questions/cab-booking)"]
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Common Mistakes to Avoid"
+  },
+  {
+    type: "paragraph",
+    text: "Watching this playlist the wrong way will leave you stuck at the same level after weeks of study. Here are the most common traps and how to avoid them:"
+  },
+  {
+    type: "bullets",
+    items: [
+      "Watching without drawing — passively following along feels productive but builds almost no long-term retention. Always have the [LLDCanvas UML editor](/features/editor) open while watching.",
+      "Skipping OOP fundamentals — many people fast-forward through the OOP basics thinking they already know it. Do not. The first two weeks of solid LLD prep are always spent fixing OOP misconceptions.",
+      "Memorising pattern names without understanding the problem they solve — before any pattern video, ask yourself what problem would make you reach for this pattern. Read the [LLD revision notes](/features/revision-notes) for context.",
+      "Not timing yourself on practice problems — interview conditions are timed. Start using [Interview Mode](/features/interview-mode) from Week 2 onwards so the pressure becomes normal.",
+      "Switching playlists mid-way — the biggest enemy of LLD prep is playlist-hopping. Commit to one resource. This playlist goes from zero to interview-ready — trust the sequence.",
+      "Ignoring the SOLID principles section — interviewers at product companies ask you to explicitly call out SOLID violations in your own design. Read the [SOLID notes](/features/revision-notes) in parallel."
+    ]
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "How LLDCanvas Complements This Playlist"
+  },
+  {
+    type: "paragraph",
+    text: "This YouTube playlist gives you the knowledge. [LLDCanvas](/) gives you the practice environment. Here is how they work together:"
+  },
+  {
+    type: "bullets",
+    items: [
+      "[UML Class Diagram Editor](/features/editor) — draw every diagram from the playlist. The editor supports all relationship types (association, inheritance, composition, aggregation, realization) and all 23 GoF pattern templates are one click away.",
+      "[110+ LLD Practice Problems](/features/interview-questions) — every problem the playlist covers (Parking Lot, Elevator, Splitwise, BookMyShow, and 100+ more) has a dedicated problem page with requirements, difficulty, company tags, and a live canvas.",
+      "[Timed Interview Mode](/features/interview-mode) — simulate the machine coding round. Set a timer, get a problem, design it on the canvas, and review your session analytics.",
+      "[Design Pattern and SOLID Revision Notes](/features/revision-notes) — structured written notes for every pattern and SOLID principle. Read these after each video to cement what you watched.",
+      "Text-to-UML — type plain English like 'User owns many Orders' and get a working UML diagram instantly. Great for sketching a solution quickly before drawing it properly.",
+      "[Real-Time Collaboration](/features/collaboration) — do a mock LLD interview with a friend or mentor on a shared canvas."
+    ]
+  },
+  {
+    type: "quote",
+    text: "LLDCanvas is completely free to use. [Open the editor](/features/editor) right now and draw the first diagram from the playlist — no signup required."
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Who Is This Playlist Best For?"
+  },
+  {
+    type: "bullets",
+    items: [
+      "Software engineers with 1 to 4 years of experience preparing for product company interviews at Flipkart, Amazon India, PhonePe, Swiggy, Zepto, Meesho, and CRED.",
+      "Fresh graduates who have done data structures but have zero exposure to object-oriented design.",
+      "Engineers switching from non-OOP languages who need to build strong OOP instincts.",
+      "Anyone who found other LLD resources too abstract — this playlist is concrete, code-first, and hands-on.",
+      "Engineers targeting the machine coding round specifically — the playlist directly addresses this format."
+    ]
+  },
+  {
+    type: "paragraph",
+    text: "If you already have solid OOP and SOLID knowledge, you can skip to the design patterns section and then jump straight to the machine coding problem walkthroughs. Use the [LLD Interview Roadmap](/blog/lld-interview-roadmap) to identify exactly which sections of the playlist to prioritise based on where you are in your preparation."
+  },
+  {
+    type: "divider"
+  },
+  {
+    type: "heading",
+    level: 2,
+    text: "Key Takeaways"
+  },
+  {
+    type: "bullets",
+    items: [
+      "This playlist is the single best free LLD resource on YouTube — structured, hands-on, and directly interview-focused.",
+      "Watch actively: pause every time a class appears and draw it yourself in the [LLDCanvas editor](/features/editor).",
+      "Follow the 4-week study plan for maximum retention — one topic area per week, with timed practice built in from Week 2.",
+      "Pair every pattern video with a matching LLD problem from [LLDCanvas's problem list](/features/interview-questions).",
+      "The machine coding round is a solvable problem if you have a reliable process — the playlist teaches the process; [Interview Mode](/features/interview-mode) trains you under real pressure.",
+      "If you are unsure whether you need LLD preparation at all, read [HLD vs LLD Explained](/blog/hld-vs-lld-explained) first — it tells you exactly which round is testing what.",
+      "The fastest path to cracking LLD interviews combines this playlist with 30 to 40 timed problem solves on [LLDCanvas](/features/interview-questions). Volume of practice beats any single resource."
+    ]
+  },
+  {
+    type: "quote",
+    text: "Ready to practice? Start with [Design Parking Lot](/features/interview-questions/parking-lot) — the most commonly asked LLD problem in Indian product company interviews — and time yourself. Then check the [LLD Interview Questions list](/blog/lld-interview-questions) to see what to tackle next."
+  }
+]
+
 const BLOGS = [
   {
     slug: "system-design-interview-guide",
@@ -3116,6 +3361,29 @@ const BLOGS = [
     seo: {"metaTitle":"Design Patterns Cheat Sheet - All 23 Patterns Explained Simply | LLDCanvas","metaDescription":"A one-page cheat sheet for all 23 Gang of Four design patterns - category, intent, and a one-line example for each. Bookmark this for interviews.","keywords":["design pattern cheat sheet","design patterns quick reference","gof design patterns list","design patterns list"]},
     faq: [{"q":"How many design patterns are there?","a":"The Gang of Four book defines 23 patterns across three categories: Creational, Structural, and Behavioral."},{"q":"Do I need to know all 23 for an interview?","a":"No. Singleton, Factory Method, Builder, Decorator, Facade, Observer, Strategy, Command, and State cover most LLD interview problems - focus there first."}],
     content: blog11Content,
+  },
+  {
+    slug: "best-lld-youtube-playlist",
+    title: "The Best YouTube Playlist to Master Low-Level Design (LLD) in 2026",
+    subtitle: "A complete walkthrough of the most recommended free LLD course on YouTube — and how to pair it with hands-on practice",
+    excerpt: "The single best free YouTube playlist for learning Low-Level Design (LLD) — covering OOP, SOLID principles, all 23 GoF design patterns, and machine coding problem walkthroughs — with a 4-week study plan and LLDCanvas practice guide.",
+    category: "Low-Level Design",
+    tags: ["LLD", "YouTube", "Free Course", "Learning Resources", "Low-Level Design", "Design Patterns", "SOLID", "OOP", "Interview Prep", "Machine Coding"],
+    isFeatured: false,
+    relatedSlugs: ["lld-interview-roadmap", "lld-interview-questions", "design-patterns-guide", "solid-principles-explained", "oop-concepts-for-interviews"],
+    seo: {
+      metaTitle: "Best YouTube Playlist to Learn LLD (Low-Level Design) in 2026 | LLDCanvas",
+      metaDescription: "The best free YouTube playlist for mastering Low-Level Design (LLD): OOP, SOLID principles, all 23 design patterns, and machine coding problem walkthroughs. Includes a 4-week study plan.",
+      keywords: ["best lld youtube playlist", "lld course youtube", "learn low level design youtube", "lld tutorial playlist", "low level design free course", "machine coding round preparation", "lld design patterns youtube"]
+    },
+    faq: [
+      { q: "What is the best YouTube playlist for learning LLD?", a: "The playlist at youtube.com/playlist?list=PLQEaRBV9gAFvzp6XhcNFpk1WdOcyVo9qT is widely regarded as the most structured and comprehensive free LLD course on YouTube, covering OOP, SOLID, all 23 GoF patterns, and machine coding problems." },
+      { q: "How long does it take to complete this LLD playlist?", a: "With 1-2 hours of study per day, you can complete the playlist and do parallel practice in approximately 4 weeks. Following the study plan in this article is the fastest path." },
+      { q: "Do I need prior experience to start this LLD playlist?", a: "You need basic familiarity with at least one OOP language (Java, C++, Python, or TypeScript). The playlist teaches design from scratch but assumes you can read and write classes." },
+      { q: "Should I watch the playlist or practice on LLDCanvas first?", a: "Do both simultaneously. Watch a video, then immediately practice the concept on LLDCanvas — either by drawing the UML in the editor or solving a related problem in the problem list." },
+      { q: "What is the difference between LLD and HLD?", a: "LLD (Low-Level Design) focuses on class structure, design patterns, and object relationships for a bounded feature. HLD (High-Level Design) architects an entire distributed system. Most product companies test both, in separate rounds." }
+    ],
+    content: blog12Content,
   },
 ]
 
