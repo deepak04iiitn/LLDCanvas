@@ -148,6 +148,51 @@ export function BlogBlocks({ blocks }: { blocks: BlogBlock[] }) {
             )
           case 'divider':
             return <hr key={i} />
+          case 'youtube': {
+            const src = block.playlistId
+              ? `https://www.youtube.com/embed/videoseries?list=${block.playlistId}&rel=0`
+              : block.videoId
+              ? `https://www.youtube.com/embed/${block.videoId}?rel=0`
+              : null
+            const externalHref = block.playlistId
+              ? `https://www.youtube.com/playlist?list=${block.playlistId}`
+              : block.videoId
+              ? `https://www.youtube.com/watch?v=${block.videoId}`
+              : null
+            if (!src) return <Fragment key={i} />
+            return (
+              <div key={i} className="not-prose my-8">
+                <div className="overflow-hidden rounded-2xl border border-hairline bg-paper shadow-sm">
+                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src={src}
+                      title={block.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full border-0"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between border-t border-hairline px-4 py-2.5">
+                    {block.caption
+                      ? <p className="m-0 font-mono text-[11px] text-ink-faint">{block.caption}</p>
+                      : <p className="m-0 font-mono text-[11px] text-ink-faint">{block.title}</p>
+                    }
+                    {externalHref && (
+                      <a
+                        href={externalHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-4 shrink-0 font-mono text-[11px] font-semibold text-brand hover:underline"
+                      >
+                        Watch on YouTube ↗
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          }
           default:
             return <Fragment key={i} />
         }
