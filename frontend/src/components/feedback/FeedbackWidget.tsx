@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
@@ -27,6 +27,9 @@ const FB_TYPES: { id: FbType; label: string; Icon: typeof Bug; color: string; bg
 export function FeedbackWidget() {
   const pathname = usePathname()
   const { data: session } = useSession()
+
+  // Never show on the maintenance page
+  if (pathname === '/maintenance') return null
 
   const [open,     setOpen]     = useState(false)
   const [step,     setStep]     = useState<'type' | 'form' | 'done'>('type')
