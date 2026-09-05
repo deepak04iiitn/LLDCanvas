@@ -187,25 +187,25 @@ function BlockFields({ block, onChange }: { block: BlogBlock; onChange: (b: Blog
             className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
             placeholder="Playlist ID (e.g. PLQEaRBV9gAFv…) — leave blank if using Video ID"
             value={(block as Extract<BlogBlock, { type: 'youtube' }>).playlistId ?? ''}
-            onChange={e => update({ ...block, playlistId: e.target.value } as BlogBlock)}
+            onChange={e => onChange({ ...block, playlistId: e.target.value } as BlogBlock)}
           />
           <input
             className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
             placeholder="Video ID (e.g. dQw4w9WgXcQ) — leave blank if using Playlist ID"
             value={(block as Extract<BlogBlock, { type: 'youtube' }>).videoId ?? ''}
-            onChange={e => update({ ...block, videoId: e.target.value } as BlogBlock)}
+            onChange={e => onChange({ ...block, videoId: e.target.value } as BlogBlock)}
           />
           <input
             className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
             placeholder="Title (used for iframe accessibility)"
             value={(block as Extract<BlogBlock, { type: 'youtube' }>).title}
-            onChange={e => update({ ...block, title: e.target.value } as BlogBlock)}
+            onChange={e => onChange({ ...block, title: e.target.value } as BlogBlock)}
           />
           <input
             className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
             placeholder="Caption (optional — shown below the embed)"
             value={(block as Extract<BlogBlock, { type: 'youtube' }>).caption ?? ''}
-            onChange={e => update({ ...block, caption: e.target.value } as BlogBlock)}
+            onChange={e => onChange({ ...block, caption: e.target.value } as BlogBlock)}
           />
         </div>
       )
