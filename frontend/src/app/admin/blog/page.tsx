@@ -81,7 +81,7 @@ function StatCard({ label, value, sub, Icon, accent, bg }: {
 
 const BLOCK_LABELS: Record<BlogBlock['type'], string> = {
   heading: 'Heading', paragraph: 'Paragraph', bullets: 'Bulleted list', numbered: 'Numbered list',
-  code: 'Code', quote: 'Callout quote', table: 'Table', divider: 'Divider',
+  code: 'Code', quote: 'Callout quote', table: 'Table', divider: 'Divider', youtube: 'YouTube embed',
 }
 
 function newBlock(type: BlogBlock['type']): BlogBlock {
@@ -94,6 +94,7 @@ function newBlock(type: BlogBlock['type']): BlogBlock {
     case 'quote':     return { type, text: '' }
     case 'table':     return { type, headers: ['', ''], rows: [['', '']] }
     case 'divider':   return { type }
+    case 'youtube':   return { type, playlistId: '', videoId: '', title: '', caption: '' }
   }
 }
 
@@ -179,6 +180,35 @@ function BlockFields({ block, onChange }: { block: BlogBlock; onChange: (b: Blog
       )
     case 'divider':
       return <p className="text-[11px] italic text-ink-faint">A horizontal rule — no content needed.</p>
+    case 'youtube':
+      return (
+        <div className="space-y-2">
+          <input
+            className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
+            placeholder="Playlist ID (e.g. PLQEaRBV9gAFv…) — leave blank if using Video ID"
+            value={(block as Extract<BlogBlock, { type: 'youtube' }>).playlistId ?? ''}
+            onChange={e => update({ ...block, playlistId: e.target.value } as BlogBlock)}
+          />
+          <input
+            className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
+            placeholder="Video ID (e.g. dQw4w9WgXcQ) — leave blank if using Playlist ID"
+            value={(block as Extract<BlogBlock, { type: 'youtube' }>).videoId ?? ''}
+            onChange={e => update({ ...block, videoId: e.target.value } as BlogBlock)}
+          />
+          <input
+            className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
+            placeholder="Title (used for iframe accessibility)"
+            value={(block as Extract<BlogBlock, { type: 'youtube' }>).title}
+            onChange={e => update({ ...block, title: e.target.value } as BlogBlock)}
+          />
+          <input
+            className="w-full rounded border border-hairline bg-paper px-2 py-1 text-[13px]"
+            placeholder="Caption (optional — shown below the embed)"
+            value={(block as Extract<BlogBlock, { type: 'youtube' }>).caption ?? ''}
+            onChange={e => update({ ...block, caption: e.target.value } as BlogBlock)}
+          />
+        </div>
+      )
   }
 }
 
