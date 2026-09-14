@@ -2,14 +2,15 @@ import { Schema, model, Document } from 'mongoose'
 
 export interface IRevenueEvent extends Document {
   userId:          string
-  subscriptionId:  string        // our DB subscription _id
-  razorpaySubId:   string        // subscription_XXXX
-  razorpayPaymentId: string      // pay_XXXX
+  subscriptionId:  string
+  razorpaySubId:   string
+  razorpayPaymentId: string
   plan:            string
-  currency:        'INR' | 'USD'
-  amountPaid:      number        // in rupees, or dollars when currency is 'USD'
+  /** ISO 4217 currency code */
+  currency:        string
+  amountPaid:      number
   billingInterval: 'monthly' | 'yearly'
-  paymentSource:   'razorpay' | 'manual'
+  paymentSource:   'razorpay' | 'manual' | 'dodo'
   createdAt:       Date
 }
 
@@ -20,10 +21,10 @@ const schema = new Schema<IRevenueEvent>(
     razorpaySubId:     { type: String, required: true },
     razorpayPaymentId: { type: String, required: true, unique: true },
     plan:              { type: String, required: true },
-    currency:          { type: String, enum: ['INR', 'USD'], default: 'INR' },
+    currency:          { type: String, default: 'INR' },
     amountPaid:        { type: Number, required: true },
     billingInterval:   { type: String, enum: ['monthly', 'yearly'], required: true },
-    paymentSource:     { type: String, enum: ['razorpay', 'manual'], default: 'razorpay' },
+    paymentSource:     { type: String, enum: ['razorpay', 'manual', 'dodo'], default: 'razorpay' },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 )

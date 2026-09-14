@@ -559,8 +559,8 @@ export interface AdminSubscription {
   currentPeriodEnd: string | null
   cancelAtPeriodEnd: boolean
   cancelledAt: string | null
-  paymentSource: 'razorpay' | 'manual'
-  currency: 'INR' | 'USD'
+  paymentSource: 'razorpay' | 'manual' | 'dodo'
+  currency: string
   paidMonths: number | null
   onboardingNote: string
   createdAt: string

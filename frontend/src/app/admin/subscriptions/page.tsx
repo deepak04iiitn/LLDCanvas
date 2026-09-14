@@ -22,6 +22,8 @@ const STATUS_BADGE: Record<string, string> = {
   authenticated: 'bg-blue-50 text-blue-600 border border-blue-200',
   pending:       'bg-amber-50 text-amber-700 border border-amber-200',
   halted:        'bg-red-50 text-red-700 border border-red-200',
+  on_hold:       'bg-amber-50 text-amber-700 border border-amber-200',
+  failed:        'bg-red-50 text-red-700 border border-red-200',
   cancelled:     'bg-paper border border-hairline text-ink-muted',
   completed:     'bg-paper border border-hairline text-ink-muted',
   expired:       'bg-paper border border-hairline text-ink-muted',
@@ -187,9 +189,11 @@ export default function AdminSubscriptionsPage() {
             <option value="">All status</option>
             <option value="active">Active</option>
             <option value="created">Created</option>
+            <option value="on_hold">On hold</option>
             <option value="cancelled">Cancelled</option>
             <option value="expired">Expired</option>
             <option value="halted">Halted</option>
+            <option value="failed">Failed</option>
           </select>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-hairline bg-paper px-3 py-1.5">
@@ -241,10 +245,26 @@ export default function AdminSubscriptionsPage() {
                       <p className="font-medium text-ink">{s.userName}</p>
                       {s.paymentSource === 'manual' && (
                         <span
-                          title={s.onboardingNote || 'Manually onboarded (international payment)'}
+                          title={s.onboardingNote || 'Manually onboarded'}
                           className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-indigo-600"
                         >
-                          <Globe className="h-2.5 w-2.5" /> {s.currency}
+                          <Globe className="h-2.5 w-2.5" /> manual · {s.currency}
+                        </span>
+                      )}
+                      {s.paymentSource === 'dodo' && (
+                        <span
+                          title="Dodo Payments (international)"
+                          className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-violet-700"
+                        >
+                          <Globe className="h-2.5 w-2.5" /> dodo · {s.currency}
+                        </span>
+                      )}
+                      {s.paymentSource === 'razorpay' && (
+                        <span
+                          title="Razorpay (India)"
+                          className="rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-emerald-700"
+                        >
+                          razorpay
                         </span>
                       )}
                     </div>

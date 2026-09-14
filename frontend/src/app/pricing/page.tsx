@@ -14,7 +14,6 @@ import { usePlan } from '@/hooks/usePlan'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
-import { InternationalUpgradeModal } from '@/components/pricing/InternationalUpgradeModal'
 import { fadeUpProps, inViewProps } from '@/lib/motion'
 
 declare global {
@@ -54,7 +53,7 @@ const PLANS = [
     badgeCls:    'bg-brand text-brand-foreground',
     btnCls:      'bg-brand text-brand-foreground hover:bg-brand-hover',
     priceINR:    { monthly: 199,  yearly: 1999  },
-    priceUSD:    { monthly: 6, yearly: 60 },
+    priceUSD:    { monthly: 10, yearly: 100 },
     tagline:     'For serious engineers leveling up',
     highlight:   true,
     features: [
@@ -74,7 +73,7 @@ const PLANS = [
     badgeCls:    'bg-amber-500 text-white',
     btnCls:      'bg-amber-500 text-white hover:bg-amber-600',
     priceINR:    { monthly: 399,  yearly: 3999  },
-    priceUSD:    { monthly: 13, yearly: 130 },
+    priceUSD:    { monthly: 20, yearly: 200 },
     tagline:     'For teams and power users',
     highlight:   false,
     features: [
@@ -207,8 +206,12 @@ function PlanCard({
         ))}
       </ul>
 
-      {/* CTA */}
-      {isCurrentPlan ? (
+      {/* CTA — when current is empty, plan is still loading (keep SSR/client in sync) */}
+      {current === '' ? (
+        <div className="flex items-center justify-center rounded-md border border-hairline bg-paper py-2.5 text-sm font-medium text-ink-faint">
+          …
+        </div>
+      ) : isCurrentPlan ? (
         <div className="flex items-center justify-center rounded-md border border-hairline bg-paper py-2.5 text-sm font-medium text-ink-muted">
           Current plan
         </div>
@@ -241,33 +244,58 @@ function PlanCard({
 export default function PricingPage() {
   const [yearly,   setYearly]   = useState(false)
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR')
+  const [gateway,  setGateway]  = useState<'razorpay' | 'dodo'>('razorpay')
+  const [country,  setCountry]  = useState('IN')
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
-  const [intlModal, setIntlModal] = useState<{ open: boolean; planName: string }>({ open: false, planName: '' })
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
 
-  // Detect currency from IP on mount
+  // Detect country / gateway from IP on mount
   useEffect(() => {
-    api.billing.geo().then(r => setCurrency(r.currency)).catch(() => {})
+    api.billing.geo().then(r => {
+      setCurrency(r.gateway === 'razorpay' ? 'INR' : 'USD')
+      setGateway(r.gateway)
+      setCountry(r.country)
+    }).catch(() => {})
   }, [])
 
-  // Load Razorpay checkout script
+  // Load Razorpay checkout script (India only)
   useEffect(() => {
+    if (gateway !== 'razorpay') return
     const s = document.createElement('script')
     s.src = 'https://checkout.razorpay.com/v1/checkout.js'
     s.async = true
     document.head.appendChild(s)
     return () => { document.head.removeChild(s) }
-  }, [])
+  }, [gateway])
 
   async function handleUpgrade(tier: 'pro' | 'ultimate', isYearly: boolean) {
-    if (currency === 'USD') {
-      const plan = PLANS.find(p => p.id === tier)
-      setIntlModal({ open: true, planName: plan?.name ?? tier })
-      return
-    }
-
     setLoadingTier(tier)
     try {
+      // Re-fetch gateway at click time so we never race the initial geo default (razorpay)
+      const geo = await api.billing.geo().catch(() => null)
+      const activeGateway = geo?.gateway ?? gateway
+      const activeCountry = geo?.country ?? country
+      const activeCurrency = geo
+        ? (geo.gateway === 'razorpay' ? 'INR' : 'USD')
+        : currency
+
+      if (geo) {
+        setGateway(geo.gateway)
+        setCountry(geo.country)
+        setCurrency(geo.gateway === 'razorpay' ? 'INR' : 'USD')
+      }
+
+      if (activeGateway === 'dodo') {
+        const { checkoutUrl } = await api.billing.subscribeDodo({
+          tier,
+          yearly: isYearly,
+          billingCurrency: activeCurrency === 'USD' ? 'USD' : activeCurrency,
+          country: activeCountry === 'IN' ? 'US' : activeCountry,
+        })
+        window.location.href = checkoutUrl
+        return
+      }
+
       const { subscriptionId, keyId, userName, userEmail } = await api.billing.subscribe({ tier, yearly: isYearly })
 
       const options = {
@@ -339,22 +367,38 @@ export default function PricingPage() {
             </button>
           </div>
 
-          {/* Currency toggle */}
+          {/* Currency toggle — display only; checkout gateway is country-based */}
           <div className="flex items-center gap-1 rounded-md border border-hairline bg-paper-elevated p-1">
             <button
               onClick={() => setCurrency('INR')}
-              className={cn('rounded px-4 py-1.5 text-sm font-medium transition-colors', currency === 'INR' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink')}
+              disabled={gateway === 'dodo'}
+              className={cn(
+                'rounded px-4 py-1.5 text-sm font-medium transition-colors',
+                currency === 'INR' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
+                gateway === 'dodo' && 'cursor-not-allowed opacity-40',
+              )}
             >
               ₹ INR
             </button>
             <button
               onClick={() => setCurrency('USD')}
-              className={cn('rounded px-4 py-1.5 text-sm font-medium transition-colors', currency === 'USD' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink')}
+              disabled={gateway === 'razorpay'}
+              className={cn(
+                'rounded px-4 py-1.5 text-sm font-medium transition-colors',
+                currency === 'USD' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
+                gateway === 'razorpay' && 'cursor-not-allowed opacity-40',
+              )}
             >
               $ USD
             </button>
           </div>
         </motion.div>
+
+        {gateway === 'dodo' && (
+          <p className="mb-8 text-center text-xs text-ink-muted">
+            Prices shown in USD. You&rsquo;ll be billed in your local currency at checkout (Adaptive Currency).
+          </p>
+        )}
 
         {/* Plan cards */}
         <div className="mb-16 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -423,7 +467,10 @@ export default function PricingPage() {
 
         {/* Footer notes */}
         <div className="mt-10 flex flex-wrap justify-center gap-8 font-mono text-xs text-ink-faint">
-          <div className="flex items-center gap-2"><Lock className="h-3.5 w-3.5" /> Secure payments via Razorpay</div>
+          <div className="flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5" />
+            Secure payments via {gateway === 'dodo' ? 'Dodo Payments' : 'Razorpay'}
+          </div>
           <div className="flex items-center gap-2"><Check className="h-3.5 w-3.5" /> Cancel anytime</div>
           <div className="flex items-center gap-2"><InfinityIcon className="h-3.5 w-3.5" /> Free tier stays free forever</div>
         </div>
@@ -440,12 +487,6 @@ export default function PricingPage() {
       </main>
 
       <SiteFooter />
-
-      <InternationalUpgradeModal
-        open={intlModal.open}
-        onOpenChange={(o) => setIntlModal(s => ({ ...s, open: o }))}
-        planName={intlModal.planName}
-      />
     </div>
   )
 }

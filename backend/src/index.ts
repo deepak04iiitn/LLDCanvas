@@ -65,7 +65,13 @@ const corsOptions: CorsOptions = {
 app.use(helmet())
 app.use(cors(corsOptions))
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
-app.use(express.json({ limit: '10mb' }))
+app.use(express.json({
+  limit: '10mb',
+  verify: (req, _res, buf) => {
+    // Preserve raw body for Dodo Standard Webhooks signature verification
+    ;(req as express.Request & { rawBody?: Buffer }).rawBody = buf
+  },
+}))
 
 // ─── Global rate limit ─────────────────────────────────────────────────────────
 // Interview sync (PATCH /interview/:id) and analytics heartbeat poll every

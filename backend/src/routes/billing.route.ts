@@ -4,9 +4,11 @@ import {
   detectGeo,
   getMyPlan,
   createSubscription,
+  createDodoSubscription,
   verifyPayment,
   cancelSubscription,
   handleWebhook,
+  handleDodoWebhook,
   getPricing,
 } from '../controllers/billing.controller'
 
@@ -16,13 +18,15 @@ const router = Router()
 router.get('/geo',     detectGeo)
 router.get('/pricing', getPricing)
 
-// Webhook — raw body needed, no auth
+// Webhooks — no auth
 router.post('/webhook', handleWebhook)
+router.post('/webhook/dodo', handleDodoWebhook)
 
 // Authenticated
-router.get('/plan',       requireAuth, getMyPlan)
-router.post('/subscribe', requireAuth, createSubscription)
-router.post('/verify',    requireAuth, verifyPayment)
-router.post('/cancel',    requireAuth, cancelSubscription)
+router.get('/plan',            requireAuth, getMyPlan)
+router.post('/subscribe',      requireAuth, createSubscription)
+router.post('/subscribe/dodo', requireAuth, createDodoSubscription)
+router.post('/verify',         requireAuth, verifyPayment)
+router.post('/cancel',         requireAuth, cancelSubscription)
 
 export default router

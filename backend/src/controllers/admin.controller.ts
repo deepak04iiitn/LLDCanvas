@@ -1224,9 +1224,22 @@ export const adminController = {
       const sub = await Subscription.findById(id)
       if (!sub) throw createError('Subscription not found', 404)
 
-      // Try to cancel in Razorpay — skip entirely for manually-onboarded subs,
-      // which were never registered with Razorpay in the first place.
-      if (sub.paymentSource !== 'manual') {
+      // Cancel at the correct provider — skip for manual onboarding.
+      if (sub.paymentSource === 'dodo') {
+        try {
+          const DodoPayments = (await import('dodopayments')).default
+          const env = process.env.DODO_PAYMENTS_ENV === 'live_mode' ? 'live_mode' : 'test_mode'
+          const client = new DodoPayments({
+            bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+            environment: env,
+          })
+          await client.subscriptions.update(sub.razorpaySubId, {
+            status: 'cancelled',
+            cancel_at_next_billing_date: false,
+            cancel_reason: 'cancelled_by_merchant',
+          })
+        } catch { /* non-fatal */ }
+      } else if (sub.paymentSource !== 'manual') {
         try {
           const Razorpay = (await import('razorpay')).default
           const rzp = new Razorpay({
@@ -1291,7 +1304,21 @@ export const adminController = {
         status: { $in: ['created', 'authenticated', 'active', 'pending', 'halted'] },
       })
       if (existing) {
-        if (existing.paymentSource !== 'manual') {
+        if (existing.paymentSource === 'dodo') {
+          try {
+            const DodoPayments = (await import('dodopayments')).default
+            const env = process.env.DODO_PAYMENTS_ENV === 'live_mode' ? 'live_mode' : 'test_mode'
+            const client = new DodoPayments({
+              bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+              environment: env,
+            })
+            await client.subscriptions.update(existing.razorpaySubId, {
+              status: 'cancelled',
+              cancel_at_next_billing_date: false,
+              cancel_reason: 'cancelled_by_merchant',
+            })
+          } catch { /* non-fatal */ }
+        } else if (existing.paymentSource !== 'manual') {
           try {
             const Razorpay = (await import('razorpay')).default
             const rzp = new Razorpay({

@@ -1,10 +1,19 @@
 import { Request, Response, NextFunction } from 'express'
 import Razorpay from 'razorpay'
 import crypto from 'crypto'
+import DodoPayments from 'dodopayments'
+import type { CountryCode, Currency } from 'dodopayments/resources/misc'
 import { Subscription } from '../models/subscription.model'
 import { RevenueEvent } from '../models/revenue-event.model'
 import { User } from '../models/user.model'
-import { getLimits, getRazorpayPlanId, planFromRazorpayId, PRICING, type PlanName } from '../config/plans'
+import {
+  getLimits,
+  getRazorpayPlanId,
+  getDodoProductId,
+  planFromDodoProductId,
+  PRICING,
+} from '../config/plans'
+import { DODO_CURRENCIES, currencyForCountry, isDodoCurrency } from '../config/dodo-currencies'
 import { createError } from '../middleware/error'
 
 // ── Razorpay client (singleton) ───────────────────────────────────────────────
@@ -19,8 +28,43 @@ function rzp(): Razorpay {
   return _rzp
 }
 
+// ── Dodo client (singleton) ───────────────────────────────────────────────────
+let _dodo: DodoPayments | null = null
+function dodo(): DodoPayments {
+  if (!_dodo) {
+    const env = process.env.DODO_PAYMENTS_ENV === 'live_mode' ? 'live_mode' : 'test_mode'
+    _dodo = new DodoPayments({
+      bearerToken: process.env.DODO_PAYMENTS_API_KEY!,
+      webhookKey:  process.env.DODO_PAYMENTS_WEBHOOK_SECRET,
+      environment: env,
+    })
+  }
+  return _dodo
+}
+
+function resolveGateway(country: string): 'razorpay' | 'dodo' {
+  const override = process.env.BILLING_GATEWAY_OVERRIDE?.trim().toLowerCase()
+  if (override === 'razorpay' || override === 'dodo') return override
+  return country.toUpperCase() === 'IN' ? 'razorpay' : 'dodo'
+}
+
+async function cancelProviderSubscription(sub: {
+  paymentSource?: string
+  razorpaySubId: string
+}, atPeriodEnd: boolean) {
+  if (sub.paymentSource === 'manual') return
+  if (sub.paymentSource === 'dodo') {
+    await dodo().subscriptions.update(sub.razorpaySubId, {
+      status: 'cancelled',
+      cancel_at_next_billing_date: atPeriodEnd,
+      cancel_reason: 'cancelled_by_customer',
+    })
+    return
+  }
+  await rzp().subscriptions.cancel(sub.razorpaySubId, atPeriodEnd)
+}
+
 // ── GET /billing/geo ───────────────────────────────────────────────────────────
-// Detect user's country via IP to decide INR vs USD display.
 export async function detectGeo(req: Request, res: Response) {
   try {
     const ip =
@@ -28,33 +72,52 @@ export async function detectGeo(req: Request, res: Response) {
       req.socket.remoteAddress ||
       ''
 
-    // Skip lookup for localhost / private IPs
     const isLocal = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip) ||
       ip.startsWith('192.168.') || ip.startsWith('10.')
 
-    if (isLocal) {
-      return res.json({ country: 'IN', currency: 'INR' })
+    let country = 'IN'
+    if (!isLocal) {
+      const geoRes = await fetch(
+        `https://ipinfo.io/${ip}/json${process.env.IPINFO_TOKEN ? `?token=${process.env.IPINFO_TOKEN}` : ''}`,
+      )
+      const geo = await geoRes.json() as { country?: string }
+      country = geo.country ?? 'US'
     }
 
-    const geoRes = await fetch(`https://ipinfo.io/${ip}/json${process.env.IPINFO_TOKEN ? `?token=${process.env.IPINFO_TOKEN}` : ''}`)
-    const geo = await geoRes.json() as { country?: string }
-    const country = geo.country ?? 'US'
-    res.json({ country, currency: country === 'IN' ? 'INR' : 'USD' })
+    const gateway = resolveGateway(country)
+    // When forcing Dodo locally, use US so checkout isn't India/Razorpay-flavoured
+    if (gateway === 'dodo' && (isLocal || country === 'IN') && process.env.BILLING_GATEWAY_OVERRIDE?.trim().toLowerCase() === 'dodo') {
+      country = 'US'
+    }
+
+    const currency = gateway === 'razorpay' ? 'INR' : currencyForCountry(country)
+
+    res.json({
+      country,
+      currency,
+      gateway,
+      supportedCurrencies: gateway === 'dodo' ? DODO_CURRENCIES : ['INR'],
+    })
   } catch {
-    res.json({ country: 'IN', currency: 'INR' })
+    const gateway = resolveGateway('IN')
+    const country = gateway === 'dodo' ? 'US' : 'IN'
+    res.json({
+      country,
+      currency: gateway === 'razorpay' ? 'INR' : 'USD',
+      gateway,
+      supportedCurrencies: gateway === 'dodo' ? DODO_CURRENCIES : ['INR'],
+    })
   }
 }
 
 // ── GET /billing/plan ──────────────────────────────────────────────────────────
-// Returns current user's plan, limits and active subscription info.
 export async function getMyPlan(req: Request, res: Response) {
   const userId = req.user!.id
   const plan = req.user!.plan
 
-  // Find active subscription if any
   const sub = await Subscription.findOne({
     userId,
-    status: { $in: ['active', 'authenticated', 'created', 'pending'] },
+    status: { $in: ['active', 'authenticated', 'created', 'pending', 'on_hold'] },
   }).sort({ createdAt: -1 }).lean()
 
   res.json({
@@ -67,12 +130,13 @@ export async function getMyPlan(req: Request, res: Response) {
       billingInterval: sub.billingInterval,
       currentPeriodEnd: sub.currentPeriodEnd,
       cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+      paymentSource:   sub.paymentSource,
+      currency:        sub.currency,
     } : null,
   })
 }
 
 // ── POST /billing/subscribe ────────────────────────────────────────────────────
-// Creates a Razorpay subscription and returns the subscription_id for frontend checkout.
 export async function createSubscription(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.id
@@ -83,19 +147,17 @@ export async function createSubscription(req: Request, res: Response, next: Next
       throw createError('Invalid plan tier', 400)
     }
 
-    // Prevent subscribing to current plan
     if (currentPlan === tier) {
       throw createError('You are already on this plan', 400)
     }
 
-    // Cancel any existing active subscription first
     const existingSub = await Subscription.findOne({
       userId,
       status: { $in: ['active', 'authenticated'] },
     })
     if (existingSub) {
       try {
-        await rzp().subscriptions.cancel(existingSub.razorpaySubId, false)
+        await cancelProviderSubscription(existingSub, false)
         await Subscription.updateOne({ _id: existingSub._id }, { status: 'cancelled', cancelledAt: new Date() })
       } catch { /* non-fatal */ }
     }
@@ -103,10 +165,9 @@ export async function createSubscription(req: Request, res: Response, next: Next
     const planId = getRazorpayPlanId(tier, yearly)
     const user = await User.findById(userId).lean()
 
-    // Create Razorpay subscription
     const rzpSub = await rzp().subscriptions.create({
       plan_id:         planId,
-      total_count:     yearly ? 12 : 120, // 12 yearly cycles or 10 years monthly (effectively indefinite)
+      total_count:     yearly ? 12 : 120,
       quantity:        1,
       customer_notify: 1,
       notes: {
@@ -117,7 +178,6 @@ export async function createSubscription(req: Request, res: Response, next: Next
       },
     })
 
-    // Save to DB
     await Subscription.create({
       userId,
       plan:             tier,
@@ -125,6 +185,8 @@ export async function createSubscription(req: Request, res: Response, next: Next
       razorpayCustomerId: '',
       status:           'created',
       billingInterval:  yearly ? 'yearly' : 'monthly',
+      paymentSource:    'razorpay',
+      currency:         'INR',
     })
 
     res.json({
@@ -138,9 +200,109 @@ export async function createSubscription(req: Request, res: Response, next: Next
   }
 }
 
+// ── POST /billing/subscribe/dodo ───────────────────────────────────────────────
+export async function createDodoSubscription(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!process.env.DODO_PAYMENTS_API_KEY) {
+      throw createError('International payments are not configured yet', 503)
+    }
+
+    const userId = req.user!.id
+    const currentPlan = req.user!.plan
+    const {
+      tier,
+      yearly,
+      billingCurrency,
+      country: bodyCountry,
+    } = req.body as {
+      tier: 'pro' | 'ultimate'
+      yearly: boolean
+      billingCurrency?: string
+      country?: string
+    }
+
+    if (!['pro', 'ultimate'].includes(tier)) {
+      throw createError('Invalid plan tier', 400)
+    }
+    if (currentPlan === tier) {
+      throw createError('You are already on this plan', 400)
+    }
+
+    const productId = getDodoProductId(tier, yearly)
+    if (!productId) {
+      throw createError('Dodo product IDs are not configured', 503)
+    }
+
+    const country = (bodyCountry || 'US').toUpperCase().slice(0, 2)
+    const currencyRaw = (billingCurrency || currencyForCountry(country)).toUpperCase()
+    const billing_currency = (isDodoCurrency(currencyRaw) ? currencyRaw : 'USD') as Currency
+
+    const existingSub = await Subscription.findOne({
+      userId,
+      status: { $in: ['active', 'authenticated'] },
+    })
+    if (existingSub) {
+      try {
+        await cancelProviderSubscription(existingSub, false)
+        await Subscription.updateOne({ _id: existingSub._id }, { status: 'cancelled', cancelledAt: new Date() })
+      } catch { /* non-fatal */ }
+    }
+
+    const user = await User.findById(userId).lean()
+    const clientUrl = (process.env.CLIENT_URL ?? 'http://localhost:3000').replace(/\/+$/, '')
+
+    // Subscription products (recurring) — renewals are driven by the Dodo product's
+    // "Repeat payment every" + long "Subscription period". Webhooks handle renewals.
+    const session = await dodo().checkoutSessions.create({
+      product_cart: [{ product_id: productId, quantity: 1 }],
+      customer: {
+        email: user?.email ?? '',
+        name:  user?.name ?? '',
+      },
+      billing_currency,
+      billing_address: {
+        country: country as CountryCode,
+      },
+      return_url: `${clientUrl}/pricing/success`,
+      metadata: {
+        userId,
+        tier,
+        billing: yearly ? 'yearly' : 'monthly',
+      },
+      feature_flags: {
+        allow_currency_selection: true,
+      },
+    })
+
+    if (!session.checkout_url || !session.session_id) {
+      throw createError('Failed to create Dodo checkout session', 502)
+    }
+
+    // Temporary unique id until webhook gives us the real subscription_id
+    const placeholderId = `dodo_cks_${session.session_id}`
+
+    await Subscription.create({
+      userId,
+      plan:                  tier,
+      razorpaySubId:         placeholderId,
+      razorpayCustomerId:    '',
+      dodoCheckoutSessionId: session.session_id,
+      status:                'created',
+      billingInterval:       yearly ? 'yearly' : 'monthly',
+      paymentSource:         'dodo',
+      currency:              billing_currency,
+    })
+
+    res.json({
+      checkoutUrl: session.checkout_url,
+      sessionId:   session.session_id,
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
 // ── POST /billing/verify ───────────────────────────────────────────────────────
-// Verifies Razorpay payment signature after checkout completes.
-// Called from frontend after successful payment popup.
 export async function verifyPayment(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.id
@@ -154,7 +316,6 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
       razorpay_signature: string
     }
 
-    // Verify signature — HMAC SHA256
     const body = `${razorpay_payment_id}|${razorpay_subscription_id}`
     const expectedSig = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
@@ -165,17 +326,13 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
       throw createError('Payment verification failed — invalid signature', 400)
     }
 
-    // Find our subscription record
     const sub = await Subscription.findOne({ razorpaySubId: razorpay_subscription_id })
     if (!sub || sub.userId !== userId) {
       throw createError('Subscription not found', 404)
     }
 
-    // Activate the subscription
     sub.status = 'active'
     await sub.save()
-
-    // Upgrade user plan
     await User.findByIdAndUpdate(userId, { plan: sub.plan })
 
     res.json({ success: true, plan: sub.plan })
@@ -185,7 +342,6 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
 }
 
 // ── POST /billing/cancel ───────────────────────────────────────────────────────
-// User-initiated cancellation — cancels at period end.
 export async function cancelSubscription(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.id
@@ -196,8 +352,7 @@ export async function cancelSubscription(req: Request, res: Response, next: Next
     })
     if (!sub) throw createError('No active subscription found', 404)
 
-    // Cancel at period end (cancel_at_cycle_end = true)
-    await rzp().subscriptions.cancel(sub.razorpaySubId, true)
+    await cancelProviderSubscription(sub, true)
 
     sub.cancelAtPeriodEnd = true
     sub.cancelledAt = new Date()
@@ -210,7 +365,6 @@ export async function cancelSubscription(req: Request, res: Response, next: Next
 }
 
 // ── POST /billing/webhook ──────────────────────────────────────────────────────
-// Razorpay webhook handler — verifies signature then processes events.
 export async function handleWebhook(req: Request, res: Response) {
   try {
     const signature = req.headers['x-razorpay-signature'] as string
@@ -241,10 +395,8 @@ export async function handleWebhook(req: Request, res: Response) {
         if (sub.current_end)   dbSub.currentPeriodEnd   = new Date(sub.current_end   * 1000)
         await dbSub.save()
 
-        // Keep user plan in sync
         await User.findByIdAndUpdate(dbSub.userId, { plan: dbSub.plan })
 
-        // Log revenue on charge event
         if (event.event === 'subscription.charged') {
           const payment = (event.payload as { payment?: { entity?: { id?: string; amount?: number } } }).payment?.entity
           if (payment?.id && payment?.amount) {
@@ -255,8 +407,9 @@ export async function handleWebhook(req: Request, res: Response) {
               razorpayPaymentId: payment.id,
               plan:              dbSub.plan,
               currency:          'INR',
-              amountPaid:        payment.amount / 100, // paise → rupees
+              amountPaid:        payment.amount / 100,
               billingInterval:   dbSub.billingInterval,
+              paymentSource:     'razorpay',
             }).catch(() => {})
           }
         }
@@ -277,10 +430,6 @@ export async function handleWebhook(req: Request, res: Response) {
         dbSub.cancelledAt = new Date()
         await dbSub.save()
 
-        // Only downgrade to free if the user has NO other active subscription.
-        // This guards against a race condition where the old subscription's
-        // cancelled webhook fires after the user has already paid for a new
-        // (upgraded/downgraded) plan and their new subscription is active.
         const hasActiveSub = await Subscription.exists({
           userId: dbSub.userId,
           _id:    { $ne: dbSub._id },
@@ -306,8 +455,203 @@ export async function handleWebhook(req: Request, res: Response) {
   }
 }
 
+// ── Dodo webhook helpers ───────────────────────────────────────────────────────
+
+type DodoSubPayload = {
+  subscription_id?: string
+  product_id?: string
+  status?: string
+  next_billing_date?: string
+  previous_billing_date?: string | null
+  currency?: string
+  metadata?: Record<string, string | number | boolean>
+  payment_id?: string
+  total_amount?: number
+  amount?: number
+}
+
+async function findDodoSubscription(data: DodoSubPayload) {
+  if (data.subscription_id) {
+    const byId = await Subscription.findOne({ razorpaySubId: data.subscription_id, paymentSource: 'dodo' })
+    if (byId) return byId
+  }
+
+  const meta = data.metadata ?? {}
+  const userId = typeof meta.userId === 'string' ? meta.userId : null
+  const sessionId = typeof meta.checkoutSessionId === 'string' ? meta.checkoutSessionId : null
+
+  if (sessionId) {
+    const bySession = await Subscription.findOne({ dodoCheckoutSessionId: sessionId, paymentSource: 'dodo' })
+    if (bySession) return bySession
+  }
+
+  if (userId) {
+    return Subscription.findOne({
+      userId,
+      paymentSource: 'dodo',
+      status: { $in: ['created', 'pending', 'active', 'on_hold'] },
+    }).sort({ createdAt: -1 })
+  }
+
+  return null
+}
+
+async function maybeDowngrade(userId: string, exceptSubId: unknown) {
+  const hasActiveSub = await Subscription.exists({
+    userId,
+    _id:    { $ne: exceptSubId },
+    status: { $in: ['active', 'authenticated'] },
+  })
+  if (!hasActiveSub) {
+    await User.findByIdAndUpdate(userId, { plan: 'free' })
+  }
+}
+
+// ── POST /billing/webhook/dodo ─────────────────────────────────────────────────
+export async function handleDodoWebhook(req: Request, res: Response) {
+  try {
+    const rawBody =
+      (req as Request & { rawBody?: Buffer | string }).rawBody
+        ? Buffer.isBuffer((req as Request & { rawBody?: Buffer }).rawBody)
+          ? (req as Request & { rawBody: Buffer }).rawBody.toString('utf8')
+          : String((req as Request & { rawBody: string }).rawBody)
+        : typeof req.body === 'string'
+          ? req.body
+          : JSON.stringify(req.body)
+
+    const headers = {
+      'webhook-id':        String(req.headers['webhook-id'] ?? ''),
+      'webhook-signature': String(req.headers['webhook-signature'] ?? ''),
+      'webhook-timestamp': String(req.headers['webhook-timestamp'] ?? ''),
+    }
+
+    let event: { type: string; data: DodoSubPayload }
+    try {
+      event = dodo().webhooks.unwrap(rawBody, {
+        headers,
+        key: process.env.DODO_PAYMENTS_WEBHOOK_SECRET,
+      }) as { type: string; data: DodoSubPayload }
+    } catch {
+      return res.status(400).json({ error: 'Invalid Dodo webhook signature' })
+    }
+
+    const data = event.data ?? {}
+
+    switch (event.type) {
+      case 'subscription.active':
+      case 'subscription.renewed':
+      case 'subscription.plan_changed': {
+        let dbSub = await findDodoSubscription(data)
+        const productId = data.product_id ?? ''
+        const plan = planFromDodoProductId(productId)
+        const meta = data.metadata ?? {}
+        const userId = (typeof meta.userId === 'string' ? meta.userId : dbSub?.userId) ?? null
+        const billing = typeof meta.billing === 'string' ? meta.billing : dbSub?.billingInterval
+
+        if (!dbSub && userId && plan !== 'free') {
+          dbSub = await Subscription.create({
+            userId,
+            plan,
+            razorpaySubId:         data.subscription_id ?? `dodo_${Date.now()}`,
+            dodoCheckoutSessionId: typeof meta.checkoutSessionId === 'string' ? meta.checkoutSessionId : '',
+            status:                'active',
+            billingInterval:       billing === 'yearly' ? 'yearly' : 'monthly',
+            paymentSource:         'dodo',
+            currency:              (data.currency ?? 'USD').toUpperCase(),
+            currentPeriodEnd:      data.next_billing_date ? new Date(data.next_billing_date) : null,
+          })
+        }
+
+        if (!dbSub) break
+
+        if (data.subscription_id && dbSub.razorpaySubId !== data.subscription_id) {
+          // Replace placeholder cks id with real subscription id
+          const conflict = await Subscription.findOne({
+            razorpaySubId: data.subscription_id,
+            _id: { $ne: dbSub._id },
+          })
+          if (!conflict) {
+            dbSub.razorpaySubId = data.subscription_id
+          }
+        }
+
+        dbSub.status = 'active'
+        if (plan !== 'free') dbSub.plan = plan
+        if (data.currency) dbSub.currency = data.currency.toUpperCase()
+        if (data.next_billing_date) dbSub.currentPeriodEnd = new Date(data.next_billing_date)
+        if (data.previous_billing_date) dbSub.currentPeriodStart = new Date(data.previous_billing_date)
+        await dbSub.save()
+
+        await User.findByIdAndUpdate(dbSub.userId, { plan: dbSub.plan })
+        break
+      }
+
+      case 'subscription.on_hold':
+      case 'subscription.paused': {
+        const dbSub = await findDodoSubscription(data)
+        if (!dbSub) break
+        dbSub.status = 'on_hold'
+        await dbSub.save()
+        break
+      }
+
+      case 'subscription.cancelled':
+      case 'subscription.expired':
+      case 'subscription.failed': {
+        const dbSub = await findDodoSubscription(data)
+        if (!dbSub) break
+        dbSub.status =
+          event.type === 'subscription.cancelled' ? 'cancelled'
+            : event.type === 'subscription.expired' ? 'expired'
+              : 'failed'
+        dbSub.cancelledAt = new Date()
+        await dbSub.save()
+        await maybeDowngrade(dbSub.userId, dbSub._id)
+        break
+      }
+
+      case 'payment.succeeded': {
+        const payment = data as DodoSubPayload & {
+          payment_id?: string
+          subscription_id?: string
+          total_amount?: number
+          settlement_amount?: number
+          currency?: string
+        }
+        if (!payment.subscription_id || !payment.payment_id) break
+
+        const dbSub = await Subscription.findOne({
+          razorpaySubId: payment.subscription_id,
+          paymentSource: 'dodo',
+        })
+        if (!dbSub) break
+
+        // Dodo amounts are typically in minor units for most currencies
+        const rawAmount = payment.total_amount ?? payment.settlement_amount ?? payment.amount ?? 0
+        const amountPaid = typeof rawAmount === 'number' ? rawAmount / 100 : 0
+
+        await RevenueEvent.create({
+          userId:            dbSub.userId,
+          subscriptionId:    dbSub._id.toString(),
+          razorpaySubId:     dbSub.razorpaySubId,
+          razorpayPaymentId: payment.payment_id,
+          plan:              dbSub.plan,
+          currency:          (payment.currency ?? dbSub.currency ?? 'USD').toUpperCase(),
+          amountPaid,
+          billingInterval:   dbSub.billingInterval,
+          paymentSource:     'dodo',
+        }).catch(() => {})
+        break
+      }
+    }
+
+    res.json({ ok: true })
+  } catch {
+    res.status(500).json({ error: 'Dodo webhook processing failed' })
+  }
+}
+
 // ── GET /billing/pricing ───────────────────────────────────────────────────────
-// Public endpoint — returns pricing data so frontend doesn't need env vars.
 export function getPricing(_req: Request, res: Response) {
   res.json({ pricing: PRICING, plans: ['free', 'pro', 'ultimate'] })
 }

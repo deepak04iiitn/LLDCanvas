@@ -183,13 +183,40 @@ export function planFromRazorpayId(planId: string): PlanName {
   return 'free'
 }
 
+/** Dodo product IDs from env — international subscription products (USD base). */
+export function getDodoProductId(tier: 'pro' | 'ultimate', yearly: boolean): string {
+  if (tier === 'pro') {
+    return yearly
+      ? process.env.DODO_PRO_YEARLY!
+      : process.env.DODO_PRO_MONTHLY!
+  }
+  return yearly
+    ? process.env.DODO_ULT_YEARLY!
+    : process.env.DODO_ULT_MONTHLY!
+}
+
+/** Map Dodo product ID back to our PlanName */
+export function planFromDodoProductId(productId: string): PlanName {
+  const proIds = [
+    process.env.DODO_PRO_MONTHLY,
+    process.env.DODO_PRO_YEARLY,
+  ]
+  const ultIds = [
+    process.env.DODO_ULT_MONTHLY,
+    process.env.DODO_ULT_YEARLY,
+  ]
+  if (proIds.includes(productId)) return 'pro'
+  if (ultIds.includes(productId)) return 'ultimate'
+  return 'free'
+}
+
 export const PRICING = {
   pro: {
-    monthly: { INR: 199, USD: 6 },
-    yearly:  { INR: 1999, USD: 60 },
+    monthly: { INR: 199, USD: 10 },
+    yearly:  { INR: 1999, USD: 100 },
   },
   ultimate: {
-    monthly: { INR: 399, USD: 13 },
-    yearly:  { INR: 3999, USD: 130 },
+    monthly: { INR: 399, USD: 20 },
+    yearly:  { INR: 3999, USD: 200 },
   },
 } as const
