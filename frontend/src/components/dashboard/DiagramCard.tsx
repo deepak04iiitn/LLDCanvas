@@ -213,15 +213,12 @@ export function DiagramCard({ diagram, index = 0, onDeleted, onDuplicated, onRen
               Open <ArrowUpRight className="h-3.5 w-3.5" />
             </span>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  title="Actions"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-hairline hover:text-ink"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
+              <DropdownMenuTrigger
+                title="Actions"
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-hairline hover:text-ink"
+              >
+                <MoreHorizontal size={16} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
                 {actions}

@@ -12,9 +12,9 @@ import { php } from '@codemirror/lang-php'
 import { javascript } from '@codemirror/lang-javascript'
 import { EditorView } from '@codemirror/view'
 import {
-  X, Play, ChevronDown, ChevronRight, GripVertical,
-  Clock, MemoryStick, Terminal, Loader2, AlertTriangle,
-  CheckCircle2, Copy, Check, RotateCcw, Ban, Zap, History,
+  Play, ChevronDown, ChevronUp, ArrowLeft, Clock, MemoryStick, Terminal,
+  Loader2, AlertTriangle, CheckCircle2, Copy, Check, RotateCcw,
+  Ban, Zap, History, Keyboard,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
@@ -119,18 +119,37 @@ interface CodePanelProps {
   problemSlug?: string
 }
 
-// ─── Light theme for CodeMirror to match app ─────────────────────────────────
+type ConsoleTab = 'output' | 'stdin'
 
-const lightTheme = EditorView.theme({
-  '&': { backgroundColor: '#FAFAF9', color: '#1C1917', fontSize: '13px', fontFamily: '"Fira Code", "JetBrains Mono", Consolas, monospace' },
-  '.cm-content': { padding: '12px 4px', caretColor: '#3D6A52' },
-  '.cm-cursor': { borderLeftColor: '#3D6A52' },
-  '.cm-selectionBackground, ::selection': { backgroundColor: '#3D6A5220' },
-  '.cm-gutters': { backgroundColor: '#F5F5F4', borderRight: '1px solid #E7E5E4', color: '#A8A29E' },
-  '.cm-activeLineGutter': { backgroundColor: '#EEF2EE' },
-  '.cm-activeLine': { backgroundColor: '#EEF2EE50' },
-  '.cm-lineNumbers': { minWidth: '3em' },
-  '&.cm-focused .cm-selectionBackground': { backgroundColor: '#3D6A5230' },
+// ─── Editor theme (warm paper palette) ───────────────────────────────────────
+
+const editorTheme = EditorView.theme({
+  '&': {
+    backgroundColor: '#FFFEFB',
+    color: '#201F1C',
+    fontSize: '13.5px',
+    fontFamily: '"Fira Code", "JetBrains Mono", "SF Mono", Consolas, monospace',
+    height: '100%',
+  },
+  '.cm-scroller': { overflow: 'auto', fontFamily: 'inherit' },
+  '.cm-content': {
+    padding: '16px 8px 48px',
+    caretColor: '#234E3F',
+    lineHeight: '1.65',
+  },
+  '.cm-cursor': { borderLeftColor: '#234E3F', borderLeftWidth: '2px' },
+  '.cm-selectionBackground, ::selection': { backgroundColor: '#234E3F22' },
+  '.cm-gutters': {
+    backgroundColor: '#F7F4EC',
+    borderRight: '1px solid #E7E2D6',
+    color: '#A69F8C',
+    minWidth: '3.25rem',
+  },
+  '.cm-activeLineGutter': { backgroundColor: '#E7F0EB', color: '#234E3F', fontWeight: '600' },
+  '.cm-activeLine': { backgroundColor: '#E7F0EB40' },
+  '.cm-lineNumbers .cm-gutterElement': { padding: '0 12px 0 8px' },
+  '&.cm-focused .cm-selectionBackground': { backgroundColor: '#234E3F30' },
+  '.cm-matchingBracket': { backgroundColor: '#234E3F18', outline: '1px solid #234E3F40' },
 })
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -139,29 +158,30 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
   const [lang,         setLang]         = useState<LangValue>('python-3.14')
   const [code,         setCode]         = useState(STARTERS['python-3.14'])
   const [stdin,        setStdin]        = useState('')
-  const [stdinOpen,    setStdinOpen]    = useState(false)
+  const [consoleTab,   setConsoleTab]   = useState<ConsoleTab>('output')
+  const [consoleOpen,  setConsoleOpen]  = useState(false)
   const [running,      setRunning]      = useState(false)
   const [result,       setResult]       = useState<CodeResult | null>(null)
   const [copied,       setCopied]       = useState(false)
   const [banned,       setBanned]       = useState<string | null>(null)
   const [dailyLimitHit, setDailyLimitHit] = useState(false)
-  const [panelWidth,   setPanelWidth]   = useState(480)
   const [langOpen,     setLangOpen]     = useState(false)
-  const [bottomHeight, setBottomHeight] = useState(120)
+  const [bottomHeight, setBottomHeight] = useState(200)
   const [historyOpen,  setHistoryOpen]  = useState(false)
   const [runCount,     setRunCount]     = useState(0)
 
-  const panelRef        = useRef<HTMLElement>(null)
-  const resizingRef     = useRef(false)
-  const startXRef       = useRef(0)
-  const startWRef       = useRef(480)
-  const vResizingRef    = useRef(false)
-  const vStartYRef      = useRef(0)
-  const vStartHRef      = useRef(120)
+  const vResizingRef = useRef(false)
+  const vStartYRef   = useRef(0)
+  const vStartHRef   = useRef(200)
 
   const currentLang = LANGUAGES.find(l => l.value === lang)!
+  const stdinLines  = stdin.trim() ? stdin.split('\n').length : 0
 
-  // Switch language - reset code to starter snippet
+  function openConsole(tab: ConsoleTab = 'output') {
+    setConsoleTab(tab)
+    setConsoleOpen(true)
+  }
+
   function switchLang(v: LangValue) {
     setLang(v)
     setCode(STARTERS[v])
@@ -169,11 +189,12 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     setLangOpen(false)
   }
 
-  // Run code
   const run = useCallback(async () => {
     if (running || !code.trim()) return
     setRunning(true)
     setResult(null)
+    setConsoleTab('output')
+    setConsoleOpen(true)
     try {
       const data = await api.code.run({ compiler: lang, code, input: stdin, ...(problemSlug ? { problemSlug } : {}) })
       setResult(data as CodeResult)
@@ -184,7 +205,6 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
         setBanned(apiErr.message)
         return
       }
-      // Daily plan limit reached
       if (apiErr.status === 429) {
         setDailyLimitHit(true)
         return
@@ -202,44 +222,27 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     } finally {
       setRunning(false)
     }
-  }, [running, code, lang, stdin])
+  }, [running, code, lang, stdin, problemSlug])
 
-  // Ctrl+Enter to run
   useEffect(() => {
+    if (!open) return
     function onKey(e: KeyboardEvent) {
-      if (!open) return
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault()
         run()
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (langOpen) { setLangOpen(false); return }
+        if (historyOpen) { setHistoryOpen(false); return }
+        onClose()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, run])
+  }, [open, run, onClose, langOpen, historyOpen])
 
-  // Drag-resize from left edge
-  const startResize = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    resizingRef.current = true
-    startXRef.current   = e.clientX
-    startWRef.current   = panelWidth
-
-    function onMove(ev: MouseEvent) {
-      if (!resizingRef.current) return
-      const delta = startXRef.current - ev.clientX
-      const next  = Math.min(800, Math.max(320, startWRef.current + delta))
-      setPanelWidth(next)
-    }
-    function onUp() {
-      resizingRef.current = false
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }, [panelWidth])
-
-  // Vertical drag - resize bottom pane (stdin + output)
   const startVerticalResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     vResizingRef.current = true
@@ -249,7 +252,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     function onMove(ev: MouseEvent) {
       if (!vResizingRef.current) return
       const delta = vStartYRef.current - ev.clientY
-      const next  = Math.min(600, Math.max(80, vStartHRef.current + delta))
+      const next  = Math.min(520, Math.max(120, vStartHRef.current + delta))
       setBottomHeight(next)
     }
     function onUp() {
@@ -261,7 +264,6 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     window.addEventListener('mouseup', onUp)
   }, [bottomHeight])
 
-  // Copy output
   function copyOutput() {
     const text = result?.output || result?.error || ''
     navigator.clipboard.writeText(text).then(() => {
@@ -270,346 +272,432 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
     })
   }
 
-  const extensions = currentLang.ext ? [currentLang.ext, lightTheme] : [lightTheme]
+  const extensions = currentLang.ext ? [currentLang.ext, editorTheme] : [editorTheme]
+  const canRun = !running && !!code.trim() && !banned && !dailyLimitHit
 
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-40 bg-black/10"
-            onClick={onClose}
-          />
+    <motion.div
+      initial={false}
+      animate={{
+        opacity: open ? 1 : 0,
+        y: open ? 0 : 10,
+      }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+      className={cn(
+        'absolute inset-0 z-40 flex flex-col',
+        'bg-[linear-gradient(180deg,#F7F4EC_0%,#FBF9F4_28%,#FBF9F4_100%)]',
+        !open && 'pointer-events-none',
+      )}
+      aria-hidden={!open}
+    >
+      {/* ── Alerts ─────────────────────────────────────────────────────── */}
+      {banned && (
+        <div className="shrink-0 border-b border-red-200/80 bg-red-50/90 px-5 py-3 flex items-start gap-2.5 backdrop-blur-sm">
+          <Ban className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-red-700">Code execution revoked</p>
+            <p className="mt-0.5 text-xs text-red-600 leading-relaxed">{banned}</p>
+          </div>
+        </div>
+      )}
 
-          {/* Panel */}
-          <motion.aside
-            ref={panelRef}
-            initial={{ x: '100%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 340, damping: 32 }}
-            style={{ width: panelWidth }}
-            className="absolute right-0 top-0 z-50 flex h-full flex-col border-l border-hairline bg-paper-elevated shadow-2xl"
+      {dailyLimitHit && !banned && (
+        <div className="shrink-0 border-b border-amber-200/80 bg-amber-50/90 px-5 py-3 flex items-center gap-2.5 backdrop-blur-sm">
+          <Zap className="h-4 w-4 shrink-0 text-amber-600" />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-amber-800">Daily limit reached</p>
+            <p className="text-xs text-amber-700">You&apos;ve used all your executions for today.</p>
+          </div>
+          <a
+            href="/pricing"
+            className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground hover:bg-brand-hover transition-colors"
           >
-            {/* Drag handle - left edge */}
-            <div
-              onMouseDown={startResize}
-              className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-brand/20 transition-colors z-10 group"
+            Upgrade
+          </a>
+        </div>
+      )}
+
+      {/* ── Toolbar ────────────────────────────────────────────────────── */}
+      <header className="shrink-0 px-4 pt-3 pb-2.5 sm:px-5">
+        <div className="flex items-center gap-3">
+          {/* Mode switch */}
+          <div className="flex items-center rounded-xl border border-hairline bg-paper-elevated/80 p-0.5 shadow-sm backdrop-blur-sm">
+            <button
+              onClick={onClose}
+              title="Back to UML (Esc)"
+              className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-hairline/70 hover:text-ink"
             >
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 flex h-12 w-1.5 items-center justify-center">
-                <GripVertical className="h-4 w-4 text-ink-faint opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">UML</span>
+            </button>
+            <div className="flex items-center gap-1.5 rounded-[10px] bg-brand px-2.5 py-1.5 text-xs font-semibold text-brand-foreground shadow-sm">
+              <Terminal className="h-3.5 w-3.5 opacity-90" />
+              Code
             </div>
+          </div>
 
-            {/* ── Ban notice ───────────────────────────────────────────────── */}
-            {banned && (
-              <div className="shrink-0 border-b border-red-200 bg-red-50 px-4 py-3 flex items-start gap-2.5">
-                <Ban className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-red-700">Code execution revoked</p>
-                  <p className="mt-0.5 text-xs text-red-600 leading-relaxed">{banned}</p>
-                </div>
-              </div>
-            )}
+          {/* Language */}
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen(v => !v)}
+              className={cn(
+                'flex items-center gap-1.5 rounded-xl border border-hairline bg-paper-elevated/90 px-3 py-1.5',
+                'text-xs font-medium text-ink shadow-sm transition hover:border-hairline-strong hover:bg-paper-elevated',
+                langOpen && 'border-brand/30 ring-2 ring-brand/10',
+              )}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              {currentLang.label}
+              <ChevronDown className={cn('h-3 w-3 text-ink-faint transition-transform', langOpen && 'rotate-180')} />
+            </button>
 
-            {/* ── Daily limit notice ────────────────────────────────────────── */}
-            {dailyLimitHit && !banned && (
-              <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-2.5">
-                <Zap className="h-4 w-4 shrink-0 text-amber-600" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-amber-800">Daily limit reached</p>
-                  <p className="text-xs text-amber-700">You&apos;ve used all your executions for today.</p>
-                </div>
-                <a
-                  href="/pricing"
-                  className="shrink-0 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90 transition-colors"
-                >
-                  Upgrade
-                </a>
-              </div>
-            )}
-
-            {/* ── Header ───────────────────────────────────────────────────── */}
-            <div className="flex items-center gap-2 border-b border-hairline px-4 py-3 shrink-0">
-              <Terminal className="h-4 w-4 text-brand shrink-0" />
-              <span className="font-semibold text-sm text-ink">Code</span>
-
-              {/* Language selector */}
-              <div className="relative ml-1">
-                <button
-                  onClick={() => setLangOpen(v => !v)}
-                  className="flex items-center gap-1.5 rounded-md border border-hairline bg-paper px-2.5 py-1 text-xs font-medium text-ink transition hover:bg-hairline"
-                >
-                  {currentLang.label}
-                  <ChevronDown className={cn('h-3 w-3 text-ink-faint transition-transform', langOpen && 'rotate-180')} />
-                </button>
-
-                <AnimatePresence>
-                  {langOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                      transition={{ duration: 0.12 }}
-                      className="absolute left-0 top-full z-20 mt-1 w-52 overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-xl"
-                    >
+            <AnimatePresence>
+              {langOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setLangOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute left-0 top-full z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-xl"
+                  >
+                    <div className="max-h-72 overflow-y-auto py-1">
                       {LANGUAGES.map(l => (
                         <button
                           key={l.value}
                           onClick={() => switchLang(l.value)}
                           className={cn(
-                            'flex w-full items-center px-3 py-2 text-xs text-left transition hover:bg-brand-tint hover:text-brand',
-                            lang === l.value && 'bg-brand-tint text-brand font-semibold',
+                            'flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition',
+                            lang === l.value
+                              ? 'bg-brand-tint font-semibold text-brand'
+                              : 'text-ink hover:bg-brand-tint/60 hover:text-brand',
                           )}
                         >
+                          <span className={cn(
+                            'h-1.5 w-1.5 rounded-full',
+                            lang === l.value ? 'bg-brand' : 'bg-hairline-strong',
+                          )} />
                           {l.label}
                         </button>
                       ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
-              <div className="ml-auto flex items-center gap-2">
-                {/* Reset to starter */}
-                <button
-                  onClick={() => { setCode(STARTERS[lang]); setResult(null) }}
-                  title="Reset to starter code"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:bg-hairline hover:text-ink transition"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              onClick={() => { setCode(STARTERS[lang]); setResult(null) }}
+              title="Reset to starter code"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint transition hover:bg-hairline/80 hover:text-ink"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
 
-                {/* Run history */}
-                <button
-                  onClick={() => setHistoryOpen(v => !v)}
-                  title="Run history"
-                  className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-md transition',
-                    historyOpen
-                      ? 'bg-brand/10 text-brand'
-                      : 'text-ink-faint hover:bg-hairline hover:text-ink',
-                  )}
-                >
-                  <History className="h-3.5 w-3.5" />
-                </button>
+            <button
+              onClick={() => setHistoryOpen(v => !v)}
+              title="Run history"
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-lg transition',
+                historyOpen
+                  ? 'bg-brand-tint text-brand'
+                  : 'text-ink-faint hover:bg-hairline/80 hover:text-ink',
+              )}
+            >
+              <History className="h-3.5 w-3.5" />
+            </button>
 
-                {/* Run */}
-                <button
-                  onClick={run}
-                  disabled={running || !code.trim() || !!banned || dailyLimitHit}
-                  className="flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:opacity-90 disabled:opacity-50"
-                  title={banned ? 'Code execution revoked by admin' : 'Run (Ctrl+Enter)'}
-                >
-                  {running
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    : <Play className="h-3.5 w-3.5 fill-current" />
-                  }
-                  {running ? 'Running…' : 'Run'}
-                </button>
+            <div className="mx-0.5 hidden h-5 w-px bg-hairline sm:block" />
 
-                {/* Close */}
-                <button
-                  onClick={onClose}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:bg-hairline hover:text-ink transition"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+            <button
+              onClick={run}
+              disabled={!canRun}
+              className={cn(
+                'group flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold shadow-sm transition',
+                'bg-brand text-brand-foreground hover:bg-brand-hover',
+                'disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none',
+              )}
+              title={banned ? 'Code execution revoked by admin' : 'Run (Ctrl+Enter)'}
+            >
+              {running
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <Play className="h-3.5 w-3.5 fill-current" />
+              }
+              {running ? 'Running…' : 'Run'}
+              {!running && (
+                <kbd className="hidden items-center rounded-md bg-white/15 px-1.5 py-0.5 font-mono text-[10px] font-medium text-brand-foreground/80 sm:inline-flex">
+                  ⌃↵
+                </kbd>
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Editor surface ─────────────────────────────────────────────── */}
+      <div className="min-h-0 flex-1 px-3 pb-2 sm:px-4">
+        <div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_1px_2px_rgba(32,31,28,0.04),0_8px_24px_rgba(32,31,28,0.06)]">
+          <div className="flex items-center gap-2 border-b border-hairline/80 bg-[#F7F4EC]/70 px-3.5 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-[#E8C4B8]" />
+              <span className="h-2 w-2 rounded-full bg-[#E2D6A8]" />
+              <span className="h-2 w-2 rounded-full bg-[#B8D4C4]" />
             </div>
+            <span className="ml-1.5 font-mono text-[10px] font-medium tracking-wide text-ink-faint">
+              main · {currentLang.label.split(' ')[0]}
+            </span>
+            <span className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint">
+              <Keyboard className="h-3 w-3" />
+              Esc → UML
+            </span>
+          </div>
 
-            {/* ── Code Editor ──────────────────────────────────────────────── */}
-            <div className="flex-1 overflow-hidden min-h-0">
-              <CodeMirror
-                value={code}
-                onChange={setCode}
-                extensions={extensions}
-                basicSetup={{
-                  lineNumbers: true,
-                  highlightActiveLineGutter: true,
-                  highlightActiveLine: true,
-                  foldGutter: false,
-                  autocompletion: true,
-                  bracketMatching: true,
-                  closeBrackets: true,
-                  indentOnInput: true,
-                  tabSize: 2,
-                }}
-                height="100%"
-                style={{ height: '100%', fontSize: '13px' }}
-              />
-            </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <CodeMirror
+              value={code}
+              onChange={setCode}
+              extensions={extensions}
+              basicSetup={{
+                lineNumbers: true,
+                highlightActiveLineGutter: true,
+                highlightActiveLine: true,
+                foldGutter: false,
+                autocompletion: true,
+                bracketMatching: true,
+                closeBrackets: true,
+                indentOnInput: true,
+                tabSize: 2,
+              }}
+              height="100%"
+              style={{ height: '100%' }}
+            />
+          </div>
+        </div>
+      </div>
 
-            {/* ── Vertical drag handle ─────────────────────────────────────── */}
+      {/* ── Console ────────────────────────────────────────────────────── */}
+      <div className="mx-3 mb-3 shrink-0 sm:mx-4 sm:mb-4">
+        {!consoleOpen ? (
+          /* Collapsed bar — entire row expands */
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => openConsole(result ? 'output' : consoleTab)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                openConsole(result ? 'output' : consoleTab)
+              }
+            }}
+            className="flex w-full cursor-pointer items-center gap-1 rounded-xl border border-hairline bg-paper-elevated px-2 py-1.5 text-left shadow-[0_1px_2px_rgba(32,31,28,0.04)] transition hover:border-hairline-strong hover:bg-[#F7F4EC]/80"
+          >
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); openConsole('output') }}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition hover:bg-brand-tint hover:text-brand"
+            >
+              Output
+              {result && (
+                <span className={cn(
+                  'h-1.5 w-1.5 rounded-full',
+                  result.status === 'success' ? 'bg-emerald-500' : 'bg-red-500',
+                )} />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); openConsole('stdin') }}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition hover:bg-brand-tint hover:text-brand"
+            >
+              Stdin
+              {stdinLines > 0 && (
+                <span className="rounded-md bg-brand/15 px-1.5 py-px text-[9px] font-bold text-brand">
+                  {stdinLines}
+                </span>
+              )}
+            </button>
+            <span className="ml-auto flex h-7 items-center gap-1 rounded-lg px-2 text-[11px] font-medium text-ink-faint">
+              Expand
+              <ChevronUp className="h-3.5 w-3.5" />
+            </span>
+          </div>
+        ) : (
+          /* Expanded console */
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_1px_2px_rgba(32,31,28,0.04),0_8px_24px_rgba(32,31,28,0.06)]">
             <div
               onMouseDown={startVerticalResize}
-              className="group relative flex h-2 w-full shrink-0 cursor-row-resize items-center justify-center border-t border-hairline bg-paper transition-colors hover:bg-brand/10"
+              className="group flex h-2.5 shrink-0 cursor-row-resize items-center justify-center border-b border-hairline/60 bg-[#F7F4EC]/50"
             >
-              <div className="flex h-1 w-10 items-center justify-center gap-0.5 rounded-full bg-hairline-strong transition-colors group-hover:bg-brand/30">
-                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
-                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
-                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
-                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
-                <span className="h-0.5 w-0.5 rounded-full bg-ink-faint" />
-              </div>
+              <div className="h-0.5 w-10 rounded-full bg-hairline-strong transition-colors group-hover:bg-brand/40" />
             </div>
 
-            {/* ── Bottom section: stdin + output ───────────────────────────── */}
-            <div className="shrink-0 flex flex-col overflow-hidden" style={{ height: bottomHeight }}>
-
-              {/* Stdin accordion */}
-              <div className="shrink-0 border-t border-hairline">
+            <div className="flex min-h-0 flex-col" style={{ height: bottomHeight }}>
+              {/* Header row — click empty space to collapse */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setConsoleOpen(false)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setConsoleOpen(false) } }}
+                className="flex shrink-0 cursor-pointer items-center gap-0.5 border-b border-hairline px-2.5 py-1.5 transition hover:bg-[#F7F4EC]/50"
+                title="Click to collapse"
+              >
                 <button
-                  onClick={() => setStdinOpen(v => !v)}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-xs font-medium text-ink-muted hover:bg-hairline/60 transition"
+                  type="button"
+                  onClick={e => { e.stopPropagation(); setConsoleTab('output') }}
+                  className={cn(
+                    'rounded-lg px-2.5 py-1 text-[11px] font-semibold transition',
+                    consoleTab === 'output'
+                      ? 'bg-brand-tint text-brand'
+                      : 'text-ink-muted hover:bg-hairline/70 hover:text-ink',
+                  )}
                 >
-                  {stdinOpen
-                    ? <ChevronDown className="h-3.5 w-3.5" />
-                    : <ChevronRight className="h-3.5 w-3.5" />
-                  }
-                  Standard Input (stdin)
-                  {stdin && (
-                    <span className="ml-auto rounded-full bg-brand-tint px-1.5 py-0.5 text-[9px] font-bold text-brand">
-                      {stdin.split('\n').length} line{stdin.split('\n').length > 1 ? 's' : ''}
+                  Output
+                </button>
+                <button
+                  type="button"
+                  onClick={e => { e.stopPropagation(); setConsoleTab('stdin') }}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition',
+                    consoleTab === 'stdin'
+                      ? 'bg-brand-tint text-brand'
+                      : 'text-ink-muted hover:bg-hairline/70 hover:text-ink',
+                  )}
+                >
+                  Stdin
+                  {stdinLines > 0 && (
+                    <span className="rounded-md bg-brand/15 px-1.5 py-px text-[9px] font-bold text-brand">
+                      {stdinLines}
                     </span>
                   )}
                 </button>
-                <AnimatePresence>
-                  {stdinOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="overflow-hidden"
-                    >
-                      <textarea
-                        value={stdin}
-                        onChange={e => setStdin(e.target.value)}
-                        placeholder="Enter stdin input (one value per line)…"
-                        rows={4}
-                        className="w-full resize-none border-t border-hairline bg-paper px-4 py-2 font-mono text-xs text-ink placeholder:text-ink-faint outline-none focus:bg-paper-elevated"
-                        spellCheck={false}
-                      />
-                    </motion.div>
+
+                <div className="ml-auto flex items-center gap-1 pr-0.5">
+                  {result && consoleTab === 'output' && (
+                    <>
+                      <span
+                        onClick={e => e.stopPropagation()}
+                        className={cn(
+                          'flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold',
+                          result.status === 'success'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-red-50 text-red-600',
+                        )}
+                      >
+                        {result.status === 'success'
+                          ? <CheckCircle2 className="h-2.5 w-2.5" />
+                          : <AlertTriangle className="h-2.5 w-2.5" />
+                        }
+                        {result.status === 'success' ? 'Success' : `Exit ${result.exit_code}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={e => { e.stopPropagation(); copyOutput() }}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-ink-faint transition hover:bg-hairline hover:text-ink"
+                        title="Copy output"
+                      >
+                        {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                      </button>
+                    </>
                   )}
-                </AnimatePresence>
-              </div>
-
-              {/* Output pane - fills remaining bottom space */}
-              <div className="flex flex-1 flex-col overflow-hidden border-t border-hairline bg-paper min-h-0">
-              {/* Output header */}
-              <div className="flex items-center gap-2 px-4 py-2 border-b border-hairline">
-                <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
-                  Output
-                </span>
-                {result && (
-                  <span className={cn(
-                    'flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold',
-                    result.status === 'success'
-                      ? 'bg-emerald-50 text-emerald-600'
-                      : 'bg-red-50 text-red-600',
-                  )}>
-                    {result.status === 'success'
-                      ? <CheckCircle2 className="h-2.5 w-2.5" />
-                      : <AlertTriangle className="h-2.5 w-2.5" />
-                    }
-                    {result.status === 'success' ? 'Success' : `Exit ${result.exit_code}`}
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md text-ink-faint">
+                    <ChevronDown className="h-3.5 w-3.5" />
                   </span>
-                )}
-                {result && (
-                  <button
-                    onClick={copyOutput}
-                    className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-ink-faint hover:bg-hairline transition"
-                    title="Copy output"
-                  >
-                    {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
-                  </button>
-                )}
-              </div>
-
-              {/* Output content - scrolls within remaining space */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0">
-                {running && (
-                  <div className="flex items-center gap-2 text-xs text-ink-faint">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
-                    Executing…
-                  </div>
-                )}
-
-                {!running && !result && (
-                  <p className="text-xs text-ink-faint">
-                    Press <kbd className="rounded border border-hairline bg-hairline px-1 py-0.5 font-mono text-[10px]">Ctrl</kbd>
-                    {' + '}
-                    <kbd className="rounded border border-hairline bg-hairline px-1 py-0.5 font-mono text-[10px]">Enter</kbd>
-                    {' or click '}
-                    <span className="font-medium text-brand">Run</span>
-                    {' to execute.'}
-                  </p>
-                )}
-
-                {!running && result && (
-                  <div className="space-y-2">
-                    {result.output && (
-                      <pre className="whitespace-pre-wrap font-mono text-xs text-ink leading-relaxed">
-                        {result.output}
-                      </pre>
-                    )}
-                    {result.error && (
-                      <pre className="whitespace-pre-wrap font-mono text-xs text-red-600 leading-relaxed">
-                        {result.error}
-                      </pre>
-                    )}
-                    {!result.output && !result.error && (
-                      <p className="text-xs text-ink-faint italic">No output produced.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Stats footer */}
-              {result && !running && (
-                <div className="flex items-center gap-3 border-t border-hairline px-4 py-2">
-                  <span className="flex items-center gap-1 text-[10px] text-ink-faint">
-                    <Clock className="h-3 w-3" />
-                    {parseFloat(result.time) < 0.001
-                      ? `${Math.round(parseFloat(result.total) * 1000)} ms total`
-                      : `${Math.round(parseFloat(result.time) * 1000)} ms exec · ${Math.round(parseFloat(result.total) * 1000)} ms total`
-                    }
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] text-ink-faint">
-                    <MemoryStick className="h-3 w-3" />
-                    {Math.round(parseInt(result.memory) / 1024)} MB
-                  </span>
-                  {result.signal !== null && (
-                    <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
-                      Signal {result.signal}
-                    </span>
-                  )}
                 </div>
-                )}
-              </div>  {/* /output pane */}
-            </div>  {/* /bottom section */}
+              </div>
 
-            {/* ── Run History Drawer (slides over the panel) ───────────────── */}
-            <RunHistoryDrawer
-              open={historyOpen}
-              onClose={() => setHistoryOpen(false)}
-              problemSlug={problemSlug}
-              runCount={runCount}
-              onRestoreCode={(restoredCode, language) => {
-                setCode(restoredCode)
-                setLang(language as typeof lang)
-                setResult(null)
-              }}
-            />
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
+              <div className="min-h-0 flex-1 overflow-hidden bg-[#FFFEFB]">
+                {consoleTab === 'stdin' ? (
+                  <textarea
+                    value={stdin}
+                    onChange={e => setStdin(e.target.value)}
+                    placeholder="Program input — one value per line…"
+                    className="h-full w-full resize-none bg-transparent px-4 py-3 font-mono text-[12.5px] leading-relaxed text-ink placeholder:text-ink-faint outline-none"
+                    spellCheck={false}
+                  />
+                ) : (
+                  <div className="flex h-full min-h-0 flex-col">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+                      {running && (
+                        <div className="flex items-center gap-2 text-xs text-ink-muted">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-brand" />
+                          Executing…
+                        </div>
+                      )}
+
+                      {!running && !result && (
+                        <div className="flex h-full min-h-14 items-center justify-center">
+                          <p className="text-xs text-ink-faint">
+                            Press{' '}
+                            <kbd className="rounded border border-hairline bg-[#F7F4EC] px-1.5 py-0.5 font-mono text-[10px] font-medium text-ink-muted">Ctrl</kbd>
+                            {' + '}
+                            <kbd className="rounded border border-hairline bg-[#F7F4EC] px-1.5 py-0.5 font-mono text-[10px] font-medium text-ink-muted">Enter</kbd>
+                            {' '}or click{' '}
+                            <span className="font-semibold text-brand">Run</span>
+                          </p>
+                        </div>
+                      )}
+
+                      {!running && result && (
+                        <div className="space-y-2">
+                          {result.output && (
+                            <pre className="whitespace-pre-wrap font-mono text-[12.5px] leading-relaxed text-ink">
+                              {result.output}
+                            </pre>
+                          )}
+                          {result.error && (
+                            <pre className="whitespace-pre-wrap font-mono text-[12.5px] leading-relaxed text-red-600">
+                              {result.error}
+                            </pre>
+                          )}
+                          {!result.output && !result.error && (
+                            <p className="text-xs italic text-ink-faint">No output produced.</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {result && !running && (
+                      <div className="flex shrink-0 items-center gap-3 border-t border-hairline bg-[#F7F4EC]/60 px-4 py-2">
+                        <span className="flex items-center gap-1.5 text-[10px] text-ink-faint">
+                          <Clock className="h-3 w-3" />
+                          {parseFloat(result.time) < 0.001
+                            ? `${Math.round(parseFloat(result.total) * 1000)} ms`
+                            : `${Math.round(parseFloat(result.time) * 1000)} ms · ${Math.round(parseFloat(result.total) * 1000)} ms total`
+                          }
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[10px] text-ink-faint">
+                          <MemoryStick className="h-3 w-3" />
+                          {Math.round(parseInt(result.memory) / 1024)} MB
+                        </span>
+                        {result.signal !== null && (
+                          <span className="rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
+                            Signal {result.signal}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <RunHistoryDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        problemSlug={problemSlug}
+        runCount={runCount}
+        onRestoreCode={(restoredCode, language) => {
+          setCode(restoredCode)
+          setLang(language as typeof lang)
+          setResult(null)
+        }}
+      />
+    </motion.div>
   )
 }

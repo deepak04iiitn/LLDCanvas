@@ -440,13 +440,10 @@ export default function DashboardPage() {
 
                     <div className="flex shrink-0 items-center gap-2">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-hairline text-ink-muted hover:bg-hairline/60 hover:text-ink"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
+                        <DropdownMenuTrigger
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-hairline text-ink-muted hover:bg-hairline/60 hover:text-ink"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
                           <DropdownMenuItem onClick={startRename} className="gap-2">
