@@ -357,7 +357,12 @@ export const api = {
 
   billing: {
     geo: () =>
-      request<{ country: string; currency: 'INR' | 'USD' }>('/billing/geo'),
+      request<{
+        country: string
+        currency: string
+        gateway: 'razorpay' | 'dodo'
+        supportedCurrencies?: string[]
+      }>('/billing/geo'),
 
     pricing: () =>
       request<{ pricing: Record<string, Record<string, Record<string, number>>> }>('/billing/pricing'),
@@ -373,11 +378,24 @@ export const api = {
           billingInterval: string
           currentPeriodEnd: string | null
           cancelAtPeriodEnd: boolean
+          paymentSource?: string
+          currency?: string
         } | null
       }>('/billing/plan'),
 
     subscribe: (payload: { tier: 'pro' | 'ultimate'; yearly: boolean }) =>
       request<{ subscriptionId: string; keyId: string; userName: string; userEmail: string }>('/billing/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
+    subscribeDodo: (payload: {
+      tier: 'pro' | 'ultimate'
+      yearly: boolean
+      billingCurrency?: string
+      country?: string
+    }) =>
+      request<{ checkoutUrl: string; sessionId: string }>('/billing/subscribe/dodo', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),

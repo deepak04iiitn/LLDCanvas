@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   Tooltip, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Legend,
@@ -8,9 +8,10 @@ import {
 import {
   Terminal, CheckCircle2, XCircle, TrendingUp, Users,
   RefreshCw, Ban, ShieldOff, Shield, Search, ChevronLeft,
-  ChevronRight, Calendar, Layers, AlertTriangle, Eye, X,
+  ChevronRight, Calendar, Layers, AlertTriangle, Eye, X, Trash2,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 import {
   adminApi,
   type CodeStats,
@@ -19,6 +20,9 @@ import {
   type UserCodeDaily,
 } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 const BRAND  = '#3D6A52'
 const ERROR  = '#EF4444'
@@ -60,7 +64,7 @@ function BanModal({ userId, userName, onConfirm, onCancel }: {
 }) {
   const [reason, setReason] = useState('')
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl border border-hairline bg-paper-elevated p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50"><Ban className="h-5 w-5 text-red-600" /></div>
@@ -106,14 +110,14 @@ function UserDrillDown({ userId, onClose }: { userId: string; onClose: () => voi
   }, [userId, days])
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/25 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/25 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="w-full max-w-2xl rounded-2xl border border-hairline bg-paper-elevated p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-semibold text-ink">{data?.userName ?? '…'}</p>
             <p className="text-xs text-ink-faint">{data?.userEmail}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {[7,14,30,60].map(d => (
               <button key={d} onClick={() => setDays(d)}
                 className={cn('rounded-md px-2.5 py-1 text-xs font-medium transition',
@@ -129,7 +133,7 @@ function UserDrillDown({ userId, onClose }: { userId: string; onClose: () => voi
           <div className="flex h-48 items-center justify-center"><RefreshCw className="h-5 w-5 animate-spin text-ink-faint" /></div>
         ) : (
           <>
-            <div className="mb-4 grid grid-cols-3 gap-3">
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { label: 'Total Runs',    value: data?.totalRuns    ?? 0, color: 'text-ink' },
                 { label: 'Successful',    value: data?.totalSuccess ?? 0, color: 'text-emerald-600' },
@@ -182,6 +186,16 @@ export default function AdminCodePage() {
   const [drillUser, setDrillUser]     = useState<string | null>(null)
   const [banTarget, setBanTarget]     = useState<{ id: string; name: string } | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [exBulkConfirm, setExBulkConfirm] = useState(false)
+  const [exBulkLoading, setExBulkLoading] = useState(false)
+  const [banBulkConfirm, setBanBulkConfirm] = useState(false)
+  const [banBulkLoading, setBanBulkLoading] = useState(false)
+
+  const executionIds = useMemo(() => executions.map(ex => String(ex._id)), [executions])
+  const exSelection = useRowSelection(executionIds)
+
+  const banIds = useMemo(() => bans.map(b => String(b._id)), [bans])
+  const banSelection = useRowSelection(banIds)
 
   const loadStats = useCallback(async () => {
     setLoading(true)
@@ -231,6 +245,33 @@ export default function AdminCodePage() {
     } finally { setActionLoading(null) }
   }
 
+  async function handleBulkDeleteExecutions() {
+    if (exSelection.count === 0) return
+    setExBulkLoading(true)
+    try {
+      const res = await adminApi.code.bulkDeleteExecutions(exSelection.selectedIds)
+      toast.success(`Deleted ${res.deleted} execution${res.deleted === 1 ? '' : 's'}`)
+      setExBulkConfirm(false)
+      exSelection.clear()
+      loadExecutions(exPage)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setExBulkLoading(false) }
+  }
+
+  async function handleBulkDeleteBans() {
+    if (banSelection.count === 0) return
+    setBanBulkLoading(true)
+    try {
+      const res = await adminApi.code.bulkDeleteBans(banSelection.selectedIds)
+      toast.success(`Removed ${res.deleted} ban${res.deleted === 1 ? '' : 's'}`)
+      setBanBulkConfirm(false)
+      banSelection.clear()
+      await loadBans()
+      await loadStats()
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBanBulkLoading(false) }
+  }
+
   const TABS = [
     { id: 'overview',   label: 'Overview',   Icon: TrendingUp },
     { id: 'executions', label: 'Executions', Icon: Terminal },
@@ -239,19 +280,19 @@ export default function AdminCodePage() {
 
   return (
     <>
-    <div className="h-full overflow-y-auto p-6">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="h-full overflow-y-auto p-4 sm:p-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold text-ink">Code Execution</h1>
             <p className="text-sm text-ink-faint">Monitor all code runs, track per-user activity, manage access</p>
           </div>
-          <button onClick={loadStats} className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline">
+          <button onClick={loadStats} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline sm:w-auto">
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="mb-6 flex gap-1 rounded-xl border border-hairline bg-paper p-1 w-fit">
+        <div className="mb-6 flex w-full flex-wrap gap-1 rounded-xl border border-hairline bg-paper p-1 sm:w-fit">
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id as typeof tab)}
               className={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all',
@@ -285,7 +326,7 @@ export default function AdminCodePage() {
                 {/* Charts row */}
                 <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
                   {/* Daily trend */}
-                  <div className="col-span-2 rounded-xl border border-hairline bg-paper-elevated p-5">
+                  <div className="col-span-1 rounded-xl border border-hairline bg-paper-elevated p-5 lg:col-span-2">
                     <h3 className="mb-4 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">Daily Executions (30d)</h3>
                     <ResponsiveContainer width="100%" height={200}>
                       <AreaChart data={stats.dailyTrend} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -323,13 +364,13 @@ export default function AdminCodePage() {
                   </div>
                   <div className="divide-y divide-hairline">
                     {stats.topUsers.map((u, i) => (
-                      <div key={u._id} className="flex items-center gap-4 px-5 py-3">
+                      <div key={u._id} className="flex flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:gap-4">
                         <span className="w-5 shrink-0 font-mono text-[11px] font-bold text-ink-faint">{i + 1}</span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-ink">{u.name}</p>
                           <p className="truncate text-xs text-ink-faint">{u.email}</p>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex flex-wrap items-center gap-3 shrink-0">
                           <span className="text-sm font-bold text-ink">{u.total}</span>
                           <span className="text-xs text-emerald-600">{u.success} ✓</span>
                           <span className="text-xs text-red-500">{u.total - u.success} ✗</span>
@@ -358,11 +399,11 @@ export default function AdminCodePage() {
         {tab === 'executions' && (
           <>
             {/* Filters */}
-            <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="mb-4 flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="relative">
                 <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
                 <input value={filterUser} onChange={e => setFilterUser(e.target.value)} placeholder="User ID…"
-                  className="h-8 rounded-lg border border-hairline bg-paper pl-8 pr-3 text-xs outline-none focus:border-brand w-36" />
+                  className="h-8 w-full rounded-lg border border-hairline bg-paper pl-8 pr-3 text-xs outline-none focus:border-brand sm:w-36" />
               </div>
               <select value={filterLang} onChange={e => setFilterLang(e.target.value)}
                 className="h-8 rounded-lg border border-hairline bg-paper px-2 text-xs outline-none focus:border-brand">
@@ -388,64 +429,99 @@ export default function AdminCodePage() {
                 className="h-8 rounded-lg border border-hairline px-3 text-xs text-ink-muted hover:bg-hairline">
                 Clear
               </button>
-              <span className="ml-auto font-mono text-xs text-ink-faint">{exTotal} results</span>
+              <span className="font-mono text-xs text-ink-faint sm:ml-auto">{exTotal} results</span>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-hairline bg-hairline/40">
-                    {['User', 'Language', 'Status', 'Exit', 'Time (ms)', 'Memory', 'Date', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-hairline">
-                  {executions.map(ex => (
-                    <tr key={String(ex._id)} className="hover:bg-hairline/30 transition">
-                      <td className="px-4 py-2.5">
-                        <p className="text-xs font-medium text-ink truncate max-w-[120px]">{ex.userName}</p>
-                        <p className="text-[10px] text-ink-faint truncate max-w-[120px]">{ex.userEmail}</p>
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.language}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                          ex.status === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600')}>
-                          {ex.status === 'success' ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
-                          {ex.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.exitCode}</td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.executionMs}</td>
-                      <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{Math.round(ex.memoryKb / 1024)} MB</td>
-                      <td className="px-4 py-2.5 font-mono text-[10px] text-ink-faint">{fmtDate(ex.createdAt)}</td>
-                      <td className="px-4 py-2.5">
-                        <button onClick={() => setDrillUser(ex.userId)}
-                          className="rounded-md border border-hairline px-2 py-0.5 text-[10px] text-ink-muted hover:bg-hairline">
-                          History
-                        </button>
-                      </td>
+            <div className="space-y-3">
+              <BulkActionBar
+                count={exSelection.count}
+                onClear={exSelection.clear}
+                onDelete={() => setExBulkConfirm(true)}
+                loading={exBulkLoading}
+                label={exSelection.count === 1 ? 'execution selected' : 'executions selected'}
+              />
+              <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[800px] text-sm">
+                  <thead>
+                    <tr className="border-b border-hairline bg-hairline/40">
+                      <th className="w-10 px-4 py-2.5">
+                        <SelectCheckbox
+                          checked={exSelection.allPageSelected}
+                          indeterminate={exSelection.somePageSelected}
+                          onChange={exSelection.togglePage}
+                          title="Select all on page"
+                          disabled={executions.length === 0}
+                        />
+                      </th>
+                      {['User', 'Language', 'Status', 'Exit', 'Time (ms)', 'Memory', 'Date', 'Actions'].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                  {executions.length === 0 && (
-                    <tr><td colSpan={8} className="py-12 text-center text-sm text-ink-faint">No executions found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-
-              {exPages > 1 && (
-                <div className="flex items-center justify-center gap-3 border-t border-hairline px-4 py-3">
-                  <button onClick={() => loadExecutions(exPage - 1)} disabled={exPage <= 1}
-                    className="flex items-center gap-1 rounded-md border border-hairline px-2.5 py-1 text-xs text-ink-muted hover:bg-hairline disabled:opacity-40">
-                    <ChevronLeft className="h-3 w-3" /> Prev
-                  </button>
-                  <span className="font-mono text-xs text-ink-faint">{exPage} / {exPages}</span>
-                  <button onClick={() => loadExecutions(exPage + 1)} disabled={exPage >= exPages}
-                    className="flex items-center gap-1 rounded-md border border-hairline px-2.5 py-1 text-xs text-ink-muted hover:bg-hairline disabled:opacity-40">
-                    Next <ChevronRight className="h-3 w-3" />
-                  </button>
+                  </thead>
+                  <tbody className="divide-y divide-hairline">
+                    {executions.map(ex => {
+                      const id = String(ex._id)
+                      return (
+                        <tr
+                          key={id}
+                          className={cn(
+                            'hover:bg-hairline/30 transition',
+                            exSelection.isSelected(id) && 'bg-brand-tint/40',
+                          )}
+                        >
+                          <td className="px-4 py-2.5">
+                            <SelectCheckbox
+                              checked={exSelection.isSelected(id)}
+                              onChange={() => exSelection.toggle(id)}
+                            />
+                          </td>
+                          <td className="px-4 py-2.5">
+                            <p className="text-xs font-medium text-ink truncate max-w-[120px]">{ex.userName}</p>
+                            <p className="text-[10px] text-ink-faint truncate max-w-[120px]">{ex.userEmail}</p>
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.language}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                              ex.status === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600')}>
+                              {ex.status === 'success' ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
+                              {ex.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.exitCode}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{ex.executionMs}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">{Math.round(ex.memoryKb / 1024)} MB</td>
+                          <td className="px-4 py-2.5 font-mono text-[10px] text-ink-faint">{fmtDate(ex.createdAt)}</td>
+                          <td className="px-4 py-2.5">
+                            <button onClick={() => setDrillUser(ex.userId)}
+                              className="rounded-md border border-hairline px-2 py-0.5 text-[10px] text-ink-muted hover:bg-hairline">
+                              History
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {executions.length === 0 && (
+                      <tr><td colSpan={9} className="py-12 text-center text-sm text-ink-faint">No executions found.</td></tr>
+                    )}
+                  </tbody>
+                </table>
                 </div>
-              )}
+
+                {exPages > 1 && (
+                  <div className="flex items-center justify-center gap-3 border-t border-hairline px-4 py-3">
+                    <button onClick={() => loadExecutions(exPage - 1)} disabled={exPage <= 1}
+                      className="flex items-center gap-1 rounded-md border border-hairline px-2.5 py-1 text-xs text-ink-muted hover:bg-hairline disabled:opacity-40">
+                      <ChevronLeft className="h-3 w-3" /> Prev
+                    </button>
+                    <span className="font-mono text-xs text-ink-faint">{exPage} / {exPages}</span>
+                    <button onClick={() => loadExecutions(exPage + 1)} disabled={exPage >= exPages}
+                      className="flex items-center gap-1 rounded-md border border-hairline px-2.5 py-1 text-xs text-ink-muted hover:bg-hairline disabled:opacity-40">
+                      Next <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
@@ -453,67 +529,102 @@ export default function AdminCodePage() {
         {/* ── BANS TAB ─────────────────────────────────────────────────────── */}
         {tab === 'bans' && (
           <>
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-2">
-                <AlertTriangle className="h-4 w-4 text-red-500" />
+                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
                 <p className="text-sm text-red-700">
                   <span className="font-semibold">{banTotal}</span> user{banTotal !== 1 ? 's' : ''} have code execution revoked
                 </p>
               </div>
-              <button onClick={loadBans} className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline ml-auto">
+              <button onClick={loadBans} className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline sm:ml-auto">
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </button>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-hairline bg-hairline/40">
-                    {['User', 'Reason', 'Banned', 'Actions'].map(h => (
-                      <th key={h} className="px-4 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-hairline">
-                  {bans.map(ban => (
-                    <tr key={String(ban._id)} className="hover:bg-hairline/30 transition">
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-ink">{ban.userName}</p>
-                        <p className="text-xs text-ink-faint">{ban.userEmail}</p>
-                        <p className="font-mono text-[9px] text-ink-faint/60">{ban.userId}</p>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-ink-muted max-w-[260px]">
-                        {ban.reason ?? <span className="italic text-ink-faint/50">No reason given</span>}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-[10px] text-ink-faint">{fmtDate(ban.createdAt)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setDrillUser(ban.userId)}
-                            className="flex items-center gap-1 rounded-md border border-hairline px-2 py-1 text-[11px] text-ink-muted hover:bg-hairline transition">
-                            <Eye className="h-3 w-3" /> History
-                          </button>
-                          <button
-                            onClick={() => handleToggleBan(ban.userId, ban.userName, true)}
-                            disabled={actionLoading === ban.userId}
-                            className="flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700 hover:bg-emerald-100 transition disabled:opacity-50"
-                          >
-                            {actionLoading === ban.userId
-                              ? <RefreshCw className="h-3 w-3 animate-spin" />
-                              : <ShieldOff className="h-3 w-3" />}
-                            Restore
-                          </button>
-                        </div>
-                      </td>
+            <div className="space-y-3">
+              <BulkActionBar
+                count={banSelection.count}
+                onClear={banSelection.clear}
+                onDelete={() => setBanBulkConfirm(true)}
+                loading={banBulkLoading}
+                label={banSelection.count === 1 ? 'ban selected' : 'bans selected'}
+              />
+              <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated">
+                <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-hairline bg-hairline/40">
+                      <th className="w-10 px-4 py-2.5">
+                        <SelectCheckbox
+                          checked={banSelection.allPageSelected}
+                          indeterminate={banSelection.somePageSelected}
+                          onChange={banSelection.togglePage}
+                          title="Select all on page"
+                          disabled={bans.length === 0}
+                        />
+                      </th>
+                      {['User', 'Reason', 'Banned', 'Actions'].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint">{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                  {bans.length === 0 && (
-                    <tr><td colSpan={4} className="py-12 text-center">
-                      <Shield className="mx-auto mb-2 h-8 w-8 text-ink-faint/30" />
-                      <p className="text-sm text-ink-faint">No users are currently banned from code execution.</p>
-                    </td></tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-hairline">
+                    {bans.map(ban => {
+                      const id = String(ban._id)
+                      return (
+                        <tr
+                          key={id}
+                          className={cn(
+                            'hover:bg-hairline/30 transition',
+                            banSelection.isSelected(id) && 'bg-brand-tint/40',
+                          )}
+                        >
+                          <td className="px-4 py-3">
+                            <SelectCheckbox
+                              checked={banSelection.isSelected(id)}
+                              onChange={() => banSelection.toggle(id)}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-medium text-ink">{ban.userName}</p>
+                            <p className="text-xs text-ink-faint">{ban.userEmail}</p>
+                            <p className="font-mono text-[9px] text-ink-faint/60">{ban.userId}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-ink-muted max-w-[260px]">
+                            {ban.reason ?? <span className="italic text-ink-faint/50">No reason given</span>}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-[10px] text-ink-faint">{fmtDate(ban.createdAt)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => setDrillUser(ban.userId)}
+                                className="flex items-center gap-1 rounded-md border border-hairline px-2 py-1 text-[11px] text-ink-muted hover:bg-hairline transition">
+                                <Eye className="h-3 w-3" /> History
+                              </button>
+                              <button
+                                onClick={() => handleToggleBan(ban.userId, ban.userName, true)}
+                                disabled={actionLoading === ban.userId}
+                                className="flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-700 hover:bg-emerald-100 transition disabled:opacity-50"
+                              >
+                                {actionLoading === ban.userId
+                                  ? <RefreshCw className="h-3 w-3 animate-spin" />
+                                  : <ShieldOff className="h-3 w-3" />}
+                                Restore
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                    {bans.length === 0 && (
+                      <tr><td colSpan={5} className="py-12 text-center">
+                        <Shield className="mx-auto mb-2 h-8 w-8 text-ink-faint/30" />
+                        <p className="text-sm text-ink-faint">No users are currently banned from code execution.</p>
+                      </td></tr>
+                    )}
+                  </tbody>
+                </table>
+                </div>
+              </div>
             </div>
           </>
         )}
@@ -531,6 +642,28 @@ export default function AdminCodePage() {
           onCancel={() => setBanTarget(null)}
         />
       )}
+
+      <ConfirmModal
+        open={exBulkConfirm}
+        onClose={() => setExBulkConfirm(false)}
+        onConfirm={handleBulkDeleteExecutions}
+        title={`Delete ${exSelection.count} execution${exSelection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected execution records. This cannot be undone."
+        confirmLabel={`Delete ${exSelection.count}`}
+        loading={exBulkLoading}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={banBulkConfirm}
+        onClose={() => setBanBulkConfirm(false)}
+        onConfirm={handleBulkDeleteBans}
+        title={`Remove ${banSelection.count} ban${banSelection.count === 1 ? '' : 's'}?`}
+        description="Delete the selected ban records and restore code execution access for those users."
+        confirmLabel={`Remove ${banSelection.count}`}
+        loading={banBulkLoading}
+        icon={Trash2}
+      />
     </>
   )
 }

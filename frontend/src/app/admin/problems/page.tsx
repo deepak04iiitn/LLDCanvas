@@ -1,14 +1,18 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   BookOpen, Search, ToggleLeft, ToggleRight, Trophy,
   ChevronLeft, ChevronRight, Plus, Pencil, Trash2, X,
   Save, RefreshCw, AlertTriangle,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 import { adminApi, type AdminProblem } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 const DIFFICULTY_COLORS = {
   easy:   'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -136,7 +140,7 @@ function ProblemPanel({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Title *">
               <input className={inp} value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="e.g. Design URL Shortener" />
             </Field>
@@ -145,7 +149,7 @@ function ProblemPanel({
             </Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Difficulty *">
               <select className={inp} value={form.difficulty} onChange={e => set('difficulty', e.target.value)}>
                 <option value="easy">Easy</option>
@@ -165,7 +169,7 @@ function ProblemPanel({
             <textarea className={ta} rows={5} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Full problem statement…" />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Companies (one per line)">
               <textarea className={ta} rows={3} value={form.companies} onChange={e => set('companies', e.target.value)} placeholder="Google&#10;Amazon&#10;Netflix" />
             </Field>
@@ -209,31 +213,6 @@ function ProblemPanel({
   )
 }
 
-// ─── Delete confirm ───────────────────────────────────────────────────────────
-function DeleteConfirm({ problem, onConfirm, onCancel }: { problem: AdminProblem; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-hairline bg-paper-elevated p-6 shadow-2xl">
-        <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50"><Trash2 className="h-5 w-5 text-red-600" /></div>
-          <div>
-            <p className="font-semibold text-ink">Delete Problem?</p>
-            <p className="text-xs text-ink-faint">This cannot be undone.</p>
-          </div>
-        </div>
-        <p className="mb-4 text-sm text-ink-muted">
-          Are you sure you want to delete <span className="font-semibold text-ink">"{problem.title}"</span>?
-          All user solutions for this problem will remain but become orphaned.
-        </p>
-        <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="rounded-lg border border-hairline px-4 py-2 text-sm text-ink-muted hover:bg-hairline">Cancel</button>
-          <button onClick={onConfirm} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Delete</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminProblemsPage() {
   const [problems,    setProblems]    = useState<AdminProblem[]>([])
@@ -250,6 +229,11 @@ export default function AdminProblemsPage() {
   const [editTarget,  setEditTarget]  = useState<AdminProblem | null>(null)
   const [deleteTarget,setDeleteTarget]= useState<AdminProblem | null>(null)
   const [deleting,    setDeleting]    = useState(false)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  const pageIds = useMemo(() => problems.map(p => p.id), [problems])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -280,9 +264,23 @@ export default function AdminProblemsPage() {
     try {
       await adminApi.problems.delete(deleteTarget.id)
       setDeleteTarget(null)
+      selection.clear()
       load(page)
     } catch { /* no-op */ }
     finally { setDeleting(false) }
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.problems.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} problem${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
   }
 
   function openCreate() { setEditTarget(null); setPanelOpen(true) }
@@ -295,15 +293,15 @@ export default function AdminProblemsPage() {
   const inactive = problems.filter(p => !p.isActive).length
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Practice Problems</h1>
           <p className="mt-0.5 text-sm text-ink-faint">Create, edit, and manage LLD interview problems</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-3 text-right">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap gap-3">
             <div className="rounded-xl border border-hairline bg-paper-elevated px-4 py-2 text-center">
               <p className="text-lg font-bold text-brand">{total}</p>
               <p className="text-[10px] font-mono uppercase tracking-wider text-ink-faint">Total</p>
@@ -319,7 +317,7 @@ export default function AdminProblemsPage() {
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
           >
             <Plus className="h-4 w-4" /> New Problem
           </button>
@@ -343,14 +341,32 @@ export default function AdminProblemsPage() {
           <option value="medium">Medium</option>
           <option value="hard">Hard</option>
         </select>
-        <button onClick={search} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:opacity-90">Search</button>
+        <button onClick={search} className="w-full sm:w-auto rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:opacity-90">Search</button>
       </div>
 
       {/* Table */}
+      <div className="space-y-3">
+        <BulkActionBar
+          count={selection.count}
+          onClear={selection.clear}
+          onDelete={() => setBulkConfirm(true)}
+          loading={bulkLoading}
+          label={selection.count === 1 ? 'problem selected' : 'problems selected'}
+        />
       <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-hairline bg-hairline/40">
+              <th className="w-10 px-4 py-3">
+                <SelectCheckbox
+                  checked={selection.allPageSelected}
+                  indeterminate={selection.somePageSelected}
+                  onChange={selection.togglePage}
+                  title="Select all on page"
+                  disabled={loading || problems.length === 0}
+                />
+              </th>
               {['#','Problem','Difficulty','Category','Solutions','Submitted','Added','Status','Actions'].map(h => (
                 <th key={h} className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">{h}</th>
               ))}
@@ -360,13 +376,23 @@ export default function AdminProblemsPage() {
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i} className="border-b border-hairline">
-                  {Array.from({ length: 9 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                   ))}
                 </tr>
               ))
             ) : problems.map((p, i) => (
-              <tr key={p.id} className={cn('border-b border-hairline transition hover:bg-hairline/30', !p.isActive && 'opacity-50')}>
+              <tr key={p.id} className={cn(
+                'border-b border-hairline transition hover:bg-hairline/30',
+                !p.isActive && 'opacity-50',
+                selection.isSelected(p.id) && 'bg-brand-tint/40',
+              )}>
+                <td className="px-4 py-3">
+                  <SelectCheckbox
+                    checked={selection.isSelected(p.id)}
+                    onChange={() => selection.toggle(p.id)}
+                  />
+                </td>
                 <td className="px-4 py-3 font-mono text-[11px] text-ink-faint">{(page - 1) * 20 + i + 1}</td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-ink">{p.title}</p>
@@ -419,6 +445,7 @@ export default function AdminProblemsPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {!loading && problems.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16">
@@ -429,6 +456,7 @@ export default function AdminProblemsPage() {
             </button>
           </div>
         )}
+      </div>
       </div>
 
       {/* Pagination */}
@@ -453,18 +481,32 @@ export default function AdminProblemsPage() {
       {panelOpen && <ProblemPanel editTarget={editTarget} onClose={closePanel} onSaved={onSaved} />}
 
       {/* Delete confirm */}
-      {deleteTarget && (
-        <DeleteConfirm
-          problem={deleteTarget}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
-      {deleting && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20">
-          <RefreshCw className="h-6 w-6 animate-spin text-brand" />
-        </div>
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => { if (!deleting) setDeleteTarget(null) }}
+        onConfirm={handleDelete}
+        title="Delete problem?"
+        description={
+          <>
+            Delete <span className="font-semibold text-ink">&ldquo;{deleteTarget?.title}&rdquo;</span>?
+            User solutions for this problem will remain but become orphaned. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete problem"
+        loading={deleting}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} problem${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected problems. User solutions may become orphaned. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

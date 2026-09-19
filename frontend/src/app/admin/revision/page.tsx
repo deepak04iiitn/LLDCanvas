@@ -1,14 +1,18 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   Layers, Search, ToggleLeft, ToggleRight, BookmarkCheck,
   RotateCcw, ChevronLeft, ChevronRight,
   Plus, Pencil, Trash2, X, Save, RefreshCw, AlertTriangle,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 import { adminApi, type AdminRevisionNote } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   basic:        'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -127,7 +131,7 @@ function RevisionPanel({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Title *">
               <input className={inp} value={form.title} onChange={e => handleTitleChange(e.target.value)} placeholder="e.g. SOLID Principles" />
             </Field>
@@ -136,7 +140,7 @@ function RevisionPanel({
             </Field>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Category *">
               <input className={inp} value={form.category} onChange={e => set('category', e.target.value)} placeholder="e.g. OOP Principles" />
             </Field>
@@ -195,31 +199,6 @@ function RevisionPanel({
   )
 }
 
-// ─── Delete confirm ───────────────────────────────────────────────────────────
-function DeleteConfirm({ note, onConfirm, onCancel }: { note: AdminRevisionNote; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl border border-hairline bg-paper-elevated p-6 shadow-2xl">
-        <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50"><Trash2 className="h-5 w-5 text-red-600" /></div>
-          <div>
-            <p className="font-semibold text-ink">Delete Revision Note?</p>
-            <p className="text-xs text-ink-faint">This cannot be undone.</p>
-          </div>
-        </div>
-        <p className="mb-4 text-sm text-ink-muted">
-          Are you sure you want to delete <span className="font-semibold text-ink">"{note.title}"</span>?
-          All user revision data for this note will remain but become orphaned.
-        </p>
-        <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="rounded-lg border border-hairline px-4 py-2 text-sm text-ink-muted hover:bg-hairline">Cancel</button>
-          <button onClick={onConfirm} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Delete</button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminRevisionPage() {
   const [notes,        setNotes]        = useState<AdminRevisionNote[]>([])
@@ -235,6 +214,11 @@ export default function AdminRevisionPage() {
   const [panelOpen,    setPanelOpen]    = useState(false)
   const [editTarget,   setEditTarget]   = useState<AdminRevisionNote | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdminRevisionNote | null>(null)
+  const [bulkConfirm,  setBulkConfirm]  = useState(false)
+  const [bulkLoading,  setBulkLoading]  = useState(false)
+
+  const pageIds = useMemo(() => notes.map(n => n.id), [notes])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -264,8 +248,22 @@ export default function AdminRevisionPage() {
     try {
       await adminApi.revision.delete(deleteTarget.id)
       setDeleteTarget(null)
+      selection.clear()
       load(page)
     } catch { /* no-op */ }
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.revision.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} note${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
   }
 
   function openCreate() { setEditTarget(null); setPanelOpen(true) }
@@ -278,15 +276,15 @@ export default function AdminRevisionPage() {
   const inactive = notes.filter(n => !n.isActive).length
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Revision Notes</h1>
           <p className="mt-0.5 text-sm text-ink-faint">Create, edit, and manage quick revision notes</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap gap-3">
             <div className="rounded-xl border border-hairline bg-paper-elevated px-4 py-2 text-center">
               <p className="text-lg font-bold text-brand">{total}</p>
               <p className="text-[10px] font-mono uppercase tracking-wider text-ink-faint">Total</p>
@@ -302,7 +300,7 @@ export default function AdminRevisionPage() {
           </div>
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:opacity-90 transition"
           >
             <Plus className="h-4 w-4" /> New Note
           </button>
@@ -319,15 +317,33 @@ export default function AdminRevisionPage() {
         </div>
         <input type="text" placeholder="Filter by category" value={category}
           onChange={e => setCategory(e.target.value)}
-          className="rounded-lg border border-hairline bg-paper-elevated px-3 py-2 text-sm outline-none focus:border-brand w-40" />
-        <button onClick={search} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:opacity-90">Search</button>
+          className="rounded-lg border border-hairline bg-paper-elevated px-3 py-2 text-sm outline-none focus:border-brand w-full sm:w-40" />
+        <button onClick={search} className="w-full sm:w-auto rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition hover:opacity-90">Search</button>
       </div>
 
       {/* Table */}
+      <div className="space-y-3">
+        <BulkActionBar
+          count={selection.count}
+          onClear={selection.clear}
+          onDelete={() => setBulkConfirm(true)}
+          loading={bulkLoading}
+          label={selection.count === 1 ? 'note selected' : 'notes selected'}
+        />
       <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-hairline bg-hairline/40">
+              <th className="w-10 px-4 py-3">
+                <SelectCheckbox
+                  checked={selection.allPageSelected}
+                  indeterminate={selection.somePageSelected}
+                  onChange={selection.togglePage}
+                  title="Select all on page"
+                  disabled={loading || notes.length === 0}
+                />
+              </th>
               {['#','Title','Category','Difficulty','Revised by','Bookmarked','Added','Status','Actions'].map(h => (
                 <th key={h} className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">{h}</th>
               ))}
@@ -337,13 +353,23 @@ export default function AdminRevisionPage() {
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i} className="border-b border-hairline">
-                  {Array.from({ length: 9 }).map((_, j) => (
+                  {Array.from({ length: 10 }).map((_, j) => (
                     <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>
                   ))}
                 </tr>
               ))
             ) : notes.map((n, i) => (
-              <tr key={n.id} className={cn('border-b border-hairline transition hover:bg-hairline/30', !n.isActive && 'opacity-50')}>
+              <tr key={n.id} className={cn(
+                'border-b border-hairline transition hover:bg-hairline/30',
+                !n.isActive && 'opacity-50',
+                selection.isSelected(n.id) && 'bg-brand-tint/40',
+              )}>
+                <td className="px-4 py-3">
+                  <SelectCheckbox
+                    checked={selection.isSelected(n.id)}
+                    onChange={() => selection.toggle(n.id)}
+                  />
+                </td>
                 <td className="px-4 py-3 font-mono text-[11px] text-ink-faint">{(page - 1) * 20 + i + 1}</td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-ink">{n.title}</p>
@@ -398,6 +424,7 @@ export default function AdminRevisionPage() {
             ))}
           </tbody>
         </table>
+        </div>
 
         {!loading && notes.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16">
@@ -408,6 +435,7 @@ export default function AdminRevisionPage() {
             </button>
           </div>
         )}
+      </div>
       </div>
 
       {/* Pagination */}
@@ -432,9 +460,31 @@ export default function AdminRevisionPage() {
       {panelOpen && <RevisionPanel editTarget={editTarget} onClose={closePanel} onSaved={onSaved} />}
 
       {/* Delete confirm */}
-      {deleteTarget && (
-        <DeleteConfirm note={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />
-      )}
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete revision note?"
+        description={
+          <>
+            Delete <span className="font-semibold text-ink">&ldquo;{deleteTarget?.title}&rdquo;</span>?
+            User revision data for this note will remain but become orphaned. This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete note"
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} note${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected revision notes. User revision data may become orphaned. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

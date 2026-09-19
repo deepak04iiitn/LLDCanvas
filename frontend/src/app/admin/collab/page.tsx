@@ -1,13 +1,17 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import {
   MessageSquareText, UserCheck, Clock, Trash2, Shield,
   Search, ChevronLeft, ChevronRight, Users, Radio,
 } from 'lucide-react'
 import { formatDistanceToNow, format, parseISO } from 'date-fns'
+import { toast } from 'sonner'
 import { adminApi, type AdminCollabInvite, type AdminComment } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-hairline ${className}`} />
@@ -50,6 +54,9 @@ export default function AdminCollabPage() {
   const [invLoading,   setInvLoading]   = useState(true)
   const [invStatus,    setInvStatus]    = useState('all')
   const [revoking,     setRevoking]     = useState<string | null>(null)
+  const [revokeTarget, setRevokeTarget] = useState<AdminCollabInvite | null>(null)
+  const [inviteBulkConfirm, setInviteBulkConfirm] = useState(false)
+  const [inviteBulkLoading, setInviteBulkLoading] = useState(false)
 
   // Comments state
   const [comments,     setComments]     = useState<AdminComment[]>([])
@@ -60,6 +67,15 @@ export default function AdminCollabPage() {
   const [cmtQ,         setCmtQ]         = useState('')
   const [cmtDraftQ,    setCmtDraftQ]    = useState('')
   const [deleting,     setDeleting]     = useState<string | null>(null)
+  const [deleteComment, setDeleteComment] = useState<AdminComment | null>(null)
+  const [bulkConfirm,  setBulkConfirm]  = useState(false)
+  const [bulkLoading,  setBulkLoading]  = useState(false)
+
+  const inviteIds = useMemo(() => invites.map(i => i._id), [invites])
+  const inviteSelection = useRowSelection(inviteIds)
+
+  const commentIds = useMemo(() => comments.map(c => c._id), [comments])
+  const selection = useRowSelection(commentIds)
 
   const loadInvites = useCallback(async (p = 1) => {
     setInvLoading(true)
@@ -88,24 +104,54 @@ export default function AdminCollabPage() {
   useEffect(() => { loadInvites(1) }, [loadInvites])
   useEffect(() => { loadComments(1) }, [loadComments])
 
-  async function handleRevoke(id: string) {
-    setRevoking(id)
+  async function handleRevoke() {
+    if (!revokeTarget) return
+    setRevoking(revokeTarget._id)
     try {
-      await adminApi.collab.revokeInvite(id)
-      setInvites(prev => prev.map(i => i._id === id ? { ...i, status: 'revoked' } : i))
+      await adminApi.collab.revokeInvite(revokeTarget._id)
+      setInvites(prev => prev.map(i => i._id === revokeTarget._id ? { ...i, status: 'revoked' } : i))
+      setRevokeTarget(null)
     } catch { /* no-op */ }
     finally { setRevoking(null) }
   }
 
-  async function handleDeleteComment(id: string) {
-    if (!confirm('Delete this discussion message permanently?')) return
-    setDeleting(id)
+  async function handleDeleteComment() {
+    if (!deleteComment) return
+    setDeleting(deleteComment._id)
     try {
-      await adminApi.collab.deleteComment(id)
-      setComments(prev => prev.filter(c => c._id !== id))
+      await adminApi.collab.deleteComment(deleteComment._id)
+      setComments(prev => prev.filter(c => c._id !== deleteComment._id))
       setCmtTotal(t => t - 1)
+      setDeleteComment(null)
+      selection.clear()
     } catch { /* no-op */ }
     finally { setDeleting(null) }
+  }
+
+  async function handleBulkDeleteInvites() {
+    if (inviteSelection.count === 0) return
+    setInviteBulkLoading(true)
+    try {
+      const res = await adminApi.collab.bulkDeleteInvites(inviteSelection.selectedIds)
+      toast.success(`Deleted ${res.deleted} invite${res.deleted === 1 ? '' : 's'}`)
+      setInviteBulkConfirm(false)
+      inviteSelection.clear()
+      loadInvites(invPage)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setInviteBulkLoading(false) }
+  }
+
+  async function handleBulkDeleteComments() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.collab.bulkDeleteComments(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} comment${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      loadComments(cmtPage)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
   }
 
   function getDiagramTitle(d: AdminCollabInvite['diagramId'] | AdminComment['diagramId']) {
@@ -114,21 +160,21 @@ export default function AdminCollabPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Collaboration Hub</h1>
           <p className="mt-0.5 text-sm text-ink-faint">Monitor and moderate collaboration invites and discussions</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <StatPill label="Total Invites"  value={invTotal}  color="text-brand"          />
           <StatPill label="Discussions"    value={cmtTotal}  color="text-violet-600" bg="bg-violet-50" />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 rounded-xl bg-hairline p-1 w-fit">
+      <div className="flex w-full flex-wrap items-center gap-1 rounded-xl bg-hairline p-1 sm:w-fit">
         {([
           { id: 'invites',     label: 'Collab Invites',   Icon: UserCheck,         count: invTotal  },
           { id: 'discussions', label: 'Discussions',      Icon: MessageSquareText, count: cmtTotal  },
@@ -153,8 +199,8 @@ export default function AdminCollabPage() {
       {/* ── Invites tab ─────────────────────────────────────────────────────── */}
       {tab === 'invites' && (
         <>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 rounded-lg bg-hairline p-0.5">
+          <div className="flex w-full items-center gap-3 overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-1 rounded-lg bg-hairline p-0.5">
               {(['all', 'accepted', 'pending', 'revoked'] as const).map(s => (
                 <button
                   key={s}
@@ -168,66 +214,98 @@ export default function AdminCollabPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-hairline bg-hairline/40">
-                  <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Diagram</th>
-                  <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Invitee</th>
-                  <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Role</th>
-                  <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Status</th>
-                  <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Invited</th>
-                  <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invLoading
-                  ? Array.from({ length: 8 }).map((_, i) => (
-                      <tr key={i} className="border-b border-hairline">
-                        {Array.from({ length: 6 }).map((_, j) => (
-                          <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
-                        ))}
-                      </tr>
-                    ))
-                  : invites.map(inv => (
-                      <tr key={inv._id} className="border-b border-hairline transition hover:bg-hairline/30">
-                        <td className="px-4 py-3">
-                          <p className="max-w-[180px] truncate text-xs font-medium text-ink">{getDiagramTitle(inv.diagramId)}</p>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-ink-muted">{inv.email}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize', ROLE_COLORS[inv.role])}>
-                            {inv.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_COLORS[inv.status])}>
-                            {inv.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-ink-faint">{timeAgo(inv.createdAt)}</td>
-                        <td className="px-4 py-3 text-center">
-                          {inv.status !== 'revoked' && (
-                            <button
-                              onClick={() => handleRevoke(inv._id)}
-                              disabled={revoking === inv._id}
-                              className="flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1 text-[11px] font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                            >
-                              <Shield size={11} /> Revoke
-                            </button>
+          <div className="space-y-3">
+            <BulkActionBar
+              count={inviteSelection.count}
+              onClear={inviteSelection.clear}
+              onDelete={() => setInviteBulkConfirm(true)}
+              loading={inviteBulkLoading}
+              label={inviteSelection.count === 1 ? 'invite selected' : 'invites selected'}
+            />
+            <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead>
+                  <tr className="border-b border-hairline bg-hairline/40">
+                    <th className="w-10 px-4 py-3">
+                      <SelectCheckbox
+                        checked={inviteSelection.allPageSelected}
+                        indeterminate={inviteSelection.somePageSelected}
+                        onChange={inviteSelection.togglePage}
+                        title="Select all on page"
+                        disabled={invLoading || invites.length === 0}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Diagram</th>
+                    <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Invitee</th>
+                    <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Role</th>
+                    <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Status</th>
+                    <th className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint">Invited</th>
+                    <th className="px-4 py-3 text-center font-mono text-[10px] uppercase tracking-widest text-ink-faint">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invLoading
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                        <tr key={i} className="border-b border-hairline">
+                          {Array.from({ length: 7 }).map((_, j) => (
+                            <td key={j} className="px-4 py-3"><Skeleton className="h-4" /></td>
+                          ))}
+                        </tr>
+                      ))
+                    : invites.map(inv => (
+                        <tr
+                          key={inv._id}
+                          className={cn(
+                            'border-b border-hairline transition hover:bg-hairline/30',
+                            inviteSelection.isSelected(inv._id) && 'bg-brand-tint/40',
                           )}
-                        </td>
-                      </tr>
-                    ))
-                }
-              </tbody>
-            </table>
-            {!invLoading && invites.length === 0 && (
-              <div className="flex flex-col items-center gap-3 py-12">
-                <UserCheck className="h-8 w-8 text-ink-faint opacity-40" />
-                <p className="text-sm text-ink-faint">No invites found</p>
+                        >
+                          <td className="px-4 py-3">
+                            <SelectCheckbox
+                              checked={inviteSelection.isSelected(inv._id)}
+                              onChange={() => inviteSelection.toggle(inv._id)}
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="max-w-[180px] truncate text-xs font-medium text-ink">{getDiagramTitle(inv.diagramId)}</p>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-ink-muted">{inv.email}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize', ROLE_COLORS[inv.role])}>
+                              {inv.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-semibold capitalize', STATUS_COLORS[inv.status])}>
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-ink-faint">{timeAgo(inv.createdAt)}</td>
+                          <td className="px-4 py-3 text-center">
+                            {inv.status !== 'revoked' && (
+                              <button
+                                onClick={() => setRevokeTarget(inv)}
+                                disabled={revoking === inv._id}
+                                className="flex items-center gap-1.5 rounded-lg border border-red-200 px-2.5 py-1 text-[11px] font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                              >
+                                <Shield size={11} /> Revoke
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                  }
+                </tbody>
+              </table>
               </div>
-            )}
+              {!invLoading && invites.length === 0 && (
+                <div className="flex flex-col items-center gap-3 py-12">
+                  <UserCheck className="h-8 w-8 text-ink-faint opacity-40" />
+                  <p className="text-sm text-ink-faint">No invites found</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {invPages > 1 && (
@@ -246,8 +324,8 @@ export default function AdminCollabPage() {
       {/* ── Discussions tab ─────────────────────────────────────────────────── */}
       {tab === 'discussions' && (
         <>
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
               <input
                 type="text"
@@ -267,10 +345,41 @@ export default function AdminCollabPage() {
           </div>
 
           <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <SelectCheckbox
+                checked={selection.allPageSelected}
+                indeterminate={selection.somePageSelected}
+                onChange={selection.togglePage}
+                title="Select all on page"
+                disabled={cmtLoading || comments.length === 0}
+              />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+                Select all on page
+              </span>
+            </div>
+            <BulkActionBar
+              count={selection.count}
+              onClear={selection.clear}
+              onDelete={() => setBulkConfirm(true)}
+              loading={bulkLoading}
+              label={selection.count === 1 ? 'comment selected' : 'comments selected'}
+            />
             {cmtLoading
               ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)
               : comments.map(c => (
-                  <div key={c._id} className="flex items-start gap-4 rounded-xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition hover:shadow-md">
+                  <div
+                    key={c._id}
+                    className={cn(
+                      'flex items-start gap-4 rounded-xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition hover:shadow-md',
+                      selection.isSelected(c._id) && 'bg-brand-tint/40',
+                    )}
+                  >
+                    <div className="pt-1">
+                      <SelectCheckbox
+                        checked={selection.isSelected(c._id)}
+                        onChange={() => selection.toggle(c._id)}
+                      />
+                    </div>
                     {/* Avatar */}
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-tint text-[11px] font-bold text-brand">
                       {c.authorName[0]?.toUpperCase()}
@@ -304,7 +413,7 @@ export default function AdminCollabPage() {
                     </div>
 
                     <button
-                      onClick={() => handleDeleteComment(c._id)}
+                      onClick={() => setDeleteComment(c)}
                       disabled={deleting === c._id}
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-red-200 text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                       title="Delete message"
@@ -335,6 +444,59 @@ export default function AdminCollabPage() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={!!revokeTarget}
+        onClose={() => setRevokeTarget(null)}
+        onConfirm={handleRevoke}
+        title="Revoke invite?"
+        description={
+          <>
+            Revoke this collaboration invite
+            {revokeTarget?.email ? (
+              <> for <span className="font-semibold text-ink">{revokeTarget.email}</span></>
+            ) : null}
+            ? They will lose access to the diagram.
+          </>
+        }
+        confirmLabel="Revoke invite"
+        variant="warning"
+        loading={!!revokeTarget && revoking === revokeTarget._id}
+        icon={Shield}
+      />
+
+      <ConfirmModal
+        open={!!deleteComment}
+        onClose={() => setDeleteComment(null)}
+        onConfirm={handleDeleteComment}
+        title="Delete message?"
+        description="Delete this discussion message permanently? This cannot be undone."
+        confirmLabel="Delete message"
+        loading={!!deleteComment && deleting === deleteComment._id}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={inviteBulkConfirm}
+        onClose={() => setInviteBulkConfirm(false)}
+        onConfirm={handleBulkDeleteInvites}
+        title={`Delete ${inviteSelection.count} invite${inviteSelection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected collaboration invites. This cannot be undone."
+        confirmLabel={`Delete ${inviteSelection.count}`}
+        loading={inviteBulkLoading}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDeleteComments}
+        title={`Delete ${selection.count} comment${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected discussion messages. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

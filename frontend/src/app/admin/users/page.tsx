@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import {
   Search, Shield, Ban, Trash2, ChevronLeft, ChevronRight,
   ShieldCheck, RefreshCw, CalendarDays, X,
@@ -9,6 +9,9 @@ import { toast } from 'sonner'
 import { format, parseISO, subDays, startOfDay, endOfDay } from 'date-fns'
 import { adminApi, type AdminUser } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 const FILTERS = ['all', 'active', 'blocked', 'admin'] as const
@@ -79,7 +82,16 @@ export default function AdminUsersPage() {
   const [to, setTo]                 = useState('')
   const [activePreset, setActivePreset] = useState<string | null>(null)
   const [actionId, setActionId]     = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
   const searchTimeout               = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const selectableIds = useMemo(
+    () => users.filter(u => !u.isAdmin).map(u => u.id),
+    [users],
+  )
+  const selection = useRowSelection(selectableIds)
 
   const load = useCallback(async (
     p     = 1,
@@ -130,22 +142,37 @@ export default function AdminUsersPage() {
     finally { setActionId(null) }
   }
 
-  async function handleDelete(user: AdminUser) {
-    if (!confirm(`Permanently delete ${user.name} and all their data?`)) return
-    setActionId(user.id)
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setActionId(deleteTarget.id)
     try {
-      await adminApi.users.delete(user.id)
-      toast.success(`${user.name} deleted`)
+      await adminApi.users.delete(deleteTarget.id)
+      toast.success(`${deleteTarget.name} deleted`)
+      setDeleteTarget(null)
+      selection.clear()
       load(page, q, filter, from, to)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
     finally { setActionId(null) }
   }
 
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.users.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} user${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page, q, filter, from, to)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
+  }
+
   return (
-    <div className="space-y-5 p-6">
+    <div className="space-y-5 p-4 sm:p-6">
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Users</h1>
           <p className="mt-0.5 text-sm text-ink-faint">
@@ -155,7 +182,7 @@ export default function AdminUsersPage() {
         </div>
         <button
           onClick={() => load(page, q, filter, from, to)}
-          className="flex items-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
@@ -171,7 +198,7 @@ export default function AdminUsersPage() {
             className="h-9 w-full rounded-md border border-hairline-strong bg-paper pl-9 pr-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
           />
         </div>
-        <div className="flex gap-1 rounded-md border border-hairline-strong bg-paper p-0.5">
+        <div className="flex flex-wrap gap-1 rounded-md border border-hairline-strong bg-paper p-0.5">
           {FILTERS.map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={cn(
@@ -187,7 +214,7 @@ export default function AdminUsersPage() {
 
       {/* Date filter row */}
       <div className="rounded-xl border border-hairline bg-paper-elevated px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="flex items-center gap-1.5 shrink-0">
             <CalendarDays className="h-3.5 w-3.5 text-ink-faint" />
             <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
@@ -214,10 +241,10 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Divider */}
-          <div className="h-4 w-px bg-hairline-strong" />
+          <div className="hidden sm:block h-4 w-px bg-hairline-strong" />
 
           {/* Custom date inputs */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
               value={from}
@@ -248,6 +275,14 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Table */}
+      <div className="space-y-3">
+        <BulkActionBar
+          count={selection.count}
+          onClear={selection.clear}
+          onDelete={() => setBulkConfirm(true)}
+          loading={bulkLoading}
+          label={selection.count === 1 ? 'user selected' : 'users selected'}
+        />
       <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
         {loading ? (
           <div className="flex h-48 items-center justify-center">
@@ -263,6 +298,15 @@ export default function AdminUsersPage() {
             <table className="w-full min-w-[640px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-hairline bg-paper">
+                  <th className="w-10 px-4 py-3">
+                    <SelectCheckbox
+                      checked={selection.allPageSelected}
+                      indeterminate={selection.somePageSelected}
+                      onChange={selection.togglePage}
+                      title="Select all on page"
+                      disabled={selectableIds.length === 0}
+                    />
+                  </th>
                   {['User', 'Status', 'Diagrams', 'Sessions', 'Joined', 'Actions'].map(h => (
                     <th key={h} className={cn(
                       'px-4 py-3 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint',
@@ -275,7 +319,21 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {users.map(user => (
-                  <tr key={user.id} className="border-b border-hairline transition-colors last:border-0 hover:bg-paper/60">
+                  <tr
+                    key={user.id}
+                    className={cn(
+                      'border-b border-hairline transition-colors last:border-0 hover:bg-paper/60',
+                      selection.isSelected(user.id) && 'bg-brand-tint/40',
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      {!user.isAdmin && (
+                        <SelectCheckbox
+                          checked={selection.isSelected(user.id)}
+                          onChange={() => selection.toggle(user.id)}
+                        />
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar name={user.name} image={user.image} />
@@ -310,7 +368,7 @@ export default function AdminUsersPage() {
                               {user.blocked ? <Shield className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
                             </button>
                             <button
-                              onClick={() => handleDelete(user)}
+                              onClick={() => setDeleteTarget(user)}
                               disabled={actionId === user.id}
                               title="Delete user"
                               className="flex h-7 w-7 items-center justify-center rounded-md text-red-400 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
@@ -328,8 +386,36 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+      </div>
 
       <Pagination page={page} totalPages={totalPages} onPage={p => load(p, q, filter, from, to)} />
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete user?"
+        description={
+          <>
+            Permanently delete <span className="font-semibold text-ink">{deleteTarget?.name}</span> and all their data.
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete user"
+        loading={!!deleteTarget && actionId === deleteTarget.id}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} user${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected users and all their data. Admin accounts are skipped. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

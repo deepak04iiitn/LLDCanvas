@@ -111,14 +111,13 @@ export function invalidatePlan() {
 }
 
 export function usePlan() {
-  const cached = typeof window !== 'undefined' ? (readCache() ?? _resolved) : null
-
+  // Always start identical on server + client to avoid hydration mismatches.
+  // Cache is applied after mount in useEffect.
   const [state, setState] = useState<PlanState>(() => ({
-    plan:         cached?.plan         ?? 'free',
-    limits:       cached?.limits       ?? DEFAULT_FREE_LIMITS,
-    subscription: cached?.subscription ?? null,
-    // If we have a cache hit, no loading flash
-    loading: cached === null,
+    plan:         'free',
+    limits:       DEFAULT_FREE_LIMITS,
+    subscription: null,
+    loading:      true,
   }))
 
   const applyData = useCallback((data: PlanData) => {
@@ -126,19 +125,19 @@ export function usePlan() {
   }, [])
 
   useEffect(() => {
-    // Already have fresh resolved data - nothing to do
-    if (_resolved && !state.loading) return
+    const cached = readCache() ?? _resolved
+    if (cached) {
+      applyData(cached)
+    }
 
-    // Subscribe to updates from the shared fetch
     _listeners.add(applyData)
 
-    // Fire the shared fetch (no-ops if already in flight)
     fetchPlan().catch(() => {
       setState(prev => ({ ...prev, loading: false }))
     })
 
     return () => { _listeners.delete(applyData) }
-  }, [applyData, state.loading])
+  }, [applyData])
 
   const refresh = useCallback(async () => {
     invalidatePlan()

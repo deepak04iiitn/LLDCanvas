@@ -18,8 +18,8 @@ LLDCanvas is designed for software engineers preparing for LLD and system design
 ## Pricing
 
 - **Free**: Access to the UML editor, Draft Notation, playground, 10 easy practice problems, basic revision notes, and select design pattern templates.
-- **Pro**: All free features plus all easy problems, 10 curated medium problems, full revision notes library, timed interview mode, and code execution sandbox.
-- **Ultimate**: Everything in Pro plus all medium and hard problems, live collaboration, priority support. Monthly: INR 399 / USD 13. Yearly: INR 3,999 / USD 130.
+- **Pro**: All free features plus all easy problems, 10 curated medium problems, full revision notes library, timed interview mode, and code execution sandbox. Monthly: INR 199 / USD 10. Yearly: INR 1,999 / USD 100.
+- **Ultimate**: Everything in Pro plus all medium and hard problems, live collaboration, priority support. Monthly: INR 399 / USD 20. Yearly: INR 3,999 / USD 200.
 
 See full pricing at [/pricing](/pricing).
 

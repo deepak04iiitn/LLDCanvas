@@ -117,6 +117,11 @@ export const adminApi = {
       req<{ ok: boolean; blocked: boolean }>(`/users/${id}/block`, { method: 'PATCH' }),
     delete: (id: string) =>
       req<{ ok: boolean }>(`/users/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number; skipped?: number }>('/users/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   diagrams: {
@@ -132,6 +137,11 @@ export const adminApi = {
     },
     delete: (id: string) =>
       req<{ ok: boolean }>(`/diagrams/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/diagrams/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   analytics: () =>
@@ -173,6 +183,11 @@ export const adminApi = {
     },
     delete: (id: string) =>
       req<{ ok: boolean }>(`/sessions/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/sessions/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   problems: {
@@ -191,6 +206,11 @@ export const adminApi = {
       req<{ ok: boolean; problem: AdminProblem }>(`/problems/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/problems/${id}/toggle`, { method: 'PATCH' }),
     delete: (id: string) => req<{ ok: boolean }>(`/problems/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/problems/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   revision: {
@@ -208,6 +228,11 @@ export const adminApi = {
       req<{ ok: boolean; note: AdminRevisionNote }>(`/revision-notes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
     toggle: (id: string) => req<{ ok: boolean; isActive: boolean }>(`/revision-notes/${id}/toggle`, { method: 'PATCH' }),
     delete: (id: string) => req<{ ok: boolean }>(`/revision-notes/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/revision-notes/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   code: {
@@ -245,6 +270,18 @@ export const adminApi = {
         method: 'PATCH',
         body: JSON.stringify({ reason }),
       }),
+
+    bulkDeleteExecutions: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/code/executions/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+
+    bulkDeleteBans: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/code/bans/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   collab: {
@@ -256,6 +293,11 @@ export const adminApi = {
       return req<{ invites: AdminCollabInvite[]; total: number; page: number; limit: number; totalPages: number }>(`/collab-invites?${qs}`)
     },
     revokeInvite: (id: string) => req<{ ok: boolean }>(`/collab-invites/${id}/revoke`, { method: 'PATCH' }),
+    bulkDeleteInvites: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/collab-invites/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
     listComments: (params: { page?: number; limit?: number; q?: string }) => {
       const qs = new URLSearchParams()
       if (params.page)  qs.set('page',  String(params.page))
@@ -264,6 +306,11 @@ export const adminApi = {
       return req<{ comments: AdminComment[]; total: number; page: number; limit: number; totalPages: number }>(`/comments?${qs}`)
     },
     deleteComment: (id: string) => req<{ ok: boolean }>(`/comments/${id}`, { method: 'DELETE' }),
+    bulkDeleteComments: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/comments/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   billing: {
@@ -315,6 +362,12 @@ export const adminApi = {
     cancelSubscription: (id: string) =>
       req<{ ok: boolean }>(`/billing/subscriptions/${id}/cancel`, { method: 'POST' }),
 
+    bulkDeleteSubscriptions: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/billing/subscriptions/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+
     createManualSubscription: (payload: {
       userId: string
       plan: 'pro' | 'ultimate'
@@ -354,6 +407,11 @@ export const adminApi = {
 
     delete: (id: string) =>
       req<{ ok: boolean }>(`/feedback/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/feedback/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   testimonials: {
@@ -373,6 +431,11 @@ export const adminApi = {
 
     delete: (id: string) =>
       req<{ ok: boolean }>(`/testimonials/${id}`, { method: 'DELETE' }),
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/testimonials/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
   },
 
   blog: {
@@ -407,6 +470,12 @@ export const adminApi = {
 
     delete: (id: string) =>
       req<{ ok: boolean }>(`/blog/${id}`, { method: 'DELETE' }),
+
+    bulkDelete: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/blog/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
 
     listComments: (params?: { page?: number; limit?: number }) => {
       const qs = new URLSearchParams()
@@ -559,8 +628,8 @@ export interface AdminSubscription {
   currentPeriodEnd: string | null
   cancelAtPeriodEnd: boolean
   cancelledAt: string | null
-  paymentSource: 'razorpay' | 'manual'
-  currency: 'INR' | 'USD'
+  paymentSource: 'razorpay' | 'manual' | 'dodo'
+  currency: string
   paidMonths: number | null
   onboardingNote: string
   createdAt: string

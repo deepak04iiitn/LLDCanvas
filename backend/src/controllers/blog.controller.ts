@@ -376,6 +376,25 @@ export const adminBlogController = {
     } catch (err) { next(err) }
   },
 
+  bulkDelete: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const raw = req.body?.ids
+      if (!Array.isArray(raw) || raw.length === 0) {
+        res.status(400).json({ error: 'ids must be a non-empty array' })
+        return
+      }
+      const ids = [...new Set(raw.filter((id: unknown): id is string => typeof id === 'string' && !!id.trim()))]
+      if (ids.length > 200) {
+        res.status(400).json({ error: 'Cannot delete more than 200 items at once' })
+        return
+      }
+      const result = await Blog.deleteMany({ _id: { $in: ids } })
+      await BlogComment.deleteMany({ blogId: { $in: ids } })
+      await BlogReaction.deleteMany({ blogId: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+    } catch (err) { next(err) }
+  },
+
   duplicate: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const original = await Blog.findById(req.params.id).lean()

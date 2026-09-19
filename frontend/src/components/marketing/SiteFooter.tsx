@@ -90,9 +90,6 @@ export function SiteFooter() {
                 preparation - practice LLD interview questions, design with UML and 23 design
                 patterns, run code, and collaborate in real time.
               </p>
-              <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] tracking-widest text-ink-faint uppercase">
-                ¶ v1.0
-              </span>
             </div>
 
             {/* ── Nav columns - always fill remaining space evenly ────────── */}

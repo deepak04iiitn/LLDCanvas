@@ -787,7 +787,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         problemNotesOpen={problemNotesOpen}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         {!readOnly && (
           <LeftPanel
             onAddClass={() => insertNode('class')}
@@ -833,13 +833,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
               diagramId={diagramId}
             />
           )}
-
-          {/* Code execution panel */}
-          <CodePanel
-            open={codePanelOpen}
-            onClose={() => setCodePanelOpen(false)}
-            problemSlug={problemSlug}
-          />
 
           {/* Problem community discussion panel */}
           {problemSlug && (
@@ -905,6 +898,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             diagramId={diagramId}
           />
         )}
+
+        {/* Code mode — full-bleed overlay over the entire workspace; stays mounted */}
+        <CodePanel
+          open={codePanelOpen}
+          onClose={() => setCodePanelOpen(false)}
+          problemSlug={problemSlug}
+        />
       </div>
 
       {localMode && <DismissableLocalBanner />}

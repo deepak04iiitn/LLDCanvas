@@ -550,70 +550,76 @@ export default function CollaborationsPage() {
             </section>
 
             {/* ── Right: Activity Timeline ───────────────────────────────── */}
-            <section>
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+            <section className="flex min-h-0 flex-col">
+              <h2 className="mb-3 flex shrink-0 items-center gap-2 text-sm font-semibold text-ink">
                 <Clock size={14} className="text-ink-faint" /> Activity Timeline
                 <span className="ml-auto text-[10px] font-normal text-ink-faint">Last 30 days</span>
               </h2>
 
-              {loading ? (
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-16 animate-pulse rounded-xl bg-hairline" />
-                  ))}
-                </div>
-              ) : events.length === 0 ? (
-                <EmptyState
-                  icon={Hourglass}
-                  title="No recent activity"
-                  body="Activity from collaborators will appear here."
-                />
-              ) : (
-                <div className="relative space-y-0.5">
-                  {events.map((ev, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.02 }}
-                      className="flex items-start gap-3 rounded-xl p-3 transition hover:bg-hairline/60"
-                    >
-                      <EventIcon type={ev.type} />
+              <div className="no-scrollbar max-h-[420px] overflow-y-auto rounded-2xl border border-hairline bg-paper-elevated">
+                {loading ? (
+                  <div className="space-y-3 p-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-14 animate-pulse rounded-xl bg-hairline" />
+                    ))}
+                  </div>
+                ) : events.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-hairline">
+                      <Hourglass size={16} className="text-ink-faint opacity-60" />
+                    </div>
+                    <p className="text-sm font-medium text-ink-muted">No recent activity</p>
+                    <p className="max-w-[200px] text-xs text-ink-faint">
+                      Activity from collaborators will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative space-y-0.5 p-1.5">
+                    {events.map((ev, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: 8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: Math.min(i * 0.02, 0.2) }}
+                        className="flex items-start gap-3 rounded-xl p-3 transition hover:bg-hairline/60"
+                      >
+                        <EventIcon type={ev.type} />
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-xs font-medium text-ink leading-snug">
-                            <span className="text-brand">{ev.actor.split('@')[0]}</span>
-                            {' '}
-                            {ev.type === 'comment' && 'commented on'}
-                            {ev.type === 'invite_accepted' && 'joined'}
-                            {ev.type === 'save' && 'saved'}
-                            {' '}
-                            <span className="font-semibold">{ev.diagramTitle}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-xs font-medium text-ink leading-snug">
+                              <span className="text-brand">{ev.actor.split('@')[0]}</span>
+                              {' '}
+                              {ev.type === 'comment' && 'commented on'}
+                              {ev.type === 'invite_accepted' && 'joined'}
+                              {ev.type === 'save' && 'saved'}
+                              {' '}
+                              <span className="font-semibold">{ev.diagramTitle}</span>
+                            </p>
+                          </div>
+                          <p className="mt-0.5 truncate text-[10px] text-ink-faint">
+                            {ev.type === 'comment'
+                              ? `"${ev.detail}"`
+                              : ev.detail}
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-ink-faint/70">
+                            {timeAgo(ev.timestamp)}
                           </p>
                         </div>
-                        <p className="mt-0.5 truncate text-[10px] text-ink-faint">
-                          {ev.type === 'comment'
-                            ? `"${ev.detail}"`
-                            : ev.detail}
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-ink-faint/70">
-                          {timeAgo(ev.timestamp)}
-                        </p>
-                      </div>
 
-                      {ev.diagramId && (
-                        <Link
-                          href={`/editor/${ev.diagramId}`}
-                          className="shrink-0 text-ink-faint transition hover:text-brand"
-                        >
-                          <ChevronRight size={14} />
-                        </Link>
-                      )}
-                    </motion.div>
-                  ))}
-                </div>
-              )}
+                        {ev.diagramId && (
+                          <Link
+                            href={`/editor/${ev.diagramId}`}
+                            className="shrink-0 text-ink-faint transition hover:text-brand"
+                          >
+                            <ChevronRight size={14} />
+                          </Link>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </section>
           </div>
         </div>

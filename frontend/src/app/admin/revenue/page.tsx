@@ -95,9 +95,9 @@ export default function AdminRevenuePage() {
   const fmt = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-hairline bg-paper-elevated">
             <BarChart3 className="h-4 w-4 text-brand" />
@@ -109,14 +109,14 @@ export default function AdminRevenuePage() {
         </div>
 
         {/* Range picker + specific-month picker */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-xl border border-hairline bg-paper-elevated p-1 gap-1">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="flex w-full gap-1 overflow-x-auto rounded-xl border border-hairline bg-paper-elevated p-1 sm:w-auto">
             {RANGE_OPTIONS.map(r => (
               <button
                 key={r.value}
                 onClick={() => selectRange(r.value)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  'shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
                   !month && range === r.value ? 'bg-paper shadow-sm text-ink' : 'text-ink-muted hover:text-ink',
                 )}
               >

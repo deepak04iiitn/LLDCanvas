@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Star, CheckCircle2, XCircle, Clock, RefreshCw,
@@ -11,6 +11,9 @@ import { formatDistanceToNow, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import { adminApi, type AdminTestimonial } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -105,7 +108,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
       className="fixed right-0 top-0 z-50 flex h-full w-[460px] max-w-full flex-col border-l border-hairline bg-paper shadow-2xl"
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 ring-1 ring-brand/20">
             <Quote className="h-4.5 w-4.5 text-brand" style={{ height: 18, width: 18 }} />
@@ -120,7 +123,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
         </button>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-6">
+      <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
         {/* Submitter */}
         <div className="rounded-xl border border-hairline bg-paper-elevated p-4 space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Submitter</p>
@@ -175,7 +178,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
         </div>
 
         {/* Featured toggle */}
-        <div className="flex items-center justify-between rounded-xl border border-hairline bg-paper-elevated px-4 py-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-hairline bg-paper-elevated px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
             <Pin className="h-4 w-4 text-brand" />
             <div>
@@ -186,7 +189,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
           <button
             onClick={() => setFeatured(!featured)}
             className={cn(
-              'relative h-6 w-11 rounded-full transition-colors',
+              'relative h-6 w-11 shrink-0 rounded-full transition-colors',
               featured ? 'bg-brand' : 'bg-hairline-strong',
             )}
           >
@@ -213,7 +216,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-hairline bg-paper-elevated px-6 py-4 flex gap-3">
+      <div className="flex shrink-0 flex-wrap gap-3 border-t border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <button
           onClick={save}
           disabled={saving}
@@ -242,6 +245,12 @@ export default function AdminTestimonialsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [selected, setSelected] = useState<AdminTestimonial | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminTestimonial | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  const pageIds = useMemo(() => items.map(item => item._id), [items])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -274,18 +283,38 @@ export default function AdminTestimonialsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete() {
+    if (!deleteTarget) return
+    const id = deleteTarget._id
     setDeleting(id)
     try {
       await adminApi.testimonials.delete(id)
       setItems(prev => prev.filter(i => i._id !== id))
       setTotal(t => t - 1)
       if (selected?._id === id) setSelected(null)
+      setDeleteTarget(null)
+      selection.clear()
       toast.success('Deleted')
     } catch {
       toast.error('Failed to delete')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.testimonials.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} testimonial${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBulkLoading(false)
     }
   }
 
@@ -298,19 +327,19 @@ export default function AdminTestimonialsPage() {
     <div className="flex h-full flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-6 pt-5 pb-4">
-        <div className="flex items-center justify-between">
+      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 pt-5 pb-4 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-ink">Testimonials</h1>
             <p className="mt-0.5 text-xs text-ink-faint">Review and approve user testimonials for the landing page</p>
           </div>
-          <button onClick={() => load(1)} className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors">
+          <button onClick={() => load(1)} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors sm:w-auto">
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
 
         {/* Stats */}
         {stats && (
@@ -323,7 +352,7 @@ export default function AdminTestimonialsPage() {
         )}
 
         {/* Status filter pills */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {[
             { value: '',         label: 'All' },
             { value: 'pending',  label: 'Pending' },
@@ -362,6 +391,25 @@ export default function AdminTestimonialsPage() {
             <p className="mt-1 text-xs text-ink-faint">Adjust the filter or wait for users to submit</p>
           </div>
         ) : (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <SelectCheckbox
+                checked={selection.allPageSelected}
+                indeterminate={selection.somePageSelected}
+                onChange={selection.togglePage}
+                title="Select all on page"
+              />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+                Select all on page
+              </span>
+            </div>
+            <BulkActionBar
+              count={selection.count}
+              onClear={selection.clear}
+              onDelete={() => setBulkConfirm(true)}
+              loading={bulkLoading}
+              label={selection.count === 1 ? 'testimonial selected' : 'testimonials selected'}
+            />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map(item => (
               <motion.div
@@ -378,9 +426,16 @@ export default function AdminTestimonialsPage() {
                       : item.status === 'rejected'
                         ? 'border-red-100 bg-red-50/20 opacity-70'
                         : 'border-hairline bg-white',
+                  selection.isSelected(item._id) && 'bg-brand-tint/40 ring-1 ring-brand/30',
                 )}
                 onClick={() => setSelected(item)}
               >
+                <div className="absolute left-3 top-3 z-10" onClick={e => e.stopPropagation()}>
+                  <SelectCheckbox
+                    checked={selection.isSelected(item._id)}
+                    onChange={() => selection.toggle(item._id)}
+                  />
+                </div>
                 {/* Featured pin */}
                 {item.featured && (
                   <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5">
@@ -390,7 +445,7 @@ export default function AdminTestimonialsPage() {
                 )}
 
                 {/* Author */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 pl-6">
                   {item.avatar ? (
                     <img src={item.avatar} alt={item.name} className="h-9 w-9 rounded-full object-cover ring-1 ring-hairline" />
                   ) : (
@@ -416,7 +471,7 @@ export default function AdminTestimonialsPage() {
                 {/* Footer actions */}
                 <div className="flex items-center justify-between border-t border-hairline pt-3">
                   <p className="text-[10px] text-ink-faint">{timeAgo(item.createdAt)}</p>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                     {item.status !== 'approved' && (
                       <button
                         onClick={e => { e.stopPropagation(); quickApprove(item._id, 'approved') }}
@@ -436,7 +491,7 @@ export default function AdminTestimonialsPage() {
                       </button>
                     )}
                     <button
-                      onClick={e => { e.stopPropagation(); handleDelete(item._id) }}
+                      onClick={e => { e.stopPropagation(); setDeleteTarget(item) }}
                       disabled={deleting === item._id}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-faint/40 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-30"
                       title="Delete"
@@ -447,6 +502,7 @@ export default function AdminTestimonialsPage() {
                 </div>
               </motion.div>
             ))}
+          </div>
           </div>
         )}
 
@@ -481,6 +537,33 @@ export default function AdminTestimonialsPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete testimonial?"
+        description={
+          <>
+            Delete testimonial from <span className="font-semibold text-ink">{deleteTarget?.name}</span>?
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete"
+        loading={!!deleteTarget && deleting === deleteTarget._id}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} testimonial${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected testimonials. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

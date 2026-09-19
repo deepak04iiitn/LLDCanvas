@@ -1687,14 +1687,26 @@ export function LandingPageClient() {
               different tools.
             </motion.p>
 
-            <motion.div className="flex flex-wrap items-center gap-3" {...fadeUpProps(0.24)}>
+            <motion.div className={cn('flex flex-wrap items-center gap-3', !session?.user && 'mb-7')} {...fadeUpProps(0.24)}>
               <Link href="/editor/local" className="inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 font-semibold text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
                 Start for free
               </Link>
               {!session?.user && (
-                <button onClick={openSignin} className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
-                  Sign in
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={openSignin}
+                    className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]"
+                  >
+                    Sign in
+                  </button>
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm"
+                  >
+                    Sign in to unlock all features
+                    <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-ink" aria-hidden />
+                  </span>
+                </div>
               )}
             </motion.div>
 

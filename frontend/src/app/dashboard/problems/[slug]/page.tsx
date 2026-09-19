@@ -1,12 +1,28 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  ArrowLeft, ArrowRight, CheckCircle2, Clock, Play, ExternalLink,
-  Lightbulb, Lock, ChevronDown, ChevronUp, RefreshCw,
-  Users, AlertTriangle, MessageSquare, ThumbsUp,
-  ChevronRight, HelpCircle, Layers, Code2, Plus, Trash2, Send, Loader2,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Play,
+  ExternalLink,
+  Lightbulb,
+  Lock,
+  RefreshCw,
+  Users,
+  AlertTriangle,
+  MessageSquare,
+  ThumbsUp,
+  HelpCircle,
+  Code2,
+  Plus,
+  Trash2,
+  Send,
+  Loader2,
+  NotebookPen,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -19,239 +35,243 @@ import type { ProblemDetail, UserSolution, ProblemPost, PostReply } from '@/type
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
 import { UpgradeGate } from '@/components/billing/UpgradeGate'
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import { ProblemNotesSection } from '@/components/problems/ProblemNotesSection'
 
 const DIFF_META = {
-  easy:   { label: 'Easy',   color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-200', dot: 'bg-emerald-400' },
-  medium: { label: 'Medium', color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-200',   dot: 'bg-amber-400'   },
-  hard:   { label: 'Hard',   color: 'text-red-600',     bg: 'bg-red-50',     ring: 'ring-red-200',     dot: 'bg-red-400'     },
-}
+  easy:   { label: 'Easy',   color: 'text-emerald-700' },
+  medium: { label: 'Medium', color: 'text-amber-700' },
+  hard:   { label: 'Hard',   color: 'text-red-700' },
+} as const
 
 const POST_TYPES = [
-  { value: 'question',   label: 'Question',         Icon: HelpCircle,    color: 'text-amber-600',   bg: 'bg-amber-50',   ring: 'ring-amber-200'   },
-  { value: 'discussion', label: 'Discussion',        Icon: MessageSquare, color: 'text-blue-600',    bg: 'bg-blue-50',    ring: 'ring-blue-200'    },
-  { value: 'solution',   label: 'Solution Approach', Icon: Lightbulb,     color: 'text-emerald-600', bg: 'bg-emerald-50', ring: 'ring-emerald-200' },
+  { value: 'question',   label: 'Question',   Icon: HelpCircle,    cls: 'text-amber-700' },
+  { value: 'discussion', label: 'Discussion', Icon: MessageSquare, cls: 'text-ink-muted' },
+  { value: 'solution',   label: 'Approach',   Icon: Lightbulb,     cls: 'text-brand' },
 ] as const
 
 type PostType = 'question' | 'discussion' | 'solution'
+type Section = 'brief' | 'hints' | 'notes' | 'discussion'
 
-const LANGUAGES = ['Python','JavaScript','TypeScript','Java','C++','C','C#','Go','Rust','Ruby','PHP','Swift','Kotlin','Other']
+const LANGUAGES = [
+  'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'C', 'C#',
+  'Go', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'Other',
+]
 
 function timeAgo(d: string) {
   try { return formatDistanceToNow(parseISO(d), { addSuffix: true }) } catch { return d }
 }
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
-
-function DifficultyBadge({ difficulty }: { difficulty: 'easy' | 'medium' | 'hard' }) {
-  const m = DIFF_META[difficulty]
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-bold uppercase tracking-wider ring-1', m.bg, m.color, m.ring)}>
-      <span className={cn('h-2 w-2 rounded-full', m.dot)} />
-      {m.label}
-    </span>
-  )
-}
-
-function TypeBadge({ type }: { type: PostType }) {
-  const t = POST_TYPES.find(p => p.value === type) ?? POST_TYPES[1]
-  return (
-    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1', t.bg, t.color, t.ring)}>
-      <t.Icon className="h-2.5 w-2.5" />
-      {t.label}
-    </span>
-  )
-}
-
-function Avatar({ name, image, size = 8 }: { name: string; image: string | null; size?: number }) {
+function Avatar({ name, image, size = 'sm' }: { name: string; image: string | null; size?: 'sm' | 'md' }) {
   const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
-  if (image) return <img src={image} alt={name} className={`h-${size} w-${size} shrink-0 rounded-full object-cover`} />
+  const dim = size === 'md' ? 'h-9 w-9 text-[11px]' : 'h-7 w-7 text-[10px]'
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt="" className={cn('shrink-0 rounded-full object-cover', dim)} />
+  }
   return (
-    <div className={`flex h-${size} w-${size} shrink-0 items-center justify-center rounded-full bg-brand-tint font-mono text-[11px] font-bold text-brand`}>
+    <div className={cn('flex shrink-0 items-center justify-center rounded-full bg-hairline font-mono font-bold text-ink-muted', dim)}>
       {initials}
     </div>
   )
 }
 
-// ─── Hints panel ─────────────────────────────────────────────────────────────
+const hintKey = (slug: string) => `lld_hints_${slug}`
 
-const HINT_STORAGE_KEY = (slug: string) => `lld_hints_${slug}`
-
-function HintsPanel({ slug, hints }: { slug: string; hints: string[] }) {
-  const storageKey = HINT_STORAGE_KEY(slug)
+function HintsList({ slug, hints }: { slug: string; hints: string[] }) {
+  const key = hintKey(slug)
   const [revealed, setRevealed] = useState<number[]>(() => {
     try {
-      const stored = localStorage.getItem(storageKey)
-      return stored ? JSON.parse(stored) : []
+      const s = localStorage.getItem(key)
+      return s ? JSON.parse(s) : []
     } catch { return [] }
   })
-  const [confirmIndex, setConfirmIndex] = useState<number | null>(null)
+  const [confirm, setConfirm] = useState<number | null>(null)
 
-  function revealHint(i: number) {
+  function reveal(i: number) {
     const next = [...new Set([...revealed, i])]
     setRevealed(next)
-    localStorage.setItem(storageKey, JSON.stringify(next))
-    setConfirmIndex(null)
+    localStorage.setItem(key, JSON.stringify(next))
+    setConfirm(null)
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Lightbulb className="h-4 w-4 text-amber-500" />
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
-          Hints - {revealed.length}/3 revealed
-        </span>
-      </div>
-      <div className="divide-y divide-hairline overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
-        {hints.map((hint, i) => {
-          const isRevealed = revealed.includes(i)
-          return (
-            <div key={i} className="p-4">
-              <div className="flex items-start gap-3">
-                <div className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold',
-                  isRevealed ? 'bg-amber-100 text-amber-700' : 'bg-hairline text-ink-faint')}>
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {isRevealed ? (
-                    <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                      className="text-sm leading-relaxed text-ink-muted">{hint}</motion.p>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-ink-faint">
-                        <Lock className="h-3.5 w-3.5" />
-                        <span className="text-xs">Hint {i + 1} is locked</span>
-                      </div>
-                      {confirmIndex === i ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-ink-faint">Reveal? (hints reduce the challenge)</span>
-                          <button onClick={() => revealHint(i)}
-                            className="rounded-lg bg-amber-500 px-3 py-1 text-[11px] font-semibold text-white transition-all hover:bg-amber-600">
-                            Yes, reveal
-                          </button>
-                          <button onClick={() => setConfirmIndex(null)}
-                            className="rounded-lg border border-hairline px-3 py-1 text-[11px] text-ink-muted transition-all hover:bg-hairline">
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setConfirmIndex(i)}
-                          className="flex items-center gap-1.5 text-xs font-medium text-amber-600 transition-colors hover:text-amber-700">
-                          <Lightbulb className="h-3.5 w-3.5" />
-                          Reveal hint {i + 1}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+    <div className="space-y-1">
+      <p className="mb-4 text-sm text-ink-faint">
+        Unlock only when stuck · {revealed.length} of {hints.length} revealed
+      </p>
+      {hints.map((hint, i) => {
+        const open = revealed.includes(i)
+        return (
+          <div
+            key={i}
+            className={cn(
+              'border-b border-hairline py-4 last:border-0',
+              !open && 'opacity-80',
+            )}
+          >
+            <div className="flex items-start gap-4">
+              <span className="mt-0.5 w-6 shrink-0 font-mono text-[11px] tabular-nums text-ink-faint">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <div className="min-w-0 flex-1">
+                {open ? (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[15px] leading-relaxed text-ink"
+                  >
+                    {hint}
+                  </motion.p>
+                ) : confirm === i ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <p className="text-sm text-ink-muted">Reveal hint {i + 1}?</p>
+                    <button
+                      type="button"
+                      onClick={() => reveal(i)}
+                      className="text-sm font-semibold text-brand hover:underline"
+                    >
+                      Reveal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirm(null)}
+                      className="text-sm text-ink-faint hover:text-ink"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirm(i)}
+                    className="inline-flex items-center gap-2 text-sm text-ink-muted transition-colors hover:text-brand"
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    Locked hint — unlock
+                  </button>
+                )}
               </div>
             </div>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-// ─── Requirements section ─────────────────────────────────────────────────────
-
-function RequirementsSection({ title, items, accent }: { title: string; items: string[]; accent: string }) {
-  const [open, setOpen] = useState(true)
-  return (
-    <div className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-      <button onClick={() => setOpen(o => !o)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left">
-        <div className="flex items-center gap-2">
-          <div className={cn('h-2 w-2 rounded-full', accent)} />
-          <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">{title}</span>
-          <span className={cn('rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold',
-            accent === 'bg-brand' ? 'bg-brand-tint text-brand' : 'bg-hairline text-ink-faint')}>
-            {items.length}
-          </span>
-        </div>
-        {open ? <ChevronUp className="h-4 w-4 text-ink-faint" /> : <ChevronDown className="h-4 w-4 text-ink-faint" />}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }} className="overflow-hidden border-t border-hairline px-5 pb-4">
-            {items.map((req, i) => (
-              <li key={i} className="flex items-start gap-3 pt-3">
-                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-hairline font-mono text-[9px] font-bold text-ink-faint">{i + 1}</span>
-                <span className="text-sm leading-relaxed text-ink-muted">{req}</span>
-              </li>
-            ))}
-          </motion.ul>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-// ─── Compose form ─────────────────────────────────────────────────────────────
-
-function ComposeForm({ slug, onCreated, onCancel }: {
-  slug: string; onCreated: (p: ProblemPost) => void; onCancel: () => void
+function ComposeForm({
+  slug,
+  onCreated,
+  onCancel,
+}: {
+  slug: string
+  onCreated: (p: ProblemPost) => void
+  onCancel: () => void
 }) {
-  const [type,       setType]       = useState<PostType>('discussion')
-  const [title,      setTitle]      = useState('')
-  const [content,    setContent]    = useState('')
-  const [code,       setCode]       = useState('')
-  const [codeLang,   setCodeLang]   = useState('Python')
-  const [showCode,   setShowCode]   = useState(false)
+  const [type, setType] = useState<PostType>('discussion')
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [code, setCode] = useState('')
+  const [codeLang, setCodeLang] = useState('Python')
+  const [showCode, setShowCode] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [error,      setError]      = useState('')
+  const [error, setError] = useState('')
 
   async function submit() {
-    if (!title.trim() || !content.trim()) { setError('Title and content are required.'); return }
-    setSubmitting(true); setError('')
+    if (!title.trim() || !content.trim()) {
+      setError('Title and content are required.')
+      return
+    }
+    setSubmitting(true)
+    setError('')
     try {
-      const { post } = await api.problems.posts.create(slug, { title, content, type, code: showCode ? code : undefined, codeLanguage: showCode ? codeLang : undefined })
+      const { post } = await api.problems.posts.create(slug, {
+        title, content, type,
+        code: showCode ? code : undefined,
+        codeLanguage: showCode ? codeLang : undefined,
+      })
       onCreated(post)
-    } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed to post') }
-    finally { setSubmitting(false) }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to post')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
-    <div className="rounded-xl border border-brand/20 bg-paper-elevated p-5 shadow-sm">
-      <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">New Post</p>
-      <div className="mb-3 flex flex-wrap gap-1.5">
+    <div className="border border-hairline bg-paper-elevated px-4 py-4 sm:px-5">
+      <div className="mb-3 flex flex-wrap gap-3">
         {POST_TYPES.map(t => (
-          <button key={t.value} onClick={() => setType(t.value)}
-            className={cn('flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition',
-              type === t.value ? `${t.bg} ${t.color} border-transparent ring-1 ${t.ring}` : 'border-hairline text-ink-faint hover:bg-hairline')}>
-            <t.Icon className="h-3 w-3" />{t.label}
+          <button
+            key={t.value}
+            type="button"
+            onClick={() => setType(t.value)}
+            className={cn(
+              'inline-flex items-center gap-1.5 text-sm font-medium transition-colors',
+              type === t.value ? t.cls : 'text-ink-faint hover:text-ink-muted',
+            )}
+          >
+            <t.Icon className="h-3 w-3" /> {t.label}
           </button>
         ))}
       </div>
-      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Title - e.g. How do I model a Rate Limiter?"
-        className="mb-2 w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
-      <textarea value={content} onChange={e => setContent(e.target.value)} placeholder="Describe your question, approach, or discussion…" rows={4}
-        className="mb-2 w-full resize-none rounded-lg border border-hairline bg-paper px-3 py-2 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
-      <button onClick={() => setShowCode(v => !v)}
-        className={cn('mb-2 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium transition',
-          showCode ? 'border-brand/30 bg-brand-tint text-brand' : 'border-hairline text-ink-faint hover:bg-hairline')}>
-        <Code2 className="h-3 w-3" />{showCode ? 'Remove code' : 'Add code snippet'}
+      <input
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Title"
+        className="mb-2 w-full border-0 border-b border-hairline bg-transparent pb-2 text-sm font-medium outline-none placeholder:text-ink-faint focus:border-brand"
+      />
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        placeholder="Write your question or approach…"
+        rows={3}
+        className="mb-2 w-full resize-none border-0 bg-transparent text-sm leading-relaxed outline-none placeholder:text-ink-faint"
+      />
+      <button
+        type="button"
+        onClick={() => setShowCode(v => !v)}
+        className="mb-2 inline-flex items-center gap-1 text-xs text-ink-faint hover:text-brand"
+      >
+        <Code2 className="h-3 w-3" /> {showCode ? 'Remove code' : 'Add code'}
       </button>
       <AnimatePresence>
         {showCode && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mb-2 overflow-hidden">
-            <div className="flex items-center gap-2 mb-1.5">
-              <select value={codeLang} onChange={e => setCodeLang(e.target.value)} className="rounded-md border border-hairline bg-paper px-2 py-1 text-[11px] outline-none">
-                {LANGUAGES.map(l => <option key={l}>{l}</option>)}
-              </select>
-            </div>
-            <textarea value={code} onChange={e => setCode(e.target.value)} placeholder="Paste code here…" rows={5}
-              className="w-full resize-y rounded-lg border border-hairline bg-[#FAFAF9] px-3 py-2 font-mono text-xs outline-none focus:border-brand" spellCheck={false} />
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mb-2 overflow-hidden"
+          >
+            <select
+              value={codeLang}
+              onChange={e => setCodeLang(e.target.value)}
+              className="mb-1.5 border border-hairline bg-paper px-2 py-1 text-xs"
+            >
+              {LANGUAGES.map(l => <option key={l}>{l}</option>)}
+            </select>
+            <textarea
+              value={code}
+              onChange={e => setCode(e.target.value)}
+              placeholder="Paste code…"
+              rows={4}
+              className="w-full border border-hairline bg-paper px-3 py-2 font-mono text-xs outline-none focus:border-brand"
+              spellCheck={false}
+            />
           </motion.div>
         )}
       </AnimatePresence>
       {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
-      <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-faint hover:bg-hairline">Cancel</button>
-        <button onClick={submit} disabled={submitting || !title.trim() || !content.trim()}
-          className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground hover:opacity-90 disabled:opacity-50">
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onCancel} className="text-xs text-ink-faint hover:text-ink">
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={submitting || !title.trim() || !content.trim()}
+          className="inline-flex items-center gap-1.5 bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground disabled:opacity-50"
+        >
           {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
           Post
         </button>
@@ -260,94 +280,114 @@ function ComposeForm({ slug, onCreated, onCancel }: {
   )
 }
 
-// ─── Post card ────────────────────────────────────────────────────────────────
-
-function PostCard({ post, slug, currentUserId, onUpvote, onDelete, onReplyAdded }: {
-  post: ProblemPost; slug: string; currentUserId: string
+function PostRow({
+  post,
+  slug,
+  onUpvote,
+  onDelete,
+  onReplyAdded,
+}: {
+  post: ProblemPost
+  slug: string
   onUpvote: (id: string) => void
   onDelete: (id: string) => void
   onReplyAdded: (postId: string, r: PostReply) => void
 }) {
-  const [expanded,      setExpanded]      = useState(false)
-  const [showReplyForm, setShowReplyForm] = useState(false)
-  const [replies,       setReplies]       = useState<PostReply[]>(post.replies ?? [])
-  const [replyContent,  setReplyContent]  = useState('')
-  const [replyCode,     setReplyCode]     = useState('')
-  const [replyLang,     setReplyLang]     = useState('Python')
+  const [expanded, setExpanded] = useState(false)
+  const [showReply, setShowReply] = useState(false)
+  const [replies, setReplies] = useState<PostReply[]>(post.replies ?? [])
+  const [replyContent, setReplyContent] = useState('')
+  const [replyCode, setReplyCode] = useState('')
+  const [replyLang, setReplyLang] = useState('Python')
   const [showReplyCode, setShowReplyCode] = useState(false)
   const [replySubmitting, setReplySubmitting] = useState(false)
-  const [upvoting,      setUpvoting]      = useState(false)
+  const [upvoting, setUpvoting] = useState(false)
+  const typeMeta = POST_TYPES.find(t => t.value === post.type) ?? POST_TYPES[1]
 
   async function handleUpvote() {
-    if (upvoting) return; setUpvoting(true)
+    if (upvoting) return
+    setUpvoting(true)
     try { await onUpvote(post._id) } finally { setUpvoting(false) }
   }
 
   async function submitReply() {
-    if (!replyContent.trim()) return; setReplySubmitting(true)
+    if (!replyContent.trim()) return
+    setReplySubmitting(true)
     try {
-      const { reply } = await api.problems.posts.reply(slug, post._id, { content: replyContent, code: showReplyCode ? replyCode : undefined, codeLanguage: showReplyCode ? replyLang : undefined })
-      setReplies(prev => [...prev, reply]); onReplyAdded(post._id, reply)
-      setReplyContent(''); setReplyCode(''); setShowReplyForm(false)
-    } catch { toast.error('Could not post reply') }
-    finally { setReplySubmitting(false) }
+      const { reply } = await api.problems.posts.reply(slug, post._id, {
+        content: replyContent,
+        code: showReplyCode ? replyCode : undefined,
+        codeLanguage: showReplyCode ? replyLang : undefined,
+      })
+      setReplies(prev => [...prev, reply])
+      onReplyAdded(post._id, reply)
+      setReplyContent('')
+      setReplyCode('')
+      setShowReply(false)
+    } catch {
+      toast.error('Could not post reply')
+    } finally {
+      setReplySubmitting(false)
+    }
   }
 
   return (
-    <div className={cn('rounded-2xl border bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)] transition-all',
-      expanded ? 'border-brand/20' : 'border-hairline hover:border-hairline-strong hover:shadow-md')}>
-      <div className="p-5">
-        <div className="flex items-start gap-3">
-          <Avatar name={post.authorName} image={post.authorImage} size={9} />
-          <div className="min-w-0 flex-1">
-            <div className="mb-1.5 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-ink">{post.authorName}</span>
-              {post.isOwn && <span className="rounded-full bg-brand-tint px-1.5 py-0.5 font-mono text-[9px] font-bold text-brand">You</span>}
-              <TypeBadge type={post.type} />
-              <span className="ml-auto flex items-center gap-1 text-[11px] text-ink-faint">
-                <Clock className="h-3 w-3" />{timeAgo(post.createdAt)}
-              </span>
-            </div>
-            <p className="text-base font-semibold text-ink leading-snug">{post.title}</p>
+    <article className="border-b border-hairline py-5 last:border-0">
+      <div className="flex gap-3">
+        <Avatar name={post.authorName} image={post.authorImage} size="md" />
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-sm font-medium text-ink">{post.authorName}</span>
+            {post.isOwn && (
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-brand">You</span>
+            )}
+            <span className={cn('inline-flex items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-wider', typeMeta.cls)}>
+              <typeMeta.Icon className="h-2.5 w-2.5" /> {typeMeta.label}
+            </span>
+            <span className="text-[11px] text-ink-faint">{timeAgo(post.createdAt)}</span>
           </div>
+          <h3 className="text-[15px] font-semibold leading-snug text-ink">{post.title}</h3>
+          <p className={cn('mt-1.5 text-sm leading-relaxed text-ink-muted', !expanded && 'line-clamp-3')}>
+            {post.content}
+          </p>
+          {post.code && expanded && (
+            <pre className="mt-3 overflow-x-auto border border-hairline bg-paper p-3 font-mono text-xs text-ink">
+              {post.code}
+            </pre>
+          )}
         </div>
-
-        <p className={cn('mt-3 text-sm leading-relaxed text-ink-muted', !expanded && 'line-clamp-4')}>
-          {post.content}
-        </p>
-
-        {post.code && expanded && (
-          <div className="mt-4 overflow-hidden rounded-xl border border-hairline bg-[#FAFAF9]">
-            <div className="flex items-center gap-2 border-b border-hairline bg-hairline/40 px-4 py-2">
-              <Code2 className="h-3.5 w-3.5 text-ink-faint" />
-              <span className="font-mono text-[10px] text-ink-faint">{post.codeLanguage ?? 'Code'}</span>
-            </div>
-            <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-ink">{post.code}</pre>
-          </div>
-        )}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-hairline px-5 py-2.5">
-        <button onClick={handleUpvote} disabled={upvoting}
-          className={cn('flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition',
-            post.hasUpvoted ? 'bg-brand-tint text-brand' : 'text-ink-faint hover:bg-hairline hover:text-ink')}>
-          <ThumbsUp className="h-3.5 w-3.5" />{post.upvoteCount}
+      <div className="mt-3 flex items-center gap-1 pl-12">
+        <button
+          type="button"
+          onClick={handleUpvote}
+          disabled={upvoting}
+          className={cn(
+            'inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium transition-colors',
+            post.hasUpvoted ? 'text-brand' : 'text-ink-faint hover:text-ink',
+          )}
+        >
+          <ThumbsUp className="h-3.5 w-3.5" /> {post.upvoteCount}
         </button>
-
-        <button onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-ink-faint transition hover:bg-hairline hover:text-ink">
-          <MessageSquare className="h-3.5 w-3.5" />{replies.length} {replies.length === 1 ? 'reply' : 'replies'}
-          {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-ink-faint hover:text-ink"
+        >
+          <MessageSquare className="h-3.5 w-3.5" /> {replies.length}
         </button>
-
-        {!expanded && (post.content.length > 280 || post.code) && (
-          <button onClick={() => setExpanded(true)} className="ml-auto text-[11px] font-medium text-brand hover:underline">Read more</button>
+        {!expanded && (post.content.length > 220 || post.code) && (
+          <button type="button" onClick={() => setExpanded(true)} className="ml-auto text-xs font-medium text-brand">
+            Read more
+          </button>
         )}
-
         {post.isOwn && (
-          <button onClick={() => onDelete(post._id)}
-            className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:bg-red-50 hover:text-red-500 transition"
-            title="Delete post">
+          <button
+            type="button"
+            onClick={() => onDelete(post._id)}
+            className="ml-auto p-1.5 text-ink-faint hover:text-red-500"
+          >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         )}
@@ -355,56 +395,84 @@ function PostCard({ post, slug, currentUserId, onUpvote, onDelete, onReplyAdded 
 
       <AnimatePresence>
         {expanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="border-t border-hairline px-5 pb-5 pt-4 space-y-4">
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 space-y-3 border-t border-hairline pl-12 pt-4">
               {replies.map(r => (
-                <div key={r._id} className="flex gap-3">
-                  <Avatar name={r.authorName} image={r.authorImage} size={7} />
-                  <div className="min-w-0 flex-1 rounded-xl bg-paper p-3">
-                    <div className="flex items-center gap-2 mb-1.5">
+                <div key={r._id} className="flex gap-2.5">
+                  <Avatar name={r.authorName} image={r.authorImage} />
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-0.5 flex items-center gap-2">
                       <span className="text-xs font-semibold text-ink">{r.authorName}</span>
-                      {r.authorId === currentUserId && <span className="rounded-full bg-brand-tint px-1 py-0.5 font-mono text-[8px] font-bold text-brand">You</span>}
                       <span className="text-[10px] text-ink-faint">{timeAgo(r.createdAt)}</span>
                     </div>
                     <p className="text-xs leading-relaxed text-ink-muted">{r.content}</p>
                     {r.code && (
-                      <div className="mt-2 overflow-hidden rounded-lg border border-hairline bg-[#FAFAF9]">
-                        <div className="border-b border-hairline bg-hairline/40 px-2.5 py-1 font-mono text-[9px] text-ink-faint">{r.codeLanguage ?? 'Code'}</div>
-                        <pre className="overflow-x-auto p-2.5 font-mono text-[11px] text-ink">{r.code}</pre>
-                      </div>
+                      <pre className="mt-2 overflow-x-auto border border-hairline bg-paper p-2 font-mono text-[11px]">
+                        {r.code}
+                      </pre>
                     )}
                   </div>
                 </div>
               ))}
-
-              {!showReplyForm ? (
-                <button onClick={() => setShowReplyForm(true)}
-                  className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs font-medium text-ink-faint hover:bg-hairline hover:text-ink transition">
-                  <MessageSquare className="h-3.5 w-3.5" /> Reply
+              {!showReply ? (
+                <button
+                  type="button"
+                  onClick={() => setShowReply(true)}
+                  className="text-xs font-medium text-ink-muted hover:text-brand"
+                >
+                  Reply…
                 </button>
               ) : (
-                <div className="rounded-xl border border-hairline bg-paper p-3 space-y-2">
-                  <textarea value={replyContent} onChange={e => setReplyContent(e.target.value)} placeholder="Write a reply…" rows={3}
-                    className="w-full resize-none rounded-lg border border-hairline bg-paper-elevated px-3 py-2 text-xs outline-none focus:border-brand" />
-                  <button onClick={() => setShowReplyCode(v => !v)}
-                    className={cn('flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium',
-                      showReplyCode ? 'border-brand/30 bg-brand-tint text-brand' : 'border-hairline text-ink-faint')}>
-                    <Code2 className="h-2.5 w-2.5" />{showReplyCode ? 'Remove code' : '+ Code'}
+                <div className="space-y-2 border border-hairline bg-paper p-3">
+                  <textarea
+                    value={replyContent}
+                    onChange={e => setReplyContent(e.target.value)}
+                    placeholder="Write a reply…"
+                    rows={2}
+                    className="w-full resize-none border-0 bg-transparent text-xs outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowReplyCode(v => !v)}
+                    className="text-[11px] text-ink-faint hover:text-brand"
+                  >
+                    {showReplyCode ? 'Remove code' : '+ Code'}
                   </button>
                   {showReplyCode && (
-                    <div>
-                      <select value={replyLang} onChange={e => setReplyLang(e.target.value)} className="mb-1 rounded border border-hairline bg-paper px-1.5 py-0.5 text-[10px]">
+                    <>
+                      <select
+                        value={replyLang}
+                        onChange={e => setReplyLang(e.target.value)}
+                        className="border border-hairline bg-paper px-1.5 py-0.5 text-[10px]"
+                      >
                         {LANGUAGES.map(l => <option key={l}>{l}</option>)}
                       </select>
-                      <textarea value={replyCode} onChange={e => setReplyCode(e.target.value)} placeholder="Code…" rows={4}
-                        className="w-full resize-y rounded-lg border border-hairline bg-[#FAFAF9] px-2.5 py-1.5 font-mono text-[11px] outline-none" spellCheck={false} />
-                    </div>
+                      <textarea
+                        value={replyCode}
+                        onChange={e => setReplyCode(e.target.value)}
+                        rows={3}
+                        className="w-full border border-hairline bg-paper px-2 py-1.5 font-mono text-[11px] outline-none"
+                        spellCheck={false}
+                      />
+                    </>
                   )}
                   <div className="flex justify-end gap-2">
-                    <button onClick={() => setShowReplyForm(false)} className="rounded-md px-2.5 py-1 text-[11px] text-ink-faint hover:bg-hairline">Cancel</button>
-                    <button onClick={submitReply} disabled={replySubmitting || !replyContent.trim()}
-                      className="flex items-center gap-1 rounded-md bg-brand px-3 py-1 text-[11px] font-semibold text-brand-foreground disabled:opacity-50">
-                      {replySubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}Reply
+                    <button type="button" onClick={() => setShowReply(false)} className="text-[11px] text-ink-faint">
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={submitReply}
+                      disabled={replySubmitting || !replyContent.trim()}
+                      className="inline-flex items-center gap-1 bg-brand px-2.5 py-1 text-[11px] font-semibold text-brand-foreground disabled:opacity-50"
+                    >
+                      {replySubmitting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                      Reply
                     </button>
                   </div>
                 </div>
@@ -413,48 +481,49 @@ function PostCard({ post, slug, currentUserId, onUpvote, onDelete, onReplyAdded 
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </article>
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-type Tab = 'requirements' | 'community'
-
 export default function ProblemDetailPage() {
-  const { slug }    = useParams<{ slug: string }>()
-  const router      = useRouter()
+  const { slug } = useParams<{ slug: string }>()
+  const router = useRouter()
   const { data: session } = useSession()
-  const currentUserId     = session?.user?.id ?? ''
+  const currentUserId = session?.user?.id ?? ''
   const { isFree } = usePlan()
 
-  const [problem,         setProblem]         = useState<ProblemDetail | null>(null)
-  const [hints,           setHints]           = useState<string[]>([])
-  const [mySolution,      setMySolution]      = useState<UserSolution | null>(null)
+  const [problem, setProblem] = useState<ProblemDetail | null>(null)
+  const [hints, setHints] = useState<string[]>([])
+  const [mySolution, setMySolution] = useState<UserSolution | null>(null)
   const [submissionCount, setSubmissionCount] = useState(0)
-  const [loading,         setLoading]         = useState(true)
-  const [tab,             setTab]             = useState<Tab>('requirements')
-  const [starting,        setStarting]        = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [section, setSection] = useState<Section>('brief')
+  const [starting, setStarting] = useState(false)
 
-  // Community discussions
-  const [posts,       setPosts]       = useState<ProblemPost[]>([])
-  const [postTotal,   setPostTotal]   = useState(0)
-  const [postPage,    setPostPage]    = useState(1)
-  const [postPages,   setPostPages]   = useState(1)
+  const [posts, setPosts] = useState<ProblemPost[]>([])
+  const [postTotal, setPostTotal] = useState(0)
+  const [postPage, setPostPage] = useState(1)
+  const [postPages, setPostPages] = useState(1)
   const [postLoading, setPostLoading] = useState(false)
-  const [postSort,    setPostSort]    = useState<'newest' | 'oldest'>('newest')
-  const [postType,    setPostType]    = useState('')
-  const [composing,   setComposing]   = useState(false)
+  const [postSort, setPostSort] = useState<'newest' | 'oldest'>('newest')
+  const [postType, setPostType] = useState('')
+  const [composing, setComposing] = useState(false)
+  const [hasNotes, setHasNotes] = useState(false)
 
   useEffect(() => {
     if (!slug) return
     setLoading(true)
-    Promise.all([api.problems.get(slug), api.problems.hints(slug)])
-      .then(([detail, { hints: h }]) => {
+    Promise.all([
+      api.problems.get(slug),
+      api.problems.hints(slug),
+      api.problems.getNotes(slug).catch(() => ({ notes: '' })),
+    ])
+      .then(([detail, { hints: h }, { notes: n }]) => {
         setProblem(detail.problem)
         setMySolution(detail.mySolution)
         setSubmissionCount(detail.submissionCount)
         setHints(h)
+        setHasNotes(n.trim().length > 0)
       })
       .catch(() => toast.error('Could not load problem'))
       .finally(() => setLoading(false))
@@ -465,28 +534,38 @@ export default function ProblemDetailPage() {
     setPostLoading(true)
     try {
       const data = await api.problems.posts.list(slug, { page, sort: postSort, type: postType || undefined })
-      setPosts(data.posts); setPostTotal(data.total); setPostPage(data.page); setPostPages(data.totalPages)
-    } catch { toast.error('Could not load discussions') }
-    finally { setPostLoading(false) }
+      setPosts(data.posts)
+      setPostTotal(data.total)
+      setPostPage(data.page)
+      setPostPages(data.totalPages)
+    } catch {
+      toast.error('Could not load discussions')
+    } finally {
+      setPostLoading(false)
+    }
   }, [slug, postSort, postType])
 
   useEffect(() => {
-    if (tab === 'community') loadPosts(1)
-  }, [tab, postSort, postType]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (section === 'discussion') loadPosts(1)
+  }, [section, postSort, postType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleStart() {
     if (!slug) return
     setStarting(true)
-    try { const { diagramId } = await api.problems.start(slug); router.push(`/editor/${diagramId}?problem=${slug}`) }
-    catch { toast.error('Could not start session') }
-    finally { setStarting(false) }
+    try {
+      const { diagramId } = await api.problems.start(slug)
+      router.push(`/editor/${diagramId}?problem=${slug}`)
+    } catch {
+      toast.error('Could not start session')
+    } finally {
+      setStarting(false)
+    }
   }
-
 
   async function handleUpvote(postId: string) {
     try {
       const { upvoteCount, hasUpvoted } = await api.problems.posts.upvote(slug, postId)
-      setPosts(prev => prev.map(p => p._id === postId ? { ...p, upvoteCount, hasUpvoted } : p))
+      setPosts(prev => prev.map(p => (p._id === postId ? { ...p, upvoteCount, hasUpvoted } : p)))
     } catch { /* no-op */ }
   }
 
@@ -494,23 +573,34 @@ export default function ProblemDetailPage() {
     if (!confirm('Delete this post permanently?')) return
     try {
       await api.problems.posts.deletePost(slug, postId)
-      setPosts(prev => prev.filter(p => p._id !== postId)); setPostTotal(t => t - 1)
-    } catch { toast.error('Could not delete post') }
+      setPosts(prev => prev.filter(p => p._id !== postId))
+      setPostTotal(t => t - 1)
+    } catch {
+      toast.error('Could not delete post')
+    }
   }
 
   function handleReplyAdded(postId: string, reply: PostReply) {
-    setPosts(prev => prev.map(p => p._id === postId ? { ...p, replyCount: p.replyCount + 1, replies: [...p.replies, reply] } : p))
+    setPosts(prev =>
+      prev.map(p =>
+        p._id === postId
+          ? { ...p, replyCount: p.replyCount + 1, replies: [...p.replies, reply] }
+          : p,
+      ),
+    )
   }
 
   function handlePostCreated(post: ProblemPost) {
-    setPosts(prev => [post, ...prev]); setPostTotal(t => t + 1); setComposing(false)
+    setPosts(prev => [post, ...prev])
+    setPostTotal(t => t + 1)
+    setComposing(false)
   }
 
   if (loading) {
     return (
       <AppShell>
         <div className="flex h-full items-center justify-center">
-          <RefreshCw className="h-5 w-5 animate-spin text-ink-faint" />
+          <Loader2 className="h-5 w-5 animate-spin text-brand" />
         </div>
       </AppShell>
     )
@@ -520,10 +610,13 @@ export default function ProblemDetailPage() {
     return (
       <AppShell>
         <div className="flex h-full flex-col items-center justify-center gap-3">
-          <AlertTriangle className="h-8 w-8 text-amber-400" />
+          <AlertTriangle className="h-8 w-8 text-ink-faint" />
           <p className="text-sm text-ink-faint">Problem not found.</p>
-          <button onClick={() => router.push('/dashboard/problems')}
-            className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-brand-foreground">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/problems')}
+            className="bg-brand px-4 py-2 text-sm font-medium text-brand-foreground"
+          >
             Back to Problems
           </button>
         </div>
@@ -531,226 +624,417 @@ export default function ProblemDetailPage() {
     )
   }
 
-  const isSolved    = mySolution?.status === 'submitted'
+  const isSolved = mySolution?.status === 'submitted'
   const isInProgress = mySolution?.status === 'in_progress'
+  const dm = DIFF_META[problem.difficulty]
+
+  const sections: { id: Section; label: string; count?: number; dot?: boolean }[] = [
+    { id: 'brief', label: 'Brief' },
+    { id: 'hints', label: 'Hints', count: hints.length || undefined },
+    { id: 'notes', label: 'Notes', dot: hasNotes },
+    { id: 'discussion', label: 'Discussion', count: postTotal || undefined },
+  ]
+
+  function PrimaryCta() {
+    if (problem!.locked) {
+      return (
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-2 bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+        >
+          <Lock className="h-4 w-4" /> Upgrade to practice
+        </Link>
+      )
+    }
+    if (isInProgress) {
+      return (
+        <button
+          type="button"
+          onClick={() => router.push(`/editor/${mySolution!.diagramId}?problem=${slug}`)}
+          className="inline-flex items-center gap-2 bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+        >
+          <ExternalLink className="h-4 w-4" /> Resume
+        </button>
+      )
+    }
+    if (isSolved) {
+      return (
+        <button
+          type="button"
+          onClick={() => router.push(`/editor/${mySolution!.diagramId}?problem=${slug}`)}
+          className="inline-flex items-center gap-2 border border-brand/30 bg-brand-tint px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
+        >
+          <ExternalLink className="h-4 w-4" /> View solution
+        </button>
+      )
+    }
+    return (
+      <button
+        type="button"
+        onClick={handleStart}
+        disabled={starting}
+        className="inline-flex items-center gap-2 bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+      >
+        {starting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+        Start practicing
+      </button>
+    )
+  }
 
   return (
     <AppShell>
-      <div className="h-full overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-5 py-8 sm:px-8">
+      <div className="flex h-full flex-col overflow-hidden bg-paper">
 
-          {/* Back */}
-          <button onClick={() => router.push('/dashboard/problems')}
-            className="mb-6 flex items-center gap-2 text-sm text-ink-faint transition-colors hover:text-ink">
-            <ArrowLeft className="h-4 w-4" /> All Problems
-          </button>
-
-          {/* Header card */}
-          <div className="mb-6 overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_1px_8px_rgba(0,0,0,0.05)]">
-            <div className="px-6 py-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <DifficultyBadge difficulty={problem.difficulty} />
-                    <span className="rounded-md border border-hairline bg-paper px-2 py-0.5 font-mono text-[10px] text-ink-faint">{problem.category}</span>
-                    {isSolved && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-[10px] font-bold text-brand">
-                        <CheckCircle2 className="h-3 w-3" /> Solved
-                      </span>
-                    )}
-                  </div>
-                  <h1 className="font-serif text-2xl font-medium text-ink">{problem.title}</h1>
-                  <p className="text-sm leading-relaxed text-ink-faint">{problem.description}</p>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {problem.companies.map(c => (
-                      <span key={c} className="rounded-md border border-hairline bg-paper px-2 py-0.5 font-mono text-[10px] text-ink-faint">{c}</span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Action */}
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  {problem.locked ? (
-                    <Link href="/pricing"
-                      className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90">
-                      <Lock className="h-4 w-4" /> Upgrade to Practice
-                    </Link>
-                  ) : !mySolution && (
-                    <button onClick={handleStart} disabled={starting}
-                      className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90 disabled:opacity-50">
-                      {starting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                      Start Practicing
-                    </button>
-                  )}
-                  {isInProgress && (
-                    <button onClick={() => router.push(`/editor/${mySolution.diagramId}?problem=${slug}`)}
-                      className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:opacity-90">
-                      <ExternalLink className="h-4 w-4" /> Resume in Editor
-                    </button>
-                  )}
-                  {isSolved && (
-                    <button onClick={() => router.push(`/editor/${mySolution.diagramId}?problem=${slug}`)}
-                      className="flex items-center gap-2 rounded-xl border border-brand/20 bg-brand-tint px-5 py-2.5 text-sm font-semibold text-brand transition-all hover:bg-brand/10">
-                      <ExternalLink className="h-4 w-4" /> View My Solution
-                    </button>
-                  )}
-                  <p className="flex items-center gap-1 font-mono text-[11px] text-ink-faint">
-                    <Users className="h-3.5 w-3.5" />
-                    {submissionCount} submitted solution{submissionCount !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
+        {/* Top bar */}
+        <header className="shrink-0 border-b border-hairline bg-paper-elevated">
+          <div className="mx-auto flex max-w-4xl items-center gap-3 px-5 py-3 sm:px-8">
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/problems')}
+              className="inline-flex items-center gap-1.5 text-xs text-ink-faint transition-colors hover:text-ink"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Problems
+            </button>
+            <div className="ml-auto">
+              <PrimaryCta />
             </div>
           </div>
+        </header>
 
-          {/* Tabs */}
-          <div className="mb-6 flex gap-1 rounded-xl border border-hairline bg-paper p-1">
-            {(['requirements', 'community'] as const).map(t => (
-              <button key={t} onClick={() => setTab(t)}
-                className={cn('flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium capitalize transition-all',
-                  tab === t ? 'bg-brand text-brand-foreground shadow-sm' : 'text-ink-muted hover:text-ink')}>
-                {t === 'requirements' ? 'Requirements & Hints' : (
-                  <span className="flex items-center gap-2">
-                    Community Discussion
-                    <span className={cn('rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold',
-                      tab === 'community' ? 'bg-white/20 text-white' : 'bg-hairline text-ink-faint')}>
-                      {postTotal}
+        <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl px-5 pb-16 pt-8 sm:px-8 sm:pt-10">
+
+            {/* Masthead */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span className={cn('font-mono text-[11px] font-semibold uppercase tracking-[0.14em]', dm.color)}>
+                  {dm.label}
+                </span>
+                <span className="text-ink-faint/40">·</span>
+                <span className="font-mono text-[11px] uppercase tracking-wider text-ink-faint">
+                  {problem.category}
+                </span>
+                {isSolved && (
+                  <>
+                    <span className="text-ink-faint/40">·</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-brand">
+                      <CheckCircle2 className="h-3 w-3" /> Solved
+                    </span>
+                  </>
+                )}
+                {isInProgress && (
+                  <>
+                    <span className="text-ink-faint/40">·</span>
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+                      <Clock className="h-3 w-3" /> In progress
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+                {problem.title}
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-muted">
+                {problem.description}
+              </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-ink-faint">
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" />
+                  {submissionCount} solution{submissionCount !== 1 ? 's' : ''}
+                </span>
+                {problem.companies.length > 0 && (
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    Asked at{' '}
+                    <span className="font-medium text-ink-muted">
+                      {problem.companies.join(', ')}
                     </span>
                   </span>
                 )}
-              </button>
-            ))}
-          </div>
-
-          {/* Requirements tab */}
-          {tab === 'requirements' && problem.locked ? (
-            <motion.div key="requirements-locked" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <UpgradeGate
-                feature="This problem's requirements"
-                description="Upgrade to unlock the full functional & non-functional requirements, hints, and practice for this problem."
-                variant="overlay"
-              />
+              </div>
             </motion.div>
-          ) : tab === 'requirements' && (
-            <motion.div key="requirements" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-              <RequirementsSection title="Functional Requirements" items={problem.functionalRequirements} accent="bg-brand" />
-              <RequirementsSection title="Non-Functional Requirements" items={problem.nonFunctionalRequirements} accent="bg-indigo-400" />
-              {hints.length > 0 && (
-                isFree ? (
-                  <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-8 text-center">
-                    <Lock className="h-6 w-6 text-amber-500" />
-                    <div>
-                      <p className="font-semibold text-amber-800">Hints require Pro</p>
-                      <p className="mt-0.5 text-xs text-amber-700">Upgrade to unlock hints for this problem.</p>
-                    </div>
-                    <Link href="/pricing" className="flex items-center gap-1.5 rounded-xl bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
-                      Upgrade to Pro <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
-                ) : (
-                  <HintsPanel slug={slug} hints={hints} />
+
+            {/* Section tabs — underline */}
+            <nav className="mt-10 flex gap-6 border-b border-hairline">
+              {sections.map(s => {
+                const active = section === s.id
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setSection(s.id)}
+                    className={cn(
+                      'relative pb-3 text-sm font-medium transition-colors',
+                      active ? 'text-ink' : 'text-ink-faint hover:text-ink-muted',
+                    )}
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      {s.id === 'notes' && <NotebookPen className="h-3.5 w-3.5" />}
+                      {s.label}
+                      {s.dot && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand" aria-label="Has notes" />
+                      )}
+                      {s.count != null && s.count > 0 && (
+                        <span className="font-mono text-[10px] text-ink-faint">{s.count}</span>
+                      )}
+                    </span>
+                    {active && (
+                      <motion.span
+                        layoutId="problemSectionLine"
+                        className="absolute inset-x-0 -bottom-px h-0.5 bg-brand"
+                        transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      />
+                    )}
+                  </button>
                 )
-              )}
-            </motion.div>
-          )}
+              })}
+            </nav>
 
-          {/* Community Discussion tab */}
-          {tab === 'community' && isFree && (
-            <motion.div key="community-locked" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center gap-4 rounded-2xl border border-brand/20 bg-brand/5 px-8 py-14 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10">
-                <Lock className="h-7 w-7 text-brand" />
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-ink">Community Discussions</p>
-                <p className="mt-1 text-sm text-ink-muted">View and participate in community Q&amp;A and solution discussions. Requires Pro or higher.</p>
-              </div>
-              <Link href="/pricing" className="flex items-center gap-2 rounded-xl bg-brand px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand/90 transition-colors">
-                Upgrade to Pro <ArrowRight className="h-4 w-4" />
-              </Link>
-            </motion.div>
-          )}
-          {tab === 'community' && !isFree && (
-            <motion.div key="community" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            {/* Section body */}
+            <div className="pt-8">
+              <AnimatePresence mode="wait">
+                {section === 'brief' && (
+                  <motion.div
+                    key="brief"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {problem.locked ? (
+                      <UpgradeGate
+                        feature="This problem's requirements"
+                        description="Upgrade to unlock requirements, hints, and practice for this problem."
+                        variant="overlay"
+                      />
+                    ) : (
+                      <div className="grid gap-12 lg:grid-cols-2">
+                        <div>
+                          <h2 className="mb-5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                            Functional · {problem.functionalRequirements.length}
+                          </h2>
+                          <ol className="space-y-4">
+                            {problem.functionalRequirements.map((item, i) => (
+                              <li key={i} className="flex gap-4">
+                                <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-brand">
+                                  {String(i + 1).padStart(2, '0')}
+                                </span>
+                                <span className="text-[15px] leading-relaxed text-ink-muted">{item}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div>
+                          <h2 className="mb-5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                            Non-functional · {problem.nonFunctionalRequirements.length}
+                          </h2>
+                          <ol className="space-y-4">
+                            {problem.nonFunctionalRequirements.map((item, i) => (
+                              <li key={i} className="flex gap-4">
+                                <span className="w-6 shrink-0 font-mono text-[11px] tabular-nums text-ink-faint">
+                                  {String(i + 1).padStart(2, '0')}
+                                </span>
+                                <span className="text-[15px] leading-relaxed text-ink-muted">{item}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
 
-              {/* Toolbar */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Sort */}
-                <div className="flex gap-0.5 rounded-xl border border-hairline bg-paper p-1">
-                  {(['newest', 'oldest'] as const).map(s => (
-                    <button key={s} onClick={() => setPostSort(s)}
-                      className={cn('rounded-lg px-3 py-1.5 font-mono text-[11px] font-medium capitalize transition-all',
-                        postSort === s ? 'bg-brand text-brand-foreground shadow-sm' : 'text-ink-muted hover:text-ink')}>
-                      {s}
-                    </button>
-                  ))}
-                </div>
+                {section === 'hints' && (
+                  <motion.div
+                    key="hints"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {problem.locked || hints.length === 0 ? (
+                      <p className="py-12 text-center text-sm text-ink-faint">No hints available.</p>
+                    ) : isFree ? (
+                      <div className="flex flex-col items-start gap-3 py-8">
+                        <Lock className="h-4 w-4 text-ink-faint" />
+                        <p className="text-sm font-medium text-ink">Hints are on Pro</p>
+                        <p className="max-w-sm text-sm text-ink-faint">Upgrade to unlock progressive hints.</p>
+                        <Link
+                          href="/pricing"
+                          className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+                        >
+                          Upgrade <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <HintsList slug={slug} hints={hints} />
+                    )}
+                  </motion.div>
+                )}
 
-                {/* Type filter */}
-                <div className="flex gap-0.5 rounded-xl border border-hairline bg-paper p-1">
-                  {['', 'question', 'discussion', 'solution'].map(t => (
-                    <button key={t} onClick={() => setPostType(t)}
-                      className={cn('rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-medium capitalize transition-all',
-                        postType === t ? 'bg-brand text-brand-foreground shadow-sm' : 'text-ink-muted hover:text-ink')}>
-                      {t || 'All'}
-                    </button>
-                  ))}
-                </div>
+                {section === 'notes' && (
+                  <motion.div
+                    key="notes"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {problem.locked ? (
+                      <UpgradeGate
+                        feature="Private notes"
+                        description="Upgrade to unlock this problem and keep private practice notes."
+                        variant="overlay"
+                      />
+                    ) : (
+                      <ProblemNotesSection slug={slug} onHasNotesChange={setHasNotes} />
+                    )}
+                  </motion.div>
+                )}
 
-                <p className="text-sm text-ink-faint">{postTotal} post{postTotal !== 1 ? 's' : ''}</p>
+                {section === 'discussion' && (
+                  <motion.div
+                    key="disc"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="space-y-5"
+                  >
+                    {isFree ? (
+                      <div className="flex flex-col items-start gap-3 py-8">
+                        <Lock className="h-4 w-4 text-ink-faint" />
+                        <p className="text-sm font-medium text-ink">Discussion is on Pro</p>
+                        <p className="max-w-sm text-sm text-ink-faint">Join community Q&amp;A with Pro or higher.</p>
+                        <Link
+                          href="/pricing"
+                          className="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+                        >
+                          Upgrade <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap items-center gap-4">
+                          <div className="flex gap-3">
+                            {(['newest', 'oldest'] as const).map(s => (
+                              <button
+                                key={s}
+                                type="button"
+                                onClick={() => setPostSort(s)}
+                                className={cn(
+                                  'text-sm font-medium capitalize',
+                                  postSort === s ? 'text-ink' : 'text-ink-faint hover:text-ink-muted',
+                                )}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                          <span className="text-ink-faint/30">|</span>
+                          <div className="flex gap-3">
+                            {['', 'question', 'discussion', 'solution'].map(t => (
+                              <button
+                                key={t || 'all'}
+                                type="button"
+                                onClick={() => setPostType(t)}
+                                className={cn(
+                                  'text-sm font-medium capitalize',
+                                  postType === t ? 'text-ink' : 'text-ink-faint hover:text-ink-muted',
+                                )}
+                              >
+                                {t || 'All'}
+                              </button>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setComposing(v => !v)}
+                            className={cn(
+                              'ml-auto inline-flex items-center gap-1.5 text-sm font-medium',
+                              composing ? 'text-ink-muted' : 'text-brand hover:underline',
+                            )}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            {composing ? 'Close' : 'New post'}
+                          </button>
+                        </div>
 
-                <button onClick={() => setComposing(v => !v)}
-                  className={cn('ml-auto flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-all',
-                    composing ? 'bg-hairline text-ink' : 'bg-brand text-brand-foreground hover:opacity-90')}>
-                  <Plus className="h-4 w-4" /> Post
-                </button>
-              </div>
+                        <AnimatePresence>
+                          {composing && (
+                            <ComposeForm slug={slug} onCreated={handlePostCreated} onCancel={() => setComposing(false)} />
+                          )}
+                        </AnimatePresence>
 
-              {/* Compose */}
-              <AnimatePresence>
-                {composing && (
-                  <ComposeForm slug={slug} onCreated={handlePostCreated} onCancel={() => setComposing(false)} />
+                        {postLoading ? (
+                          <div className="space-y-4">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                              <div key={i} className="h-20 animate-pulse border-b border-hairline bg-hairline/40" />
+                            ))}
+                          </div>
+                        ) : posts.length === 0 ? (
+                          <div className="py-14 text-center font-sans">
+                            <p className="text-sm font-medium text-ink">No discussions yet</p>
+                            <p className="mt-1 text-sm text-ink-faint">Be the first to ask or share an approach.</p>
+                            <button
+                              type="button"
+                              onClick={() => setComposing(true)}
+                              className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Start a discussion
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            {posts.map(post => (
+                              <PostRow
+                                key={post._id}
+                                post={post}
+                                slug={slug}
+                                onUpvote={handleUpvote}
+                                onDelete={handleDelete}
+                                onReplyAdded={handleReplyAdded}
+                              />
+                            ))}
+                            {postPages > 1 && (
+                              <div className="flex items-center justify-center gap-4 pt-6">
+                                <button
+                                  type="button"
+                                  onClick={() => loadPosts(postPage - 1)}
+                                  disabled={postPage <= 1}
+                                  className="text-xs text-ink-muted disabled:opacity-40"
+                                >
+                                  Previous
+                                </button>
+                                <span className="font-mono text-[11px] text-ink-faint">
+                                  {postPage} / {postPages}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => loadPosts(postPage + 1)}
+                                  disabled={postPage >= postPages}
+                                  className="text-xs text-ink-muted disabled:opacity-40"
+                                >
+                                  Next
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </motion.div>
                 )}
               </AnimatePresence>
-
-              {postLoading ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-hairline" />)}
-                </div>
-              ) : posts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl border border-hairline bg-paper-elevated py-20 text-center">
-                  <MessageSquare className="mb-3 h-10 w-10 text-ink-faint/30" />
-                  <p className="text-sm font-semibold text-ink">No discussions yet</p>
-                  <p className="mt-1 text-xs text-ink-faint">Be the first to ask a question or share an approach!</p>
-                  <button onClick={() => setComposing(true)}
-                    className="mt-5 flex items-center gap-1.5 rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-brand-foreground hover:opacity-90">
-                    <Plus className="h-4 w-4" /> Start a discussion
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {posts.map(post => (
-                    <PostCard key={post._id} post={post} slug={slug} currentUserId={currentUserId}
-                      onUpvote={handleUpvote} onDelete={handleDelete} onReplyAdded={handleReplyAdded} />
-                  ))}
-                  {postPages > 1 && (
-                    <div className="flex items-center justify-center gap-3 pt-2">
-                      <button onClick={() => loadPosts(postPage - 1)} disabled={postPage <= 1}
-                        className="rounded-xl border border-hairline-strong px-4 py-2 text-sm text-ink-muted hover:bg-hairline disabled:opacity-40">
-                        Previous
-                      </button>
-                      <span className="font-mono text-xs text-ink-faint">{postPage} / {postPages}</span>
-                      <button onClick={() => loadPosts(postPage + 1)} disabled={postPage >= postPages}
-                        className="rounded-xl border border-hairline-strong px-4 py-2 text-sm text-ink-muted hover:bg-hairline disabled:opacity-40">
-                        Next
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </motion.div>
-          )} {/* end !isFree community */}
-
+            </div>
+          </div>
         </div>
       </div>
     </AppShell>

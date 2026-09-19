@@ -614,7 +614,7 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Code execution panel */}
+        {/* Code mode — full-width UML ↔ Code switch */}
         {onOpenCode && (
           <Tooltip>
             <TooltipTrigger
@@ -624,12 +624,15 @@ export function Topbar({
                 'w-auto gap-1.5 px-2.5 text-xs font-medium',
                 codePanelOpen && 'bg-brand-tint text-brand',
               )}
-              aria-label="Open code editor"
+              aria-label={codePanelOpen ? 'Switch to UML diagram' : 'Switch to code editor'}
+              aria-pressed={codePanelOpen}
             >
               <Code2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Code</span>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Write &amp; run code (Ctrl+Enter)</TooltipContent>
+            <TooltipContent side="bottom">
+              {codePanelOpen ? 'Back to UML (Esc)' : 'Code editor — full workspace'}
+            </TooltipContent>
           </Tooltip>
         )}
 

@@ -1,11 +1,14 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { Search, Trash2, ChevronLeft, ChevronRight, RefreshCw, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import { adminApi, type AdminSession } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 const STATUS_FILTERS = ['all', 'active', 'completed', 'abandoned'] as const
 type StatusFilter = (typeof STATUS_FILTERS)[number]
@@ -57,7 +60,13 @@ export default function AdminSessionsPage() {
   const [q, setQ]                   = useState('')
   const [status, setStatus]         = useState<StatusFilter>('all')
   const [actionId, setActionId]     = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminSession | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
   const searchTimeout               = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const pageIds = useMemo(() => sessions.map(s => s.id), [sessions])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1, query = q, st = status) => {
     setLoading(true)
@@ -79,25 +88,40 @@ export default function AdminSessionsPage() {
     searchTimeout.current = setTimeout(() => load(1, v, status), 350)
   }
 
-  async function handleDelete(s: AdminSession) {
-    if (!confirm(`Delete session "${s.title}"?`)) return
-    setActionId(s.id)
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setActionId(deleteTarget.id)
     try {
-      await adminApi.sessions.delete(s.id)
+      await adminApi.sessions.delete(deleteTarget.id)
       toast.success('Session deleted')
+      setDeleteTarget(null)
+      selection.clear()
       load(page, q, status)
     } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
     finally { setActionId(null) }
   }
 
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.sessions.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} session${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page, q, status)
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
+  }
+
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="p-4 sm:p-6 space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Practice Sessions</h1>
           <p className="mt-0.5 text-sm text-ink-faint">{total.toLocaleString()} total sessions</p>
         </div>
-        <button onClick={() => load(page, q, status)} className="flex items-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline">
+        <button onClick={() => load(page, q, status)} className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline">
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
       </div>
@@ -109,7 +133,7 @@ export default function AdminSessionsPage() {
             className="h-9 w-full rounded-md border border-hairline-strong bg-paper pl-9 pr-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
           />
         </div>
-        <div className="flex gap-1 rounded-md border border-hairline-strong bg-paper p-0.5">
+        <div className="flex flex-wrap gap-1 rounded-md border border-hairline-strong bg-paper p-0.5">
           {STATUS_FILTERS.map(f => (
             <button key={f} onClick={() => setStatus(f)}
               className={cn(
@@ -123,6 +147,14 @@ export default function AdminSessionsPage() {
         </div>
       </div>
 
+      <div className="space-y-3">
+        <BulkActionBar
+          count={selection.count}
+          onClear={selection.clear}
+          onDelete={() => setBulkConfirm(true)}
+          loading={bulkLoading}
+          label={selection.count === 1 ? 'session selected' : 'sessions selected'}
+        />
       <div className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
         {loading ? (
           <div className="flex h-48 items-center justify-center">
@@ -135,6 +167,14 @@ export default function AdminSessionsPage() {
             <table className="w-full min-w-[700px] border-collapse text-sm">
               <thead>
                 <tr className="border-b border-hairline bg-paper">
+                  <th className="w-10 px-4 py-3">
+                    <SelectCheckbox
+                      checked={selection.allPageSelected}
+                      indeterminate={selection.somePageSelected}
+                      onChange={selection.togglePage}
+                      title="Select all on page"
+                    />
+                  </th>
                   {['Title', 'User', 'Status', 'Limit', 'Elapsed', 'Started', ''].map(h => (
                     <th key={h} className="px-4 py-3 text-left font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint last:text-right">
                       {h}
@@ -144,7 +184,19 @@ export default function AdminSessionsPage() {
               </thead>
               <tbody>
                 {sessions.map(s => (
-                  <tr key={s.id} className="border-b border-hairline transition-colors last:border-0 hover:bg-paper/60">
+                  <tr
+                    key={s.id}
+                    className={cn(
+                      'border-b border-hairline transition-colors last:border-0 hover:bg-paper/60',
+                      selection.isSelected(s.id) && 'bg-brand-tint/40',
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      <SelectCheckbox
+                        checked={selection.isSelected(s.id)}
+                        onChange={() => selection.toggle(s.id)}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <p className="max-w-[180px] truncate font-medium text-ink">{s.title}</p>
                     </td>
@@ -159,7 +211,7 @@ export default function AdminSessionsPage() {
                       {s.startedAt ? format(parseISO(s.startedAt), 'MMM d, yyyy') : '-'}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => handleDelete(s)} disabled={actionId === s.id}
+                      <button onClick={() => setDeleteTarget(s)} disabled={actionId === s.id}
                         className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-red-400 transition-all hover:bg-red-50 hover:text-red-600 disabled:opacity-50">
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -171,8 +223,36 @@ export default function AdminSessionsPage() {
           </div>
         )}
       </div>
+      </div>
 
       <Pagination page={page} totalPages={totalPages} onPage={p => load(p, q, status)} />
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete session?"
+        description={
+          <>
+            Delete session <span className="font-semibold text-ink">&ldquo;{deleteTarget?.title}&rdquo;</span>?
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete session"
+        loading={!!deleteTarget && actionId === deleteTarget.id}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} session${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected practice sessions. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

@@ -1,7 +1,17 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { Search, Bookmark, CheckCircle2, BookOpen, BarChart3, X, Layers, Lock, ArrowRight } from 'lucide-react'
+import { useEffect, useState, useMemo, useRef } from 'react'
+import {
+  Search,
+  Bookmark,
+  CheckCircle2,
+  X,
+  Layers,
+  Lock,
+  ArrowUpRight,
+  ChevronDown,
+} from 'lucide-react'
+import { motion } from 'framer-motion'
 import { RevisionNoteSummary, RevisionStats } from '@/types'
 import { api } from '@/lib/api'
 import { NoteDrawer } from '@/components/revision/NoteDrawer'
@@ -11,44 +21,61 @@ import { usePlan } from '@/hooks/usePlan'
 import Link from 'next/link'
 import { toast } from 'sonner'
 
-// ── constants ─────────────────────────────────────────────────────────────────
-
 const DIFF_ORDER = { basic: 0, intermediate: 1, advanced: 2 }
 
 const DIFF_META = {
-  basic:        { label: 'Basic',        dot: 'bg-emerald-400', color: 'text-emerald-600', bg: 'bg-emerald-50',  ring: 'ring-emerald-200' },
-  intermediate: { label: 'Intermediate', dot: 'bg-amber-400',   color: 'text-amber-600',   bg: 'bg-amber-50',    ring: 'ring-amber-200'   },
-  advanced:     { label: 'Advanced',     dot: 'bg-red-400',     color: 'text-red-600',     bg: 'bg-red-50',      ring: 'ring-red-200'     },
+  basic:        { label: 'Basic',        color: 'text-emerald-700', bar: 'bg-emerald-500' },
+  intermediate: { label: 'Intermediate', color: 'text-amber-700',   bar: 'bg-amber-500' },
+  advanced:     { label: 'Advanced',     color: 'text-red-700',     bar: 'bg-red-500' },
 }
 
-// ── sub-components ────────────────────────────────────────────────────────────
+function ProgressRing({ value, size = 56 }: { value: number; size?: number }) {
+  const stroke = 4
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const offset = c - (Math.min(100, Math.max(0, value)) / 100) * c
 
-function DiffBadge({ d }: { d: 'basic' | 'intermediate' | 'advanced' }) {
-  const m = DIFF_META[d]
   return (
-    <span className={cn(
-      'inline-flex items-center gap-1 rounded-full font-mono font-bold uppercase tracking-wider ring-1 px-2 py-0.5 text-[9px]',
-      m.bg, m.color, m.ring,
-    )}>
-      <span className={cn('h-1.5 w-1.5 rounded-full', m.dot)} />
-      {m.label}
-    </span>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-hairline" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+          className="text-brand transition-[stroke-dashoffset] duration-700 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="font-mono text-sm font-semibold tabular-nums text-ink">{value}%</span>
+      </div>
+    </div>
   )
 }
 
-function NoteCard({
+function NoteRow({
   note,
+  index,
   onClick,
   onBookmarkToggle,
   canBookmark = true,
 }: {
   note: RevisionNoteSummary
+  index: number
   onClick: () => void
   onBookmarkToggle: (slug: string, bookmarked: boolean) => void
   canBookmark?: boolean
 }) {
   const [bookmarked, setBookmarked] = useState(note.bookmarked)
-  const [toggling, setToggling]     = useState(false)
+  const [toggling, setToggling] = useState(false)
+  const isRevised = note.myStatus === 'revised'
+  const dm = DIFF_META[note.difficulty]
 
   async function handleBookmark(e: React.MouseEvent) {
     e.stopPropagation()
@@ -67,141 +94,126 @@ function NoteCard({
     }
   }
 
-  const isRevised = note.myStatus === 'revised'
-
   return (
-    <div
+    <motion.div
       role="button"
       tabIndex={0}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: Math.min(index * 0.015, 0.2) }}
       onClick={onClick}
-      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick() }}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
       className={cn(
-        'group relative flex flex-col gap-3 rounded-2xl border bg-paper-elevated p-5 cursor-pointer',
-        'transition-all duration-200 hover:-translate-y-0.5',
-        'hover:border-hairline-strong hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)]',
-        isRevised
-          ? 'border-brand/20 shadow-[0_0_0_1px_rgba(var(--color-brand-rgb),0.08)]'
-          : 'border-hairline shadow-[0_1px_6px_rgba(0,0,0,0.04)]',
+        'group flex w-full cursor-pointer gap-4 rounded-xl border border-transparent px-4 py-4 text-left transition-all sm:gap-5 sm:px-5',
+        'hover:border-hairline hover:bg-paper-elevated',
+        isRevised && 'bg-brand-tint/25',
       )}
     >
-      {/* Revised accent stripe */}
-      {isRevised && (
-        <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-full bg-brand" />
-      )}
+      <span className="hidden w-7 shrink-0 pt-1 font-mono text-[11px] tabular-nums text-ink-faint sm:block">
+        {String(index + 1).padStart(2, '0')}
+      </span>
 
-      {/* Top: difficulty + bookmark */}
-      <div className="flex items-start justify-between gap-2">
-        <DiffBadge d={note.difficulty} />
-        <div className="flex items-center gap-1.5">
+      <div className="min-w-0 flex-1">
+        <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.12em]', dm.color)}>
+            {dm.label}
+          </span>
           {isRevised && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-tint px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-brand">
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-brand">
               <CheckCircle2 className="h-3 w-3" /> Revised
             </span>
           )}
-          {canBookmark && (
-            <button
-              onClick={handleBookmark}
-              title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
-              className={cn(
-                'rounded-md p-1 transition-colors',
-                bookmarked
-                  ? 'text-amber-500 hover:text-amber-600'
-                  : 'text-ink-faint opacity-0 group-hover:opacity-100 hover:text-amber-500',
-              )}
-            >
-              <Bookmark size={13} className={bookmarked ? 'fill-current' : ''} />
-            </button>
+          {bookmarked && (
+            <Bookmark className="h-3 w-3 fill-amber-400 text-amber-400" />
           )}
         </div>
-      </div>
 
-      {/* Title + summary */}
-      <div>
-        <h3 className="text-[15px] font-semibold leading-snug text-ink transition-colors group-hover:text-brand">
+        <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-brand sm:text-base">
           {note.title}
         </h3>
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink-faint">
+        <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-muted">
           {note.summary}
         </p>
+
+        {note.tags.length > 0 && (
+          <p className="mt-2.5 font-mono text-[10px] text-ink-faint">
+            {note.tags.slice(0, 4).join(' · ')}
+            {note.tags.length > 4 && ` · +${note.tags.length - 4}`}
+          </p>
+        )}
       </div>
 
-      {/* Tags */}
-      {note.tags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          {note.tags.slice(0, 4).map(t => (
-            <span key={t} className="rounded-md border border-hairline bg-paper px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
-              {t}
-            </span>
-          ))}
-          {note.tags.length > 4 && (
-            <span className="font-mono text-[10px] text-ink-faint">+{note.tags.length - 4}</span>
-          )}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="flex items-center justify-between border-t border-hairline pt-3">
-        <span className="rounded-md bg-hairline px-1.5 py-0.5 font-mono text-[10px] text-ink-faint">
-          {note.category}
+      <div className="flex shrink-0 flex-col items-end justify-between gap-3 self-stretch py-0.5">
+        {canBookmark ? (
+          <button
+            type="button"
+            onClick={handleBookmark}
+            title={bookmarked ? 'Remove bookmark' : 'Bookmark'}
+            className={cn(
+              'rounded-lg p-1.5 transition-colors',
+              bookmarked
+                ? 'text-amber-500 hover:bg-amber-50'
+                : 'text-ink-faint opacity-0 hover:bg-hairline hover:text-amber-500 group-hover:opacity-100',
+            )}
+          >
+            <Bookmark className={cn('h-3.5 w-3.5', bookmarked && 'fill-current')} />
+          </button>
+        ) : (
+          <span />
+        )}
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-hairline text-ink-faint transition-all group-hover:border-brand group-hover:bg-brand group-hover:text-paper">
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </span>
-        <span className="text-xs font-medium text-ink-muted transition-colors group-hover:text-ink">
-          Read →
-        </span>
       </div>
-    </div>
-  )
-}
-
-function StatCard({ label, value, icon: Icon, accent }: {
-  label: string; value: string | number; icon: React.ElementType; accent: string
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-hairline bg-paper-elevated px-4 py-3.5 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-      <div className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl', accent)}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="font-mono text-xl font-black text-ink tabular-nums leading-none">{value}</p>
-        <p className="mt-0.5 text-[11px] text-ink-faint">{label}</p>
-      </div>
-    </div>
+    </motion.div>
   )
 }
 
 function Skeleton() {
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-2xl border border-hairline bg-paper-elevated" />
-        ))}
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(9)].map((_, i) => (
-          <div key={i} className="h-44 animate-pulse rounded-2xl border border-hairline bg-paper-elevated" />
-        ))}
-      </div>
+    <div className="space-y-2">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="flex gap-4 rounded-xl px-4 py-5">
+          <div className="hidden h-4 w-7 animate-pulse rounded bg-hairline sm:block" />
+          <div className="flex-1 space-y-2.5">
+            <div className="h-3 w-24 animate-pulse rounded bg-hairline" />
+            <div className="h-5 w-3/5 animate-pulse rounded bg-hairline" />
+            <div className="h-3.5 w-full max-w-md animate-pulse rounded bg-hairline/70" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
 
-// ── page ──────────────────────────────────────────────────────────────────────
-
 export default function RevisionPage() {
   const { isFree } = usePlan()
-  const [notes, setNotes]           = useState<RevisionNoteSummary[]>([])
-  const [stats, setStats]           = useState<RevisionStats | null>(null)
+  const [notes, setNotes] = useState<RevisionNoteSummary[]>([])
+  const [stats, setStats] = useState<RevisionStats | null>(null)
   const [categories, setCategories] = useState<string[]>([])
-  const [loading, setLoading]       = useState(true)
+  const [loading, setLoading] = useState(true)
 
-  // filters
-  const [query, setQuery]           = useState('')
+  const [query, setQuery] = useState('')
   const [activeCategory, setCategory] = useState<string | null>(null)
-  const [activeDiff, setDiff]       = useState<string | null>(null)
+  const [activeDiff, setDiff] = useState<string | null>(null)
   const [bookmarkedOnly, setBookOnly] = useState(false)
+  const [openSlug, setOpenSlug] = useState<string | null>(null)
+  const [catOpen, setCatOpen] = useState(false)
+  const catRef = useRef<HTMLDivElement>(null)
 
-  // drawer
-  const [openSlug, setOpenSlug]     = useState<string | null>(null)
+  useEffect(() => {
+    if (!catOpen) return
+    function handleOutside(e: MouseEvent) {
+      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [catOpen])
 
   useEffect(() => {
     Promise.all([
@@ -216,13 +228,13 @@ export default function RevisionPage() {
   }, [])
 
   function handleRevised(slug: string) {
-    setNotes(ns => ns.map(n => n.slug === slug ? { ...n, myStatus: 'revised' } : n))
-    setStats(s => s ? { ...s, revised: s.revised + 1 } : s)
+    setNotes(ns => ns.map(n => (n.slug === slug ? { ...n, myStatus: 'revised' } : n)))
+    setStats(s => (s ? { ...s, revised: s.revised + 1 } : s))
   }
 
   function handleBookmarkToggle(slug: string, bm: boolean) {
-    setNotes(ns => ns.map(n => n.slug === slug ? { ...n, bookmarked: bm } : n))
-    setStats(s => s ? { ...s, bookmarked: s.bookmarked + (bm ? 1 : -1) } : s)
+    setNotes(ns => ns.map(n => (n.slug === slug ? { ...n, bookmarked: bm } : n)))
+    setStats(s => (s ? { ...s, bookmarked: s.bookmarked + (bm ? 1 : -1) } : s))
   }
 
   const filtered = useMemo(() => {
@@ -256,226 +268,295 @@ export default function RevisionPage() {
   }, [filtered])
 
   const progressPct = stats ? Math.round((stats.revised / Math.max(stats.total, 1)) * 100) : 0
-  const hasFilters  = !!(query || activeCategory || activeDiff || bookmarkedOnly)
+  const hasFilters = !!(query || activeCategory || activeDiff || bookmarkedOnly)
+
+  const categoryCounts = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const n of notes) map.set(n.category, (map.get(n.category) ?? 0) + 1)
+    return map
+  }, [notes])
 
   return (
     <AppShell>
       <div className="flex h-full flex-col overflow-hidden">
 
-        {/* ── Masthead ─────────────────────────────────────────────────────── */}
-        <header className="shrink-0 border-b border-hairline px-6 py-10 sm:px-10">
-          <div className="mx-auto max-w-4xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-faint">
-              Study
-            </p>
-            <h1 className="mt-2 font-serif text-4xl leading-none text-ink sm:text-[2.75rem]">
-              Quick Revision Notes
-            </h1>
+        {/* Compact masthead */}
+        <header className="shrink-0 border-b border-hairline px-6 py-5 sm:px-10 sm:py-6">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-6">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <h1 className="font-serif text-[1.75rem] leading-none tracking-tight text-ink sm:text-[2rem]">
+                  Quick Revision
+                </h1>
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+                  Study
+                </span>
+              </div>
+              {!loading && stats && (
+                <p className="mt-2 font-mono text-[12px] text-ink-faint">
+                  <span className="font-semibold text-ink">{stats.revised}</span>/{stats.total} revised
+                  <span className="mx-1.5 text-hairline-strong">·</span>
+                  <span className="font-semibold text-ink">{stats.bookmarked}</span> bookmarked
+                  <span className="mx-1.5 text-hairline-strong">·</span>
+                  <span className="font-semibold text-ink">{stats.total}</span> notes
+                </p>
+              )}
+            </div>
+
             {!loading && stats && (
-              <p className="mt-4 text-[15px] text-ink-muted">
-                <span className="font-mono font-semibold text-ink">{stats.revised}</span> of{' '}
-                <span className="font-mono font-semibold text-ink">{stats.total}</span> revised
-                {stats.bookmarked > 0 && (
-                  <> · <span className="font-mono font-semibold text-ink">{stats.bookmarked}</span> bookmarked</>
-                )}
-                {progressPct > 0 && (
-                  <> · <span className="font-mono font-semibold text-brand">{progressPct}% complete</span></>
-                )}
-              </p>
+              <div className="hidden items-center gap-5 sm:flex">
+                <div className="w-36">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Progress</span>
+                    <span className="font-mono text-[10px] tabular-nums text-ink-faint">
+                      {stats.revised}/{stats.total}
+                    </span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-hairline">
+                    <div
+                      className="h-full rounded-full bg-brand transition-all duration-700"
+                      style={{ width: `${progressPct}%` }}
+                    />
+                  </div>
+                </div>
+                <ProgressRing value={progressPct} />
+              </div>
             )}
           </div>
         </header>
 
-        {/* ── Scrollable body ───────────────────────────────────────────────── */}
-        <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-10 sm:px-10">
-          <div className="mx-auto max-w-4xl space-y-8">
+        <div className="no-scrollbar flex-1 overflow-y-auto px-6 py-6 sm:px-10">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12">
 
-            {loading ? <Skeleton /> : (
-              <>
-                {/* Stats row */}
-                {stats && (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard label="Total Notes"  value={stats.total}      icon={BookOpen}     accent="bg-brand-tint text-brand" />
-                    <StatCard label="Revised"       value={stats.revised}    icon={CheckCircle2} accent="bg-emerald-50 text-emerald-600" />
-                    <StatCard label="Bookmarked"    value={stats.bookmarked} icon={Bookmark}     accent="bg-amber-50 text-amber-600" />
-                    <StatCard label="Progress"      value={`${progressPct}%`} icon={BarChart3}   accent="bg-violet-50 text-violet-600" />
+            {/* Left filter rail */}
+            <aside className="lg:sticky lg:top-6 lg:self-start">
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-faint">
+                    Find
+                  </p>
+                  <div className="relative mb-3">
+                    <Search className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
+                    <input
+                      value={query}
+                      onChange={e => setQuery(e.target.value)}
+                      placeholder="Search notes…"
+                      className="w-full border-b border-hairline bg-transparent py-2 pl-5 pr-6 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-brand"
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        onClick={() => setQuery('')}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {/* Progress bar */}
-                {stats && stats.total > 0 && (
+                <div>
+                  <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-faint">
+                    Difficulty
+                  </p>
+                  <nav className="flex gap-1 overflow-x-auto border-b border-hairline pb-px lg:flex-col lg:gap-0.5 lg:overflow-visible lg:border-b-0 lg:border-l lg:border-hairline lg:pb-0">
+                    <button
+                      type="button"
+                      onClick={() => setDiff(null)}
+                      className={cn(
+                        'relative flex shrink-0 items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors lg:pl-4',
+                        !activeDiff ? 'font-medium text-ink' : 'text-ink-faint hover:text-ink-muted',
+                      )}
+                    >
+                      {!activeDiff && (
+                        <motion.span
+                          layoutId="revDiffRail"
+                          className="absolute inset-x-0 bottom-0 h-0.5 bg-brand lg:inset-y-1.5 lg:left-0 lg:right-auto lg:bottom-auto lg:w-0.5"
+                        />
+                      )}
+                      <span className="flex-1">All</span>
+                    </button>
+                    {(['basic', 'intermediate', 'advanced'] as const).map(d => {
+                      const active = activeDiff === d
+                      return (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setDiff(active ? null : d)}
+                          className={cn(
+                            'relative flex shrink-0 items-center gap-2 px-3 py-2.5 text-left text-sm capitalize transition-colors lg:pl-4',
+                            active ? 'font-medium text-ink' : 'text-ink-faint hover:text-ink-muted',
+                          )}
+                        >
+                          {active && (
+                            <motion.span
+                              layoutId="revDiffRail"
+                              className="absolute inset-x-0 bottom-0 h-0.5 bg-brand lg:inset-y-1.5 lg:left-0 lg:right-auto lg:bottom-auto lg:w-0.5"
+                            />
+                          )}
+                          <span className={cn('flex-1', active && DIFF_META[d].color)}>
+                            {DIFF_META[d].label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </nav>
+                </div>
+
+                {categories.length > 0 && (
                   <div>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <span className="font-mono text-[11px] text-ink-faint">Revision progress</span>
-                      <span className="font-mono text-[11px] text-ink-faint">{stats.revised}/{stats.total}</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-hairline">
-                      <div
-                        className="h-full rounded-full bg-brand transition-all duration-700"
-                        style={{ width: `${progressPct}%` }}
-                      />
+                    <p className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-faint">
+                      Category
+                    </p>
+                    <div className="relative" ref={catRef}>
+                      <button
+                        type="button"
+                        onClick={() => setCatOpen(v => !v)}
+                        className={cn(
+                          'flex w-full items-center justify-between border-b py-2 text-left text-sm transition-colors',
+                          activeCategory
+                            ? 'border-brand text-brand'
+                            : 'border-hairline text-ink-muted hover:text-ink',
+                        )}
+                      >
+                        <span className="truncate">{activeCategory || 'All categories'}</span>
+                        {activeCategory ? (
+                          <X
+                            className="h-3.5 w-3.5 shrink-0"
+                            onClick={e => {
+                              e.stopPropagation()
+                              setCategory(null)
+                            }}
+                          />
+                        ) : (
+                          <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', catOpen && 'rotate-180')} />
+                        )}
+                      </button>
+
+                      {catOpen && (
+                        <div className="absolute bottom-full left-0 right-0 z-50 mb-2 max-h-56 overflow-y-auto rounded-lg border border-hairline bg-paper p-1 shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() => { setCategory(null); setCatOpen(false) }}
+                            className={cn(
+                              'flex w-full rounded-md px-2.5 py-2 text-left text-xs transition-colors',
+                              !activeCategory ? 'bg-brand-tint font-medium text-brand' : 'text-ink-muted hover:bg-hairline/50',
+                            )}
+                          >
+                            All categories
+                          </button>
+                          {categories.map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => { setCategory(c); setCatOpen(false) }}
+                              className={cn(
+                                'flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-xs transition-colors',
+                                activeCategory === c ? 'bg-brand-tint font-medium text-brand' : 'text-ink-muted hover:bg-hairline/50',
+                              )}
+                            >
+                              {c}
+                              <span className="font-mono text-[10px] text-ink-faint">
+                                {categoryCounts.get(c) ?? 0}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Filter bar */}
-                <div className="flex flex-col gap-3 rounded-2xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)]">
-                  {/* Search + difficulty + bookmark */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative flex-1 min-w-[180px]">
-                      <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
-                      <input
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        placeholder="Search concepts, tags…"
-                        className="w-full rounded-xl border border-hairline bg-paper py-2 pl-8 pr-8 text-sm text-ink outline-none
-                                   placeholder:text-ink-faint focus:border-brand transition-colors"
-                      />
-                      {query && (
-                        <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink">
-                          <X size={13} />
+                <div>
+                  {isFree && (
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center gap-1.5 text-xs text-ink-faint transition-colors hover:text-ink"
+                    >
+                      <Lock className="h-3 w-3 text-amber-400" />
+                      Bookmarks · Pro
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </aside>
+
+            {/* Notes list */}
+            <section className="min-w-0">
+              {loading ? (
+                <Skeleton />
+              ) : (
+                <div className="space-y-8">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline pb-3">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-faint">
+                      {filtered.length} note{filtered.length !== 1 ? 's' : ''}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-4">
+                      {!isFree && (
+                        <label className="flex cursor-pointer items-center gap-2 text-xs text-ink-muted select-none">
+                          <input
+                            type="checkbox"
+                            checked={bookmarkedOnly}
+                            onChange={e => setBookOnly(e.target.checked)}
+                            className="h-3.5 w-3.5 rounded border-hairline-strong accent-brand"
+                          />
+                          <span className="inline-flex items-center gap-1.5">
+                            <Bookmark className={cn('h-3.5 w-3.5', bookmarkedOnly && 'fill-amber-400 text-amber-500')} />
+                            Bookmarks only
+                          </span>
+                        </label>
+                      )}
+                      {hasFilters && (
+                        <button
+                          type="button"
+                          onClick={() => { setQuery(''); setCategory(null); setDiff(null); setBookOnly(false) }}
+                          className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink"
+                        >
+                          Reset filters
                         </button>
                       )}
                     </div>
-
-                    <div className="flex gap-1.5">
-                      {(['basic', 'intermediate', 'advanced'] as const).map(d => (
-                        <button
-                          key={d}
-                          onClick={() => setDiff(activeDiff === d ? null : d)}
-                          className={cn(
-                            'inline-flex items-center gap-1 rounded-full font-mono font-bold uppercase tracking-wider ring-1 px-2 py-1 text-[9px] transition-all',
-                            activeDiff === d
-                              ? `${DIFF_META[d].bg} ${DIFF_META[d].color} ${DIFF_META[d].ring}`
-                              : 'bg-paper text-ink-faint ring-hairline hover:ring-hairline-strong',
-                          )}
-                        >
-                          <span className={cn('h-1.5 w-1.5 rounded-full', DIFF_META[d].dot)} />
-                          {DIFF_META[d].label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {isFree ? (
-                      <Link
-                        href="/pricing"
-                        className="flex items-center gap-1.5 rounded-xl border border-hairline bg-paper px-3 py-1.5 text-xs font-medium text-ink-faint/60 hover:border-amber-300 hover:text-amber-600 transition-all"
-                        title="Bookmarks require Pro"
-                      >
-                        <Lock size={12} className="text-amber-400" />
-                        Bookmarks
-                        <span className="text-[9px] font-bold text-amber-500 uppercase">Pro</span>
-                      </Link>
-                    ) : (
-                      <button
-                        onClick={() => setBookOnly(v => !v)}
-                        className={cn(
-                          'flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-medium transition-all',
-                          bookmarkedOnly
-                            ? 'border-amber-300 bg-amber-50 text-amber-700'
-                            : 'border-hairline bg-paper text-ink-faint hover:border-hairline-strong hover:text-ink',
-                        )}
-                      >
-                        <Bookmark size={12} className={bookmarkedOnly ? 'fill-current' : ''} />
-                        Bookmarks
-                      </button>
-                    )}
                   </div>
 
-                  {/* Category chips */}
-                  {categories.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 border-t border-hairline pt-3">
-                      <button
-                        onClick={() => setCategory(null)}
-                        className={cn(
-                          'rounded-full border px-3 py-1 font-mono text-[10px] font-medium transition-all',
-                          !activeCategory
-                            ? 'border-brand bg-brand-tint text-brand'
-                            : 'border-hairline bg-paper text-ink-faint hover:border-hairline-strong hover:text-ink',
-                        )}
-                      >
-                        All
-                      </button>
-                      {categories.map(c => (
-                        <button
-                          key={c}
-                          onClick={() => setCategory(activeCategory === c ? null : c)}
-                          className={cn(
-                            'rounded-full border px-3 py-1 font-mono text-[10px] font-medium transition-all',
-                            activeCategory === c
-                              ? 'border-brand bg-brand-tint text-brand'
-                              : 'border-hairline bg-paper text-ink-faint hover:border-hairline-strong hover:text-ink',
-                          )}
-                        >
-                          {c}
-                        </button>
-                      ))}
+                  {grouped.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <Layers className="mb-3 h-8 w-8 text-ink-faint/40" strokeWidth={1.5} />
+                      <p className="font-serif text-xl text-ink">No matches</p>
+                      <p className="mt-2 text-sm text-ink-faint">Try another topic, difficulty, or search.</p>
                     </div>
-                  )}
-                </div>
-
-                {/* Results meta */}
-                <div className="flex items-center justify-between">
-                  <p className="font-mono text-[11px] text-ink-faint">
-                    Showing {filtered.length} of {notes.length} notes
-                  </p>
-                  {hasFilters && (
-                    <button
-                      onClick={() => { setQuery(''); setCategory(null); setDiff(null); setBookOnly(false) }}
-                      className="font-mono text-[11px] text-brand hover:underline underline-offset-2"
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-
-                {/* Grouped grid */}
-                {grouped.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <Layers className="mb-3 h-8 w-8 text-ink-faint/40" strokeWidth={1.5} />
-                    <p className="text-sm text-ink-faint">No notes match your filters.</p>
-                    {hasFilters && (
-                      <button
-                        onClick={() => { setQuery(''); setCategory(null); setDiff(null); setBookOnly(false) }}
-                        className="mt-2 text-xs text-brand hover:underline"
-                      >
-                        Clear filters
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-10">
-                    {grouped.map(([category, catNotes]) => (
-                      <section key={category}>
-                        <div className="mb-4 flex items-center gap-4">
-                          <h2 className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-ink-faint">
+                  ) : (
+                    grouped.map(([category, catNotes]) => (
+                      <div key={category}>
+                        <div className="mb-2 flex items-baseline gap-3 px-1 sm:px-0">
+                          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
                             {category}
                           </h2>
-                          <div className="flex-1 h-px bg-hairline" />
-                          <span className="font-mono text-[10px] text-ink-faint">{catNotes.length}</span>
+                          <span className="font-mono text-[10px] tabular-nums text-ink-faint/60">
+                            {catNotes.length}
+                          </span>
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                          {catNotes.map(note => (
-                            <NoteCard
+                        <div className="space-y-0.5">
+                          {catNotes.map((note, i) => (
+                            <NoteRow
                               key={note.slug}
                               note={note}
+                              index={i}
                               onClick={() => setOpenSlug(note.slug)}
                               onBookmarkToggle={handleBookmarkToggle}
                               canBookmark={!isFree}
                             />
                           ))}
                         </div>
-                      </section>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </section>
           </div>
         </div>
       </div>
 
-      {/* Drawer */}
       <NoteDrawer
         slug={openSlug}
         onClose={() => setOpenSlug(null)}
