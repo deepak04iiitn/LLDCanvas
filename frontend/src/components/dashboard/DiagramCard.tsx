@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import {
-  ExternalLink, Pencil, Copy, Download, Trash2, Users,
+  ExternalLink, Pencil, Copy, Download, Trash2, Users, MoreHorizontal, ArrowUpRight,
 } from 'lucide-react'
 import {
   ContextMenu,
@@ -14,6 +14,13 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,20 +29,20 @@ import {
 } from '@/components/ui/dialog'
 import { DiagramSummary } from '@/types'
 import { api } from '@/lib/api'
-import { formatRelativeTime } from '@/lib/utils'
+import { cn, formatRelativeTime } from '@/lib/utils'
 
 interface DiagramCardProps {
   diagram: DiagramSummary
+  index?: number
   onDeleted: (id: string) => void
   onDuplicated: (d: DiagramSummary) => void
   onRenamed: (id: string, title: string) => void
 }
 
-export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: DiagramCardProps) {
+export function DiagramCard({ diagram, index = 0, onDeleted, onDuplicated, onRenamed }: DiagramCardProps) {
   const router = useRouter()
   const [renaming, setRenaming] = useState(false)
   const [renameValue, setRenameValue] = useState(diagram.title)
-  const [hovered, setHovered] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -90,61 +97,88 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
     router.push(`/editor/${diagram._id}?export=png`)
   }
 
+  const actions = (
+    <>
+      <DropdownMenuItem onClick={openEditor} className="cursor-pointer gap-2.5">
+        <ExternalLink size={13} className="text-ink-faint" /> Open
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() => router.push(`/editor/${diagram._id}?collab=1`)}
+        className="cursor-pointer gap-2.5"
+      >
+        <Users size={13} className="text-brand" /> Collaborate
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onClick={startRename} className="cursor-pointer gap-2.5">
+        <Pencil size={13} className="text-ink-faint" /> Rename
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={handleDuplicate} className="cursor-pointer gap-2.5">
+        <Copy size={13} className="text-ink-faint" /> Duplicate
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={handleExport} className="cursor-pointer gap-2.5">
+        <Download size={13} className="text-ink-faint" /> Export
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() => setConfirmOpen(true)}
+        className="cursor-pointer gap-2.5 text-red-700 focus:bg-red-50 focus:text-red-700"
+      >
+        <Trash2 size={13} className="text-red-500" /> Delete
+      </DropdownMenuItem>
+    </>
+  )
+
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
+      <ContextMenuTrigger asChild>
         <motion.div
-          className="group relative cursor-pointer overflow-hidden rounded-lg border border-hairline bg-paper-elevated shadow-sm transition-all duration-200 hover:border-hairline-strong hover:shadow-md"
-          initial={{ opacity: 0, y: 12 }}
+          role="button"
+          tabIndex={0}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
+          transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.2) }}
           onClick={(e) => {
             if (renaming) e.stopPropagation()
             else openEditor()
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !renaming) openEditor()
+          }}
+          className={cn(
+            'group flex cursor-pointer items-center gap-3.5 rounded-xl border border-transparent px-3 py-2.5 transition-all',
+            'hover:border-hairline hover:bg-paper-elevated',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20',
+          )}
         >
-          {/* Thumbnail */}
-          <div className="relative flex h-36 items-center justify-center overflow-hidden bg-paper">
+          {/* Thumb */}
+          <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-hairline bg-paper sm:h-16 sm:w-24">
             {diagram.thumbnail ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={diagram.thumbnail}
-                alt={diagram.title}
+                alt=""
                 className="h-full w-full object-cover"
               />
             ) : (
-              <EmptyThumbnail />
+              <div
+                className="flex h-full w-full items-center justify-center"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, var(--hairline) 1px, transparent 1px)',
+                  backgroundSize: '10px 10px',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden className="opacity-50">
+                  <rect x="4" y="4" width="24" height="7" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
+                  <rect x="4" y="14" width="24" height="14" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
+                  <line x1="4" y1="18" x2="28" y2="18" stroke="var(--brand)" strokeWidth="1.5" />
+                </svg>
+              </div>
             )}
-
-            {/* Hover overlay */}
-            <motion.div
-              className="absolute inset-0 flex items-center justify-center gap-2 bg-ink/70"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: hovered ? 1 : 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <ExternalLink size={14} className="text-paper-elevated" />
-              <span className="text-sm font-semibold tracking-wide text-paper-elevated">Open</span>
-            </motion.div>
-
-            {/* Delete button */}
-            <motion.button
-              type="button"
-              title="Delete diagram"
-              onClick={(e) => { e.stopPropagation(); setConfirmOpen(true) }}
-              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-lg bg-ink/70 text-paper-elevated transition-colors hover:bg-red-600"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: hovered ? 1 : 0 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Trash2 size={13} />
-            </motion.button>
           </div>
 
-          {/* Card footer */}
-          <div className="px-4 py-3">
+          {/* Meta */}
+          <div className="min-w-0 flex-1">
             {renaming ? (
               <Input
                 ref={inputRef}
@@ -156,25 +190,48 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
                   if (e.key === 'Escape') { setRenaming(false); setRenameValue(diagram.title) }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="h-7 border-hairline-strong px-2 py-0 text-sm focus:border-brand"
+                className="h-8 max-w-md rounded-lg border-brand px-2 text-sm"
                 autoFocus
               />
             ) : (
               <p
-                className="truncate text-sm font-medium leading-5 text-ink"
+                className="truncate text-sm font-semibold text-ink transition-colors group-hover:text-brand"
                 onDoubleClick={(e) => { e.stopPropagation(); startRename() }}
+                title={diagram.title}
               >
                 {diagram.title}
               </p>
             )}
-            <p className="mt-1 text-xs text-ink-faint">
-              {formatRelativeTime(diagram.updatedAt)}
+            <p className="mt-0.5 text-xs text-ink-faint">
+              Updated {formatRelativeTime(diagram.updatedAt)}
             </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 sm:opacity-100 sm:group-hover:opacity-100">
+            <span className="mr-1 hidden items-center gap-1 text-xs font-medium text-ink-faint group-hover:text-brand sm:inline-flex">
+              Open <ArrowUpRight className="h-3.5 w-3.5" />
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  title="Actions"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint transition-colors hover:bg-hairline hover:text-ink"
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
+                {actions}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </motion.div>
       </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-48 rounded-lg border-hairline shadow-lg">
+      <ContextMenuContent className="w-48 rounded-xl border-hairline shadow-lg">
         <ContextMenuItem onClick={openEditor} className="cursor-pointer gap-2.5">
           <ExternalLink size={13} className="text-ink-faint" /> Open
         </ContextMenuItem>
@@ -205,10 +262,10 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
       </ContextMenuContent>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-0 shadow-xl sm:max-w-sm">
+        <DialogContent className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated p-0 shadow-xl sm:max-w-sm">
           <div className="p-6">
             <DialogHeader className="mb-2">
-              <DialogTitle className="font-serif text-lg font-medium text-ink">
+              <DialogTitle className="text-lg font-semibold text-ink">
                 Delete UML diagram?
               </DialogTitle>
             </DialogHeader>
@@ -217,37 +274,20 @@ export function DiagramCard({ diagram, onDeleted, onDuplicated, onRenamed }: Dia
               permanently deleted. This cannot be undone.
             </p>
             <DialogFooter className="pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setConfirmOpen(false)}
-                className="border-hairline-strong transition-all active:scale-[0.97]"
-              >
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
                 Cancel
               </Button>
               <Button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="bg-red-600 text-white transition-all hover:bg-red-700 active:scale-[0.97]"
+                className="bg-red-600 text-white hover:bg-red-700"
               >
-                {deleting ? 'Deleting…' : 'Delete Diagram'}
+                {deleting ? 'Deleting…' : 'Delete'}
               </Button>
             </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
     </ContextMenu>
-  )
-}
-
-function EmptyThumbnail() {
-  return (
-    <div className="flex flex-col items-center gap-2 opacity-40">
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-        <rect x="4" y="4" width="24" height="7" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
-        <rect x="4" y="14" width="24" height="14" rx="2" stroke="var(--brand)" strokeWidth="1.5" />
-        <line x1="4" y1="18" x2="28" y2="18" stroke="var(--brand)" strokeWidth="1.5" />
-      </svg>
-      <span className="font-mono text-[10px] text-ink-faint">Empty diagram</span>
-    </div>
   )
 }

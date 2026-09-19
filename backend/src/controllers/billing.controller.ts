@@ -263,7 +263,7 @@ export async function createDodoSubscription(req: Request, res: Response, next: 
       billing_address: {
         country: country as CountryCode,
       },
-      return_url: `${clientUrl}/pricing/success`,
+      return_url: `${clientUrl}/dashboard?upgraded=1`,
       metadata: {
         userId,
         tier,

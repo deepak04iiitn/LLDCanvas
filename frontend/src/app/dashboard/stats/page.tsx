@@ -179,7 +179,7 @@ export default function StatsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6 max-w-5xl"
+                className="w-full space-y-6"
               >
                 {/* Stat cards */}
                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -255,7 +255,7 @@ export default function StatsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-5 max-w-5xl"
+                  className="w-full space-y-5"
                 >
                   {advLoad ? (
                     <>
@@ -287,7 +287,7 @@ export default function StatsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="space-y-5 max-w-5xl"
+                  className="w-full space-y-5"
                 >
                   {advLoad ? (
                     <><SkeletonBlock h="h-72" /><SkeletonBlock h="h-72" /></>
@@ -314,7 +314,7 @@ export default function StatsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2 }}
-                  className="max-w-5xl"
+                  className="w-full"
                 >
                   {advLoad ? (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

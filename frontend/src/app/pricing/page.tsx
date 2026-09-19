@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -246,16 +246,29 @@ export default function PricingPage() {
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR')
   const [gateway,  setGateway]  = useState<'razorpay' | 'dodo'>('razorpay')
   const [country,  setCountry]  = useState('IN')
+  const [geoReady, setGeoReady] = useState(false)
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
 
-  // Detect country / gateway from IP on mount
+  const isIndiaGateway = gateway === 'razorpay'
+  const isIntlGateway  = gateway === 'dodo'
+
+  // Detect country / gateway from IP — lock currency to match region
   useEffect(() => {
-    api.billing.geo().then(r => {
-      setCurrency(r.gateway === 'razorpay' ? 'INR' : 'USD')
-      setGateway(r.gateway)
-      setCountry(r.country)
-    }).catch(() => {})
+    api.billing.geo()
+      .then(r => {
+        const intl = r.gateway === 'dodo'
+        setGateway(r.gateway)
+        setCountry(r.country)
+        setCurrency(intl ? 'USD' : 'INR')
+      })
+      .catch(() => {
+        // Safe default: India / INR
+        setGateway('razorpay')
+        setCountry('IN')
+        setCurrency('INR')
+      })
+      .finally(() => setGeoReady(true))
   }, [])
 
   // Load Razorpay checkout script (India only)
@@ -275,21 +288,20 @@ export default function PricingPage() {
       const geo = await api.billing.geo().catch(() => null)
       const activeGateway = geo?.gateway ?? gateway
       const activeCountry = geo?.country ?? country
-      const activeCurrency = geo
-        ? (geo.gateway === 'razorpay' ? 'INR' : 'USD')
-        : currency
+      const activeCurrency = activeGateway === 'razorpay' ? 'INR' : 'USD'
 
       if (geo) {
         setGateway(geo.gateway)
         setCountry(geo.country)
-        setCurrency(geo.gateway === 'razorpay' ? 'INR' : 'USD')
+        setCurrency(activeCurrency)
+        setGeoReady(true)
       }
 
       if (activeGateway === 'dodo') {
         const { checkoutUrl } = await api.billing.subscribeDodo({
           tier,
           yearly: isYearly,
-          billingCurrency: activeCurrency === 'USD' ? 'USD' : activeCurrency,
+          billingCurrency: activeCurrency,
           country: activeCountry === 'IN' ? 'US' : activeCountry,
         })
         window.location.href = checkoutUrl
@@ -367,26 +379,30 @@ export default function PricingPage() {
             </button>
           </div>
 
-          {/* Currency toggle — display only; checkout gateway is country-based */}
+          {/* Currency toggle — locked by geo (India → INR, international → USD) */}
           <div className="flex items-center gap-1 rounded-md border border-hairline bg-paper-elevated p-1">
             <button
-              onClick={() => setCurrency('INR')}
-              disabled={gateway === 'dodo'}
+              type="button"
+              onClick={() => { if (isIndiaGateway) setCurrency('INR') }}
+              disabled={!geoReady || isIntlGateway}
+              title={isIntlGateway ? 'INR pricing is available for India only' : undefined}
               className={cn(
                 'rounded px-4 py-1.5 text-sm font-medium transition-colors',
-                currency === 'INR' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
-                gateway === 'dodo' && 'cursor-not-allowed opacity-40',
+                geoReady && currency === 'INR' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
+                (!geoReady || isIntlGateway) && 'cursor-not-allowed opacity-40 hover:text-ink-muted',
               )}
             >
               ₹ INR
             </button>
             <button
-              onClick={() => setCurrency('USD')}
-              disabled={gateway === 'razorpay'}
+              type="button"
+              onClick={() => { if (isIntlGateway) setCurrency('USD') }}
+              disabled={!geoReady || isIndiaGateway}
+              title={isIndiaGateway ? 'USD pricing is for international customers' : undefined}
               className={cn(
                 'rounded px-4 py-1.5 text-sm font-medium transition-colors',
-                currency === 'USD' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
-                gateway === 'razorpay' && 'cursor-not-allowed opacity-40',
+                geoReady && currency === 'USD' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
+                (!geoReady || isIndiaGateway) && 'cursor-not-allowed opacity-40 hover:text-ink-muted',
               )}
             >
               $ USD
@@ -394,7 +410,7 @@ export default function PricingPage() {
           </div>
         </motion.div>
 
-        {gateway === 'dodo' && (
+        {geoReady && isIntlGateway && (
           <p className="mb-8 text-center text-xs text-ink-muted">
             Prices shown in USD. You&rsquo;ll be billed in your local currency at checkout (Adaptive Currency).
           </p>

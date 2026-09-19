@@ -14,7 +14,7 @@ Code is already integrated. You only need to configure the Dodo dashboard and fi
 | Everywhere else | Dodo Checkout Sessions | USD list price → Adaptive Currency at checkout |
 
 Webhook (Dodo): `POST https://<your-api-host>/billing/webhook/dodo`  
-Return URL after checkout: `https://<your-frontend>/pricing/success`
+Return URL after checkout: `https://<your-frontend>/dashboard?upgraded=1`
 
 ---
 
