@@ -131,10 +131,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-paper-elevated shadow-xl">
+          <aside className="absolute left-0 top-0 flex h-full w-[min(16rem,85vw)] flex-col bg-paper-elevated shadow-xl">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-3 rounded-md p-1.5 text-ink-faint hover:bg-hairline"
+              className="absolute right-3 top-3 z-10 rounded-md p-1.5 text-ink-faint hover:bg-hairline"
+              aria-label="Close menu"
             >
               <X className="h-4 w-4" />
             </button>
@@ -144,24 +145,25 @@ export function AdminShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile topbar */}
-        <header className="flex h-12 items-center gap-3 border-b border-hairline bg-paper-elevated px-4 lg:hidden">
+        <header className="flex h-12 shrink-0 items-center gap-2.5 border-b border-hairline bg-paper-elevated px-3 sm:px-4 lg:hidden">
           <button
             onClick={() => setMobileOpen(true)}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-hairline"
+            className="shrink-0 rounded-md p-1.5 text-ink-muted hover:bg-hairline"
+            aria-label="Open menu"
           >
             <Menu className="h-4 w-4" />
           </button>
-          <Link href="/">
-            <Wordmark height={32} />
+          <Link href="/" className="min-w-0 shrink">
+            <Wordmark height={28} />
           </Link>
-          <span className="rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
+          <span className="shrink-0 rounded-full bg-brand px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-brand-foreground">
             Admin
           </span>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           {children}
         </main>
       </div>

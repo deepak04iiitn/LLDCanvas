@@ -91,12 +91,17 @@ function MobileMenu({
                 </Link>
               ) : (
                 <>
-                  <button
-                    onClick={() => { onClose(); onSignin() }}
-                    className="flex w-full items-center justify-center rounded-md border border-hairline-strong py-2.5 text-sm font-medium text-ink transition-colors hover:bg-hairline/40"
-                  >
-                    Sign in
-                  </button>
+                  <div className="space-y-1.5">
+                    <button
+                      onClick={() => { onClose(); onSignin() }}
+                      className="flex w-full items-center justify-center rounded-md border border-hairline-strong py-2.5 text-sm font-medium text-ink transition-colors hover:bg-hairline/40"
+                    >
+                      Sign in
+                    </button>
+                    <p className="text-center text-[11px] leading-snug text-ink-muted">
+                      Sign in to unlock all features
+                    </p>
+                  </div>
                   <button
                     onClick={() => { onClose(); onSignup() }}
                     className="flex w-full items-center justify-center rounded-md bg-brand py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-hover"
@@ -155,9 +160,21 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
             </Link>
           ) : (
             <>
-              <button onClick={openSignin} className="px-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink">
-                Sign in
-              </button>
+              <div className="relative">
+                <button
+                  onClick={openSignin}
+                  className="px-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
+                >
+                  Sign in
+                </button>
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm"
+                >
+                  Sign in to unlock all features
+                  <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-ink" aria-hidden />
+                </span>
+              </div>
               <button onClick={openSignup} className="rounded-md border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
                 Get started
               </button>

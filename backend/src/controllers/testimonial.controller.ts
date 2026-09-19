@@ -103,6 +103,25 @@ export async function deleteTestimonial(req: Request, res: Response): Promise<vo
   }
 }
 
+export async function bulkDeleteTestimonials(req: Request, res: Response): Promise<void> {
+  try {
+    const raw = req.body?.ids
+    if (!Array.isArray(raw) || raw.length === 0) {
+      res.status(400).json({ error: 'ids must be a non-empty array' })
+      return
+    }
+    const ids = [...new Set(raw.filter((id: unknown): id is string => typeof id === 'string' && !!id.trim()))]
+    if (ids.length > 200) {
+      res.status(400).json({ error: 'Cannot delete more than 200 items at once' })
+      return
+    }
+    const result = await Testimonial.deleteMany({ _id: { $in: ids } })
+    res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+  } catch {
+    res.status(500).json({ error: 'Failed to delete testimonial' })
+  }
+}
+
 // ─── Admin: stats ─────────────────────────────────────────────────────────────
 
 export async function testimonialStats(_req: Request, res: Response): Promise<void> {

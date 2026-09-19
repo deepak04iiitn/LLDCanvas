@@ -32,6 +32,22 @@ function daysAgo(n: number) {
   return d
 }
 
+/** Parse and validate a bulk-delete `ids` body. Caps at 200. */
+function parseBulkIds(body: unknown): string[] {
+  const raw = (body as { ids?: unknown })?.ids
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw createError('ids must be a non-empty array', 400)
+  }
+  const ids = [...new Set(
+    raw
+      .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+      .map(id => id.trim()),
+  )]
+  if (ids.length === 0) throw createError('ids must be a non-empty array', 400)
+  if (ids.length > 200) throw createError('Cannot delete more than 200 items at once', 400)
+  return ids
+}
+
 // True MRR — the normalized monthly value of every currently-active paid
 // subscription (yearly plans divided by 12), not "cash collected this
 // calendar month" (which spikes on yearly renewals and says nothing about
@@ -317,6 +333,26 @@ export const adminController = {
     }
   },
 
+  bulkDeleteUsers: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const users = await User.find({ _id: { $in: ids }, isAdmin: { $ne: true } }).select('_id')
+      const deletable = users.map(u => u._id.toString())
+      if (deletable.length === 0) {
+        res.json({ ok: true, deleted: 0, skipped: ids.length })
+        return
+      }
+      await Promise.all([
+        User.deleteMany({ _id: { $in: deletable } }),
+        Diagram.deleteMany({ userId: { $in: deletable } }),
+        InterviewSession.deleteMany({ userId: { $in: deletable } }),
+      ])
+      res.json({ ok: true, deleted: deletable.length, skipped: ids.length - deletable.length })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   // ─── Diagrams ───────────────────────────────────────────────────────────────
 
   listDiagrams: async (req: Request, res: Response, next: NextFunction) => {
@@ -369,6 +405,16 @@ export const adminController = {
       if (!diagram) throw createError('Diagram not found', 404)
       await diagram.deleteOne()
       res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  bulkDeleteDiagrams: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await Diagram.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
     } catch (err) {
       next(err)
     }
@@ -429,6 +475,16 @@ export const adminController = {
       if (!session) throw createError('Session not found', 404)
       await session.deleteOne()
       res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  bulkDeleteSessions: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await InterviewSession.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
     } catch (err) {
       next(err)
     }
@@ -659,6 +715,16 @@ export const adminController = {
     }
   },
 
+  bulkDeleteProblems: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await Problem.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   // ─── Revision notes management ───────────────────────────────────────────────
 
   listRevisionNotes: async (req: Request, res: Response, next: NextFunction) => {
@@ -783,6 +849,16 @@ export const adminController = {
     }
   },
 
+  bulkDeleteRevisionNotes: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await RevisionNote.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   // ─── Collaboration management ────────────────────────────────────────────────
 
   listCollabInvites: async (req: Request, res: Response, next: NextFunction) => {
@@ -822,6 +898,16 @@ export const adminController = {
     }
   },
 
+  bulkDeleteCollabInvites: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await CollabInvite.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+    } catch (err) {
+      next(err)
+    }
+  },
+
   listComments: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const page  = Math.max(1, Number(req.query.page) || 1)
@@ -853,6 +939,16 @@ export const adminController = {
       if (!comment) throw createError('Comment not found', 404)
       await comment.deleteOne()
       res.json({ ok: true })
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  bulkDeleteComments: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await Comment.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
     } catch (err) {
       next(err)
     }
@@ -981,6 +1077,14 @@ export const adminController = {
     } catch (err) { next(err) }
   },
 
+  bulkDeleteCodeExecutions: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await CodeExecutionLog.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
+    } catch (err) { next(err) }
+  },
+
   // GET /admin/code/executions/:userId/daily  — per-user daily breakdown
   getUserCodeDaily: async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1041,6 +1145,14 @@ export const adminController = {
       }))
 
       res.json({ bans: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
+    } catch (err) { next(err) }
+  },
+
+  bulkDeleteCodeBans: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const result = await CodeBan.deleteMany({ _id: { $in: ids } })
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
     } catch (err) { next(err) }
   },
 
@@ -1259,6 +1371,34 @@ export const adminController = {
       await User.findByIdAndUpdate(sub.userId, { plan: 'free' })
 
       res.json({ ok: true, userId: sub.userId })
+    } catch (err) { next(err) }
+  },
+
+  // POST /admin/billing/subscriptions/bulk-delete — remove subscription records
+  bulkDeleteSubscriptions: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const ids = parseBulkIds(req.body)
+      const subs = await Subscription.find({ _id: { $in: ids } }).select('_id userId status').lean()
+      if (subs.length === 0) {
+        res.json({ ok: true, deleted: 0 })
+        return
+      }
+      const userIds = [...new Set(subs.map(s => s.userId.toString()))]
+      const result = await Subscription.deleteMany({ _id: { $in: ids } })
+
+      // Downgrade users who no longer have an active paid subscription
+      for (const userId of userIds) {
+        const stillActive = await Subscription.exists({
+          userId,
+          status: 'active',
+          plan: { $in: ['pro', 'ultimate'] },
+        })
+        if (!stillActive) {
+          await User.findByIdAndUpdate(userId, { plan: 'free' })
+        }
+      }
+
+      res.json({ ok: true, deleted: result.deletedCount ?? 0 })
     } catch (err) { next(err) }
   },
 

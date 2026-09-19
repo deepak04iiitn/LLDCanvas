@@ -1,14 +1,19 @@
 ﻿'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   CreditCard, Search, ChevronLeft, ChevronRight, Users, Rocket, Crown, Zap,
   AlertTriangle, X, Check, Globe, Loader2, UserCircle2, CalendarRange, Wallet, StickyNote,
+  Trash2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { adminApi, type AdminSubscription, type AdminUser } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 const PLAN_BADGE: Record<string, string> = {
   free:     'bg-paper border border-hairline text-ink-muted',
@@ -76,6 +81,11 @@ export default function AdminSubscriptionsPage() {
   const [manualOpen, setManualOpen] = useState(false)
   const [manualForm, setManualForm] = useState<ManualOnboardForm>(EMPTY_MANUAL_FORM)
   const [manualLoading, setManualLoading] = useState(false)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  const pageIds = useMemo(() => subs.map(s => s._id), [subs])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -110,6 +120,19 @@ export default function AdminSubscriptionsPage() {
       load()
     } catch { /* ignore */ }
     setActionLoading(false)
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.billing.bulkDeleteSubscriptions(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} subscription${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load()
+    } catch (e) { toast.error(e instanceof Error ? e.message : 'Failed') }
+    finally { setBulkLoading(false) }
   }
 
   // Debounced user search for the manual-onboard picker
@@ -157,9 +180,9 @@ export default function AdminSubscriptionsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-hairline bg-paper-elevated">
             <CreditCard className="h-4 w-4 text-brand" />
@@ -171,7 +194,7 @@ export default function AdminSubscriptionsPage() {
         </div>
         <button
           onClick={openManualOnboard}
-          className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground transition-colors hover:bg-brand-hover"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground transition-colors hover:bg-brand-hover sm:w-auto"
         >
           <Globe className="h-3.5 w-3.5" /> Manually onboard
         </button>
@@ -212,110 +235,139 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-hairline bg-paper overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-hairline bg-paper-elevated">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">User</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Plan</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Billing</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Started</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Period End</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={7} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
-            ) : subs.length === 0 ? (
-              <tr><td colSpan={7} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
-            ) : subs.map((s, i) => {
-              const PIcon = PLAN_ICON[s.plan as keyof typeof PLAN_ICON] ?? Zap
-              return (
-                <motion.tr
-                  key={s._id}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="border-b border-hairline/50 last:border-0 hover:bg-paper-elevated/50"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-medium text-ink">{s.userName}</p>
-                      {s.paymentSource === 'manual' && (
-                        <span
-                          title={s.onboardingNote || 'Manually onboarded'}
-                          className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-indigo-600"
-                        >
-                          <Globe className="h-2.5 w-2.5" /> manual · {s.currency}
-                        </span>
-                      )}
-                      {s.paymentSource === 'dodo' && (
-                        <span
-                          title="Dodo Payments (international)"
-                          className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-violet-700"
-                        >
-                          <Globe className="h-2.5 w-2.5" /> dodo · {s.currency}
-                        </span>
-                      )}
-                      {s.paymentSource === 'razorpay' && (
-                        <span
-                          title="Razorpay (India)"
-                          className="rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-emerald-700"
-                        >
-                          razorpay
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-muted">{s.userEmail}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium', PLAN_BADGE[s.plan])}>
-                      <PIcon className="h-3 w-3" /> {s.plan}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_BADGE[s.status] ?? STATUS_BADGE.expired)}>
-                      {s.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-ink-muted capitalize">{s.billingInterval}</td>
-                  <td className="px-4 py-3 text-xs text-ink-muted" title={new Date(s.createdAt).toLocaleString()}>
-                    {new Date(s.createdAt).toLocaleDateString()}
-                    {s.currentPeriodStart && (
-                      <p className="text-[11px] text-ink-faint">
-                        billing since {new Date(s.currentPeriodStart).toLocaleDateString()}
-                      </p>
+      <div className="space-y-3">
+        <BulkActionBar
+          count={selection.count}
+          onClear={selection.clear}
+          onDelete={() => setBulkConfirm(true)}
+          loading={bulkLoading}
+          label={selection.count === 1 ? 'subscription selected' : 'subscriptions selected'}
+        />
+        <div className="overflow-hidden rounded-xl border border-hairline bg-paper">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px] text-sm">
+            <thead>
+              <tr className="border-b border-hairline bg-paper-elevated">
+                <th className="w-10 px-4 py-3">
+                  <SelectCheckbox
+                    checked={selection.allPageSelected}
+                    indeterminate={selection.somePageSelected}
+                    onChange={selection.togglePage}
+                    title="Select all on page"
+                    disabled={loading || subs.length === 0}
+                  />
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">User</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Plan</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Billing</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Started</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Period End</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={8} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
+              ) : subs.length === 0 ? (
+                <tr><td colSpan={8} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
+              ) : subs.map((s, i) => {
+                const PIcon = PLAN_ICON[s.plan as keyof typeof PLAN_ICON] ?? Zap
+                return (
+                  <motion.tr
+                    key={s._id}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className={cn(
+                      'border-b border-hairline/50 last:border-0 hover:bg-paper-elevated/50',
+                      selection.isSelected(s._id) && 'bg-brand-tint/40',
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-ink-muted">
-                    {s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString() : '-'}
-                    {s.cancelAtPeriodEnd && <span className="ml-1 text-amber-500">(cancelling)</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setOverrideModal({ sub: s, plan: s.plan })}
-                        className="rounded-md border border-hairline px-2 py-1 text-xs font-medium text-ink-muted hover:bg-paper-elevated transition-colors"
-                      >
-                        Override plan
-                      </button>
-                      {!TERMINAL_STATUSES.has(s.status) && (
-                        <button
-                          onClick={() => setCancelConfirm(s)}
-                          className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
+                  >
+                    <td className="px-4 py-3">
+                      <SelectCheckbox
+                        checked={selection.isSelected(s._id)}
+                        onChange={() => selection.toggle(s._id)}
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-medium text-ink">{s.userName}</p>
+                        {s.paymentSource === 'manual' && (
+                          <span
+                            title={s.onboardingNote || 'Manually onboarded'}
+                            className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-indigo-600"
+                          >
+                            <Globe className="h-2.5 w-2.5" /> manual · {s.currency}
+                          </span>
+                        )}
+                        {s.paymentSource === 'dodo' && (
+                          <span
+                            title="Dodo Payments (international)"
+                            className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-violet-700"
+                          >
+                            <Globe className="h-2.5 w-2.5" /> dodo · {s.currency}
+                          </span>
+                        )}
+                        {s.paymentSource === 'razorpay' && (
+                          <span
+                            title="Razorpay (India)"
+                            className="rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-emerald-700"
+                          >
+                            razorpay
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-ink-muted">{s.userEmail}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium', PLAN_BADGE[s.plan])}>
+                        <PIcon className="h-3 w-3" /> {s.plan}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_BADGE[s.status] ?? STATUS_BADGE.expired)}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-ink-muted capitalize">{s.billingInterval}</td>
+                    <td className="px-4 py-3 text-xs text-ink-muted" title={new Date(s.createdAt).toLocaleString()}>
+                      {new Date(s.createdAt).toLocaleDateString()}
+                      {s.currentPeriodStart && (
+                        <p className="text-[11px] text-ink-faint">
+                          billing since {new Date(s.currentPeriodStart).toLocaleDateString()}
+                        </p>
                       )}
-                    </div>
-                  </td>
-                </motion.tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-ink-muted">
+                      {s.currentPeriodEnd ? new Date(s.currentPeriodEnd).toLocaleDateString() : '-'}
+                      {s.cancelAtPeriodEnd && <span className="ml-1 text-amber-500">(cancelling)</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setOverrideModal({ sub: s, plan: s.plan })}
+                          className="rounded-md border border-hairline px-2 py-1 text-xs font-medium text-ink-muted hover:bg-paper-elevated transition-colors"
+                        >
+                          Override plan
+                        </button>
+                        {!TERMINAL_STATUSES.has(s.status) && (
+                          <button
+                            onClick={() => setCancelConfirm(s)}
+                            className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                )
+              })}
+            </tbody>
+          </table>
+          </div>
+        </div>
       </div>
 
       {/* Pagination */}
@@ -337,7 +389,7 @@ export default function AdminSubscriptionsPage() {
 
       {/* Override plan modal */}
       {overrideModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -374,31 +426,34 @@ export default function AdminSubscriptionsPage() {
       )}
 
       {/* Cancel confirmation modal */}
-      {cancelConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm rounded-2xl border border-hairline bg-paper p-6 shadow-xl"
-          >
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-50">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-            </div>
-            <h3 className="mb-1 font-semibold text-ink">Cancel subscription?</h3>
-            <p className="mb-4 text-sm text-ink-muted">
-              This will immediately cancel <strong>{cancelConfirm.userName}</strong>&apos;s subscription and downgrade them to Free.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setCancelConfirm(null)} className="flex-1 rounded-xl border border-hairline py-2 text-sm font-medium text-ink-muted hover:bg-paper-elevated transition-colors">
-                Keep
-              </button>
-              <button onClick={handleCancel} disabled={actionLoading} className="flex-1 rounded-xl bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors disabled:opacity-60">
-                Cancel subscription
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!cancelConfirm}
+        onClose={() => setCancelConfirm(null)}
+        onConfirm={handleCancel}
+        title="Cancel subscription?"
+        description={
+          <>
+            This will immediately cancel <span className="font-semibold text-ink">{cancelConfirm?.userName}</span>&apos;s
+            subscription and downgrade them to Free.
+          </>
+        }
+        confirmLabel="Cancel subscription"
+        cancelLabel="Keep"
+        loading={actionLoading}
+        icon={AlertTriangle}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} subscription${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected subscription records. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
+
       {/* Manual onboard - sliding right panel */}
       <Sheet open={manualOpen} onOpenChange={setManualOpen}>
         <SheetContent

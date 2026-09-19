@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Rss, Plus, Search, RefreshCw, Eye, ThumbsUp, ThumbsDown,
@@ -20,6 +20,9 @@ import {
 import { cn } from '@/lib/utils'
 import { BlogBlocks } from '@/components/blog/BlogBlocks'
 import { type BlogBlock, BLOG_BLOCK_TYPES } from '@/lib/blog-blocks'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 // ─── Shared style constants ───────────────────────────────────────────────────
 
@@ -290,6 +293,7 @@ function BlogDrawer({
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [tab, setTab] = useState<'content' | 'preview' | 'seo' | 'meta'>('content')
   const tagsRef = useRef<HTMLInputElement>(null)
   const kwRef   = useRef<HTMLInputElement>(null)
@@ -323,12 +327,12 @@ function BlogDrawer({
 
   async function handleDelete() {
     if (!blog) return
-    if (!confirm('Delete this blog post? This cannot be undone.')) return
     setDeleting(true)
     try {
       await adminApi.blog.delete(blog._id)
       onDelete?.(blog._id)
       toast.success('Blog deleted')
+      setConfirmDelete(false)
       onClose()
     } catch {
       toast.error('Failed to delete')
@@ -364,7 +368,7 @@ function BlogDrawer({
       className="fixed right-0 top-0 z-50 flex h-full w-160 max-w-full flex-col border-l border-hairline bg-paper shadow-2xl"
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 ring-1 ring-brand/20">
             <Rss className="h-4.5 w-4.5 text-brand" style={{ height: 18, width: 18 }} />
@@ -419,7 +423,7 @@ function BlogDrawer({
                   className={IB}
                 />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Slug">
                   <input
                     value={form.slug ?? ''}
@@ -480,7 +484,7 @@ function BlogDrawer({
             </Field>
 
             {/* Cover image */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Cover Image URL">
                 <input
                   value={form.coverImage ?? ''}
@@ -588,7 +592,7 @@ function BlogDrawer({
         {tab === 'meta' && (
           <>
             <Field label="Status">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {(['draft', 'published', 'scheduled'] as const).map(s => {
                   const m = STATUS[s]
                   return (
@@ -627,7 +631,7 @@ function BlogDrawer({
             {/* Author */}
             <div className="space-y-3 rounded-xl border border-hairline p-4">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Author</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label="Name">
                   <input
                     value={form.author?.name ?? ''}
@@ -659,18 +663,18 @@ function BlogDrawer({
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-hairline bg-paper-elevated px-6 py-4 flex gap-3">
+      <div className="flex shrink-0 flex-wrap gap-3 border-t border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <button
           onClick={save}
           disabled={saving}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50 transition-colors"
+          className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand/90 disabled:opacity-50 transition-colors"
         >
           {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {isNew ? 'Create Blog' : 'Save Changes'}
         </button>
         {!isNew && (
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmDelete(true)}
             disabled={deleting}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
           >
@@ -681,6 +685,22 @@ function BlogDrawer({
           Cancel
         </button>
       </div>
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={handleDelete}
+        title="Delete blog post?"
+        description={
+          <>
+            Delete <span className="font-semibold text-ink">&ldquo;{blog?.title || form.title}&rdquo;</span>?
+            This cannot be undone.
+          </>
+        }
+        confirmLabel="Delete post"
+        loading={deleting}
+        icon={Trash2}
+      />
     </motion.div>
   )
 }
@@ -710,6 +730,11 @@ export default function AdminBlogPage() {
   const [drawerOpen,   setDrawerOpen]   = useState(false)
   const [editBlog,     setEditBlog]     = useState<AdminBlogDetail | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [bulkConfirm,  setBulkConfirm]  = useState(false)
+  const [bulkLoading,  setBulkLoading]  = useState(false)
+
+  const pageIds = useMemo(() => blogs.map(b => b._id), [blogs])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -800,6 +825,23 @@ export default function AdminBlogPage() {
   function handleDeleted(id: string) {
     setBlogs(prev => prev.filter(b => b._id !== id))
     setTotal(t => t - 1)
+    selection.clear()
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.blog.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} post${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBulkLoading(false)
+    }
   }
 
   const FILTERS = [
@@ -813,19 +855,19 @@ export default function AdminBlogPage() {
     <div className="flex h-full flex-col overflow-hidden">
 
       {/* Header */}
-      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-6 pt-5 pb-4">
-        <div className="flex items-center justify-between">
+      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 pt-5 pb-4 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-ink">Blog Management</h1>
             <p className="mt-0.5 text-xs text-ink-faint">Create, edit, publish, and analyze blog posts</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => load(1)} className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <button onClick={() => load(1)} className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors sm:flex-none">
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </button>
             <button
               onClick={openNew}
-              className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90 transition-colors"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand/90 transition-colors sm:flex-none"
             >
               <Plus className="h-3.5 w-3.5" /> New Blog
             </button>
@@ -833,7 +875,7 @@ export default function AdminBlogPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
 
         {/* Analytics cards */}
         {analytics && (
@@ -874,7 +916,7 @@ export default function AdminBlogPage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-48">
+          <div className="relative w-full flex-1 sm:min-w-48">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
             <input
               value={search}
@@ -883,8 +925,8 @@ export default function AdminBlogPage() {
               className="w-full rounded-lg border border-hairline bg-paper py-2 pl-8 pr-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10"
             />
           </div>
-          <div className="flex gap-1.5">
-            <Filter className="h-4 w-4 text-ink-faint self-center" />
+          <div className="flex w-full flex-wrap gap-1.5 sm:w-auto">
+            <Filter className="h-4 w-4 self-center text-ink-faint" />
             {FILTERS.map(f => (
               <button
                 key={f.value}
@@ -917,31 +959,56 @@ export default function AdminBlogPage() {
           </div>
         ) : (
           <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <SelectCheckbox
+                checked={selection.allPageSelected}
+                indeterminate={selection.somePageSelected}
+                onChange={selection.togglePage}
+                title="Select all on page"
+              />
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+                Select all on page
+              </span>
+            </div>
+            <BulkActionBar
+              count={selection.count}
+              onClear={selection.clear}
+              onDelete={() => setBulkConfirm(true)}
+              loading={bulkLoading}
+              label={selection.count === 1 ? 'post selected' : 'posts selected'}
+            />
             {blogs.map(blog => (
               <motion.div
                 key={blog._id}
                 layout
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="group flex items-center gap-4 rounded-2xl border border-hairline bg-white px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className={cn(
+                  'group flex flex-col gap-3 rounded-2xl border border-hairline bg-white px-5 py-4 transition-all hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:gap-4',
+                  selection.isSelected(blog._id) && 'bg-brand-tint/40',
+                )}
               >
+                <SelectCheckbox
+                  checked={selection.isSelected(blog._id)}
+                  onChange={() => selection.toggle(blog._id)}
+                />
                 {/* Status indicator */}
                 <div className={cn(
-                  'h-2 w-2 shrink-0 rounded-full',
+                  'hidden h-2 w-2 shrink-0 rounded-full sm:block',
                   blog.status === 'published' ? 'bg-emerald-400' : blog.status === 'scheduled' ? 'bg-blue-400' : 'bg-amber-400',
                 )} />
 
                 {/* Main content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-ink truncate">{blog.title}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-ink">{blog.title}</p>
                     {blog.isFeatured && (
                       <span className="flex items-center gap-0.5 rounded-full bg-brand/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand">
                         <Star className="h-2 w-2" /> Featured
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex items-center gap-3 flex-wrap">
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
                     <StatusBadge status={blog.status} />
                     {blog.category && (
                       <span className="flex items-center gap-0.5 text-[10px] text-ink-faint">
@@ -962,7 +1029,7 @@ export default function AdminBlogPage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
                   <a
                     href={`/blog/${blog.slug}`}
                     target="_blank"
@@ -1050,6 +1117,17 @@ export default function AdminBlogPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} post${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected blog posts. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }

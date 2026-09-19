@@ -130,9 +130,9 @@ export default function AdminOverviewPage() {
 
   if (loading || !stats || !charts) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 p-4 sm:p-6">
         <Skeleton className="h-8 w-48" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           {Array.from({ length: 12 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
@@ -152,17 +152,17 @@ export default function AdminOverviewPage() {
   ] : []
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 sm:p-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-serif text-2xl font-medium text-ink">Platform Overview</h1>
           <p className="mt-0.5 text-sm text-ink-faint">Real-time and 30-day metrics across all users.</p>
         </div>
         <button
           onClick={() => { loadOverview(); loadLive() }}
-          className="flex items-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline"
+          className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-md border border-hairline-strong px-3 py-2 text-sm text-ink-muted transition-all hover:bg-hairline"
         >
           <RefreshCw className="h-3.5 w-3.5" /> Refresh
         </button>
@@ -170,25 +170,25 @@ export default function AdminOverviewPage() {
 
       {/* ── Live / Behavioural section ────────────────────────────────────────── */}
       <div>
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <Radio className="h-4 w-4 animate-pulse text-brand" />
           <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
             Live &amp; Engagement Metrics
           </h2>
           {!liveLoading && (
-            <span className="ml-auto font-mono text-[10px] text-ink-faint">
+            <span className="ml-auto hidden sm:inline font-mono text-[10px] text-ink-faint">
               auto-refreshes every 30 s
             </span>
           )}
         </div>
 
         {liveLoading && !live ? (
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-24" />)}
           </div>
         ) : live ? (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               <StatCard label="Live users"         value={live.live}                               Icon={Radio}        live sub="online right now" />
               <StatCard label="DAU"                value={live.dau.toLocaleString()}               Icon={Activity}     sub="unique visitors today" />
               <StatCard label="WAU"                value={live.wau.toLocaleString()}               Icon={TrendingUp}   sub="unique visitors this week" />
@@ -275,7 +275,7 @@ export default function AdminOverviewPage() {
             Platform Stats
           </h2>
         </div>
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
           <StatCard label="Total users"    value={stats.totalUsers.toLocaleString()}          Icon={Users}         sub={`${stats.newToday} joined today`} />
           <StatCard label="Active today"   value={stats.activeToday.toLocaleString()}         Icon={Activity}      sub={`${stats.newThisWeek} new this week`} />
           <StatCard label="Total UML diagrams" value={stats.totalDiagrams.toLocaleString()}       Icon={FileText}      sub={`${stats.newDiagramsToday} created today`} />
@@ -392,7 +392,7 @@ export default function AdminOverviewPage() {
             </div>
 
             {/* Problems & Solutions */}
-            <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               <StatCard label="Practice Problems"  value={featureStats.problems.active}               Icon={BookOpen}          sub={`${featureStats.problems.inactive} inactive`} />
               <StatCard label="Total Solutions"    value={featureStats.solutions.total.toLocaleString()} Icon={Trophy}          sub={`${featureStats.solutions.submitted} submitted`} />
               <StatCard label="Revision Notes"     value={featureStats.revision.activeNotes}          Icon={Layers}            sub={`${featureStats.revision.totalRevisions} revisions done`} />
@@ -400,7 +400,7 @@ export default function AdminOverviewPage() {
             </div>
 
             {/* Collaboration & Sharing */}
-            <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
               <StatCard label="Active Collabs"     value={featureStats.collab.accepted}               Icon={UserCheck}         sub={`${featureStats.collab.pending} pending invites`} />
               <StatCard label="Discussions"        value={featureStats.collab.totalComments}          Icon={MessageSquareText} sub={`${featureStats.collab.resolvedComments} resolved`} />
               <StatCard label="Shared Diagrams"    value={featureStats.sharing.totalShared}           Icon={Share2}            sub={`${featureStats.sharing.public} public`} />
@@ -409,7 +409,7 @@ export default function AdminOverviewPage() {
 
             {/* Code Execution */}
             {codeStats && (
-              <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
                 <StatCard label="Total Code Runs"   value={codeStats.totalRuns.toLocaleString()}  Icon={Terminal}       sub="all time" />
                 <StatCard label="Today's Runs"      value={codeStats.todayRuns}                   Icon={TrendingUp}     sub={`${codeStats.todaySuccess} successful`} accent />
                 <StatCard label="Success Rate"      value={`${codeStats.successRate}%`}           Icon={CheckCircle}    sub={`${codeStats.errorRuns} errors total`} />
@@ -419,7 +419,7 @@ export default function AdminOverviewPage() {
 
             {/* Billing & Subscriptions */}
             {billingOverview && (
-              <div className="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4 lg:grid-cols-4">
                 <StatCard label="Active Subs"     value={billingOverview.activeSubscriptions}                               Icon={CreditCard}    sub="paying subscribers" accent />
                 <StatCard label="MRR (This Month)" value={`₹${billingOverview.mrr.toLocaleString('en-IN')}`}               Icon={IndianRupee}   sub="monthly recurring" />
                 <StatCard label="Pro Users"        value={billingOverview.planDistribution['pro']      ?? 0}                Icon={Rocket}      sub="on Pro plan" />

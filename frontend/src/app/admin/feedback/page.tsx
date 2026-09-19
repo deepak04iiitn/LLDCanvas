@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bug, Lightbulb, TrendingUp, Wrench, Search, RefreshCw,
@@ -13,6 +13,9 @@ import { formatDistanceToNow, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import { adminApi, type AdminFeedback, type FeedbackStatus, type FeedbackPriority } from '@/lib/admin-api'
 import { cn } from '@/lib/utils'
+import { ConfirmModal } from '@/components/admin/ConfirmModal'
+import { BulkActionBar, SelectCheckbox } from '@/components/admin/BulkActionBar'
+import { useRowSelection } from '@/components/admin/useRowSelection'
 
 // ─── Meta maps ────────────────────────────────────────────────────────────────
 
@@ -136,7 +139,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
       className="fixed right-0 top-0 z-50 flex h-full w-[480px] max-w-full flex-col border-l border-hairline bg-paper shadow-2xl"
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <div className="flex items-center gap-3">
           <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl ring-1', typeMeta.bg, typeMeta.ring)}>
             <typeMeta.Icon className={cn('h-4.5 w-4.5', typeMeta.color)} style={{ height: 18, width: 18 }} />
@@ -151,7 +154,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
         </button>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-6">
+      <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
         {/* Submitter */}
         <div className="rounded-xl border border-hairline bg-paper-elevated p-4 space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Submitter</p>
@@ -184,7 +187,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
         </div>
 
         {/* Controls */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-faint">Status</label>
             <select
@@ -227,7 +230,7 @@ function DetailDrawer({ item, onClose, onUpdate }: {
       </div>
 
       {/* Footer actions */}
-      <div className="shrink-0 border-t border-hairline bg-paper-elevated px-6 py-4 flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3 border-t border-hairline bg-paper-elevated px-4 py-4 sm:px-6">
         <button
           onClick={save}
           disabled={saving}
@@ -274,6 +277,12 @@ export default function AdminFeedbackPage() {
   // Detail
   const [selected, setSelected] = useState<AdminFeedback | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<AdminFeedback | null>(null)
+  const [bulkConfirm, setBulkConfirm] = useState(false)
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  const pageIds = useMemo(() => items.map(item => item._id), [items])
+  const selection = useRowSelection(pageIds)
 
   const load = useCallback(async (p = 1) => {
     setLoading(true)
@@ -296,18 +305,38 @@ export default function AdminFeedbackPage() {
 
   useEffect(() => { load(1) }, [load])
 
-  async function handleDelete(id: string) {
+  async function handleDelete() {
+    if (!deleteTarget) return
+    const id = deleteTarget._id
     setDeleting(id)
     try {
       await adminApi.feedback.delete(id)
       setItems(prev => prev.filter(i => i._id !== id))
       setTotal(t => t - 1)
       if (selected?._id === id) setSelected(null)
+      setDeleteTarget(null)
+      selection.clear()
       toast.success('Deleted')
     } catch {
       toast.error('Failed to delete')
     } finally {
       setDeleting(null)
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selection.count === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await adminApi.feedback.bulkDelete(selection.selectedIds)
+      toast.success(`Deleted ${res.deleted} item${res.deleted === 1 ? '' : 's'}`)
+      setBulkConfirm(false)
+      selection.clear()
+      load(page)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed')
+    } finally {
+      setBulkLoading(false)
     }
   }
 
@@ -320,8 +349,8 @@ export default function AdminFeedbackPage() {
     <div className="flex h-full flex-col overflow-hidden">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-6 pt-5 pb-4">
-        <div className="flex items-center justify-between">
+      <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 pt-5 pb-4 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-lg font-semibold text-ink">Feedback & Reports</h1>
             <p className="mt-0.5 text-xs text-ink-faint">
@@ -330,14 +359,14 @@ export default function AdminFeedbackPage() {
           </div>
           <button
             onClick={() => load(1)}
-            className="flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors"
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted hover:bg-hairline transition-colors sm:w-auto"
           >
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+      <div className="flex-1 space-y-6 overflow-y-auto px-4 py-6 sm:px-6">
 
         {/* ── Stats ──────────────────────────────────────────────────────── */}
         {stats && (
@@ -373,7 +402,7 @@ export default function AdminFeedbackPage() {
 
         {/* ── Filters ────────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative flex-1 min-w-48">
+          <div className="relative w-full flex-1 sm:min-w-48">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-faint" />
             <input
               value={q} onChange={e => setQ(e.target.value)}
@@ -404,6 +433,26 @@ export default function AdminFeedbackPage() {
         </div>
 
         {/* ── Table ──────────────────────────────────────────────────────── */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <SelectCheckbox
+              checked={selection.allPageSelected}
+              indeterminate={selection.somePageSelected}
+              onChange={selection.togglePage}
+              title="Select all on page"
+              disabled={loading || items.length === 0}
+            />
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+              Select all on page
+            </span>
+          </div>
+          <BulkActionBar
+            count={selection.count}
+            onClear={selection.clear}
+            onDelete={() => setBulkConfirm(true)}
+            loading={bulkLoading}
+            label={selection.count === 1 ? 'item selected' : 'items selected'}
+          />
         <div className="overflow-hidden rounded-2xl border border-hairline bg-white shadow-sm">
           {loading ? (
             <div className="space-y-px">
@@ -434,9 +483,16 @@ export default function AdminFeedbackPage() {
                     className={cn(
                       'group flex items-start gap-4 px-5 py-4 transition-colors hover:bg-brand/2 cursor-pointer',
                       selected?._id === item._id && 'bg-brand/5',
+                      selection.isSelected(item._id) && 'bg-brand-tint/40',
                     )}
                     onClick={() => setSelected(item)}
                   >
+                    <div className="mt-2" onClick={e => e.stopPropagation()}>
+                      <SelectCheckbox
+                        checked={selection.isSelected(item._id)}
+                        onChange={() => selection.toggle(item._id)}
+                      />
+                    </div>
                     {/* Type icon */}
                     <div className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1', typeMeta.bg, typeMeta.ring)}>
                       <typeMeta.Icon className={cn('h-4 w-4', typeMeta.color)} />
@@ -463,10 +519,10 @@ export default function AdminFeedbackPage() {
 
                     {/* Delete */}
                     <button
-                      onClick={e => { e.stopPropagation(); handleDelete(item._id) }}
+                      onClick={e => { e.stopPropagation(); setDeleteTarget(item) }}
                       disabled={deleting === item._id}
                       className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-ink-faint/40
-                                 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 disabled:opacity-30"
+                                 opacity-100 transition-all hover:bg-red-50 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 disabled:opacity-30"
                     >
                       {deleting === item._id
                         ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -495,6 +551,7 @@ export default function AdminFeedbackPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* ── Detail drawer ──────────────────────────────────────────────────── */}
@@ -510,6 +567,28 @@ export default function AdminFeedbackPage() {
           </>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete feedback?"
+        description="Remove this feedback item permanently? This cannot be undone."
+        confirmLabel="Delete"
+        loading={!!deleteTarget && deleting === deleteTarget._id}
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        open={bulkConfirm}
+        onClose={() => setBulkConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title={`Delete ${selection.count} item${selection.count === 1 ? '' : 's'}?`}
+        description="Permanently delete the selected feedback items. This cannot be undone."
+        confirmLabel={`Delete ${selection.count}`}
+        loading={bulkLoading}
+        icon={Trash2}
+      />
     </div>
   )
 }
