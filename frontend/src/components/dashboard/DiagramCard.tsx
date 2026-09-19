@@ -131,26 +131,29 @@ export function DiagramCard({ diagram, index = 0, onDeleted, onDuplicated, onRen
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <motion.div
-          role="button"
-          tabIndex={0}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.2) }}
-          onClick={(e) => {
-            if (renaming) e.stopPropagation()
-            else openEditor()
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !renaming) openEditor()
-          }}
-          className={cn(
-            'group flex cursor-pointer items-center gap-3.5 rounded-xl border border-transparent px-3 py-2.5 transition-all',
-            'hover:border-hairline hover:bg-paper-elevated',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20',
-          )}
-        >
+      <ContextMenuTrigger
+        render={
+          <motion.div
+            role="button"
+            tabIndex={0}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: Math.min(index * 0.025, 0.2) }}
+            onClick={(e) => {
+              if (renaming) e.stopPropagation()
+              else openEditor()
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !renaming) openEditor()
+            }}
+            className={cn(
+              'group flex cursor-pointer items-center gap-3.5 rounded-xl border border-transparent px-3 py-2.5 transition-all',
+              'hover:border-hairline hover:bg-paper-elevated',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/20',
+            )}
+          />
+        }
+      >
           {/* Thumb */}
           <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-hairline bg-paper sm:h-16 sm:w-24">
             {diagram.thumbnail ? (
@@ -225,7 +228,6 @@ export function DiagramCard({ diagram, index = 0, onDeleted, onDuplicated, onRen
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </motion.div>
       </ContextMenuTrigger>
 
       <ContextMenuContent className="w-48 rounded-xl border-hairline shadow-lg">
