@@ -250,7 +250,9 @@ export default function PricingPage() {
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
 
-  // Detect country / gateway from IP — sets default currency (user can still switch)
+  const isIntlGateway = gateway === 'dodo'
+
+  // Detect country / gateway from IP — currency is locked to region
   useEffect(() => {
     api.billing.geo()
       .then(r => {
@@ -268,12 +270,7 @@ export default function PricingPage() {
       .finally(() => setGeoReady(true))
   }, [])
 
-  function selectCurrency(next: 'INR' | 'USD') {
-    setCurrency(next)
-    setGateway(next === 'INR' ? 'razorpay' : 'dodo')
-  }
-
-  // Load Razorpay checkout script when INR / Razorpay is selected
+  // Load Razorpay checkout script (India only)
   useEffect(() => {
     if (gateway !== 'razorpay') return
     const s = document.createElement('script')
@@ -286,17 +283,18 @@ export default function PricingPage() {
   async function handleUpgrade(tier: 'pro' | 'ultimate', isYearly: boolean) {
     setLoadingTier(tier)
     try {
-      // Respect the currency the user picked; geo only fills country for checkout
+      // Re-fetch gateway at click time so we never race the initial geo default
       const geo = await api.billing.geo().catch(() => null)
+      const activeGateway = geo?.gateway ?? gateway
       const activeCountry = geo?.country ?? country
-      const activeCurrency = currency
-      const activeGateway = currency === 'INR' ? 'razorpay' : 'dodo'
+      const activeCurrency = activeGateway === 'razorpay' ? 'INR' : 'USD'
 
       if (geo) {
+        setGateway(geo.gateway)
         setCountry(geo.country)
+        setCurrency(activeCurrency)
         setGeoReady(true)
       }
-      setGateway(activeGateway)
 
       if (activeGateway === 'dodo') {
         const { checkoutUrl } = await api.billing.subscribeDodo({
@@ -361,9 +359,8 @@ export default function PricingPage() {
           </motion.p>
         </div>
 
-        {/* Toggles */}
-        <motion.div {...fadeUpProps(0.16)} className="mb-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          {/* Billing period */}
+        {/* Billing period */}
+        <motion.div {...fadeUpProps(0.16)} className="mb-10 flex justify-center">
           <div className="flex items-center gap-1 rounded-md border border-hairline bg-paper-elevated p-1">
             <button
               onClick={() => setYearly(false)}
@@ -379,35 +376,9 @@ export default function PricingPage() {
               <span className="rounded-full bg-brand-tint px-1.5 py-0.5 font-mono text-[10px] font-semibold text-brand">Save ~17%</span>
             </button>
           </div>
-
-          {/* Currency — geo sets the default; user can always switch */}
-          <div className="flex items-center gap-1 rounded-md border border-hairline bg-paper-elevated p-1">
-            <button
-              type="button"
-              onClick={() => selectCurrency('INR')}
-              aria-pressed={currency === 'INR'}
-              className={cn(
-                'rounded px-4 py-1.5 text-sm font-medium transition-colors',
-                currency === 'INR' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
-              )}
-            >
-              ₹ INR
-            </button>
-            <button
-              type="button"
-              onClick={() => selectCurrency('USD')}
-              aria-pressed={currency === 'USD'}
-              className={cn(
-                'rounded px-4 py-1.5 text-sm font-medium transition-colors',
-                currency === 'USD' ? 'bg-paper text-ink shadow-sm' : 'text-ink-muted hover:text-ink',
-              )}
-            >
-              $ USD
-            </button>
-          </div>
         </motion.div>
 
-        {geoReady && currency === 'USD' && (
+        {geoReady && isIntlGateway && (
           <motion.div
             {...fadeUpProps(0.2)}
             className="mb-8 flex justify-center px-2"
