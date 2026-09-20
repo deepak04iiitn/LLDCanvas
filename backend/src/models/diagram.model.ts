@@ -23,6 +23,10 @@ export interface IDiagram extends Document {
   // attempt — excluded from the normal "My UML Diagrams" dashboard grid.
   origin: 'manual' | 'interview'
   diagramData: DiagramData
+  /** Interactive LLD expansion fields */
+  forkParentId?: Types.ObjectId
+  publishedSlug?: string
+  replayEnabled?: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -34,6 +38,9 @@ const diagramSchema = new Schema<IDiagram>(
     thumbnail: { type: String },
     isTemplate: { type: Boolean, default: false },
     origin: { type: String, enum: ['manual', 'interview'], default: 'manual' },
+    forkParentId: { type: Schema.Types.ObjectId, ref: 'Diagram' },
+    publishedSlug: { type: String },
+    replayEnabled: { type: Boolean, default: false },
     diagramData: {
       version: { type: Number, default: 1 },
       nodes: { type: Array, default: [] },

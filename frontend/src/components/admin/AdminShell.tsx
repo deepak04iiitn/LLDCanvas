@@ -8,6 +8,7 @@ import {
   LogOut, Menu, ShieldCheck, X,
   BookOpen, Layers, MessageSquareText, Terminal,
   CreditCard, BarChart3, Bug, Quote, Rss,
+  FlaskConical, GraduationCap, Globe2,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { useSignOut } from '@/lib/auth'
@@ -26,7 +27,10 @@ const NAV: { label: string; href: string; Icon: React.ElementType; isActive: (p:
   { label: 'Revenue',      href: '/admin/revenue',       Icon: BarChart3,         isActive: (p) => p.startsWith('/admin/revenue') },
   { label: 'Feedback',      href: '/admin/feedback',      Icon: Bug,               isActive: (p) => p.startsWith('/admin/feedback'), divider: true },
   { label: 'Testimonials',  href: '/admin/testimonials',  Icon: Quote,             isActive: (p) => p.startsWith('/admin/testimonials') },
-  { label: 'Blog',          href: '/admin/blog',           Icon: Rss,               isActive: (p) => p.startsWith('/admin/blog'),           divider: true },
+  { label: 'Blog',              href: '/admin/blog',              Icon: Rss,           isActive: (p) => p.startsWith('/admin/blog'),              divider: true },
+  { label: 'Studio Packs',      href: '/admin/studio',            Icon: FlaskConical,  isActive: (p) => p.startsWith('/admin/studio') },
+  { label: 'Learn Quiz',        href: '/admin/learn/quiz',        Icon: GraduationCap, isActive: (p) => p.startsWith('/admin/learn') },
+  { label: 'Community Gallery', href: '/admin/community/gallery', Icon: Globe2,        isActive: (p) => p.startsWith('/admin/community'),        divider: true },
 ]
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

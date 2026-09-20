@@ -6,7 +6,7 @@ import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
   CreditCard, Layers, Mail, Rss,
-  Briefcase,
+  Briefcase, FlaskConical, GraduationCap, Globe2,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
@@ -17,6 +17,9 @@ import { useAuthModal } from '@/lib/auth-modal-store'
 const FEATURE_LINKS = [
   { label: 'UML Diagram Editor',        href: '/features/editor',              Icon: LayoutTemplate },
   { label: 'Draft Notation',            href: '/features/draft-notation',      Icon: PenLine        },
+  { label: 'Design Studio',             href: '/design-studio',                Icon: FlaskConical   },
+  { label: 'Learn & Practice',          href: '/learn',                        Icon: GraduationCap  },
+  { label: 'Community Gallery',         href: '/community',                    Icon: Globe2         },
   { label: 'LLD Interview Questions',   href: '/features/interview-questions',  Icon: ListChecks     },
   { label: 'LLD Interview Mode',        href: '/features/interview-mode',       Icon: Timer          },
   { label: 'Real-Time Collaboration',   href: '/features/collaboration',        Icon: Users          },

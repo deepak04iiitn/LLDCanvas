@@ -5,15 +5,22 @@ import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 
 const LINKS = [
-  { href: '/features/editor',              label: 'The Editor',          note: 'UML diagram canvas'   },
-  { href: '/features/draft-notation',      label: 'Draft Notation',      note: 'Text → diagram'   },
-  { href: '/features/interview-mode',      label: 'Interview Mode',      note: 'Timed practice'        },
-  { href: '/features/interview-questions', label: 'Interview Questions', note: '110+ problems'         },
-  { href: '/features/revision-notes',      label: 'Revision Notes',      note: 'Concept refreshers'    },
-  { href: '/features/code-execution',      label: 'Code Execution',      note: '12 languages'          },
-  { href: '/features/collaboration',       label: 'Collaboration',       note: 'Real-time sync'        },
-  { href: '/pricing',                      label: 'Pricing',             note: 'Plans & billing'       },
-  { href: '/docs',                         label: 'Docs',                note: 'Guides & API'          },
+  { href: '/features/editor',                   label: 'The Editor',               note: 'UML diagram canvas'     },
+  { href: '/features/draft-notation',           label: 'Draft Notation',           note: 'Text → diagram'         },
+  { href: '/features/interview-mode',           label: 'Interview Mode',           note: 'Timed practice'         },
+  { href: '/features/interview-questions',      label: 'Interview Questions',      note: '110+ problems'          },
+  { href: '/features/revision-notes',           label: 'Revision Notes',           note: 'Concept refreshers'     },
+  { href: '/features/code-execution',           label: 'Code Execution',           note: '12 languages'           },
+  { href: '/features/collaboration',            label: 'Collaboration',            note: 'Real-time sync'         },
+  { href: '/features/design-debugger',          label: 'Design Debugger',          note: 'Spot design flaws'      },
+  { href: '/features/design-score',             label: 'Design Score',             note: 'Heuristic feedback'     },
+  { href: '/features/daily-lld-quiz',           label: 'Daily LLD Quiz',           note: 'Stay sharp daily'       },
+  { href: '/features/design-gallery',           label: 'Design Gallery',           note: 'Community designs'      },
+  { href: '/features/architecture-microscope',  label: 'Architecture Microscope',  note: 'Inspect a class'        },
+  { href: '/features/uml-diff',                 label: 'UML Diff',                 note: 'Structural before/after'},
+  { href: '/features/dependency-web',           label: 'Dependency Web',           note: 'Couplings & cycles'     },
+  { href: '/pricing',                           label: 'Pricing',                  note: 'Plans & billing'        },
+  { href: '/docs',                              label: 'Docs',                     note: 'Guides & API'           },
 ]
 
 // Rendered near the bottom of every /features/** page - every page links to

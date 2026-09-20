@@ -28,6 +28,13 @@ import testimonialRouter   from './routes/testimonial.route'
 import publicRouter        from './routes/public.route'
 import blogRouter          from './routes/blog.route'
 import patternRouter       from './routes/pattern.route'
+import artifactRouter      from './routes/artifact.route'
+import studioRouter        from './routes/studio.route'
+import learnRouter         from './routes/learn.route'
+import communityRouter     from './routes/community.route'
+import adminStudioRouter   from './routes/admin/studio.route'
+import adminLearnRouter    from './routes/admin/learn.route'
+import adminCommunityRouter from './routes/admin/community.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 
 const app    = express()
@@ -110,6 +117,13 @@ app.use('/billing',         billingRouter)
 app.use('/feedback',        feedbackRouter)
 app.use('/testimonials',    testimonialRouter)
 app.use('/blog',            blogRouter)
+app.use('/artifacts',       artifactRouter)
+app.use('/studio',          studioRouter)
+app.use('/learn',           learnRouter)
+app.use('/community',       communityRouter)
+app.use('/admin/studio',    adminStudioRouter)
+app.use('/admin/learn',     adminLearnRouter)
+app.use('/admin/community', adminCommunityRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)

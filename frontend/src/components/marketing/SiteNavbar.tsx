@@ -11,11 +11,14 @@ import { cn } from '@/lib/utils'
 import { ChevronRight, Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
-  { label: 'Features',   href: '/features' },
-  { label: 'Blogs',      href: '/blog' },
-  { label: 'Playground', href: '/playground' },
-  { label: 'Pricing',    href: '/pricing' },
-  { label: 'Docs',       href: '/docs' },
+  { label: 'Features',       href: '/features' },
+  { label: 'Design Studio',  href: '/design-studio' },
+  { label: 'Learn',          href: '/learn' },
+  { label: 'Community',      href: '/community' },
+  { label: 'Blogs',          href: '/blog' },
+  { label: 'Playground',     href: '/playground' },
+  { label: 'Pricing',        href: '/pricing' },
+  { label: 'Docs',           href: '/docs' },
 ]
 
 
@@ -144,9 +147,9 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
         </Link>
 
         {/* Desktop links */}
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-5 xl:gap-7 lg:flex">
           {NAV_LINKS.map(l => (
-            <a key={l.href} href={l.href} className="text-sm text-ink-muted transition-colors duration-150 hover:text-ink">
+            <a key={l.href} href={l.href} className="whitespace-nowrap text-sm text-ink-muted transition-colors duration-150 hover:text-ink">
               {l.label}
             </a>
           ))}

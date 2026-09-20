@@ -488,6 +488,104 @@ export const adminApi = {
     deleteComment: (id: string) =>
       req<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
   },
+
+  studio: {
+    listPacks: (type?: ChallengePackType) => {
+      const qs = new URLSearchParams()
+      if (type) qs.set('type', type)
+      const q = qs.toString()
+      return req<{ packs: AdminChallengePack[] }>(`/studio/packs${q ? `?${q}` : ''}`)
+    },
+    createPack: (body: Partial<AdminChallengePack> & { type: ChallengePackType; slug: string; title: string }) =>
+      req<AdminChallengePack>('/studio/packs', { method: 'POST', body: JSON.stringify(body) }),
+    updatePack: (id: string, body: Partial<AdminChallengePack>) =>
+      req<AdminChallengePack>(`/studio/packs/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deletePack: (id: string) =>
+      req<{ ok: boolean }>(`/studio/packs/${id}`, { method: 'DELETE' }),
+    publishPack: (id: string) =>
+      req<AdminChallengePack>(`/studio/packs/${id}/publish`, { method: 'POST' }),
+    bulkDeletePacks: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/studio/packs/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+  },
+
+  learn: {
+    listQuiz: () =>
+      req<{ questions: AdminQuizQuestion[] }>('/learn/quiz'),
+    createQuiz: (body: Partial<AdminQuizQuestion> & { slug: string; prompt: string; choices: string[]; correctIndex: number }) =>
+      req<AdminQuizQuestion>('/learn/quiz', { method: 'POST', body: JSON.stringify(body) }),
+    updateQuiz: (id: string, body: Partial<AdminQuizQuestion>) =>
+      req<AdminQuizQuestion>(`/learn/quiz/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deleteQuiz: (id: string) =>
+      req<{ ok: boolean }>(`/learn/quiz/${id}`, { method: 'DELETE' }),
+  },
+
+  community: {
+    listGallery: () =>
+      req<{ designs: AdminPublishedDesign[] }>('/community/gallery'),
+    moderate: (id: string, action: GalleryModerateAction) =>
+      req<AdminPublishedDesign>(`/community/gallery/${id}/moderate`, {
+        method: 'POST',
+        body: JSON.stringify({ action }),
+      }),
+  },
+}
+
+// ─── Interactive LLD admin types ──────────────────────────────────────────────
+
+export type ChallengePackType = 'debugger' | 'refactor' | 'change_one' | 'evolution'
+export type ChallengePackStatus = 'draft' | 'published' | 'archived'
+export type GalleryModerateAction = 'feature' | 'unfeature' | 'unpublish' | 'publish'
+
+export interface AdminChallengePack {
+  _id: string
+  type: ChallengePackType
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  description: string
+  diagramSnapshot: Record<string, unknown>
+  payload: Record<string, unknown>
+  status: ChallengePackStatus
+  planMin: 'free' | 'pro' | 'ultimate'
+  problemId?: string
+  tags: string[]
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminQuizQuestion {
+  _id: string
+  slug: string
+  topic: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  prompt: string
+  choices: string[]
+  correctIndex: number
+  explanation: string
+  status: 'draft' | 'published' | 'archived'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminPublishedDesign {
+  _id: string
+  diagramId: string
+  userId: string
+  slug: string
+  title: string
+  summary: string
+  visibility: 'public' | 'unlisted' | 'private'
+  featured: boolean
+  thumbnail?: string
+  problemId?: string
+  forkParentId?: string
+  replayEnabled: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 // ─── Admin testimonial type ───────────────────────────────────────────────────
