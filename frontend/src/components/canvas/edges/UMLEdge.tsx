@@ -275,13 +275,14 @@ export function UMLEdge({
   source,
   target,
 }: EdgeProps) {
-  const edgeData = (rawData ?? {}) as Partial<UMLEdgeData>
+  const edgeData = (rawData ?? {}) as Partial<UMLEdgeData> & { hideChrome?: boolean }
   const relType: RelationshipType = edgeData.relationshipType ?? 'association'
   // 'step' → auto-elbow (legacy); everything else (undefined/'straight') → straight + manual waypoints
   const lineStyle = edgeData.lineStyle === 'step' ? 'step' : 'straight'
   const waypoints: Waypoint[] = Array.isArray(edgeData.waypoints)
     ? (edgeData.waypoints as Waypoint[])
     : []
+  const hideChrome = Boolean(edgeData.hideChrome)
 
   const { theme } = useEditor()
   const dark = theme === 'dark'
@@ -510,8 +511,8 @@ export function UMLEdge({
         />
       ))}
 
-      {/* Edge label + routing toggle — shown when selected */}
-      {selected && (
+      {/* Edge label + routing toggle — shown when selected (hidden in studio/refactor) */}
+      {selected && !hideChrome && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -554,22 +555,24 @@ export function UMLEdge({
       )}
 
       {/* Multiplicity labels */}
-      <EdgeLabelRenderer>
-        <MultiplicityLabel
-          value={edgeData.sourceMultiplicity}
-          x={srcLabelX}
-          y={srcLabelY}
-          onChange={v => updateMultiplicity('sourceMultiplicity', v)}
-          dark={dark}
-        />
-        <MultiplicityLabel
-          value={edgeData.targetMultiplicity}
-          x={tgtLabelX}
-          y={tgtLabelY}
-          onChange={v => updateMultiplicity('targetMultiplicity', v)}
-          dark={dark}
-        />
-      </EdgeLabelRenderer>
+      {!hideChrome && (
+        <EdgeLabelRenderer>
+          <MultiplicityLabel
+            value={edgeData.sourceMultiplicity}
+            x={srcLabelX}
+            y={srcLabelY}
+            onChange={v => updateMultiplicity('sourceMultiplicity', v)}
+            dark={dark}
+          />
+          <MultiplicityLabel
+            value={edgeData.targetMultiplicity}
+            x={tgtLabelX}
+            y={tgtLabelY}
+            onChange={v => updateMultiplicity('targetMultiplicity', v)}
+            dark={dark}
+          />
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }

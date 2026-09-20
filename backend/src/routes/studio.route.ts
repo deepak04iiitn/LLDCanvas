@@ -37,7 +37,19 @@ router.get('/change-one/packs', changeOneCtrl.listChangeOnePacks)
 router.post('/start', requireAuth, async (req, res, next) => {
   try {
     const type = String(req.body.type ?? 'debugger') as ChallengePackType
-    const packId = String(req.body.packId ?? '')
+    const packId = String(req.body.packId ?? req.body.slug ?? '')
+    const session = await startSession(req.user!.id, packId, type)
+    res.status(201).json(session)
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Alias: open by pack slug (resume in-progress or create). */
+router.post('/open', requireAuth, async (req, res, next) => {
+  try {
+    const type = String(req.body.type ?? 'debugger') as ChallengePackType
+    const packId = String(req.body.packId ?? req.body.slug ?? '')
     const session = await startSession(req.user!.id, packId, type)
     res.status(201).json(session)
   } catch (e) {
@@ -104,6 +116,8 @@ router.get('/debugger/:sessionId/reveal', requireAuth, debuggerCtrl.reveal)
 
 router.post('/refactor/start', requireAuth, refactorCtrl.start)
 router.get('/refactor/:sessionId', requireAuth, refactorCtrl.get)
+router.post('/refactor/:sessionId/save', requireAuth, refactorCtrl.save)
+router.post('/refactor/:sessionId/submit', requireAuth, refactorCtrl.submit)
 
 router.post('/change-one/start', requireAuth, changeOneCtrl.start)
 router.get('/change-one/:sessionId', requireAuth, changeOneCtrl.get)

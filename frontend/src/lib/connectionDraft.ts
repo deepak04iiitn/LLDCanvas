@@ -1,137 +1,148 @@
 /**
- * Module-level singleton that tracks cursor direction changes while the user
- * is dragging a new connection edge, accumulating confirmed bend waypoints.
+ * Module-level singleton that accumulates bend waypoints while the user drags
+ * a new connection. A waypoint is committed when the cursor stops moving
+ * (short stillness debounce). After each bend, the cursor must travel away
+ * before another stop can create a new breakpoint — this prevents stacked
+ * duplicate circles from hand jitter.
  *
  * Only one connection can be in-progress at a time, so module-level state
- * is safe.  Call `resetConnectionDraft()` at the start of every new drag.
+ * is safe. Call `resetConnectionDraft()` at the start of every new drag.
  */
 
 import type { Waypoint } from '@/types'
 
-// ─── Tuning parameters ─────────────────────────────────────────────────────────
+/**
+ * Stillness debounce (ms). Long enough to ignore gaps between mousemove
+ * events; short enough to feel instant when the user stops.
+ */
+const PAUSE_MS = 80
+
+/** Movement below this (flow units) still counts as "stopped". */
+const STILL_EPS = 4
 
 /**
- * Minimum distance (flow units) the cursor must travel in a new direction
- * before that change is confirmed as an intentional bend.
- * Higher = harder to create bends accidentally; lower = more responsive.
+ * After placing a bend (or starting the drag), the cursor must travel at least
+ * this far before another pause can create a breakpoint.
  */
-const MIN_TURN_DIST = 26
+const MIN_SEGMENT = 28
 
-/**
- * An angle greater than this (between the established segment direction and
- * the current movement direction) is considered a potential direction change.
- */
-const TURN_ANGLE_DEG = 28
-const SAME_DIR_DOT = Math.cos((TURN_ANGLE_DEG * Math.PI) / 180) // ≈ 0.882
-
-/**
- * Once a candidate direction is established, subsequent movements must
- * align within this angle to accumulate toward confirmation.
- */
-const CAND_ANGLE_DEG = 22
-const CAND_DIR_DOT = Math.cos((CAND_ANGLE_DEG * Math.PI) / 180) // ≈ 0.927
+/** Refuse to place a waypoint closer than this to the previous one. */
+const MERGE_EPS = 16
 
 // ─── Module state ──────────────────────────────────────────────────────────────
 
 let _waypoints: Waypoint[] = []
-let _prevPos: Waypoint | null = null
-let _segmentDir: Waypoint | null = null   // unit vector for the current segment
+let _lastPos: Waypoint | null = null
+let _origin: Waypoint | null = null
+let _pauseTimer: ReturnType<typeof setTimeout> | null = null
+const _listeners = new Set<() => void>()
 
-// Candidate bend: tracks whether we are "starting to turn"
-let _candPos: Waypoint | null = null      // cursor pos when potential turn began
-let _candDir: Waypoint | null = null      // unit vector of the candidate turn direction
-let _candDist = 0                          // how far we have moved in that candidate direction
+function notify(): void {
+  for (const cb of _listeners) cb()
+}
+
+function clearPauseTimer(): void {
+  if (_pauseTimer != null) {
+    clearTimeout(_pauseTimer)
+    _pauseTimer = null
+  }
+}
+
+function dist(a: Waypoint, b: Waypoint): number {
+  return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function travelAnchor(): Waypoint | null {
+  return _waypoints[_waypoints.length - 1] ?? _origin
+}
+
+function farEnoughToArm(pos: Waypoint): boolean {
+  const anchor = travelAnchor()
+  if (!anchor) return true
+  return dist(anchor, pos) >= MIN_SEGMENT
+}
+
+function commitPauseWaypoint(): void {
+  _pauseTimer = null
+  if (!_lastPos) return
+  if (!farEnoughToArm(_lastPos)) return
+
+  const last = _waypoints[_waypoints.length - 1]
+  if (last && dist(last, _lastPos) < MERGE_EPS) return
+
+  _waypoints.push({ x: _lastPos.x, y: _lastPos.y })
+  notify()
+}
+
+function schedulePauseWaypoint(): void {
+  clearPauseTimer()
+  _pauseTimer = setTimeout(commitPauseWaypoint, PAUSE_MS)
+}
+
+/** Collapse near-duplicate points (safety net for consumers). */
+function dedupeWaypoints(points: Waypoint[]): Waypoint[] {
+  const out: Waypoint[] = []
+  for (const p of points) {
+    const prev = out[out.length - 1]
+    if (prev && dist(prev, p) < MERGE_EPS) continue
+    out.push(p)
+  }
+  return out
+}
 
 // ─── Public API ────────────────────────────────────────────────────────────────
 
+/** Subscribe to waypoint commits (needed so the draft line re-renders on pause). */
+export function subscribeConnectionDraft(onChange: () => void): () => void {
+  _listeners.add(onChange)
+  return () => {
+    _listeners.delete(onChange)
+  }
+}
+
 /** Call at the beginning of every new connection drag. */
 export function resetConnectionDraft(): void {
+  clearPauseTimer()
   _waypoints = []
-  _prevPos = null
-  _segmentDir = null
-  _candPos = null
-  _candDir = null
-  _candDist = 0
+  _lastPos = null
+  _origin = null
 }
 
 /**
  * Feed the latest cursor position (in React Flow's flow coordinates).
  * Call this every time `toX`/`toY` changes inside the ConnectionLineComponent.
+ *
+ * Moving restarts the stillness timer. Stopping places a breakpoint once;
+ * you must drag away before the next stop can create another.
  */
 export function updateConnectionDraft(toX: number, toY: number): void {
   const cur: Waypoint = { x: toX, y: toY }
 
-  if (_prevPos === null) {
-    _prevPos = cur
+  if (_lastPos == null) {
+    _lastPos = cur
+    _origin = cur
+    // Don't arm yet — wait until the user has actually dragged away from start.
     return
   }
 
-  const dx = cur.x - _prevPos.x
-  const dy = cur.y - _prevPos.y
-  const dist = Math.hypot(dx, dy)
-
-  if (dist < 0.5) return // negligible movement — skip
-
-  const moveDir: Waypoint = { x: dx / dist, y: dy / dist }
-
-  // Establish initial segment direction on first meaningful movement
-  if (_segmentDir === null) {
-    _segmentDir = moveDir
-    _prevPos = cur
+  const moved = dist(_lastPos, cur)
+  if (moved < STILL_EPS) {
+    // Still considered stopped — leave any existing pause timer running.
     return
   }
 
-  const dotSeg = moveDir.x * _segmentDir.x + moveDir.y * _segmentDir.y
+  _lastPos = cur
 
-  if (dotSeg >= SAME_DIR_DOT) {
-    // ── Still going in the same direction ────────────────────────────────────
-    // Discard any in-progress candidate and lightly update the segment direction
-    // (exponential smoothing) to stay aligned as the user curves slightly.
-    _candPos = null
-    _candDir = null
-    _candDist = 0
-    // Blend the segment direction toward the current movement to handle gradual curves
-    const blend = 0.15
-    const nx = _segmentDir.x * (1 - blend) + moveDir.x * blend
-    const ny = _segmentDir.y * (1 - blend) + moveDir.y * blend
-    const nl = Math.hypot(nx, ny)
-    if (nl > 0) _segmentDir = { x: nx / nl, y: ny / nl }
-  } else {
-    // ── Potential direction change ────────────────────────────────────────────
-    if (_candPos === null) {
-      // Start tracking a candidate: the bend point would be at *prevPos*
-      // (where we were when the turn started, not where we are now).
-      _candPos = { ..._prevPos }
-      _candDir = moveDir
-      _candDist = dist
-    } else {
-      const dotCand = moveDir.x * _candDir!.x + moveDir.y * _candDir!.y
-
-      if (dotCand >= CAND_DIR_DOT) {
-        // Continuing in the candidate direction → accumulate distance
-        _candDist += dist
-
-        if (_candDist >= MIN_TURN_DIST) {
-          // ✓ Confirmed bend: commit the waypoint at the candidate position
-          _waypoints.push({ x: _candPos.x, y: _candPos.y })
-          _segmentDir = _candDir!
-          _candPos = null
-          _candDir = null
-          _candDist = 0
-        }
-      } else {
-        // The turn direction itself changed — reset the candidate to now
-        _candPos = { ..._prevPos }
-        _candDir = moveDir
-        _candDist = dist
-      }
-    }
+  if (!farEnoughToArm(cur)) {
+    // Still too close to the last bend / start — don't arm a new pause.
+    clearPauseTimer()
+    return
   }
 
-  _prevPos = cur
+  schedulePauseWaypoint()
 }
 
-/** Returns a snapshot of all confirmed waypoints so far. */
+/** Returns a snapshot of all confirmed waypoints so far (deduped). */
 export function getConnectionDraftWaypoints(): Waypoint[] {
-  return [..._waypoints]
+  return dedupeWaypoints(_waypoints)
 }

@@ -11,9 +11,9 @@ export default function InteractivePublicLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col text-ink">
+    <div className="min-h-screen text-ink">
       <SiteNavbar alwaysSolid />
-      <main className="flex-1">{children}</main>
+      <main>{children}</main>
       <SiteFooter />
     </div>
   )

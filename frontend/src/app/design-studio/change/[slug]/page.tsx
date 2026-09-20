@@ -6,10 +6,13 @@ import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DiagramChallengeAttempt } from '@/components/studio/challenges/DiagramChallengeAttempt'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import {
+  StudioAttemptLoader,
+  useOpenStudioAttempt,
+} from '@/components/studio/challenges/useOpenStudioAttempt'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
 
-export default function ChangeAttemptPage() {
-  const { attemptId } = useParams<{ attemptId: string }>()
+function ChangeAttemptBody({ attemptId }: { attemptId: string }) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [diagram, setDiagram] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
@@ -64,5 +67,16 @@ export default function ChangeAttemptPage() {
       initialDiagram={diagram}
       onSubmit={onSubmit}
     />
+  )
+}
+
+export default function ChangeChallengePage() {
+  const { slug } = useParams<{ slug: string }>()
+  const { attemptId, loading, error } = useOpenStudioAttempt('change_one', slug)
+
+  return (
+    <StudioAttemptLoader loading={loading} error={error}>
+      {attemptId ? <ChangeAttemptBody attemptId={attemptId} /> : null}
+    </StudioAttemptLoader>
   )
 }

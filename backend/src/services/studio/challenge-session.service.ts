@@ -10,6 +10,7 @@ import {
   type UserMark,
 } from './debuggerGrade'
 import { verifyDebuggerRepair } from './debuggerVerify'
+import { gradeRefactor } from './refactorGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -47,17 +48,48 @@ export async function startSession(
   packIdOrSlug: string,
   type?: ChallengePackType,
 ) {
+  // Prefer resuming an in-progress attempt for this pack (slug URLs / refresh-safe).
+  return openSession(userId, packIdOrSlug, type)
+}
+
+/** Open by pack slug/id: resume in-progress attempt or create a new one. */
+export async function openSession(
+  userId: string,
+  packIdOrSlug: string,
+  type?: ChallengePackType,
+) {
   const pack = await resolvePublishedPack(packIdOrSlug, type)
+
+  const existing = await ChallengeAttempt.findOne({
+    userId,
+    packId: pack._id,
+    status: 'in_progress',
+  }).sort({ startedAt: -1 })
+
+  if (existing) {
+    return {
+      attemptId: existing.id,
+      pack: serializePack(pack),
+      resumed: true,
+    }
+  }
+
   const attempt = await ChallengeAttempt.create({
     packId: pack._id,
     userId,
     type: pack.type,
     status: 'in_progress',
-    stage: pack.type === 'debugger' ? 'detect' : 'detect',
+    stage: 'detect',
     diagramData: pack.diagramSnapshot,
     marks: [],
     hintsUsed: 0,
-    consoleLog: [{ t: Date.now(), level: 'info', message: 'Session started — investigate the design.' }],
+    consoleLog: [
+      {
+        t: Date.now(),
+        level: 'info',
+        message: 'Session started — investigate the design.',
+      },
+    ],
     startedAt: new Date(),
     result: {
       stage: 'detect',
@@ -66,16 +98,31 @@ export async function startSession(
   })
   return {
     attemptId: attempt.id,
-    pack: {
-      id: pack.id,
-      type: pack.type,
-      slug: pack.slug,
-      title: pack.title,
-      description: pack.description,
-      difficulty: pack.difficulty,
-      payload: pack.payload,
-      diagramSnapshot: pack.diagramSnapshot,
-    },
+    pack: serializePack(pack),
+    resumed: false,
+  }
+}
+
+function serializePack(pack: {
+  id?: string
+  _id?: { toString(): string }
+  type: string
+  slug: string
+  title: string
+  description: string
+  difficulty: string
+  payload: unknown
+  diagramSnapshot: unknown
+}) {
+  return {
+    id: String(pack.id ?? pack._id ?? pack.slug),
+    type: pack.type,
+    slug: pack.slug,
+    title: pack.title,
+    description: pack.description,
+    difficulty: pack.difficulty,
+    payload: pack.payload,
+    diagramSnapshot: pack.diagramSnapshot,
   }
 }
 
@@ -301,6 +348,11 @@ export async function submitStructuralChallenge(
     throw createError('Wrong challenge type', 400)
   }
 
+  // Refactor uses the full behavior-contract grader
+  if (attempt.type === 'refactor') {
+    return submitRefactor(attemptId, userId, diagramData)
+  }
+
   const pack = await ChallengePack.findById(attempt.packId)
   if (!pack) throw createError('Pack missing', 404)
 
@@ -315,16 +367,58 @@ export async function submitStructuralChallenge(
     (after.edges ?? []) as Parameters<typeof scoreDiagram>[1],
   )
 
-  const narrative =
-    attempt.type === 'change_one'
-      ? `You made ${entries.length} structural change(s). Prefer the smallest change that satisfies the requirement.`
-      : `You made ${entries.length} structural change(s). Review coupling/complexity feedback below.`
+  const narrative = `You made ${entries.length} structural change(s). Prefer the smallest change that satisfies the requirement.`
 
   attempt.diagramData = after
   attempt.status = 'submitted'
   attempt.result = { diff: entries, score, narrative }
   await attempt.save()
   return { result: attempt.result }
+}
+
+export async function saveRefactor(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'refactor') throw createError('Not a refactor session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+
+  attempt.diagramData = diagramData
+  pushLog(attempt, 'info', 'Working diagram saved')
+  await attempt.save()
+  return { ok: true, diagramData: attempt.diagramData }
+}
+
+export async function submitRefactor(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'refactor') throw createError('Not a refactor session', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const before = (pack.diagramSnapshot ?? {}) as Record<string, unknown>
+  const after = diagramData
+  const grade = gradeRefactor(before, after, pack.payload)
+
+  attempt.diagramData = after
+  attempt.status = 'submitted'
+  attempt.stage = 'complete'
+  attempt.result = grade as unknown as Record<string, unknown>
+  pushLog(
+    attempt,
+    grade.accepted ? 'ok' : 'warn',
+    grade.narrative,
+  )
+  await attempt.save()
+  return { result: attempt.result, consoleLog: attempt.consoleLog }
 }
 
 export async function listPublishedPacks(type?: ChallengePackType) {

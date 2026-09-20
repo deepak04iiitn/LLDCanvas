@@ -112,11 +112,24 @@ export const studioApi = {
     },
   },
 
-  start: (type: StudioPackType | string, packId: string) =>
-    request<{ attemptId: string; pack: StudioPackDetail }>('/studio/start', {
-      method: 'POST',
-      body: JSON.stringify({ type, packId }),
-    }),
+  start: (type: StudioPackType | string, packIdOrSlug: string) =>
+    request<{ attemptId: string; pack: StudioPackDetail; resumed?: boolean }>(
+      '/studio/start',
+      {
+        method: 'POST',
+        body: JSON.stringify({ type, packId: packIdOrSlug, slug: packIdOrSlug }),
+      },
+    ),
+
+  /** Open challenge by pack slug — resumes in-progress or starts fresh. */
+  open: (type: StudioPackType | string, slug: string) =>
+    request<{ attemptId: string; pack: StudioPackDetail; resumed?: boolean }>(
+      '/studio/open',
+      {
+        method: 'POST',
+        body: JSON.stringify({ type, slug, packId: slug }),
+      },
+    ),
 
   getAttempt: (attemptId: string) =>
     request<{ attempt: StudioAttempt; pack: StudioPackDetail | null }>(
@@ -183,13 +196,19 @@ export const studioApi = {
   },
 
   submitRefactor: (attemptId: string, diagramData: unknown) =>
-    request<{ result: Record<string, unknown> }>(
+    request<{ result: Record<string, unknown>; consoleLog?: DebuggerConsoleEntry[] }>(
       `/studio/refactor/${attemptId}/submit`,
       {
         method: 'POST',
         body: JSON.stringify({ diagramData }),
       },
     ),
+
+  saveRefactor: (attemptId: string, diagramData: unknown) =>
+    request<{ ok: boolean; diagramData?: unknown }>(`/studio/refactor/${attemptId}/save`, {
+      method: 'POST',
+      body: JSON.stringify({ diagramData }),
+    }),
 
   submitChange: (attemptId: string, diagramData: unknown) =>
     request<{ result: Record<string, unknown> }>(

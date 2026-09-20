@@ -275,7 +275,6 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
           </span>
         </span>
       }
-      contentClassName="flex flex-col overflow-hidden"
     >
       <StageBanner stage={stage} />
 
@@ -371,8 +370,8 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <div className="min-h-[320px] flex-1 lg:min-h-0">
+      <div className="flex h-[70vh] flex-col lg:flex-row">
+        <div className="min-h-0 flex-1">
           <DebuggerCanvas
             diagram={diagram}
             readOnly={readOnly}
@@ -381,10 +380,10 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
             markedIds={markedIds}
             onSelect={onSelect}
             onDiagramChange={d => setDiagram(d)}
-            className="h-full min-h-[320px]"
+            className="h-full"
           />
         </div>
-        <aside className="h-64 shrink-0 border-t border-hairline lg:h-auto lg:w-80 lg:border-l lg:border-t-0">
+        <aside className="h-64 shrink-0 border-t border-hairline lg:h-full lg:w-80 lg:border-l lg:border-t-0">
           {tool === 'mark' ? (
             <MarkIssueForm
               elementId={selectedId}

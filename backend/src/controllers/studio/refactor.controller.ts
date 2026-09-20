@@ -2,8 +2,9 @@ import { Request, Response, NextFunction } from 'express'
 import {
   getSession,
   listPublishedPacks,
+  saveRefactor,
   startSession,
-  submitStructuralChallenge,
+  submitRefactor,
 } from '../../services/studio/challenge-session.service'
 
 function paramId(id: string | string[]) {
@@ -14,7 +15,9 @@ export async function listRefactorPacks(_req: Request, res: Response, next: Next
   try {
     const packs = await listPublishedPacks('refactor')
     res.json({ packs })
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function start(req: Request, res: Response, next: NextFunction) {
@@ -22,24 +25,42 @@ export async function start(req: Request, res: Response, next: NextFunction) {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
     const session = await startSession(req.user!.id, packId, 'refactor')
     res.status(201).json(session)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function get(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await getSession(paramId(req.params.sessionId), req.user!.id)
     res.json(data)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
+}
+
+export async function save(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await saveRefactor(
+      paramId(req.params.sessionId),
+      req.user!.id,
+      req.body.diagramData ?? {},
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function submit(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await submitStructuralChallenge(
+    const result = await submitRefactor(
       paramId(req.params.sessionId),
       req.user!.id,
       req.body.diagramData ?? {},
-      ['refactor'],
     )
     res.json(result)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }

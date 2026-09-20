@@ -5,6 +5,10 @@ import { useParams } from 'next/navigation'
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import {
+  StudioAttemptLoader,
+  useOpenStudioAttempt,
+} from '@/components/studio/challenges/useOpenStudioAttempt'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
 import { cn } from '@/lib/utils'
 
@@ -15,8 +19,7 @@ interface EvolutionStage {
   description?: string
 }
 
-export default function EvolutionAttemptPage() {
-  const { attemptId } = useParams<{ attemptId: string }>()
+function EvolutionBody({ attemptId }: { attemptId: string }) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [checkpoint, setCheckpoint] = useState(0)
@@ -41,9 +44,7 @@ export default function EvolutionAttemptPage() {
 
   const stages = useMemo((): EvolutionStage[] => {
     const raw =
-      pack?.payload?.stages ??
-      pack?.payload?.checkpoints ??
-      pack?.payload?.versions
+      pack?.payload?.stages ?? pack?.payload?.checkpoints ?? pack?.payload?.versions
     if (Array.isArray(raw) && raw.length > 0) {
       return raw as EvolutionStage[]
     }
@@ -87,8 +88,8 @@ export default function EvolutionAttemptPage() {
     >
       <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6">
         <p className="text-[13px] text-ink-muted">
-          Advance through stages as checkpoints. Diagram editing and stage submit are stubbed
-          for this MVP.
+          Advance through stages as checkpoints. Diagram editing and stage submit are stubbed for
+          this MVP.
         </p>
 
         <ol className="space-y-3">
@@ -153,5 +154,16 @@ export default function EvolutionAttemptPage() {
         )}
       </div>
     </CategoryShell>
+  )
+}
+
+export default function EvolutionChallengePage() {
+  const { slug } = useParams<{ slug: string }>()
+  const { attemptId, loading, error } = useOpenStudioAttempt('evolution', slug)
+
+  return (
+    <StudioAttemptLoader loading={loading} error={error}>
+      {attemptId ? <EvolutionBody attemptId={attemptId} /> : null}
+    </StudioAttemptLoader>
   )
 }

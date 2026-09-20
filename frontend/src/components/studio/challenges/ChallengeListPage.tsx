@@ -63,17 +63,17 @@ export function ChallengeListPage({
         openAuthModal(pathname, 'signin')
         return
       }
-      const id = packIdOf(pack)
-      setStartingId(id)
+      const slug = pack.slug || packIdOf(pack)
+      setStartingId(packIdOf(pack))
       try {
-        const res = await studioApi.start(packType, id)
-        router.push(`${attemptBasePath}/${res.attemptId}`)
+        // Navigate by pack slug — session opens on the challenge page (no attempt id in URL).
+        router.push(`${attemptBasePath}/${encodeURIComponent(slug)}`)
       } catch (err) {
-        toast.error((err as Error).message ?? 'Failed to start challenge')
+        toast.error((err as Error).message ?? 'Failed to open challenge')
         setStartingId(null)
       }
     },
-    [attemptBasePath, openAuthModal, packType, pathname, router, session],
+    [attemptBasePath, openAuthModal, pathname, router, session],
   )
 
   return (
