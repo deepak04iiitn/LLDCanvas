@@ -4,7 +4,9 @@ import type { ChallengePackType } from '../models/studio/challenge-pack.model'
 import {
   getSession,
   listPublishedPacks,
+  saveChange,
   startSession,
+  submitChange,
   submitDebugger,
   submitStructuralChallenge,
 } from '../services/studio/challenge-session.service'
@@ -92,11 +94,25 @@ router.post('/refactor/:attemptId/submit', requireAuth, async (req, res, next) =
 
 router.post('/change/:attemptId/submit', requireAuth, async (req, res, next) => {
   try {
-    const result = await submitStructuralChallenge(
+    const result = await submitChange(
       paramId(req.params.attemptId),
       req.user!.id,
       req.body.diagramData ?? {},
-      ['change_one'],
+      req.body.prediction ?? null,
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/change/:attemptId/save', requireAuth, async (req, res, next) => {
+  try {
+    const result = await saveChange(
+      paramId(req.params.attemptId),
+      req.user!.id,
+      req.body.diagramData ?? {},
+      req.body.prediction ?? null,
     )
     res.json(result)
   } catch (e) {
@@ -121,6 +137,7 @@ router.post('/refactor/:sessionId/submit', requireAuth, refactorCtrl.submit)
 
 router.post('/change-one/start', requireAuth, changeOneCtrl.start)
 router.get('/change-one/:sessionId', requireAuth, changeOneCtrl.get)
+router.post('/change-one/:sessionId/save', requireAuth, changeOneCtrl.save)
 router.post('/change-one/:sessionId/submit', requireAuth, changeOneCtrl.submit)
 
 export default router

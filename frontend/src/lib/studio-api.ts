@@ -210,14 +210,28 @@ export const studioApi = {
       body: JSON.stringify({ diagramData }),
     }),
 
-  submitChange: (attemptId: string, diagramData: unknown) =>
-    request<{ result: Record<string, unknown> }>(
+  submitChange: (
+    attemptId: string,
+    diagramData: unknown,
+    prediction?: { elementIds?: string[]; elementNames?: string[]; relationshipKeys?: string[] } | null,
+  ) =>
+    request<{ result: Record<string, unknown>; consoleLog?: DebuggerConsoleEntry[] }>(
       `/studio/change/${attemptId}/submit`,
       {
         method: 'POST',
-        body: JSON.stringify({ diagramData }),
+        body: JSON.stringify({ diagramData, prediction }),
       },
     ),
+
+  saveChange: (
+    attemptId: string,
+    diagramData: unknown,
+    prediction?: { elementIds?: string[]; elementNames?: string[]; relationshipKeys?: string[] } | null,
+  ) =>
+    request<{ ok: boolean; diagramData?: unknown }>(`/studio/change/${attemptId}/save`, {
+      method: 'POST',
+      body: JSON.stringify({ diagramData, prediction }),
+    }),
 
   /** Score an owned artifact (also usable as a budget proxy). */
   budget: {

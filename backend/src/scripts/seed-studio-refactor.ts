@@ -96,7 +96,7 @@ const PACKS = [
     title: 'Food Delivery Order Flow',
     difficulty: 'medium' as const,
     description:
-      'You inherit a food-delivery OrderManager that owns pricing, payment, inventory, email, and persistence. Improve the structure without losing existing behavior.',
+      'A food-delivery OrderManager does too many jobs at once. Split it into clearer pieces without losing checkout behavior.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 1,
@@ -142,8 +142,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'You inherit this food-delivery checkout design. OrderManager currently lists many methods — create, cancel, price, pay, refund, inventory, email, save, invoice.\n\n' +
-        'Improve the architecture on the right canvas. Keep what the system already does; do not wipe the diagram and start from a blank page.',
+        'What’s going on\n' +
+        'You inherited a food-delivery checkout design. The big box is OrderManager. Look at its method list: create, cancel, price, pay, refund, inventory, email, save, invoice. One class is trying to run the whole kitchen.\n\n' +
+        'The problem (simple terms)\n' +
+        'When one class owns every concern, every small product change means editing the same giant class — and bugs in email can break payment, and so on.\n\n' +
+        'What you should do\n' +
+        'On the right canvas, improve the structure. Split responsibilities into smaller collaborators if that helps. Keep the behaviors the system already has.\n\n' +
+        'Where to start\n' +
+        'Read OrderManager’s methods, then follow the arrows to Payment, Inventory, and Notification. Don’t wipe the diagram and redraw from scratch.',
       requirements: [
         'Order creation',
         'Payment processing',
@@ -195,7 +201,7 @@ const PACKS = [
     title: 'Payment Provider Wiring',
     difficulty: 'easy' as const,
     description:
-      'Checkout Payment talks straight to Razorpay. Restructure so another provider can be added without rewriting Payment.',
+      'Payment is glued to Razorpay. Make providers swappable without rewriting Order or Payment each time.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 2,
@@ -217,8 +223,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'Order asks Payment to charge. Payment currently points at Razorpay directly.\n\n' +
-        'Refactor so payment providers are easier to swap. Keep Order’s public role intact.',
+        'What’s going on\n' +
+        'Order asks Payment to charge. Payment holds a field typed as Razorpay and points straight at the Razorpay class.\n\n' +
+        'The problem (simple terms)\n' +
+        'If product wants Stripe tomorrow, you will likely open Payment and rewrite it. High-level payment logic is glued to one vendor.\n\n' +
+        'What you should do\n' +
+        'Refactor so a new provider can plug in without rewriting Payment (and without touching Order’s role). Keep charge/refund possible.\n\n' +
+        'Where to start\n' +
+        'Look at the Payment → Razorpay arrow and the razorpayClient field. Ask: “What should Payment depend on instead of a concrete vendor?”',
       requirements: ['Checkout can still charge', 'Refund path remains possible'],
       constraints: [
         'Do not remove Order or Payment',
@@ -248,7 +260,7 @@ const PACKS = [
     title: 'Login Service Responsibilities',
     difficulty: 'medium' as const,
     description:
-      'AuthService mixes tokens, OAuth, MFA, sessions, and email. Split responsibilities while login still works.',
+      'AuthService is a kitchen-sink: JWT, OAuth, MFA, sessions, and email. Split it while login still works.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 3,
@@ -277,8 +289,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'AppController calls AuthService.login(). Inside, AuthService also issues JWTs, starts MFA, creates sessions, and sends welcome email.\n\n' +
-        'Refactor toward clearer collaborators. Keep a working login path to UserRepository.',
+        'What’s going on\n' +
+        'AppController calls AuthService.login(). Inside AuthService you’ll also find JWT issue/verify, Google OAuth, MFA, sessions, and welcome email.\n\n' +
+        'The problem (simple terms)\n' +
+        'Login, security tokens, third-party OAuth, and marketing email are different jobs. Mixing them makes AuthService hard to test and risky to change.\n\n' +
+        'What you should do\n' +
+        'Extract clearer collaborators. Keep a path where login still reaches UserRepository, and tokens/sessions still exist somewhere.\n\n' +
+        'Where to start\n' +
+        'Read AuthService’s method names. Group which ones are “identity,” which are “tokens/sessions,” and which are “side effects like email.”',
       requirements: ['Login still reaches user storage', 'Token or session concern remains somewhere'],
       constraints: ['Do not delete UserRepository', 'Prefer extracting collaborators over one mega rewrite'],
       behaviorContract: {
@@ -304,7 +322,7 @@ const PACKS = [
     title: 'Checkout Service Triangle',
     difficulty: 'hard' as const,
     description:
-      'Order, Inventory, and Pricing call each other in a loop. Restructure so checkout still works without the cycle.',
+      'Order, Inventory, and Pricing call each other in a loop. Break the cycle so checkout is still possible.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 4,
@@ -325,8 +343,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'Follow the arrows: OrderService → InventoryService → PricingEngine → OrderService.\n\n' +
-        'That loop is painful to test and change. Refactor so checkout can still quote and reserve without a closed cycle.',
+        'What’s going on\n' +
+        'Follow the arrows carefully: OrderService → InventoryService → PricingEngine → back to OrderService. That closed loop is the whole story of this challenge.\n\n' +
+        'The problem (simple terms)\n' +
+        'When A needs B, B needs C, and C needs A again, you can’t change or test one piece without dragging the others. Cycles also hide who is really in charge of checkout.\n\n' +
+        'What you should do\n' +
+        'Restructure so place/reserve/quote still work, but without that closed cycle. An orchestrator (or one-way flow) is a common approach.\n\n' +
+        'Where to start\n' +
+        'Find the PricingEngine → OrderService back-edge. Ask whether pricing really needs to own/call Order, or if someone else should coordinate.',
       requirements: ['Orders can still place', 'Inventory can still reserve', 'Pricing can still quote'],
       constraints: ['Prefer breaking the Pricing → Order back-edge', 'You may introduce an orchestrator'],
       behaviorContract: {
@@ -351,7 +375,7 @@ const PACKS = [
     title: 'Report Export Paths',
     difficulty: 'medium' as const,
     description:
-      'ReportService grows a method per export format. Restructure so formats can plug in without rewriting the service each time.',
+      'ReportService grows a new method for every export format. Make formats plug-in style instead.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 5,
@@ -378,8 +402,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'Dashboard asks ReportService to build and export reports. The service currently has toPdf, toCsv, toXlsx, toHtml, and even emailPdf.\n\n' +
-        'Refactor so new formats are easier to add. Keep a path from Dashboard through reporting to storage.',
+        'What’s going on\n' +
+        'Dashboard asks ReportService to export. ReportService already has toPdf, toCsv, toXlsx, toHtml — and even emailPdf. Tomorrow product will want Markdown.\n\n' +
+        'The problem (simple terms)\n' +
+        'Every new format means editing ReportService again. The service knows too many concrete formats instead of “build report → export somehow.”\n\n' +
+        'What you should do\n' +
+        'Refactor so formats can plug in. Keep Dashboard able to request an export and keep storage (BlobStore) reachable.\n\n' +
+        'Where to start\n' +
+        'Count the toXxx methods. Imagine adding one more format — which class would you rather leave alone?',
       requirements: ['Dashboard can still request an export', 'Reports can still be stored'],
       constraints: ['Do not delete BlobStore', 'Prefer pluggable exporters over more toXxx methods'],
       behaviorContract: {
@@ -405,7 +435,7 @@ const PACKS = [
     title: 'Notification Delivery Path',
     difficulty: 'easy' as const,
     description:
-      'Notifier is wired to Email and SMS concretes. Restructure so a new channel can be added without rewriting Notifier.',
+      'Notifier is wired straight to Email and SMS. Make a new channel possible without rewriting Notifier.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 6,
@@ -427,8 +457,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'After confirm, OrderService asks Notifier to message the user. Notifier talks straight to EmailService and SmsService.\n\n' +
-        'Refactor so channels are easier to evolve. Keep OrderService able to trigger a notification.',
+        'What’s going on\n' +
+        'After confirm, OrderService asks Notifier to message the user. Notifier points at EmailService and SmsService as concrete classes.\n\n' +
+        'The problem (simple terms)\n' +
+        'Adding WhatsApp (or push) means editing Notifier again and wiring another concrete dependency. Channels are not treated as interchangeable.\n\n' +
+        'What you should do\n' +
+        'Refactor so channels are easier to evolve. Keep OrderService able to trigger a notification somehow.\n\n' +
+        'Where to start\n' +
+        'Look at Notifier’s outgoing arrows. Ask what shared idea Email and SMS both represent.',
       requirements: ['Order confirmation can still notify'],
       constraints: ['Do not delete OrderService', 'At most 2 new abstractions'],
       behaviorContract: {
@@ -454,7 +490,7 @@ const PACKS = [
     title: 'API Caching Path',
     difficulty: 'easy' as const,
     description:
-      'ApiHandler knows Redis and an in-memory cache directly. Hide the cache behind a clearer boundary.',
+      'ApiHandler knows Redis and in-memory cache by name. Hide caching behind one clear boundary.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 7,
@@ -474,8 +510,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'ApiHandler reads and writes through both RedisCache and MemoryCache.\n\n' +
-        'Refactor so the handler does not need to know both concrete caches. Keep a get/set caching capability.',
+        'What’s going on\n' +
+        'ApiHandler reads and writes through both RedisCache and MemoryCache. The handler knows two storage technologies by name.\n\n' +
+        'The problem (simple terms)\n' +
+        'Swapping or combining caches (or adding a third) forces edits inside ApiHandler. The API layer shouldn’t care which cache engine is underneath.\n\n' +
+        'What you should do\n' +
+        'Introduce a clearer boundary so the handler depends on “a cache,” not on Redis + Memory specifically. Keep get/set caching available.\n\n' +
+        'Where to start\n' +
+        'Compare RedisCache and MemoryCache methods — they already look alike. That similarity is a hint.',
       requirements: ['API can still read/write cache'],
       constraints: ['Prefer one abstraction over deleting caching entirely'],
       behaviorContract: {
@@ -500,7 +542,7 @@ const PACKS = [
     title: 'Game Player Loadout',
     difficulty: 'medium' as const,
     description:
-      'Player hard-wires Sword and Bow. Restructure so new weapons plug in without rewriting Player.',
+      'Player hard-wires Sword, Bow, and FireSpell. Restructure so a new weapon plugs in without rewriting Player.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 8,
@@ -509,19 +551,29 @@ const PACKS = [
       version: 1,
       meta,
       nodes: [
-        node('n1', 'el-player', 'Player', 200, 40, ['attack', 'equipSword', 'equipBow']),
-        node('n2', 'el-sword', 'Sword', 40, 200, ['swing']),
-        node('n3', 'el-bow', 'Bow', 360, 200, ['shoot']),
+        node('n1', 'el-player', 'Player', 280, 40, ['attack', 'equipSword', 'equipBow', 'equipFireSpell']),
+        node('n2', 'el-sword', 'Sword', 40, 220, ['swing']),
+        node('n3', 'el-bow', 'Bow', 280, 220, ['shoot']),
+        node('n4', 'el-spell', 'FireSpell', 520, 220, ['cast']),
       ],
       edges: [
         edge('e1', 'ed-p-sword', 'n1', 'n2'),
         edge('e2', 'ed-p-bow', 'n1', 'n3'),
+        edge('e3', 'ed-p-spell', 'n1', 'n4'),
       ],
     },
     payload: {
       briefing:
-        'Player can attack and equip Sword or Bow via concrete dependencies.\n\n' +
-        'Refactor so loadouts are easier to extend. Keep a Player that can still attack somehow.',
+        'What’s going on\n' +
+        'This is a game combat sketch. Player has attack, plus equipSword / equipBow / equipFireSpell. Arrows go from Player straight to Sword, Bow, and FireSpell.\n\n' +
+        'The problem (simple terms)\n' +
+        'Every new weapon means editing Player again — new equip method, new dependency arrow. Player knows concrete weapons instead of “something I can attack with.”\n\n' +
+        'What you should do\n' +
+        'Refactor the right canvas so new weapons can plug in without rewriting Player. Keep a Player that can still attack somehow.\n\n' +
+        'Where to start\n' +
+        'Open Player and read its methods. Then look at the three outgoing arrows. Ask: what shared idea do Sword, Bow, and FireSpell all represent?\n\n' +
+        'Tip\n' +
+        'You do not need a perfect pattern name first — aim for “Player depends on a weapon idea, not three hard-coded classes.”',
       requirements: ['Player can still attack'],
       constraints: ['Do not delete Player', 'At most 2 new abstractions'],
       behaviorContract: {
@@ -546,7 +598,7 @@ const PACKS = [
     title: 'Parking Fee Calculation',
     difficulty: 'medium' as const,
     description:
-      'ParkingLot calculates fees and knows vehicle types. Separate fee policy from the lot while parking still works.',
+      'ParkingLot parks vehicles and also hard-codes fee rules per vehicle type. Separate fee policy from the lot.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 9,
@@ -574,8 +626,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'ParkingLot parks vehicles and also embeds fee calculation for car, bike, and truck.\n\n' +
-        'Refactor so fee rules can evolve separately. Keep park/exit behavior available.',
+        'What’s going on\n' +
+        'ParkingLot can park and exit vehicles. It also has calcFeeCar, calcFeeBike, and calcFeeTruck — fee policy lives inside the lot.\n\n' +
+        'The problem (simple terms)\n' +
+        'A new vehicle type (or a weekend pricing rule) means editing ParkingLot again. Parking logistics and pricing policy are tangled.\n\n' +
+        'What you should do\n' +
+        'Separate fee rules from the lot so pricing can evolve on its own. Keep park/exit available, and keep fee calculation possible somewhere.\n\n' +
+        'Where to start\n' +
+        'Compare the three calcFee* methods. That’s usually the smell that wants its own home.',
       requirements: ['Vehicles can still park', 'Fees can still be calculated somewhere'],
       constraints: ['Do not delete ParkingLot'],
       behaviorContract: {
@@ -600,7 +658,7 @@ const PACKS = [
     title: 'Hotel Booking Collaborators',
     difficulty: 'hard' as const,
     description:
-      'BookingService talks to Stripe and Google Calendar concretely while owning search, charge, and notify. Thin it out without losing booking flows.',
+      'BookingService owns search, Stripe charge, Google Calendar, and email. Thin it toward clearer ports without losing booking.',
     status: 'published' as const,
     planMin: 'free' as const,
     order: 10,
@@ -630,8 +688,14 @@ const PACKS = [
     },
     payload: {
       briefing:
-        'BookingService searches rooms, charges via StripeGateway, and syncs GoogleCalendar — plus emails guests.\n\n' +
-        'Refactor toward clearer ports/collaborators. Keep a path that can still find rooms and charge.',
+        'What’s going on\n' +
+        'BookingService searches rooms, charges via StripeGateway, syncs GoogleCalendar, and emails guests. Domain booking logic sits next to vendor APIs.\n\n' +
+        'The problem (simple terms)\n' +
+        'Swapping Stripe for another PSP (or Calendar for another calendar) forces edits deep inside BookingService. Infrastructure details are leaking into the booking brain.\n\n' +
+        'What you should do\n' +
+        'Move toward clearer ports/collaborators (payment, calendar, notify) while keeping room search and charging possible.\n\n' +
+        'Where to start\n' +
+        'Separate “find a room” from “talk to Stripe” from “talk to Google.” Prefer ports over deleting vendor adapters entirely.',
       requirements: ['Room search remains', 'Payment can still happen', 'Calendar sync remains possible'],
       constraints: [
         'Do not delete RoomCatalog',
@@ -658,6 +722,27 @@ const PACKS = [
 ]
 
 async function upgradeLegacyRefactorPacks() {
+  const richByTheme: Record<string, string> = {
+    'weapon-strategy-player':
+      PACKS.find(p => p.slug === 'ref-player-weapons')?.payload.briefing ?? '',
+    'decouple-payment-provider':
+      PACKS.find(p => p.slug === 'ref-decouple-payment')?.payload.briefing ?? '',
+    'notification-channels':
+      PACKS.find(p => p.slug === 'ref-notifier-channels')?.payload.briefing ?? '',
+    'parking-polymorphism':
+      PACKS.find(p => p.slug === 'ref-parking-fees')?.payload.briefing ?? '',
+    'booking-hexagonal':
+      PACKS.find(p => p.slug === 'ref-booking-hex')?.payload.briefing ?? '',
+    'report-exporter-strategy':
+      PACKS.find(p => p.slug === 'ref-report-exporters')?.payload.briefing ?? '',
+    'cache-behind-port':
+      PACKS.find(p => p.slug === 'ref-cache-port')?.payload.briefing ?? '',
+    'break-service-cycle':
+      PACKS.find(p => p.slug === 'ref-break-cycle')?.payload.briefing ?? '',
+    'split-auth-responsibilities':
+      PACKS.find(p => p.slug === 'ref-split-auth')?.payload.briefing ?? '',
+  }
+
   const legacy = await ChallengePack.find({
     type: 'refactor',
     slug: { $nin: PACKS.map(p => p.slug) },
@@ -668,10 +753,19 @@ async function upgradeLegacyRefactorPacks() {
     const constraints = Array.isArray(payload.constraints)
       ? (payload.constraints as string[])
       : ['Do not remove functionality', 'Prefer smaller focused changes']
+    const existing = typeof payload.briefing === 'string' ? payload.briefing : ''
+    const themed = richByTheme[String(doc.slug)]
     const briefing =
-      typeof payload.briefing === 'string' && payload.briefing.length > 40
-        ? payload.briefing
-        : `${doc.description || doc.title}\n\nImprove the architecture on the right while preserving existing behavior. Do not start from a blank canvas.`
+      themed ||
+      (existing.includes('What you should do')
+        ? existing
+        : `What’s going on\n${doc.description || doc.title}\n\n` +
+          `The problem (simple terms)\n` +
+          `The current structure is hard to change safely — responsibilities are tangled or dependencies are too concrete.\n\n` +
+          `What you should do\n` +
+          `Improve the architecture on the right canvas. Keep existing behavior. Do not wipe the diagram and start blank.\n\n` +
+          `Where to start\n` +
+          `Read the biggest class’s methods and follow its outgoing arrows. Ask what would break if product added one more variant tomorrow.`)
     const requirements = Array.isArray(payload.requirements)
       ? (payload.requirements as string[])
       : ['Core flows from the original diagram still work']
@@ -695,6 +789,10 @@ async function upgradeLegacyRefactorPacks() {
       .replace(/\b(god|DIP|OCP|SRP|concrete)\b/gi, '')
       .replace(/\s+/g, ' ')
       .trim() || doc.title
+    if (themed && String(doc.slug) === 'weapon-strategy-player') {
+      doc.description =
+        'Player hard-wires Sword, Bow, and FireSpell. Restructure so a new weapon plugs in without rewriting Player.'
+    }
     doc.payload = {
       ...payload,
       briefing,

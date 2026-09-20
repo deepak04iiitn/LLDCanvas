@@ -11,6 +11,8 @@ import {
 } from './debuggerGrade'
 import { verifyDebuggerRepair } from './debuggerVerify'
 import { gradeRefactor } from './refactorGrade'
+import { gradeChange, type ChangePrediction } from './changeGrade'
+import { gradeChange, type ChangePrediction } from './changeGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -348,9 +350,12 @@ export async function submitStructuralChallenge(
     throw createError('Wrong challenge type', 400)
   }
 
-  // Refactor uses the full behavior-contract grader
+  // Dedicated graders
   if (attempt.type === 'refactor') {
     return submitRefactor(attemptId, userId, diagramData)
+  }
+  if (attempt.type === 'change_one') {
+    return submitChange(attemptId, userId, diagramData)
   }
 
   const pack = await ChallengePack.findById(attempt.packId)
@@ -417,6 +422,59 @@ export async function submitRefactor(
     grade.accepted ? 'ok' : 'warn',
     grade.narrative,
   )
+  await attempt.save()
+  return { result: attempt.result, consoleLog: attempt.consoleLog }
+}
+
+export async function saveChange(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+  prediction?: ChangePrediction | null,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'change_one') throw createError('Not a change session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+
+  attempt.diagramData = diagramData
+  if (prediction) {
+    attempt.result = {
+      ...(attempt.result && typeof attempt.result === 'object' ? attempt.result : {}),
+      draftPrediction: prediction,
+    }
+  }
+  pushLog(attempt, 'info', 'Working diagram saved')
+  await attempt.save()
+  return { ok: true, diagramData: attempt.diagramData }
+}
+
+export async function submitChange(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+  prediction?: ChangePrediction | null,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'change_one') throw createError('Not a change session', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const before = (pack.diagramSnapshot ?? {}) as Record<string, unknown>
+  const after = diagramData
+  const draftPred =
+    prediction ??
+    ((attempt.result as { draftPrediction?: ChangePrediction } | undefined)?.draftPrediction ??
+      null)
+  const grade = gradeChange(before, after, pack.payload, draftPred)
+
+  attempt.diagramData = after
+  attempt.status = 'submitted'
+  attempt.stage = 'complete'
+  attempt.result = grade as unknown as Record<string, unknown>
+  pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
   await attempt.save()
   return { result: attempt.result, consoleLog: attempt.consoleLog }
 }

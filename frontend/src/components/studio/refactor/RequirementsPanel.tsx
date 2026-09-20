@@ -32,10 +32,10 @@ export function RequirementsPanel({
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center justify-between gap-2 px-4 py-2 text-left sm:px-6"
+        className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left sm:px-6"
       >
         <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-          Brief · requirements · contract
+          Problem brief · what to keep
         </span>
         {open ? (
           <ChevronUp size={14} className="text-ink-faint" />
@@ -45,20 +45,20 @@ export function RequirementsPanel({
       </button>
 
       {open && (
-        <div className="space-y-3 px-4 pb-3 sm:px-6">
+        <div className="space-y-4 px-4 pb-4 sm:px-6">
           {briefing && (
-            <div>
-              <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                Brief
+            <div className="rounded-lg border border-hairline bg-paper-elevated px-4 py-3">
+              <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
+                Read this first
               </p>
-              <p className="whitespace-pre-line leading-relaxed text-ink-muted">{briefing}</p>
+              <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink">{briefing}</p>
             </div>
           )}
 
           {requirements.length > 0 && (
             <div>
               <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                Requirements to preserve
+                Must still work after you refactor
               </p>
               <ul className="space-y-1">
                 {requirements.map(r => (
@@ -74,7 +74,7 @@ export function RequirementsPanel({
           {constraints.length > 0 && (
             <div>
               <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                Constraints
+                Rules / limits
               </p>
               <ul className="space-y-1">
                 {constraints.map(c => (
@@ -90,7 +90,7 @@ export function RequirementsPanel({
           {flows.length > 0 && (
             <div>
               <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                Behavior contract
+                Behavior we will check
               </p>
               <ul className="space-y-2">
                 {flows.map(f => (

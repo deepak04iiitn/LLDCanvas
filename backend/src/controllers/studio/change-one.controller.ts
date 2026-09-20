@@ -2,8 +2,9 @@ import { Request, Response, NextFunction } from 'express'
 import {
   getSession,
   listPublishedPacks,
+  saveChange,
   startSession,
-  submitStructuralChallenge,
+  submitChange,
 } from '../../services/studio/challenge-session.service'
 
 function paramId(id: string | string[]) {
@@ -14,7 +15,9 @@ export async function listChangeOnePacks(_req: Request, res: Response, next: Nex
   try {
     const packs = await listPublishedPacks('change_one')
     res.json({ packs })
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function start(req: Request, res: Response, next: NextFunction) {
@@ -22,24 +25,44 @@ export async function start(req: Request, res: Response, next: NextFunction) {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
     const session = await startSession(req.user!.id, packId, 'change_one')
     res.status(201).json(session)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function get(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await getSession(paramId(req.params.sessionId), req.user!.id)
     res.json(data)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
+}
+
+export async function save(req: Request, res: Response, next: NextFunction) {
+  try {
+    const result = await saveChange(
+      paramId(req.params.sessionId),
+      req.user!.id,
+      req.body.diagramData ?? {},
+      req.body.prediction ?? null,
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
 }
 
 export async function submit(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await submitStructuralChallenge(
+    const result = await submitChange(
       paramId(req.params.sessionId),
       req.user!.id,
       req.body.diagramData ?? {},
-      ['change_one'],
+      req.body.prediction ?? null,
     )
     res.json(result)
-  } catch (e) { next(e) }
+  } catch (e) {
+    next(e)
+  }
 }
