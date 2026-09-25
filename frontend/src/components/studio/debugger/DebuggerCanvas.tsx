@@ -616,6 +616,9 @@ function DebuggerCanvasInner({
     setEdges(nextEdges)
     nodesRef.current = nextNodes
     edgesRef.current = nextEdges
+    requestAnimationFrame(() => {
+      rfInstance.current?.fitView({ padding: 0.18, maxZoom: 1.15, duration: 180 })
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- diagram read when diagramKey changes
   }, [diagramKey, editable, setNodes, setEdges])
 
@@ -626,9 +629,15 @@ function DebuggerCanvasInner({
         const selected = selectedId === elementId || selectedId === n.id
         const highlighted = hi.has(elementId) || hi.has(n.id)
         const marked = mk.has(elementId) || mk.has(n.id)
+        const dimOthers = hi.size > 0 && !highlighted
         return {
           ...n,
           selected,
+          style: {
+            ...(n.style ?? {}),
+            opacity: dimOthers ? 0.28 : 1,
+            transition: 'opacity 160ms ease',
+          },
           data: {
             ...n.data,
             highlighted,
@@ -640,17 +649,20 @@ function DebuggerCanvasInner({
     )
     setEdges(es =>
       es.map(e => {
-        const elementId = eidOf(e.data as Record<string, unknown>, e.id)
+        const elementId = eidOf((e.data ?? {}) as Record<string, unknown>, e.id)
         const selected = selectedId === elementId || selectedId === e.id
         const highlighted = hi.has(elementId) || hi.has(e.id)
         const marked = mk.has(elementId) || mk.has(e.id)
+        const dimOthers = hi.size > 0 && !highlighted
         return {
           ...e,
           selected,
-          reconnectable: editable,
-          animated: highlighted,
+          style: {
+            ...(e.style ?? {}),
+            opacity: dimOthers ? 0.2 : 1,
+          },
           data: {
-            ...(e.data as Record<string, unknown>),
+            ...e.data,
             highlighted,
             marked,
           },
@@ -928,11 +940,14 @@ function DebuggerCanvasInner({
           onReconnect={editable ? onReconnect : undefined}
           onInit={inst => {
             rfInstance.current = inst
+            requestAnimationFrame(() => {
+              inst.fitView({ padding: 0.18, maxZoom: 1.15, duration: 200 })
+            })
           }}
           onNodesDelete={onNodesDelete}
           onNodeClickExtra={onNodeClick}
           onEdgeClickExtra={onEdgeClick}
-          canvasMode="select"
+          canvasMode={readOnly ? 'pan' : 'select'}
           selectedCount={readOnly ? 0 : selectedCount}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}

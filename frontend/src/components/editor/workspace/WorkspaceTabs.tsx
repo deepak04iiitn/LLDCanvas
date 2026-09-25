@@ -6,6 +6,9 @@ import { AnalyzePanel } from './AnalyzePanel'
 import { EvolvePanel } from './EvolvePanel'
 import { HistoryPanel } from './HistoryPanel'
 import { SharePanel } from './SharePanel'
+import type { AnalyzeEdge } from '@/lib/graph/analyzeDiagram'
+import type { MicroscopeHighlightState } from '@/components/studio/microscope/MicroscopeSession'
+import type { MicroscopeOverlay } from '@/lib/graph/microscope'
 
 export type WorkspaceTabId = 'canvas' | 'analyze' | 'evolve' | 'history' | 'share'
 
@@ -18,34 +21,39 @@ const TABS: { id: WorkspaceTabId; label: string }[] = [
 ]
 
 export interface WorkspaceTabsProps {
-  /** Rendered when Canvas tab is active (usually the existing editor canvas). */
   canvas?: React.ReactNode
-  /** Optional selected node for Analyze tools. */
-  selectedNode?: { id: string; name?: string } | null
-  /** Diagram data for client-side analysis. */
+  selectedNode?: { id: string; name?: string; elementId?: string } | null
+  selectedEdge?: AnalyzeEdge | null
   diagram?: { nodes: unknown[]; edges: unknown[] } | null
-  /** Persisted diagram id (Mongo). Local drafts skip History/Share APIs. */
   diagramId?: string | null
-  /** Default title for Share publish form. */
   diagramTitle?: string
+  microscopeOverlay?: MicroscopeOverlay
+  onFocusElement?: (elementId: string) => void
+  onHighlightChange?: (state: MicroscopeHighlightState) => void
   className?: string
   defaultTab?: WorkspaceTabId
 }
 
 /**
- * Design Workspace tab strip — Canvas | Analyze | Evolve | History | Share.
- * Canvas column host: non-canvas tabs replace the center column content.
+ * Design Workspace — Analyze uses split Microscope Mode (canvas + instrument).
  */
 export function WorkspaceTabs({
   canvas,
   selectedNode = null,
+  selectedEdge = null,
   diagram = null,
   diagramId = null,
   diagramTitle = '',
+  microscopeOverlay,
+  onFocusElement,
+  onHighlightChange,
   className,
   defaultTab = 'canvas',
 }: WorkspaceTabsProps) {
   const [tab, setTab] = useState<WorkspaceTabId>(defaultTab)
+
+  const showCanvas =
+    tab === 'canvas' || tab === 'analyze'
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
@@ -62,9 +70,7 @@ export function WorkspaceTabs({
             onClick={() => setTab(t.id)}
             className={cn(
               'relative px-3 py-2.5 text-[13px] transition-colors',
-              tab === t.id
-                ? 'font-medium text-brand'
-                : 'text-ink-muted hover:text-ink',
+              tab === t.id ? 'font-medium text-brand' : 'text-ink-muted hover:text-ink',
             )}
           >
             {t.label}
@@ -76,13 +82,13 @@ export function WorkspaceTabs({
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
-        {/* Keep canvas mounted so React Flow state/viewport survive tab switches */}
         <div
           className={cn(
             'absolute inset-0',
-            tab === 'canvas' ? 'z-10' : 'pointer-events-none z-0 opacity-0',
+            showCanvas ? 'z-10' : 'pointer-events-none z-0 opacity-0',
+            tab === 'analyze' && 'right-[min(420px,42%)]',
           )}
-          aria-hidden={tab !== 'canvas'}
+          aria-hidden={!showCanvas}
         >
           {canvas ?? (
             <div className="flex h-full items-center justify-center text-[13px] text-ink-faint">
@@ -92,8 +98,15 @@ export function WorkspaceTabs({
         </div>
 
         {tab === 'analyze' && (
-          <div className="absolute inset-0 z-20">
-            <AnalyzePanel selectedNode={selectedNode} diagram={diagram} />
+          <div className="absolute bottom-0 right-0 top-0 z-20 w-[min(420px,42%)] border-l border-hairline bg-paper shadow-sm">
+            <AnalyzePanel
+              selectedNode={selectedNode}
+              selectedEdge={selectedEdge}
+              diagram={diagram}
+              overlay={microscopeOverlay}
+              onFocusElement={onFocusElement}
+              onHighlightChange={onHighlightChange}
+            />
           </div>
         )}
         {tab === 'evolve' && (

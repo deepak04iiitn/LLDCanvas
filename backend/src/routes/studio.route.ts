@@ -15,6 +15,8 @@ import {
   submitStructuralChallenge,
   getBudgetReport,
   getEvolutionJourney,
+  saveMicroscope,
+  submitMicroscope,
 } from '../services/studio/challenge-session.service'
 import * as debuggerCtrl from '../controllers/studio/debugger.controller'
 import * as refactorCtrl from '../controllers/studio/refactor.controller'
@@ -208,6 +210,34 @@ router.get('/budget/:attemptId/report', requireAuth, async (req, res, next) => {
   try {
     const data = await getBudgetReport(paramId(req.params.attemptId), req.user!.id)
     res.json(data)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/microscope/:attemptId/save', requireAuth, async (req, res, next) => {
+  try {
+    const result = await saveMicroscope(
+      paramId(req.params.attemptId),
+      req.user!.id,
+      req.body ?? {},
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/microscope/:attemptId/submit', requireAuth, async (req, res, next) => {
+  try {
+    const result = await submitMicroscope(paramId(req.params.attemptId), req.user!.id, {
+      focusElementIds: Array.isArray(req.body.focusElementIds) ? req.body.focusElementIds : [],
+      selectedEdgeId: typeof req.body.selectedEdgeId === 'string' ? req.body.selectedEdgeId : undefined,
+      freeText: typeof req.body.freeText === 'string' ? req.body.freeText : undefined,
+      lensUsed: Array.isArray(req.body.lensUsed) ? req.body.lensUsed : [],
+      notes: typeof req.body.notes === 'string' ? req.body.notes : undefined,
+    })
+    res.json(result)
   } catch (e) {
     next(e)
   }

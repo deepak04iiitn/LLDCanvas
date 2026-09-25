@@ -308,8 +308,87 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     const n = nodes.find(nd => nd.selected)
     if (!n) return null
     const data = n.data as UMLNodeData | undefined
-    return { id: n.id, name: data?.name }
+    return {
+      id: n.id,
+      name: data?.name,
+      elementId: (data as { elementId?: string } | undefined)?.elementId ?? n.id,
+    }
   }, [nodes])
+  const selectedEdge = useMemo(() => {
+    const e = edges.find(ed => ed.selected)
+    if (!e) return null
+    const data = e.data as UMLEdgeData | undefined
+    return {
+      id: e.id,
+      elementId: typeof data?.elementId === 'string' ? data.elementId : e.id,
+      source: e.source,
+      target: e.target,
+      data: {
+        relationshipType: data?.relationshipType,
+        label: data?.label,
+        elementId: typeof data?.elementId === 'string' ? data.elementId : e.id,
+      },
+    }
+  }, [edges])
+  const [microHighlight, setMicroHighlight] = useState<{
+    highlightIds: string[]
+    dimIds: string[]
+  }>({ highlightIds: [], dimIds: [] })
+
+  const displayNodes = useMemo(() => {
+    if (!microHighlight.dimIds.length && !microHighlight.highlightIds.length) return nodes
+    const dim = new Set(microHighlight.dimIds)
+    const hi = new Set(microHighlight.highlightIds)
+    return nodes.map(n => {
+      const data = n.data as UMLNodeData & { elementId?: string }
+      const eid = data?.elementId ?? n.id
+      const isHi = hi.has(eid) || hi.has(n.id)
+      const isDim = !isHi && (dim.has(eid) || dim.has(n.id))
+      return {
+        ...n,
+        style: {
+          ...(n.style ?? {}),
+          opacity: isDim ? 0.2 : 1,
+          transition: 'opacity 160ms ease',
+        },
+      }
+    })
+  }, [nodes, microHighlight])
+
+  const displayEdges = useMemo(() => {
+    if (!microHighlight.dimIds.length && !microHighlight.highlightIds.length) return edges
+    const hi = new Set(microHighlight.highlightIds)
+    const byId = new Map(nodes.map(n => [n.id, n]))
+    return edges.map(e => {
+      const s = byId.get(e.source)
+      const t = byId.get(e.target)
+      const se = (s?.data as { elementId?: string } | undefined)?.elementId ?? e.source
+      const te = (t?.data as { elementId?: string } | undefined)?.elementId ?? e.target
+      const keep = hi.has(se) || hi.has(te) || hi.has(e.source) || hi.has(e.target)
+      return {
+        ...e,
+        style: {
+          ...(e.style ?? {}),
+          opacity: keep || !microHighlight.highlightIds.length ? 1 : 0.15,
+        },
+      }
+    })
+  }, [edges, nodes, microHighlight])
+
+  const handleFocusElement = useCallback(
+    (elementId: string) => {
+      setNodes(nds =>
+        nds.map(n => {
+          const data = n.data as UMLNodeData & { elementId?: string }
+          const eid = data?.elementId ?? n.id
+          return { ...n, selected: eid === elementId || n.id === elementId }
+        }),
+      )
+      setEdges(eds => eds.map(e => ({ ...e, selected: false })))
+    },
+    [setNodes, setEdges],
+  )
+
   const [canvasMode, setCanvasMode] = useState<'pan' | 'select' | 'eraser'>('pan')
 
   // Keep the module-level EraserState in sync so node/edge components can
@@ -852,11 +931,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             diagramTitle={title}
             diagram={{ nodes, edges }}
             selectedNode={selectedNode}
+            selectedEdge={selectedEdge}
+            onFocusElement={handleFocusElement}
+            onHighlightChange={setMicroHighlight}
             canvas={
               <>
                 <CanvasView
-                  nodes={nodes}
-                  edges={edges}
+                  nodes={displayNodes}
+                  edges={displayEdges}
                   onNodesChange={readOnly ? () => {} : onNodesChange}
                   onEdgesChange={readOnly ? () => {} : onEdgesChange}
                   onConnect={readOnly ? () => {} : onConnect}

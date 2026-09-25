@@ -35,6 +35,7 @@ export type StudioPackType =
   | 'change_one'
   | 'evolution'
   | 'budget'
+  | 'microscope'
 
 export interface StudioPackSummary {
   _id?: string
@@ -350,6 +351,31 @@ export const studioApi = {
       report: Record<string, unknown>
       complete: boolean
     }>(`/studio/budget/${attemptId}/report`),
+
+  saveMicroscope: (attemptId: string, draft: Record<string, unknown>) =>
+    request<{ ok: boolean; progress?: Record<string, unknown> }>(
+      `/studio/microscope/${attemptId}/save`,
+      { method: 'POST', body: JSON.stringify(draft) },
+    ),
+
+  submitMicroscope: (
+    attemptId: string,
+    body: {
+      focusElementIds?: string[]
+      selectedEdgeId?: string
+      freeText?: string
+      lensUsed?: string[]
+      notes?: string
+    },
+  ) =>
+    request<{
+      grade: Record<string, unknown>
+      progress: Record<string, unknown>
+      complete: boolean
+    }>(`/studio/microscope/${attemptId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   /** Score an owned artifact (also usable as a diagram-inflation proxy). */
   budget: {

@@ -77,8 +77,9 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'microscope',
     category: 'design-studio',
     label: 'Architecture Microscope',
-    description: 'Inspect a class — responsibilities, deps, and heuristic concerns. Open any diagram → Analyze.',
-    href: '/dashboard',
+    description:
+      'Explore architecture internals — lenses, traces, blast radius, and investigate challenges.',
+    href: '/design-studio/microscope',
     adminHref: '/admin/studio/tools',
     flagKey: 'FF_STUDIO_MICROSCOPE',
     analyticsPrefix: 'studio_microscope',

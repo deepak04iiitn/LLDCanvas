@@ -6,6 +6,7 @@ export type ChallengePackType =
   | 'change_one'
   | 'evolution'
   | 'budget'
+  | 'microscope'
 export type ChallengePackStatus = 'draft' | 'published' | 'archived'
 export type ChallengeDifficulty = 'easy' | 'medium' | 'hard'
 export type PlanMin = 'free' | 'pro' | 'ultimate'
@@ -31,7 +32,7 @@ const challengePackSchema = new Schema<IChallengePack>(
   {
     type: {
       type: String,
-      enum: ['debugger', 'refactor', 'change_one', 'evolution', 'budget'],
+      enum: ['debugger', 'refactor', 'change_one', 'evolution', 'budget', 'microscope'],
       required: true,
       index: true,
     },

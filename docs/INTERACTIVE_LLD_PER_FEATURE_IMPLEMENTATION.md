@@ -301,54 +301,37 @@ Each feature below: **Phase · Dependencies · Folders · Backend steps · Front
 
 | | |
 |--|--|
-| **Category** | Design Studio |
-| **Phase** | 2 |
-| **Depends on** | Phase 0–1 (Artifact, Graph) |
-| **User route** | Editor Analyze panel (primary); linked from `/design-studio` |
-| **Admin** | `/admin/studio/tools` (flag + usage only) |
+| **Category** | Design Studio + Editor Analyze |
+| **Phase** | 2 (+ full lenses / investigate) |
+| **Depends on** | Graph kernel |
+| **User route** | Editor Analyze (Microscope Mode); `/design-studio/microscope` |
+| **Admin** | `/admin/studio/tools` |
+
+### Product
+
+Interactive instrument — not a static inspector. Core loop: **Select → Zoom → Trace → Investigate → Understand**.
+
+Lenses: Dependencies, Blast Radius, Responsibilities/Cohesion, Flows, Abstractions, Consumers, Cycles, Layers, Encapsulation, Creation, X-Ray. Follow Me path bar. Authored investigate packs with soft grade.
 
 ### Folders
 
 ```text
 components/studio/microscope/
-  MicroscopePanel.tsx
-  MicroscopeOverlay.tsx
-  ResponsibilityList.tsx
-  ConcernList.tsx
-lib/graph/microscope.ts          # thin wrapper over analyzeDiagram
-hooks/studio/useMicroscope.ts
-components/editor/workspace/AnalyzePanel.tsx   # mounts Microscope
+  MicroscopeSession.tsx
+  InvestigateSession.tsx
+  LensSwitcher.tsx / ZoomBreadcrumb.tsx / FollowMeBar.tsx
+  MicroscopeLensBody.tsx / OverviewCard.tsx / CohesionBars.tsx
+lib/graph/microscope.ts
+lib/graph/analyzeDiagram.ts
+services/studio/microscopeVerify.ts
+services/studio/microscopeGrade.ts
 ```
 
-### Backend steps
+### DoD
 
-1. Optional: `GET /artifacts/:id/analysis/node/:elementId` (server recompute for consistency).  
-2. Prefer client-first; add API only if needed for shareable deep links.  
-3. Analytics ingest via existing heartbeat or `POST /analytics/event`.
-
-### Frontend steps
-
-1. Add Analyze tab host in editor workspace.  
-2. On node select → open MicroscopePanel; fade non-related nodes.  
-3. Show responsibilities (methods + notes), in/out deps, heuristic concerns.  
-4. Empty state: “Select a class”.  
-5. Mobile: panel as sheet.
-
-### Admin / Seed / SEO
-
-- Admin: toggle in Studio Tools.  
-- Seed: none.  
-- SEO: `/features/architecture-microscope` — CTA “Open Design Studio / your diagram”.
-
-### Analytics
-
-`studio_microscope_open`, `studio_microscope_node_inspect`
-
-### Tests / DoD
-
-- Unit: concern heuristics on fixtures.  
-- E2E: open diagram → select class → panel shows deps.  
-- DoD: works on 100+ node diagram without jank; flaggable.
+- Editor Analyze: split canvas + microscope; fade/focus by lens.
+- Studio: list/session investigate packs with soft narrative grade.
+- Soft evidence only (no auto “god class” verdict).
 
 ---
 

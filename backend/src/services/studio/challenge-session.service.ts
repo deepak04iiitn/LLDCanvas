@@ -28,6 +28,8 @@ import {
   gradeBudgetStage,
   type BudgetStageSubmission,
 } from './budgetGrade'
+import { parseMicroscopePayload } from './microscopeVerify'
+import { gradeMicroscope, type MicroscopeSubmission } from './microscopeGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -109,7 +111,9 @@ export async function openSession(
             ? 'Evolution track started — understand the baseline, then respond to each pressure.'
             : pack.type === 'budget'
               ? 'Architecture Budget started — read the scenario, then spend where it matters.'
-              : 'Session started — investigate the design.',
+              : pack.type === 'microscope'
+                ? 'Microscope investigate started — select → zoom → trace → understand.'
+                : 'Session started — investigate the design.',
       },
     ],
     startedAt: new Date(),
@@ -152,7 +156,18 @@ export async function openSession(
                 unitLabel: unitLabelFor(bp.budget.kind, bp.budget.unitLabel),
               }
             })()
-          : {},
+          : pack.type === 'microscope'
+            ? (() => {
+                const mp = parseMicroscopePayload(pack.payload)
+                return {
+                  focusElementIds: mp.starterFocusId ? [mp.starterFocusId] : [],
+                  lensUsed: [] as string[],
+                  notes: '',
+                  freeText: '',
+                  draft: null,
+                }
+              })()
+            : {},
   })
   return {
     attemptId: attempt.id,
@@ -976,6 +991,54 @@ export async function getBudgetReport(attemptId: string, userId: string) {
     }),
     complete: attempt.status === 'submitted',
   }
+}
+
+export async function saveMicroscope(
+  attemptId: string,
+  userId: string,
+  draft: Record<string, unknown>,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'microscope') throw createError('Not a microscope session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+  attempt.progress = {
+    ...(attempt.progress && typeof attempt.progress === 'object' ? attempt.progress : {}),
+    ...draft,
+  }
+  attempt.markModified('progress')
+  pushLog(attempt, 'info', 'Microscope progress saved')
+  await attempt.save()
+  return { ok: true, progress: attempt.progress }
+}
+
+export async function submitMicroscope(
+  attemptId: string,
+  userId: string,
+  submission: MicroscopeSubmission,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'microscope') throw createError('Not a microscope session', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const grade = gradeMicroscope(pack.payload, submission)
+  attempt.progress = {
+    ...(attempt.progress && typeof attempt.progress === 'object' ? attempt.progress : {}),
+    ...submission,
+    lastGrade: grade,
+  }
+  attempt.markModified('progress')
+  attempt.result = { grade }
+  if (grade.accepted) {
+    attempt.status = 'submitted'
+    attempt.stage = 'complete'
+  }
+  pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
+  await attempt.save()
+  return { grade, progress: attempt.progress, complete: attempt.status === 'submitted' }
 }
 
 export async function listPublishedPacks(type?: ChallengePackType) {

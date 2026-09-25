@@ -1,16 +1,18 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   analyzeDiagram,
-  getNodeAnalysis,
   type DiagramLike,
+  type AnalyzeEdge,
 } from '@/lib/graph/analyzeDiagram'
 import { toDependencyGraph } from '@/lib/graph/toDependencyGraph'
 import { storyWalk } from '@/lib/graph/storyWalk'
 import { scoreEngine } from '@/lib/graph/scoreEngine'
-import { MicroscopePanel } from '@/components/studio/microscope/MicroscopePanel'
+import { MicroscopeSession } from '@/components/studio/microscope/MicroscopeSession'
+import type { MicroscopeHighlightState } from '@/components/studio/microscope/MicroscopeSession'
+import type { MicroscopeOverlay } from '@/lib/graph/microscope'
 import { DependencyWebView } from '@/components/studio/dependency-web/DependencyWebView'
 import { StoryPlayer } from '@/components/studio/story/StoryPlayer'
 import { ScoreOverview } from '@/components/learn/score/ScoreOverview'
@@ -18,34 +20,40 @@ import { ScoreOverview } from '@/components/learn/score/ScoreOverview'
 type AnalyzeView = 'microscope' | 'depweb' | 'score' | 'story'
 
 export interface AnalyzePanelProps {
-  selectedNode?: { id: string; name?: string } | null
+  selectedNode?: { id: string; name?: string; elementId?: string } | null
+  selectedEdge?: AnalyzeEdge | null
   diagram?: { nodes: unknown[]; edges: unknown[] } | null
+  overlay?: MicroscopeOverlay
+  onFocusElement?: (elementId: string) => void
+  onHighlightChange?: (state: MicroscopeHighlightState) => void
   className?: string
 }
 
 /**
- * Hosts Phase 2 Analyze tools: Microscope, Dependency Web, Score, Story.
+ * Hosts Analyze tools — Microscope is the primary interactive instrument.
  */
 export function AnalyzePanel({
   selectedNode = null,
+  selectedEdge = null,
   diagram = null,
+  overlay,
+  onFocusElement,
+  onHighlightChange,
   className,
 }: AnalyzePanelProps) {
   const [view, setView] = useState<AnalyzeView>('microscope')
 
-  const diagramLike = useMemo<DiagramLike>(() => ({
-    nodes: (diagram?.nodes ?? []) as DiagramLike['nodes'],
-    edges: (diagram?.edges ?? []) as DiagramLike['edges'],
-  }), [diagram])
+  const diagramLike = useMemo<DiagramLike>(
+    () => ({
+      nodes: (diagram?.nodes ?? []) as DiagramLike['nodes'],
+      edges: (diagram?.edges ?? []) as DiagramLike['edges'],
+    }),
+    [diagram],
+  )
 
   const analysis = useMemo(
     () => (diagram ? analyzeDiagram(diagramLike) : null),
     [diagram, diagramLike],
-  )
-
-  const nodeAnalysis = useMemo(
-    () => getNodeAnalysis(diagramLike, selectedNode?.id),
-    [diagramLike, selectedNode?.id],
   )
 
   const depGraph = useMemo(
@@ -61,6 +69,15 @@ export function AnalyzePanel({
   const score = useMemo(
     () => (diagram ? scoreEngine(diagramLike) : null),
     [diagram, diagramLike],
+  )
+
+  const handleIsolate = useCallback(
+    (nodeId: string) => {
+      const n = diagramLike.nodes.find(x => x.id === nodeId || (x.elementId ?? x.id) === nodeId)
+      if (n) onFocusElement?.(n.elementId ?? n.id)
+      setView('microscope')
+    },
+    [diagramLike.nodes, onFocusElement],
   )
 
   const views: { id: AnalyzeView; label: string }[] = [
@@ -95,16 +112,21 @@ export function AnalyzePanel({
         )}
       </div>
 
-      <p className="shrink-0 border-b border-hairline bg-paper-elevated/60 px-3 py-1.5 text-[11px] text-ink-muted">
-        Log design rationale in the{' '}
-        <span className="font-medium text-brand">History → Decisions</span> tab.
-      </p>
-
       <div className="min-h-0 flex-1 overflow-hidden">
         {view === 'microscope' && (
-          <MicroscopePanel selectedNode={selectedNode} analysis={nodeAnalysis} />
+          <MicroscopeSession
+            diagram={diagramLike}
+            selectedNode={selectedNode}
+            selectedEdge={selectedEdge}
+            overlay={overlay}
+            onFocusElement={onFocusElement}
+            onHighlightChange={onHighlightChange}
+            embedded
+          />
         )}
-        {view === 'depweb' && <DependencyWebView graph={depGraph} />}
+        {view === 'depweb' && (
+          <DependencyWebView graph={depGraph} onIsolate={handleIsolate} />
+        )}
         {view === 'score' && <ScoreOverview score={score} />}
         {view === 'story' && <StoryPlayer story={story} />}
       </div>
