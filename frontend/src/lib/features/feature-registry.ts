@@ -65,7 +65,8 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'budget',
     category: 'design-studio',
     label: 'Architecture Budget',
-    description: 'Live cost model for interfaces, patterns, and dependencies.',
+    description:
+      'Marketplace prioritization under scarce budgets — invest, reserve, and face opportunity cost.',
     href: '/design-studio/budget',
     adminHref: '/admin/studio/budget',
     minPlan: 'pro',

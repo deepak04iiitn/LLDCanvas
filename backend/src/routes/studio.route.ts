@@ -4,19 +4,23 @@ import type { ChallengePackType } from '../models/studio/challenge-pack.model'
 import {
   getSession,
   listPublishedPacks,
+  saveBudget,
   saveChange,
   saveEvolution,
   startSession,
+  submitBudgetStage,
   submitChange,
   submitDebugger,
   submitEvolutionStage,
   submitStructuralChallenge,
+  getBudgetReport,
   getEvolutionJourney,
 } from '../services/studio/challenge-session.service'
 import * as debuggerCtrl from '../controllers/studio/debugger.controller'
 import * as refactorCtrl from '../controllers/studio/refactor.controller'
 import * as changeOneCtrl from '../controllers/studio/change-one.controller'
 import * as evolutionCtrl from '../controllers/studio/evolution.controller'
+import * as budgetCtrl from '../controllers/studio/budget.controller'
 
 const router = Router()
 
@@ -39,6 +43,7 @@ router.get('/debugger/packs', debuggerCtrl.listDebuggerPacks)
 router.get('/refactor/packs', refactorCtrl.listRefactorPacks)
 router.get('/change-one/packs', changeOneCtrl.listChangeOnePacks)
 router.get('/evolution/packs', evolutionCtrl.listEvolutionPacks)
+router.get('/budget/packs', budgetCtrl.listBudgetPacks)
 
 /** Auth required for sessions / attempts. */
 router.post('/start', requireAuth, async (req, res, next) => {
@@ -165,6 +170,54 @@ router.get('/evolution/:attemptId/journey', requireAuth, async (req, res, next) 
     next(e)
   }
 })
+
+router.post('/budget/:attemptId/save', requireAuth, async (req, res, next) => {
+  try {
+    const result = await saveBudget(
+      paramId(req.params.attemptId),
+      req.user!.id,
+      req.body.diagramData ?? {},
+      req.body.draft ?? null,
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/budget/:attemptId/submit-stage', requireAuth, async (req, res, next) => {
+  try {
+    const result = await submitBudgetStage(paramId(req.params.attemptId), req.user!.id, {
+      picks: Array.isArray(req.body.picks) ? req.body.picks : [],
+      reserved: typeof req.body.reserved === 'number' ? req.body.reserved : 0,
+      deferredPressureIds: Array.isArray(req.body.deferredPressureIds)
+        ? req.body.deferredPressureIds
+        : [],
+      customInvestments: Array.isArray(req.body.customInvestments)
+        ? req.body.customInvestments
+        : [],
+      diagram: req.body.diagramData ?? req.body.diagram,
+    })
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.get('/budget/:attemptId/report', requireAuth, async (req, res, next) => {
+  try {
+    const data = await getBudgetReport(paramId(req.params.attemptId), req.user!.id)
+    res.json(data)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/budget/start', requireAuth, budgetCtrl.start)
+router.get('/budget/:sessionId', requireAuth, budgetCtrl.get)
+router.post('/budget/:sessionId/save', requireAuth, budgetCtrl.save)
+router.post('/budget/:sessionId/submit-stage', requireAuth, budgetCtrl.submitStage)
+router.get('/budget/:sessionId/report', requireAuth, budgetCtrl.report)
 
 router.post('/evolution/start', requireAuth, evolutionCtrl.start)
 router.get('/evolution/:sessionId', requireAuth, evolutionCtrl.get)

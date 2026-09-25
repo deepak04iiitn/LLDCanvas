@@ -12,8 +12,9 @@ export default function AdminStudioBudgetPage() {
         </div>
         <h1 className="font-serif text-2xl font-medium text-ink">Budget Config</h1>
         <p className="mt-2 text-[14px] text-ink-muted">
-          Cost tables for interfaces, patterns, and dependencies are managed via editor tools and
-          studio pack payloads — not a separate CMS yet.
+          Architecture Budget packs (marketplace investments, stages, grading) are authored as
+          studio challenge packs — seed via <span className="font-mono text-[12px]">seed-studio-budget</span>.
+          Diagram cost tables remain available for inflation signals in reports.
         </p>
         <Link
           href="/admin/studio"

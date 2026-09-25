@@ -105,9 +105,9 @@ export function EvolvePanel({ diagram = null, className }: EvolvePanelProps) {
             href="/design-studio/budget"
             className="rounded-md border border-hairline px-3 py-2.5 text-[13px] text-ink transition-colors hover:border-brand/40 hover:bg-brand-tint/40"
           >
-            <span className="font-medium text-brand">Budget Mode</span>
+            <span className="font-medium text-brand">Architecture Budget</span>
             <span className="mt-0.5 block text-[12px] text-ink-muted">
-              Design under a hard cost ceiling.
+              Invest scarce points — prioritize under pressure.
             </span>
           </Link>
         </div>

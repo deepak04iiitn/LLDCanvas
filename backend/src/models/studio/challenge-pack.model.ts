@@ -1,6 +1,11 @@
 import { Schema, model, Document, Types } from 'mongoose'
 
-export type ChallengePackType = 'debugger' | 'refactor' | 'change_one' | 'evolution'
+export type ChallengePackType =
+  | 'debugger'
+  | 'refactor'
+  | 'change_one'
+  | 'evolution'
+  | 'budget'
 export type ChallengePackStatus = 'draft' | 'published' | 'archived'
 export type ChallengeDifficulty = 'easy' | 'medium' | 'hard'
 export type PlanMin = 'free' | 'pro' | 'ultimate'
@@ -26,7 +31,7 @@ const challengePackSchema = new Schema<IChallengePack>(
   {
     type: {
       type: String,
-      enum: ['debugger', 'refactor', 'change_one', 'evolution'],
+      enum: ['debugger', 'refactor', 'change_one', 'evolution', 'budget'],
       required: true,
       index: true,
     },

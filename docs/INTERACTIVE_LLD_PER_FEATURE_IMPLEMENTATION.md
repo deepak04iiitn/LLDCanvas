@@ -651,36 +651,45 @@ services/studio/refactor.service.ts
 | | |
 |--|--|
 | **Category** | Design Studio |
-| **Phase** | 3 |
-| **Depends on** | Graph, cost table |
+| **Phase** | 3 (+ marketplace prioritization) |
+| **Depends on** | Challenge packs, soft grading |
 | **Admin** | `/admin/studio/budget` |
-| **Seed** | 1 default cost table |
+| **Seed** | Food Delivery MVP, E-Commerce Checkout (+ infra / engineer-days / expert auction / combo) |
+
+### Product
+
+Marketplace prioritization under scarce budgets — not a live complexity meter as the primary mode.
+Players allocate investments (why + target), may reserve, defer debt, then face soft reports (coverage, opportunity cost, inflation via `budgetCalc`, Evolution handoff).
 
 ### Folders
 
 ```text
 components/studio/budget/
+  BudgetSession.tsx
   BudgetMeter.tsx
-  BudgetBreakdown.tsx
-lib/graph/budgetCalc.ts
-models/studio/budget-cost-table.model.ts
+  InvestmentCatalog.tsx
+  InvestmentWhyPanel.tsx
+  TradeoffReveal.tsx
+  PriorityBoard.tsx
+  BudgetComplete.tsx
+  BudgetReplay.tsx
+lib/graph/budgetCalc.ts          # secondary inflation signal in report
+services/studio/budgetVerify.ts
+services/studio/budgetGrade.ts
 ```
 
-### Backend steps
+### Routes
 
-1. Cost table model + admin activate.  
-2. Optional verify endpoint on submit.  
-3. Seed default costs.
-
-### Frontend steps
-
-1. Live meter in Evolve panel while editing.  
-2. Warnings near threshold.  
-3. Breakdown popover.
+- `/design-studio/budget` — challenge list
+- `/design-studio/budget/[slug]` — BudgetSession
+- API: `/studio/budget/:id/save`, `/submit-stage`, `/report`
 
 ### DoD
 
-- Admin edits costs → client picks up active version.
+- Soft grade (no hard fail) with coverage / opportunity cost / reserve / debt.
+- Multi-stage future events + budget kinds (points, engineer-days, infra $, time).
+- Evolution debt handoff + optional combo pack.
+- `budgetCalc` appears as architecture inflation in the investment report.
 
 ---
 

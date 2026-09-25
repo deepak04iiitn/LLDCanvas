@@ -18,6 +18,16 @@ import {
   gradeEvolutionStage,
   type EvolutionStageSubmission,
 } from './evolutionGrade'
+import {
+  getBudgetStages,
+  parseBudgetPayload,
+  unitLabelFor,
+} from './budgetVerify'
+import {
+  buildBudgetReport,
+  gradeBudgetStage,
+  type BudgetStageSubmission,
+} from './budgetGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -97,7 +107,9 @@ export async function openSession(
         message:
           pack.type === 'evolution'
             ? 'Evolution track started — understand the baseline, then respond to each pressure.'
-            : 'Session started — investigate the design.',
+            : pack.type === 'budget'
+              ? 'Architecture Budget started — read the scenario, then spend where it matters.'
+              : 'Session started — investigate the design.',
       },
     ],
     startedAt: new Date(),
@@ -124,7 +136,23 @@ export async function openSession(
             decisionLog: [],
             draft: null,
           }
-        : {},
+        : pack.type === 'budget'
+          ? (() => {
+              const bp = parseBudgetPayload(pack.payload)
+              const total = bp.budget.total
+              return {
+                stageIndex: 0,
+                remaining: total,
+                reserved: 0,
+                picks: [] as unknown[],
+                deferredDebt: [] as unknown[],
+                stageGrades: [] as unknown[],
+                decisionLog: [] as unknown[],
+                draft: null,
+                unitLabel: unitLabelFor(bp.budget.kind, bp.budget.unitLabel),
+              }
+            })()
+          : {},
   })
   return {
     attemptId: attempt.id,
@@ -720,6 +748,232 @@ export async function getEvolutionJourney(attemptId: string, userId: string) {
       category: s.category,
       mustChange: s.mustChange,
     })),
+    complete: attempt.status === 'submitted',
+  }
+}
+
+// ─── Architecture Budget ─────────────────────────────────────────────────────
+
+function readBudgetProgress(attempt: { progress?: Record<string, unknown> }) {
+  const p = (attempt.progress ?? {}) as Record<string, unknown>
+  return {
+    stageIndex: typeof p.stageIndex === 'number' ? p.stageIndex : 0,
+    remaining: typeof p.remaining === 'number' ? p.remaining : 0,
+    reserved: typeof p.reserved === 'number' ? p.reserved : 0,
+    picks: Array.isArray(p.picks) ? (p.picks as Record<string, unknown>[]) : [],
+    deferredDebt: Array.isArray(p.deferredDebt)
+      ? (p.deferredDebt as { pressureId: string; severity: string; deferredAtStage: string }[])
+      : [],
+    stageGrades: Array.isArray(p.stageGrades) ? (p.stageGrades as Record<string, unknown>[]) : [],
+    decisionLog: Array.isArray(p.decisionLog) ? (p.decisionLog as Record<string, unknown>[]) : [],
+    draft: (p.draft as Record<string, unknown> | null) ?? null,
+    unitLabel: typeof p.unitLabel === 'string' ? p.unitLabel : 'Points',
+    lastStageGrade: p.lastStageGrade as Record<string, unknown> | undefined,
+    customInvestmentsLedger: Array.isArray(p.customInvestmentsLedger)
+      ? p.customInvestmentsLedger
+      : [],
+  }
+}
+
+export async function saveBudget(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+  draft?: Record<string, unknown> | null,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'budget') throw createError('Not a budget session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+
+  attempt.diagramData = diagramData
+  const progress = readBudgetProgress(attempt)
+  if (draft) progress.draft = draft
+  attempt.progress = progress as unknown as Record<string, unknown>
+  attempt.markModified('progress')
+  pushLog(attempt, 'info', 'Budget progress saved')
+  await attempt.save()
+  return { ok: true, diagramData: attempt.diagramData, progress: attempt.progress }
+}
+
+export async function submitBudgetStage(
+  attemptId: string,
+  userId: string,
+  submission: BudgetStageSubmission,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'budget') throw createError('Not a budget session', 400)
+  if (attempt.status === 'submitted') throw createError('Track already complete', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const payload = parseBudgetPayload(pack.payload)
+  const stages = getBudgetStages(pack.payload)
+  const progress = readBudgetProgress(attempt)
+  const stage = stages[progress.stageIndex]
+  if (!stage) throw createError('No more stages', 400)
+
+  // Apply budget delta from this stage before grading spend
+  const remainingBefore = progress.remaining + (stage.budgetDelta ?? 0)
+
+  const grade = gradeBudgetStage(payload, stage, submission, {
+    budgetRemainingBefore: remainingBefore,
+    reservedBefore: progress.reserved,
+    baselineDiagram: (pack.diagramSnapshot as Record<string, unknown>) ?? {},
+    openDebt: progress.deferredDebt,
+  })
+
+  if (!grade.accepted && grade.overspend) {
+    attempt.progress = {
+      ...progress,
+      draft: submission as unknown as Record<string, unknown>,
+      lastStageGrade: grade,
+    } as unknown as Record<string, unknown>
+    attempt.markModified('progress')
+    pushLog(attempt, 'warn', grade.narrative)
+    await attempt.save()
+    return {
+      grade,
+      progress: attempt.progress,
+      complete: false,
+      nextStageIndex: progress.stageIndex,
+      consoleLog: attempt.consoleLog,
+    }
+  }
+
+  // Commit picks
+  const invById = new Map((payload.investments ?? []).map(i => [i.id, i]))
+  for (const pick of grade.picks) {
+    const inv = invById.get(pick.investmentId)
+    const cost =
+      typeof pick.estimatedCost === 'number' ? pick.estimatedCost : inv?.cost ?? 0
+    progress.picks.push({
+      ...pick,
+      stageId: stage.id,
+      cost,
+      label: inv?.label ?? pick.investmentId,
+    })
+  }
+  for (const custom of submission.customInvestments ?? []) {
+    progress.customInvestmentsLedger.push({
+      ...custom,
+      stageId: stage.id,
+      at: Date.now(),
+    })
+  }
+
+  progress.remaining = grade.remaining
+  // Carry reserved into wallet for next stages
+  progress.reserved = grade.reserved
+
+  for (const d of grade.deferredDebt) {
+    if (!progress.deferredDebt.some(x => x.pressureId === d.pressureId)) {
+      progress.deferredDebt.push({
+        pressureId: d.pressureId,
+        severity: d.severity,
+        deferredAtStage: stage.id,
+      })
+    }
+  }
+
+  // Escalate debt severities for next stage preview
+  const nextStage = stages[progress.stageIndex + 1]
+  if (nextStage?.debtEscalations?.length) {
+    for (const esc of nextStage.debtEscalations) {
+      const row = progress.deferredDebt.find(d => d.pressureId === esc.pressureId)
+      if (row && row.severity === esc.fromSeverity) {
+        row.severity = esc.toSeverity
+      }
+    }
+  }
+
+  progress.stageGrades.push(grade as unknown as Record<string, unknown>)
+  progress.lastStageGrade = grade as unknown as Record<string, unknown>
+  progress.decisionLog.push({
+    stageId: stage.id,
+    at: Date.now(),
+    picks: grade.picks,
+    reserved: grade.reserved,
+    spent: grade.spent,
+    narrative: grade.narrative,
+  })
+  progress.draft = null
+
+  if (submission.diagram) {
+    attempt.diagramData = submission.diagram
+  }
+
+  const nextIndex = progress.stageIndex + 1
+  const complete = nextIndex >= stages.length
+  if (grade.accepted) {
+    progress.stageIndex = nextIndex
+    // On advancing, fold reserved into remaining for the next event
+    if (!complete && progress.reserved > 0) {
+      // reserved stays available; remaining already excludes it
+    }
+  }
+
+  attempt.progress = progress as unknown as Record<string, unknown>
+  attempt.markModified('progress')
+  attempt.result = {
+    ...(attempt.result && typeof attempt.result === 'object' ? attempt.result : {}),
+    lastStageGrade: grade,
+    stageIndex: progress.stageIndex,
+    complete,
+  }
+
+  if (complete && grade.accepted) {
+    attempt.status = 'submitted'
+    attempt.stage = 'complete'
+  }
+
+  pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
+  await attempt.save()
+
+  return {
+    grade,
+    progress: attempt.progress,
+    complete: complete && grade.accepted,
+    nextStageIndex: progress.stageIndex,
+    consoleLog: attempt.consoleLog,
+  }
+}
+
+export async function getBudgetReport(attemptId: string, userId: string) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'budget') throw createError('Not a budget session', 400)
+  const pack = await ChallengePack.findById(attempt.packId)
+  const payload = parseBudgetPayload(pack?.payload)
+  const progress = readBudgetProgress(attempt)
+  const stages = getBudgetStages(pack?.payload)
+
+  return {
+    pack: pack ? serializePack(pack) : null,
+    progress,
+    stages: stages.map(s => ({
+      id: s.id,
+      dayLabel: s.dayLabel,
+      title: s.title,
+      narrative: s.narrative,
+      budgetDelta: s.budgetDelta,
+    })),
+    report: buildBudgetReport(payload, {
+      stageIndex: progress.stageIndex,
+      remaining: progress.remaining,
+      reserved: progress.reserved,
+      picks: progress.picks as {
+        investmentId: string
+        stageId: string
+        cost?: number
+        why?: string[]
+      }[],
+      deferredDebt: progress.deferredDebt,
+      stageGrades: progress.stageGrades as unknown as import('./budgetGrade').BudgetStageGrade[],
+      decisionLog: progress.decisionLog,
+    }),
     complete: attempt.status === 'submitted',
   }
 }

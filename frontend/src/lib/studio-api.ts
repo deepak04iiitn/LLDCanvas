@@ -290,7 +290,68 @@ export const studioApi = {
       complete: boolean
     }>(`/studio/evolution/${attemptId}/journey`),
 
-  /** Score an owned artifact (also usable as a budget proxy). */
+  saveBudget: (
+    attemptId: string,
+    diagramData: unknown,
+    draft?: Record<string, unknown> | null,
+  ) =>
+    request<{ ok: boolean; diagramData?: unknown; progress?: Record<string, unknown> }>(
+      `/studio/budget/${attemptId}/save`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ diagramData, draft }),
+      },
+    ),
+
+  submitBudgetStage: (
+    attemptId: string,
+    body: {
+      picks: {
+        investmentId: string
+        why?: string[]
+        whyNote?: string
+        targetElementIds?: string[]
+        targetNames?: string[]
+        estimatedCost?: number
+      }[]
+      reserved?: number
+      deferredPressureIds?: string[]
+      customInvestments?: {
+        label: string
+        cost: number
+        why?: string[]
+        tags?: string[]
+      }[]
+      diagramData?: unknown
+    },
+  ) =>
+    request<{
+      grade: Record<string, unknown>
+      progress: Record<string, unknown>
+      complete: boolean
+      nextStageIndex: number
+      consoleLog?: DebuggerConsoleEntry[]
+    }>(`/studio/budget/${attemptId}/submit-stage`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  getBudgetReport: (attemptId: string) =>
+    request<{
+      pack: StudioPackDetail | null
+      progress: Record<string, unknown>
+      stages: {
+        id: string
+        dayLabel: string
+        title: string
+        narrative: string
+        budgetDelta?: number
+      }[]
+      report: Record<string, unknown>
+      complete: boolean
+    }>(`/studio/budget/${attemptId}/report`),
+
+  /** Score an owned artifact (also usable as a diagram-inflation proxy). */
   budget: {
     scoreArtifact: (artifactId: string) =>
       request<Record<string, unknown>>(`/artifacts/${artifactId}/score`, {
