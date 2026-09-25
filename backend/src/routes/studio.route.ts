@@ -5,14 +5,18 @@ import {
   getSession,
   listPublishedPacks,
   saveChange,
+  saveEvolution,
   startSession,
   submitChange,
   submitDebugger,
+  submitEvolutionStage,
   submitStructuralChallenge,
+  getEvolutionJourney,
 } from '../services/studio/challenge-session.service'
 import * as debuggerCtrl from '../controllers/studio/debugger.controller'
 import * as refactorCtrl from '../controllers/studio/refactor.controller'
 import * as changeOneCtrl from '../controllers/studio/change-one.controller'
+import * as evolutionCtrl from '../controllers/studio/evolution.controller'
 
 const router = Router()
 
@@ -34,6 +38,7 @@ router.get('/packs', async (req, res, next) => {
 router.get('/debugger/packs', debuggerCtrl.listDebuggerPacks)
 router.get('/refactor/packs', refactorCtrl.listRefactorPacks)
 router.get('/change-one/packs', changeOneCtrl.listChangeOnePacks)
+router.get('/evolution/packs', evolutionCtrl.listEvolutionPacks)
 
 /** Auth required for sessions / attempts. */
 router.post('/start', requireAuth, async (req, res, next) => {
@@ -119,6 +124,50 @@ router.post('/change/:attemptId/save', requireAuth, async (req, res, next) => {
     next(e)
   }
 })
+
+router.post('/evolution/:attemptId/save', requireAuth, async (req, res, next) => {
+  try {
+    const result = await saveEvolution(
+      paramId(req.params.attemptId),
+      req.user!.id,
+      req.body.diagramData ?? {},
+      req.body.draft ?? null,
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/evolution/:attemptId/submit-stage', requireAuth, async (req, res, next) => {
+  try {
+    const result = await submitEvolutionStage(paramId(req.params.attemptId), req.user!.id, {
+      decision: req.body.decision === 'noop' ? 'noop' : 'change',
+      pressures: Array.isArray(req.body.pressures) ? req.body.pressures : [],
+      classify: req.body.classify ?? {},
+      diagram: req.body.diagramData ?? req.body.diagram,
+      why: Array.isArray(req.body.why) ? req.body.why : [],
+      whyNote: typeof req.body.whyNote === 'string' ? req.body.whyNote : undefined,
+      tradeoffsAck: Array.isArray(req.body.tradeoffsAck) ? req.body.tradeoffsAck : [],
+      debtActions: Array.isArray(req.body.debtActions) ? req.body.debtActions : [],
+    })
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.get('/evolution/:attemptId/journey', requireAuth, async (req, res, next) => {
+  try {
+    const data = await getEvolutionJourney(paramId(req.params.attemptId), req.user!.id)
+    res.json(data)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/evolution/start', requireAuth, evolutionCtrl.start)
+router.get('/evolution/:sessionId', requireAuth, evolutionCtrl.get)
 
 // Type-specific aliases (sessionId = attemptId)
 router.post('/debugger/start', requireAuth, debuggerCtrl.start)

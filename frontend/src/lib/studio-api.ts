@@ -93,6 +93,7 @@ export interface StudioAttempt {
   marks?: DebuggerMark[]
   diagramData?: Record<string, unknown>
   result?: Record<string, unknown>
+  progress?: Record<string, unknown>
   hintsUsed?: number
   consoleLog?: DebuggerConsoleEntry[]
   startedAt?: string
@@ -232,6 +233,62 @@ export const studioApi = {
       method: 'POST',
       body: JSON.stringify({ diagramData, prediction }),
     }),
+
+  saveEvolution: (
+    attemptId: string,
+    diagramData: unknown,
+    draft?: Record<string, unknown> | null,
+  ) =>
+    request<{ ok: boolean; diagramData?: unknown; progress?: Record<string, unknown> }>(
+      `/studio/evolution/${attemptId}/save`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ diagramData, draft }),
+      },
+    ),
+
+  submitEvolutionStage: (
+    attemptId: string,
+    body: {
+      decision: 'change' | 'noop'
+      pressures?: string[]
+      classify?: {
+        keep?: string[]
+        change?: string[]
+        introduce?: string[]
+        remove?: string[]
+      }
+      diagramData?: unknown
+      why?: string[]
+      whyNote?: string
+      tradeoffsAck?: string[]
+      debtActions?: { id: string; action: 'fix' | 'defer' }[]
+    },
+  ) =>
+    request<{
+      grade: Record<string, unknown>
+      progress: Record<string, unknown>
+      complete: boolean
+      nextStageIndex: number
+      consoleLog?: DebuggerConsoleEntry[]
+    }>(`/studio/evolution/${attemptId}/submit-stage`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  getEvolutionJourney: (attemptId: string) =>
+    request<{
+      pack: StudioPackDetail | null
+      progress: Record<string, unknown>
+      stages: {
+        id: string
+        dayLabel: string
+        title: string
+        category?: string
+        mustChange: boolean
+      }[]
+      complete: boolean
+    }>(`/studio/evolution/${attemptId}/journey`),
 
   /** Score an owned artifact (also usable as a budget proxy). */
   budget: {

@@ -149,7 +149,7 @@ function blastRadiusOf(
     untouchedIds: untouched,
     directCount: direct.size,
     indirectCount: indirect.size,
-    untouchedCount: untouched.size,
+    untouchedCount: untouched.length,
   }
 }
 

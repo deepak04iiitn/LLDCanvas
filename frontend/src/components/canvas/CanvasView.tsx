@@ -18,13 +18,16 @@ import {
   type OnNodesDelete,
   type ReactFlowInstance,
   type OnConnectStart,
+  type OnReconnect,
+  type NodeMouseHandler,
+  type EdgeMouseHandler,
 } from '@xyflow/react'
 import { Trash2, CopyPlus } from 'lucide-react'
 import '@xyflow/react/dist/style.css'
 import { useEditor } from '@/contexts/EditorContext'
 import { nodeTypes } from './nodes'
 import { edgeTypes } from './edges'
-import { UMLMarkers } from './UMLMarkers'
+import { UMLMarkers, UMLMarkerScope } from './UMLMarkers'
 import { DraftConnectionLine } from './edges/DraftConnectionLine'
 import { EraserState } from '@/lib/eraserState'
 
@@ -177,6 +180,11 @@ interface CanvasViewProps {
   onConnectStart?: OnConnectStart
   onInit: (instance: ReactFlowInstance) => void
   onNodesDelete?: OnNodesDelete
+  onReconnect?: OnReconnect
+  /** Fired on node click when not in eraser mode (studio selection, etc.). */
+  onNodeClickExtra?: NodeMouseHandler
+  /** Fired on edge click when not in eraser mode. */
+  onEdgeClickExtra?: EdgeMouseHandler
   canvasMode: 'pan' | 'select' | 'eraser'
   selectedCount: number
   onDuplicate: () => void
@@ -185,6 +193,8 @@ interface CanvasViewProps {
   onEraseNode?: (nodeId: string) => void
   onEraseEdge?: (edgeId: string) => void
   readOnly?: boolean
+  /** Hide clone/delete selection bar (studio canvases). */
+  hideSelectionBar?: boolean
 }
 
 export function CanvasView({
@@ -196,6 +206,9 @@ export function CanvasView({
   onConnectStart,
   onInit,
   onNodesDelete,
+  onReconnect,
+  onNodeClickExtra,
+  onEdgeClickExtra,
   canvasMode,
   selectedCount,
   onDuplicate,
@@ -204,6 +217,7 @@ export function CanvasView({
   onEraseNode,
   onEraseEdge,
   readOnly,
+  hideSelectionBar,
 }: CanvasViewProps) {
   const { theme } = useEditor()
   const [guides, setGuides] = useState<GuideLines>({})
@@ -259,11 +273,14 @@ export function CanvasView({
   )
 
   const onNodeClick = useCallback(
-    (_: unknown, node: Node) => {
-      if (!isEraser) return
-      onEraseNode?.(node.id)
+    (evt: React.MouseEvent, node: Node) => {
+      if (isEraser) {
+        onEraseNode?.(node.id)
+        return
+      }
+      onNodeClickExtra?.(evt, node)
     },
-    [isEraser, onEraseNode],
+    [isEraser, onEraseNode, onNodeClickExtra],
   )
 
   const onEdgeMouseEnter = useCallback(
@@ -284,14 +301,18 @@ export function CanvasView({
   )
 
   const onEdgeClick = useCallback(
-    (_: unknown, edge: Edge) => {
-      if (!isEraser) return
-      onEraseEdge?.(edge.id)
+    (evt: React.MouseEvent, edge: Edge) => {
+      if (isEraser) {
+        onEraseEdge?.(edge.id)
+        return
+      }
+      onEdgeClickExtra?.(evt, edge)
     },
-    [isEraser, onEraseEdge],
+    [isEraser, onEraseEdge, onEdgeClickExtra],
   )
 
   return (
+    <UMLMarkerScope>
     <div
       className="relative h-full w-full overflow-hidden"
       data-mode={canvasMode}
@@ -307,7 +328,6 @@ export function CanvasView({
       {canvasMode === 'eraser' && (
         <style>{`.react-flow__pane, .react-flow__node, .react-flow__edge { cursor: ${ERASER_CURSOR} !important; }`}</style>
       )}
-      <UMLMarkers />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -315,6 +335,7 @@ export function CanvasView({
         onEdgesChange={onEdgesChange}
         onConnect={isEraser ? undefined : onConnect}
         onConnectStart={isEraser ? undefined : onConnectStart}
+        onReconnect={readOnly || isEraser ? undefined : onReconnect}
         onInit={onInit}
         onNodesDelete={onNodesDelete}
         nodeTypes={nodeTypes}
@@ -326,13 +347,13 @@ export function CanvasView({
         // In select mode: left-drag box-selects; right/middle-drag pans.
         // In pan mode: left-drag pans; Shift+drag still box-selects.
         // In eraser mode: no drag interaction (only hover + click to erase).
-        selectionOnDrag={canvasMode === 'select'}
+        selectionOnDrag={canvasMode === 'select' && !readOnly}
         panOnDrag={canvasMode === 'select' ? [1, 2] : isEraser ? false : true}
         selectionMode={SelectionMode.Partial}
         selectionKeyCode="Shift"
         multiSelectionKeyCode="Shift"
-        onNodeDrag={isEraser ? undefined : onNodeDrag}
-        onNodeDragStop={isEraser ? undefined : onNodeDragStop}
+        onNodeDrag={isEraser || readOnly ? undefined : onNodeDrag}
+        onNodeDragStop={isEraser || readOnly ? undefined : onNodeDragStop}
         onNodeMouseEnter={onNodeMouseEnter}
         onNodeMouseLeave={onNodeMouseLeave}
         onNodeClick={onNodeClick}
@@ -343,11 +364,13 @@ export function CanvasView({
         proOptions={{ hideAttribution: true }}
         nodesDraggable={!readOnly && !isEraser}
         nodesConnectable={!readOnly && !isEraser}
-        elementsSelectable={!readOnly && !isEraser}
+        elementsSelectable={!isEraser}
+        edgesReconnectable={!readOnly && !isEraser}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
         connectionLineComponent={DraftConnectionLine}
       >
+        <UMLMarkers />
         <Background
           variant={gridVariant}
           gap={16}
@@ -363,13 +386,16 @@ export function CanvasView({
         <AlignmentGuideOverlay guides={guides} />
 
         {/* ── Selection action bar ──────────────────────────────────────── */}
-        <SelectionBar
-          count={selectedCount}
-          onClone={onDuplicate}
-          onDelete={onDelete}
-          onClear={onClearSelection}
-        />
+        {!hideSelectionBar && (
+          <SelectionBar
+            count={selectedCount}
+            onClone={onDuplicate}
+            onDelete={onDelete}
+            onClear={onClearSelection}
+          />
+        )}
       </ReactFlow>
     </div>
+    </UMLMarkerScope>
   )
 }

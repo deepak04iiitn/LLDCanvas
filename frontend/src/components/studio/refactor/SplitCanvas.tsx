@@ -10,6 +10,8 @@ export interface SplitCanvasProps {
   onSelect: (elementId: string, kind: 'node' | 'edge') => void
   onWorkingChange: (diagram: DebuggerDiagram) => void
   readOnlyWorking?: boolean
+  originalLabel?: string
+  workingLabel?: string
   className?: string
 }
 
@@ -20,6 +22,8 @@ export function SplitCanvas({
   onSelect,
   onWorkingChange,
   readOnlyWorking,
+  originalLabel = 'Original design',
+  workingLabel = 'Your refactored design',
   className,
 }: SplitCanvasProps) {
   return (
@@ -32,7 +36,7 @@ export function SplitCanvas({
       <div className="flex min-h-0 flex-col border-b border-hairline lg:border-b-0 lg:border-r">
         <div className="shrink-0 border-b border-hairline bg-paper px-3 py-1.5">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-            Original design
+            {originalLabel}
           </p>
         </div>
         <div className="relative min-h-0 flex-1">
@@ -49,7 +53,7 @@ export function SplitCanvas({
       <div className="flex min-h-0 flex-col">
         <div className="shrink-0 border-b border-hairline bg-brand-tint/20 px-3 py-1.5">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
-            Your refactored design
+            {workingLabel}
           </p>
         </div>
         <div className="relative min-h-0 flex-1">

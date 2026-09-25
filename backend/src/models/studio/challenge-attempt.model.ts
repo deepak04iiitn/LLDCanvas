@@ -11,6 +11,8 @@ export interface IChallengeAttempt extends Document {
   marks: unknown[]
   diagramData?: Record<string, unknown>
   result?: Record<string, unknown>
+  /** Evolution (and other multi-step) progress blob */
+  progress?: Record<string, unknown>
   hintsUsed: number
   consoleLog: unknown[]
   startedAt: Date
@@ -32,6 +34,7 @@ const challengeAttemptSchema = new Schema<IChallengeAttempt>(
     marks: { type: [Schema.Types.Mixed], default: [] },
     diagramData: { type: Schema.Types.Mixed },
     result: { type: Schema.Types.Mixed },
+    progress: { type: Schema.Types.Mixed, default: {} },
     hintsUsed: { type: Number, default: 0 },
     consoleLog: { type: [Schema.Types.Mixed], default: [] },
     startedAt: { type: Date, default: Date.now },

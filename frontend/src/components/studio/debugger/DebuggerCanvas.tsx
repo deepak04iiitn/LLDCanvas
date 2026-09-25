@@ -1,20 +1,15 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ReactFlow,
   ReactFlowProvider,
-  Background,
-  Controls,
-  Handle,
-  Position,
   useNodesState,
   useEdgesState,
   useReactFlow,
   applyNodeChanges,
   applyEdgeChanges,
+  addEdge,
   reconnectEdge,
-  ConnectionMode,
   type Node,
   type Edge,
   type Connection,
@@ -23,18 +18,27 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
   type OnReconnect,
+  type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { nanoid } from 'nanoid'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { EditorProvider } from '@/contexts/EditorContext'
-import { edgeTypes, DEFAULT_EDGE_TYPE } from '@/components/canvas/edges'
-import { UMLMarkers } from '@/components/canvas/UMLMarkers'
+import { CanvasView } from '@/components/canvas/CanvasView'
+import { DEFAULT_EDGE_TYPE } from '@/components/canvas/edges'
 import { RelationshipPicker } from '@/components/canvas/RelationshipPicker'
-import { DraftConnectionLine } from '@/components/canvas/edges/DraftConnectionLine'
 import { resetConnectionDraft, getConnectionDraftWaypoints } from '@/lib/connectionDraft'
-import type { RelationshipType, UMLEdgeData } from '@/types'
+import type {
+  RelationshipType,
+  UMLEdgeData,
+  UMLMethod,
+  UMLAttribute,
+  NodeType,
+  UMLNodeData,
+  Waypoint,
+  Visibility,
+} from '@/types'
 
 export interface DebuggerDiagram {
   nodes: unknown[]
@@ -50,6 +54,8 @@ const RELATIONSHIP_TYPES = new Set<string>([
   'dependency',
   'bidirectional',
 ])
+
+const NODE_TYPES = new Set<string>(['class', 'interface', 'abstract-class', 'enum', 'note'])
 
 function eidOf(data: Record<string, unknown> | undefined, fallback: string) {
   return String(data?.elementId ?? fallback)
@@ -69,9 +75,96 @@ function resolveRelationshipType(
   return DEFAULT_EDGE_TYPE
 }
 
+function resolveNodeType(type: unknown, data: Record<string, unknown> | undefined): NodeType {
+  const fromData = data?.nodeType
+  if (typeof fromData === 'string' && NODE_TYPES.has(fromData)) {
+    return fromData as NodeType
+  }
+  if (typeof type === 'string' && NODE_TYPES.has(type)) {
+    return type as NodeType
+  }
+  if (type === 'debuggerClass') return 'class'
+  return 'class'
+}
+
+function normalizeVisibility(v: unknown, fallback: Visibility): Visibility {
+  if (v === '+' || v === '-' || v === '#' || v === '~') return v
+  const s = String(v ?? '').toLowerCase()
+  if (s === 'public' || s === '+') return '+'
+  if (s === 'private' || s === '-') return '-'
+  if (s === 'protected' || s === '#') return '#'
+  if (s === 'package' || s === '~') return '~'
+  return fallback
+}
+
+function normalizeMethod(m: unknown, i: number): UMLMethod {
+  if (m && typeof m === 'object' && 'name' in (m as object)) {
+    const o = m as Partial<UMLMethod> & { visibility?: unknown; params?: unknown }
+    const params =
+      typeof o.params === 'string'
+        ? o.params
+        : Array.isArray(o.params)
+          ? (o.params as { name?: string; type?: string }[])
+              .map(p => `${p.name ?? 'arg'}: ${p.type ?? 'Object'}`)
+              .join(', ')
+          : ''
+    return {
+      id: o.id ?? `m${i}`,
+      visibility: normalizeVisibility(o.visibility, '+'),
+      name: String(o.name ?? 'method'),
+      params,
+      returnType: String(o.returnType ?? 'void'),
+      isStatic: Boolean(o.isStatic),
+      isAbstract: Boolean(o.isAbstract),
+      isConstructor: Boolean(o.isConstructor),
+    }
+  }
+  const raw = String(m ?? 'method').trim()
+  const visMatch = raw.match(/^([+\-#~])\s*/)
+  const visibility = (visMatch?.[1] as UMLMethod['visibility']) ?? '+'
+  const rest = raw.replace(/^([+\-#~])\s*/, '')
+  const name = rest.replace(/\s*\(.*$/, '').trim() || 'method'
+  const paramsMatch = rest.match(/\((.*)\)/)
+  return {
+    id: `m${i}`,
+    visibility,
+    name,
+    params: paramsMatch?.[1]?.trim() ?? '',
+    returnType: 'void',
+    isStatic: false,
+    isAbstract: false,
+  }
+}
+
+function normalizeAttribute(a: unknown, i: number): UMLAttribute {
+  if (a && typeof a === 'object' && 'name' in (a as object)) {
+    const o = a as Partial<UMLAttribute> & { visibility?: unknown }
+    return {
+      id: o.id ?? `a${i}`,
+      visibility: normalizeVisibility(o.visibility, '-'),
+      name: String(o.name ?? 'field'),
+      type: String(o.type ?? 'String'),
+      isStatic: Boolean(o.isStatic),
+    }
+  }
+  const raw = String(a ?? 'field').trim()
+  const visMatch = raw.match(/^([+\-#~])\s*/)
+  const visibility = (visMatch?.[1] as UMLAttribute['visibility']) ?? '-'
+  const rest = raw.replace(/^([+\-#~])\s*/, '')
+  const [name, type] = rest.split(':').map(s => s.trim())
+  return {
+    id: `a${i}`,
+    visibility,
+    name: name || 'field',
+    type: type || 'String',
+    isStatic: false,
+  }
+}
+
 function mapDiagramNodes(ns: Node[]): DebuggerDiagram['nodes'] {
   return ns.map(n => ({
     id: n.id,
+    type: n.type,
     position: n.position,
     data: n.data,
   }))
@@ -82,6 +175,12 @@ function mapDiagramEdges(es: Edge[]): DebuggerDiagram['edges'] {
     const data = (e.data ?? {}) as Record<string, unknown>
     const relationshipType = resolveRelationshipType(e.type, data)
     const hasWaypoints = Array.isArray(data.waypoints) && data.waypoints.length > 0
+    const lineStyle =
+      data.lineStyle === 'step' || data.lineStyle === 'straight'
+        ? data.lineStyle
+        : hasWaypoints
+          ? undefined
+          : 'step'
     return {
       id: e.id,
       source: e.source,
@@ -93,121 +192,54 @@ function mapDiagramEdges(es: Edge[]): DebuggerDiagram['edges'] {
         ...data,
         relationshipType,
         elementId: eidOf(data, e.id),
-        waypoints: hasWaypoints ? data.waypoints : undefined,
-        lineStyle: hasWaypoints
-          ? undefined
-          : ((data.lineStyle as string | undefined) ?? 'step'),
+        // Step routing ignores waypoints; keeping both caused broken polylines
+        waypoints: lineStyle === 'step' ? undefined : hasWaypoints ? data.waypoints : undefined,
+        lineStyle,
       },
     }
   })
 }
 
-function toRfNodes(
-  raw: unknown[],
-  selectedId: string | null,
-  highlightedIds: Set<string>,
-  markedIds: Set<string>,
-  editable: boolean,
-): Node[] {
-  return raw.map((n, i) => {
-    const node = n as {
-      id?: string
-      position?: { x: number; y: number }
-      data?: Record<string, unknown>
-      type?: string
-    }
-    const id = String(node.id ?? `n${i}`)
-    const data = { ...(node.data ?? {}) }
-    const elementId = eidOf(data, id)
-    const name = String(data.name ?? id)
-    const methods = Array.isArray(data.methods) ? data.methods : []
-    const selected = selectedId === elementId || selectedId === id
-    const highlighted = highlightedIds.has(elementId) || highlightedIds.has(id)
-    const marked = markedIds.has(elementId) || markedIds.has(id)
-
-    return {
-      id,
-      type: 'debuggerClass',
-      position: node.position ?? { x: (i % 4) * 220, y: Math.floor(i / 4) * 160 },
-      data: {
-        ...data,
-        elementId,
-        name,
-        methods,
-        nodeType: data.nodeType ?? node.type ?? 'class',
-        selected,
-        highlighted,
-        marked,
-        editable,
-      },
-      selected,
-    }
-  })
-}
-
-const SIDE_POSITION: Record<'top' | 'right' | 'bottom' | 'left', Position> = {
-  top: Position.Top,
-  right: Position.Right,
-  bottom: Position.Bottom,
-  left: Position.Left,
-}
-const SIDE_OFFSETS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95] as const
-
-function sideHandleStyle(side: 'top' | 'right' | 'bottom' | 'left', pct: number) {
-  return side === 'top' || side === 'bottom' ? { left: `${pct}%` } : { top: `${pct}%` }
-}
-
-/** Same dense border ports as the UML editor (every 5% along each side). */
-const HANDLE_POSITIONS = (['top', 'right', 'bottom', 'left'] as const).flatMap(side =>
-  SIDE_OFFSETS.map(pct => ({
-    id: pct === 50 ? side : `${side}@${pct}`,
-    position: SIDE_POSITION[side],
-    style: sideHandleStyle(side, pct),
-  })),
-)
-
-const HANDLE_BASE =
-  '!h-2.5 !w-2.5 !rounded-full !border-[1.5px] !border-white !bg-brand ' +
-  '!shadow-sm !transition-[opacity,transform] !duration-100'
-
-function snap5(v: number): number {
-  return Math.max(5, Math.min(95, Math.round(v / 5) * 5))
-}
-
-function nearestHandleId(clientX: number, clientY: number, rect: DOMRect, zone = 14): string | null {
-  const mx = clientX - rect.left
-  const my = clientY - rect.top
-  const w = rect.width
-  const h = rect.height
-  const dTop = my
-  const dBottom = h - my
-  const dLeft = mx
-  const dRight = w - mx
-  const closest = Math.min(dTop, dBottom, dLeft, dRight)
-  if (closest > zone) return null
-  if (closest === dTop) {
-    const p = snap5((mx / w) * 100)
-    return p === 50 ? 'top' : `top@${p}`
-  }
-  if (closest === dBottom) {
-    const p = snap5((mx / w) * 100)
-    return p === 50 ? 'bottom' : `bottom@${p}`
-  }
-  if (closest === dLeft) {
-    const p = snap5((my / h) * 100)
-    return p === 50 ? 'left' : `left@${p}`
-  }
-  const p = snap5((my / h) * 100)
-  return p === 50 ? 'right' : `right@${p}`
-}
-
-function estimateNodeSize(node: {
-  data?: { methods?: unknown[] }
+function estimateNodeBox(node: {
+  data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean }
 }): { w: number; h: number } {
   const methods = Array.isArray(node.data?.methods) ? node.data!.methods!.length : 0
-  const shown = Math.min(methods, 6)
-  const h = 36 + (shown > 0 ? 8 + shown * 14 : 0) + (methods > 6 ? 12 : 0)
-  return { w: 160, h: Math.max(h, 48) }
+  const attrs = Array.isArray(node.data?.attributes) ? node.data!.attributes!.length : 0
+  // Studio keeps add-row chrome collapsed until select — match locked height.
+  return { w: 220, h: Math.max(64, 52 + attrs * 20 + methods * 20 + 8) }
+}
+
+/** Push nodes apart so edge step-routing has room (avoids sideways U-stubs). */
+function ensureNodeSpacing(nodes: Node[]): Node[] {
+  if (nodes.length < 2) return nodes
+  const next = nodes.map(n => ({ ...n, position: { ...n.position } }))
+  const order = [...next.keys()].sort(
+    (i, j) => next[i].position.y - next[j].position.y || next[i].position.x - next[j].position.x,
+  )
+  const GAP = 100
+  const NEAR_X = 360
+  for (let a = 0; a < order.length; a++) {
+    for (let b = a + 1; b < order.length; b++) {
+      const i = order[a]
+      const j = order[b]
+      const A = next[i]
+      const B = next[j]
+      const as = estimateNodeBox(
+        A as { data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean } },
+      )
+      const bs = estimateNodeBox(
+        B as { data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean } },
+      )
+      const acx = A.position.x + as.w / 2
+      const bcx = B.position.x + bs.w / 2
+      const nearHorizontally = Math.abs(acx - bcx) < NEAR_X
+      const minY = A.position.y + as.h + GAP
+      if (nearHorizontally && B.position.y < minY) {
+        B.position.y = minY
+      }
+    }
+  }
+  return next
 }
 
 function normalizeHandleId(h?: string | null): string | undefined {
@@ -224,13 +256,18 @@ function isValidHandleId(h?: string): boolean {
   return Boolean(h && /^(top|right|bottom|left)(@\d+)?$/.test(h))
 }
 
-/** Mid-side ports: vertical stacks use bottom→top; horizontal use left↔right. */
 function pickHandles(
-  source: { position: { x: number; y: number }; data?: { methods?: unknown[] } },
-  target: { position: { x: number; y: number }; data?: { methods?: unknown[] } },
+  source: {
+    position: { x: number; y: number }
+    data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean }
+  },
+  target: {
+    position: { x: number; y: number }
+    data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean }
+  },
 ): { sourceHandle: string; targetHandle: string } {
-  const s = estimateNodeSize(source)
-  const t = estimateNodeSize(target)
+  const s = estimateNodeBox(source)
+  const t = estimateNodeBox(target)
   const sx = source.position.x + s.w / 2
   const sy = source.position.y + s.h / 2
   const tx = target.position.x + t.w / 2
@@ -247,6 +284,69 @@ function pickHandles(
     : { sourceHandle: 'left', targetHandle: 'right' }
 }
 
+function toRfNodes(
+  raw: unknown[],
+  selectedId: string | null,
+  highlightedIds: Set<string>,
+  markedIds: Set<string>,
+  locked: boolean,
+): Node[] {
+  const mapped = raw.map((n, i) => {
+    const node = n as {
+      id?: string
+      position?: { x: number; y: number }
+      data?: Record<string, unknown>
+      type?: string
+    }
+    const id = String(node.id ?? `n${i}`)
+    const rawData = { ...(node.data ?? {}) }
+    const elementId = eidOf(rawData, id)
+    const nodeType = resolveNodeType(node.type, rawData)
+    const name = String(rawData.name ?? id)
+    const methods = (Array.isArray(rawData.methods) ? rawData.methods : []).map(normalizeMethod)
+    const attributes = (Array.isArray(rawData.attributes) ? rawData.attributes : []).map(
+      normalizeAttribute,
+    )
+    const selected = selectedId === elementId || selectedId === id
+    const highlighted = highlightedIds.has(elementId) || highlightedIds.has(id)
+    const marked = markedIds.has(elementId) || markedIds.has(id)
+
+    const data: UMLNodeData & {
+      elementId: string
+      highlighted: boolean
+      marked: boolean
+      locked: boolean
+    } = {
+      ...(rawData as object),
+      elementId,
+      nodeType,
+      name,
+      methods,
+      attributes,
+      stereotype:
+        typeof rawData.stereotype === 'string'
+          ? rawData.stereotype
+          : nodeType === 'interface'
+            ? 'interface'
+            : nodeType === 'enum'
+              ? 'enum'
+              : undefined,
+      highlighted,
+      marked,
+      locked,
+    }
+
+    return {
+      id,
+      type: nodeType === 'note' ? 'note' : nodeType,
+      position: node.position ?? { x: (i % 4) * 240, y: Math.floor(i / 4) * 180 },
+      data,
+      selected,
+    }
+  })
+  return ensureNodeSpacing(mapped)
+}
+
 function toRfEdges(
   raw: unknown[],
   nodesRaw: unknown[],
@@ -257,13 +357,13 @@ function toRfEdges(
 ): Edge[] {
   const nodeById = new Map<
     string,
-    { position: { x: number; y: number }; data?: { methods?: unknown[] } }
+    { position: { x: number; y: number }; data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean } }
   >()
   for (const n of nodesRaw) {
     const node = n as {
       id?: string
       position?: { x: number; y: number }
-      data?: { methods?: unknown[] }
+      data?: { methods?: unknown[]; attributes?: unknown[]; locked?: boolean }
     }
     if (node.id) {
       nodeById.set(String(node.id), {
@@ -273,7 +373,25 @@ function toRfEdges(
     }
   }
 
-  return raw.map((e, i) => {
+  // First pass: build edge stubs with geometry-based handles (ignore stale seed
+  // handles after spacing — same bottom→top on a short gap causes U-stubs).
+  type Stub = {
+    id: string
+    sourceId: string
+    targetId: string
+    data: Record<string, unknown>
+    elementId: string
+    relationshipType: RelationshipType
+    selected: boolean
+    highlighted: boolean
+    marked: boolean
+    sourceHandle: string
+    targetHandle: string
+    lineStyle: 'step' | 'straight' | undefined
+  }
+
+  const stubs: Stub[] = []
+  raw.forEach((e, i) => {
     const edge = e as {
       id?: string
       source?: string
@@ -284,145 +402,95 @@ function toRfEdges(
       data?: Record<string, unknown>
     }
     const id = String(edge.id ?? `e${i}`)
-    const data = { ...(edge.data ?? {}) }
-    const elementId = eidOf(data, id)
-    const relationshipType = resolveRelationshipType(edge.type, data)
-    const selected = selectedId === elementId || selectedId === id
-    const highlighted = highlightedIds.has(elementId) || highlightedIds.has(id)
-    const marked = markedIds.has(elementId) || markedIds.has(id)
-
     const sourceId = String(edge.source)
     const targetId = String(edge.target)
-    let sourceHandle = normalizeHandleId(edge.sourceHandle)
-    let targetHandle = normalizeHandleId(edge.targetHandle)
-    if (
-      !sourceHandle ||
-      !targetHandle ||
-      !isValidHandleId(sourceHandle) ||
-      !isValidHandleId(targetHandle)
-    ) {
-      const src = nodeById.get(sourceId)
-      const tgt = nodeById.get(targetId)
-      if (src && tgt) {
-        const picked = pickHandles(src, tgt)
-        sourceHandle = isValidHandleId(sourceHandle) ? sourceHandle : picked.sourceHandle
-        targetHandle = isValidHandleId(targetHandle) ? targetHandle : picked.targetHandle
-      }
-    }
+    if (!nodeById.has(sourceId) || !nodeById.has(targetId)) return
 
-    const hasWaypoints = Array.isArray(data.waypoints) && (data.waypoints as unknown[]).length > 0
-    return {
+    const data = { ...(edge.data ?? {}) }
+    // Drop draft waypoints that break routing (they force polyline over step).
+    delete data.waypoints
+    const elementId = eidOf(data, id)
+    const relationshipType = resolveRelationshipType(edge.type, data)
+    const src = nodeById.get(sourceId)!
+    const tgt = nodeById.get(targetId)!
+    const picked = pickHandles(src, tgt)
+
+    const sBox = estimateNodeBox(src)
+    const tBox = estimateNodeBox(tgt)
+    const gapY = Math.abs(
+      tgt.position.y + tBox.h / 2 - (src.position.y + sBox.h / 2),
+    )
+    // Step elbows need vertical room; otherwise RF draws sideways loops.
+    const lineStyleRaw = data.lineStyle
+    let lineStyle: 'step' | 'straight' | undefined =
+      lineStyleRaw === 'step' || lineStyleRaw === 'straight' ? lineStyleRaw : 'step'
+    if (lineStyle === 'step' && gapY < 140) lineStyle = 'straight'
+
+    stubs.push({
       id,
-      source: sourceId,
-      target: targetId,
-      sourceHandle,
-      targetHandle,
-      type: relationshipType,
-      data: {
-        ...data,
-        elementId,
-        relationshipType,
-        // Pack edges default to elbow; user-drawn edges with bend points stay straight+waypoints
-        lineStyle: hasWaypoints
-          ? undefined
-          : ((data.lineStyle as string | undefined) ?? 'step'),
-        waypoints: hasWaypoints ? data.waypoints : undefined,
-        hideChrome: true,
-        highlighted,
-        marked,
-      },
-      selected,
-      reconnectable: editable,
-      animated: highlighted,
-    }
+      sourceId,
+      targetId,
+      data,
+      elementId,
+      relationshipType,
+      selected: selectedId === elementId || selectedId === id,
+      highlighted: highlightedIds.has(elementId) || highlightedIds.has(id),
+      marked: markedIds.has(elementId) || markedIds.has(id),
+      sourceHandle: picked.sourceHandle,
+      targetHandle: picked.targetHandle,
+      lineStyle,
+    })
   })
-}
 
-function DebuggerClassNode({ data }: { data: Record<string, unknown> }) {
-  const methods = Array.isArray(data.methods) ? data.methods : []
-  const name = String(data.name ?? 'Class')
-  const nodeType = String(data.nodeType ?? 'class')
-  const selected = Boolean(data.selected)
-  const highlighted = Boolean(data.highlighted)
-  const marked = Boolean(data.marked)
-  const editable = Boolean(data.editable)
-  const nodeRef = useRef<HTMLDivElement>(null)
-  const [activeHandle, setActiveHandle] = useState<string | null>(null)
+  // Spread sibling edges that share the same source side so paths don't stack.
+  const bySourceSide = new Map<string, Stub[]>()
+  for (const s of stubs) {
+    const side = s.sourceHandle.split('@')[0]
+    const key = `${s.sourceId}|${side}`
+    if (!bySourceSide.has(key)) bySourceSide.set(key, [])
+    bySourceSide.get(key)!.push(s)
+  }
+  for (const group of bySourceSide.values()) {
+    if (group.length < 2) continue
+    const side = group[0].sourceHandle.split('@')[0] as 'top' | 'right' | 'bottom' | 'left'
+    group.sort((a, b) => {
+      const ta = nodeById.get(a.targetId)!.position
+      const tb = nodeById.get(b.targetId)!.position
+      return side === 'top' || side === 'bottom' ? ta.x - tb.x : ta.y - tb.y
+    })
+    const n = group.length
+    group.forEach((s, i) => {
+      const pct = Math.round(20 + (60 * (i + 1)) / (n + 1))
+      const snapped = Math.max(5, Math.min(95, Math.round(pct / 5) * 5))
+      s.sourceHandle = snapped === 50 ? side : `${side}@${snapped}`
+    })
+  }
 
-  const onBorderMouseMove = useCallback(
-    (e: ReactMouseEvent) => {
-      if (!editable) return
-      const rect = nodeRef.current?.getBoundingClientRect()
-      if (rect) setActiveHandle(nearestHandleId(e.clientX, e.clientY, rect))
+  return stubs.map(s => ({
+    id: s.id,
+    source: s.sourceId,
+    target: s.targetId,
+    sourceHandle: s.sourceHandle,
+    targetHandle: s.targetHandle,
+    type: s.relationshipType,
+    data: {
+      ...s.data,
+      elementId: s.elementId,
+      relationshipType: s.relationshipType,
+      lineStyle: s.lineStyle,
+      waypoints: undefined,
+      highlighted: s.highlighted,
+      marked: s.marked,
+    } satisfies UMLEdgeData & {
+      elementId: string
+      highlighted: boolean
+      marked: boolean
     },
-    [editable],
-  )
-
-  const onBorderMouseLeave = useCallback(() => {
-    setActiveHandle(null)
-  }, [])
-
-  return (
-    <div
-      ref={nodeRef}
-      onMouseMove={onBorderMouseMove}
-      onMouseLeave={onBorderMouseLeave}
-      className={cn(
-        'relative min-w-[140px] max-w-[200px] rounded-md border bg-paper-elevated text-left shadow-sm',
-        marked && 'border-amber-500 ring-2 ring-amber-400/40',
-        !marked && highlighted && 'border-brand ring-2 ring-brand/30',
-        !marked && !highlighted && selected && 'border-brand',
-        !marked && !highlighted && !selected && 'border-hairline',
-      )}
-    >
-      {/* Dense border handles like UML editor — only nearest lights up */}
-      {HANDLE_POSITIONS.map(({ id, position, style }) => {
-        const visible = editable && id === activeHandle
-        return (
-          <Handle
-            key={id}
-            id={id}
-            type="source"
-            position={position}
-            style={style}
-            className={cn(
-              HANDLE_BASE,
-              visible ? 'opacity-100! hover:scale-125!' : 'opacity-0!',
-            )}
-          />
-        )
-      })}
-      <div className="border-b border-hairline px-2.5 py-1.5">
-        {nodeType !== 'class' && (
-          <p className="font-mono text-[9px] uppercase tracking-wide text-ink-faint">
-            «{nodeType}»
-          </p>
-        )}
-        <p className="font-serif text-[13px] font-medium text-ink">{name}</p>
-      </div>
-      {methods.length > 0 && (
-        <ul className="space-y-0.5 px-2.5 py-1.5">
-          {methods.slice(0, 6).map((m, i) => {
-            const label =
-              typeof m === 'string'
-                ? m
-                : `${(m as { name?: string }).name ?? 'method'}()`
-            return (
-              <li key={i} className="truncate font-mono text-[10px] text-ink-muted">
-                + {label}
-              </li>
-            )
-          })}
-          {methods.length > 6 && (
-            <li className="font-mono text-[9px] text-ink-faint">+{methods.length - 6} more</li>
-          )}
-        </ul>
-      )}
-    </div>
-  )
+    selected: s.selected,
+    reconnectable: editable,
+    animated: s.highlighted,
+  }))
 }
-
-const nodeTypes = { debuggerClass: DebuggerClassNode }
 
 /** Stable defaults — `= []` in props creates a new array every render and loops RF sync. */
 const EMPTY_IDS: string[] = []
@@ -486,14 +554,24 @@ function DebuggerCanvasInner({
           target?: string
           sourceHandle?: string | null
           targetHandle?: string | null
+          type?: string
+          data?: { relationshipType?: string }
         }
-        return [edge.id, edge.source, edge.target, edge.sourceHandle, edge.targetHandle]
+        return [
+          edge.id,
+          edge.source,
+          edge.target,
+          edge.sourceHandle,
+          edge.targetHandle,
+          edge.type,
+          edge.data?.relationshipType,
+        ]
       }),
     )}`
   }, [diagram])
 
   const [nodes, setNodes] = useNodesState(
-    toRfNodes(diagram.nodes ?? [], selectedId, hi, mk, editable),
+    toRfNodes(diagram.nodes ?? [], selectedId, hi, mk, !editable),
   )
   const [edges, setEdges] = useEdgesState(
     toRfEdges(diagram.edges ?? [], diagram.nodes ?? [], selectedId, hi, mk, editable),
@@ -505,6 +583,7 @@ function DebuggerCanvasInner({
   edgesRef.current = edges
 
   const skipNextSync = useRef(false)
+  const rfInstance = useRef<ReactFlowInstance | null>(null)
 
   const emitChange = useCallback(
     (ns: Node[], es: Edge[]) => {
@@ -514,20 +593,25 @@ function DebuggerCanvasInner({
         nodes: mapDiagramNodes(ns),
         edges: mapDiagramEdges(es),
       }
-      // Never call parent setState inside RF/setState updaters — defer to next tick.
       queueMicrotask(() => onDiagramChange(payload))
     },
     [onDiagramChange, readOnly],
   )
 
-  // Full replace only when parent diagram content changes (undo / external), not on selection.
   useEffect(() => {
     if (skipNextSync.current) {
       skipNextSync.current = false
       return
     }
-    const nextNodes = toRfNodes(diagram.nodes ?? [], selectedId, hi, mk, editable)
-    const nextEdges = toRfEdges(diagram.edges ?? [], diagram.nodes ?? [], selectedId, hi, mk, editable)
+    const nextNodes = toRfNodes(diagram.nodes ?? [], selectedId, hi, mk, !editable)
+    const nextEdges = toRfEdges(
+      diagram.edges ?? [],
+      nextNodes,
+      selectedId,
+      hi,
+      mk,
+      editable,
+    )
     setNodes(nextNodes)
     setEdges(nextEdges)
     nodesRef.current = nextNodes
@@ -535,7 +619,6 @@ function DebuggerCanvasInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- diagram read when diagramKey changes
   }, [diagramKey, editable, setNodes, setEdges])
 
-  // Selection / highlight chrome only — keep positions.
   useEffect(() => {
     setNodes(ns =>
       ns.map(n => {
@@ -548,10 +631,9 @@ function DebuggerCanvasInner({
           selected,
           data: {
             ...n.data,
-            selected,
             highlighted,
             marked,
-            editable,
+            locked: !editable,
           },
         }
       }),
@@ -598,33 +680,18 @@ function DebuggerCanvasInner({
     [onSelect],
   )
 
-  const onNodeDoubleClick: NodeMouseHandler = useCallback(
-    (_, node) => {
-      if (readOnly) return
-      const current = String((node.data as { name?: string })?.name ?? node.id)
-      const nextName = window.prompt('Rename class', current)
-      if (nextName == null) return
-      const name = nextName.trim()
-      if (!name || name === current) return
-      const updated = nodesRef.current.map(n =>
-        n.id === node.id ? { ...n, data: { ...n.data, name } } : n,
-      )
-      nodesRef.current = updated
-      setNodes(updated)
-      emitChange(updated, edgesRef.current)
-      const elementId = String((node.data as { elementId?: string })?.elementId ?? node.id)
-      onSelect(elementId, 'node')
-    },
-    [readOnly, setNodes, emitChange, onSelect],
-  )
-
   const handleNodesChange: OnNodesChange = useCallback(
     changes => {
-      const next = applyNodeChanges(changes, nodesRef.current)
+      // Always apply selection changes (debugger click-to-highlight on read-only).
+      const allowed = readOnly
+        ? changes.filter(c => c.type === 'select')
+        : changes
+      if (allowed.length === 0) return
+      const next = applyNodeChanges(allowed, nodesRef.current)
       nodesRef.current = next
       setNodes(next)
       if (!readOnly) {
-        const shouldEmit = changes.some(
+        const shouldEmit = allowed.some(
           c =>
             c.type === 'remove' ||
             c.type === 'add' ||
@@ -639,11 +706,15 @@ function DebuggerCanvasInner({
 
   const handleEdgesChange: OnEdgesChange = useCallback(
     changes => {
-      const next = applyEdgeChanges(changes, edgesRef.current)
+      const allowed = readOnly
+        ? changes.filter(c => c.type === 'select')
+        : changes
+      if (allowed.length === 0) return
+      const next = applyEdgeChanges(allowed, edgesRef.current)
       edgesRef.current = next
       setEdges(next)
       if (!readOnly) {
-        const shouldEmit = changes.some(
+        const shouldEmit = allowed.some(
           c => c.type === 'remove' || c.type === 'add' || c.type === 'replace',
         )
         if (shouldEmit) emitChange(nodesRef.current, next)
@@ -653,26 +724,22 @@ function DebuggerCanvasInner({
   )
 
   const onConnectStart = useCallback(() => {
-    if (readOnly) return
     resetConnectionDraft()
-  }, [readOnly])
+  }, [])
 
   const onConnect = useCallback(
     (c: Connection) => {
       if (readOnly) return
-      if (!c.source || !c.target) return
-      if (c.source === c.target && (c.sourceHandle ?? null) === (c.targetHandle ?? null)) return
-      const eds = edgesRef.current
-      const duplicate = eds.some(
+      const isSameHandle = c.source === c.target && c.sourceHandle === c.targetHandle
+      const isDuplicate = edgesRef.current.some(
         e =>
           e.source === c.source &&
           e.target === c.target &&
           (e.sourceHandle ?? null) === (c.sourceHandle ?? null) &&
           (e.targetHandle ?? null) === (c.targetHandle ?? null),
       )
-      if (duplicate) {
-        toast.info('That relationship already exists')
-        resetConnectionDraft()
+      if (isSameHandle || isDuplicate) {
+        if (isDuplicate) toast.info('That relationship already exists')
         return
       }
 
@@ -683,9 +750,9 @@ function DebuggerCanvasInner({
       let pos = { x: window.innerWidth / 2 - 130, y: window.innerHeight / 2 - 160 }
       if (src && tgt) {
         const midX =
-          (src.position.x + ((src.measured?.width as number | undefined) ?? 180) / 2 +
+          (src.position.x + ((src.measured?.width as number | undefined) ?? 200) / 2 +
             tgt.position.x +
-            ((tgt.measured?.width as number | undefined) ?? 180) / 2) /
+            ((tgt.measured?.width as number | undefined) ?? 200) / 2) /
           2
         const midY =
           (src.position.y + ((src.measured?.height as number | undefined) ?? 100) / 2 +
@@ -708,23 +775,20 @@ function DebuggerCanvasInner({
       resetConnectionDraft()
       const edgeId = `e-${nanoid(6)}`
       const elementId = `ed-${nanoid(6)}`
-      const edge: Edge = {
-        id: edgeId,
-        source: pendingConn.source!,
-        target: pendingConn.target!,
-        sourceHandle: pendingConn.sourceHandle,
-        targetHandle: pendingConn.targetHandle,
-        type: relType,
-        reconnectable: true,
-        data: {
-          elementId,
-          relationshipType: relType,
-          // Same as UML editor: straight polyline + bend waypoints from the drag
-          waypoints: waypoints.length > 0 ? waypoints : undefined,
-          hideChrome: true,
-        } satisfies UMLEdgeData & { elementId: string; hideChrome: boolean },
-      }
-      const next = [...edgesRef.current, edge]
+      const next = addEdge(
+        {
+          ...pendingConn,
+          id: edgeId,
+          type: relType,
+          reconnectable: true,
+          data: {
+            elementId,
+            relationshipType: relType,
+            waypoints: waypoints.length > 0 ? waypoints : undefined,
+          } satisfies UMLEdgeData & { elementId: string },
+        },
+        edgesRef.current,
+      )
       edgesRef.current = next
       setEdges(next)
       emitChange(nodesRef.current, next)
@@ -752,15 +816,65 @@ function DebuggerCanvasInner({
     [readOnly, setEdges, emitChange],
   )
 
+  const selectedCount = useMemo(
+    () => nodes.filter(n => n.selected).length + edges.filter(e => e.selected).length,
+    [nodes, edges],
+  )
+
+  const handleClearSelection = useCallback(() => {
+    setNodes(nds => nds.map(n => ({ ...n, selected: false })))
+    setEdges(eds => eds.map(e => ({ ...e, selected: false })))
+    onSelect('', 'node')
+  }, [setNodes, setEdges, onSelect])
+
+  const handleDelete = useCallback(() => {
+    if (readOnly) return
+    const nextNodes = nodesRef.current.filter(n => !n.selected)
+    const removedNodeIds = new Set(nodesRef.current.filter(n => n.selected).map(n => n.id))
+    const nextEdges = edgesRef.current.filter(
+      e => !e.selected && !removedNodeIds.has(e.source) && !removedNodeIds.has(e.target),
+    )
+    nodesRef.current = nextNodes
+    edgesRef.current = nextEdges
+    setNodes(nextNodes)
+    setEdges(nextEdges)
+    emitChange(nextNodes, nextEdges)
+  }, [readOnly, setNodes, setEdges, emitChange])
+
+  const handleDuplicate = useCallback(() => {
+    if (readOnly) return
+    const selected = nodesRef.current.filter(n => n.selected)
+    if (selected.length === 0) return
+    const clones = selected.map(n => ({
+      ...n,
+      id: `n-${nanoid(6)}`,
+      position: { x: n.position.x + 32, y: n.position.y + 32 },
+      selected: false,
+      data: {
+        ...n.data,
+        elementId: `el-${nanoid(6)}`,
+        name: `${String((n.data as { name?: string }).name ?? 'Class')}Copy`,
+      },
+    }))
+    const next = [...nodesRef.current.map(n => ({ ...n, selected: false })), ...clones]
+    nodesRef.current = next
+    setNodes(next)
+    emitChange(next, edgesRef.current)
+  }, [readOnly, setNodes, emitChange])
+
+  const onNodesDelete = useCallback(() => {
+    // CanvasView fires this; handleNodesChange already emits on remove
+  }, [])
+
   const addNode = useCallback(
-    (nodeType: 'class' | 'interface') => {
+    (nodeType: NodeType) => {
       if (readOnly) return
       const id = `n-${nanoid(6)}`
       const elementId = `el-${nanoid(6)}`
       const name = nodeType === 'interface' ? 'NewInterface' : 'NewClass'
       const node: Node = {
         id,
-        type: 'debuggerClass',
+        type: nodeType,
         position: { x: 80 + Math.random() * 120, y: 80 + Math.random() * 80 },
         data: {
           elementId,
@@ -768,8 +882,8 @@ function DebuggerCanvasInner({
           nodeType,
           methods: [],
           attributes: [],
-          editable: true,
-        },
+          isEditing: true,
+        } satisfies UMLNodeData & { elementId: string },
       }
       const next = [...nodesRef.current, node]
       nodesRef.current = next
@@ -804,40 +918,28 @@ function DebuggerCanvasInner({
         </div>
       )}
       <div className="relative min-h-0 flex-1">
-        <UMLMarkers />
-        <ReactFlow
+        <CanvasView
           nodes={nodes}
           edges={edges}
-          nodeTypes={nodeTypes}
-          edgeTypes={edgeTypes}
-          connectionMode={ConnectionMode.Loose}
-          defaultEdgeOptions={{
-            type: DEFAULT_EDGE_TYPE,
-            reconnectable: editable,
-          }}
           onNodesChange={handleNodesChange}
           onEdgesChange={handleEdgesChange}
-          onNodeClick={onNodeClick}
-          onEdgeClick={onEdgeClick}
-          onNodeDoubleClick={onNodeDoubleClick}
-          onConnectStart={editable ? onConnectStart : undefined}
           onConnect={onConnect}
+          onConnectStart={editable ? onConnectStart : undefined}
           onReconnect={editable ? onReconnect : undefined}
-          nodesDraggable={editable}
-          nodesConnectable={editable}
-          edgesReconnectable={editable}
-          elementsSelectable
-          edgesFocusable={editable}
-          deleteKeyCode={editable ? ['Backspace', 'Delete'] : null}
-          connectionLineComponent={editable ? DraftConnectionLine : undefined}
-          fitView
-          zoomOnScroll={false}
-          preventScrolling={false}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background gap={16} size={1} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
+          onInit={inst => {
+            rfInstance.current = inst
+          }}
+          onNodesDelete={onNodesDelete}
+          onNodeClickExtra={onNodeClick}
+          onEdgeClickExtra={onEdgeClick}
+          canvasMode="select"
+          selectedCount={readOnly ? 0 : selectedCount}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onClearSelection={handleClearSelection}
+          readOnly={readOnly}
+          hideSelectionBar={hideEditChrome || readOnly}
+        />
         {editable && (
           <RelationshipPicker
             open={pickerOpen}

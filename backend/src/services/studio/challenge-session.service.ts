@@ -12,7 +12,12 @@ import {
 import { verifyDebuggerRepair } from './debuggerVerify'
 import { gradeRefactor } from './refactorGrade'
 import { gradeChange, type ChangePrediction } from './changeGrade'
-import { gradeChange, type ChangePrediction } from './changeGrade'
+import {
+  findStage,
+  getEvolutionStages,
+  gradeEvolutionStage,
+  type EvolutionStageSubmission,
+} from './evolutionGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -89,7 +94,10 @@ export async function openSession(
       {
         t: Date.now(),
         level: 'info',
-        message: 'Session started — investigate the design.',
+        message:
+          pack.type === 'evolution'
+            ? 'Evolution track started — understand the baseline, then respond to each pressure.'
+            : 'Session started — investigate the design.',
       },
     ],
     startedAt: new Date(),
@@ -97,6 +105,26 @@ export async function openSession(
       stage: 'detect',
       revealCount: parseDebuggerPayload(pack.payload).revealCount,
     },
+    progress:
+      pack.type === 'evolution'
+        ? {
+            stageIndex: 0,
+            versions: [
+              {
+                stageId: 'v0',
+                dayLabel: 'Day 0',
+                title: 'Baseline',
+                decision: 'noop',
+                diagram: pack.diagramSnapshot,
+                pressures: [],
+                classify: { keep: [], change: [], introduce: [], remove: [] },
+              },
+            ],
+            debt: { open: [], resolved: [], score: 0 },
+            decisionLog: [],
+            draft: null,
+          }
+        : {},
   })
   return {
     attemptId: attempt.id,
@@ -477,6 +505,223 @@ export async function submitChange(
   pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
   await attempt.save()
   return { result: attempt.result, consoleLog: attempt.consoleLog }
+}
+
+// ─── Architecture Evolution ───────────────────────────────────────────────
+
+type EvolutionProgress = {
+  stageIndex: number
+  versions: Record<string, unknown>[]
+  debt: { open: string[]; resolved: string[]; score: number }
+  decisionLog: Record<string, unknown>[]
+  draft?: Record<string, unknown> | null
+  lastStageGrade?: Record<string, unknown>
+}
+
+function readEvolutionProgress(attempt: {
+  progress?: Record<string, unknown>
+  diagramData?: Record<string, unknown>
+}): EvolutionProgress {
+  const p = (attempt.progress ?? {}) as Partial<EvolutionProgress>
+  return {
+    stageIndex: typeof p.stageIndex === 'number' ? p.stageIndex : 0,
+    versions: Array.isArray(p.versions) ? p.versions : [],
+    debt: p.debt ?? { open: [], resolved: [], score: 0 },
+    decisionLog: Array.isArray(p.decisionLog) ? p.decisionLog : [],
+    draft: p.draft ?? null,
+    lastStageGrade: p.lastStageGrade,
+  }
+}
+
+export async function saveEvolution(
+  attemptId: string,
+  userId: string,
+  diagramData: Record<string, unknown>,
+  draft?: Record<string, unknown> | null,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'evolution') throw createError('Not an evolution session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+
+  attempt.diagramData = diagramData
+  const progress = readEvolutionProgress(attempt)
+  if (draft) progress.draft = draft
+  attempt.progress = progress as unknown as Record<string, unknown>
+  attempt.markModified('progress')
+  pushLog(attempt, 'info', 'Evolution progress saved')
+  await attempt.save()
+  return { ok: true, diagramData: attempt.diagramData, progress: attempt.progress }
+}
+
+export async function submitEvolutionStage(
+  attemptId: string,
+  userId: string,
+  submission: EvolutionStageSubmission,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'evolution') throw createError('Not an evolution session', 400)
+  if (attempt.status === 'submitted') throw createError('Track already complete', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const stages = getEvolutionStages(pack.payload)
+  const progress = readEvolutionProgress(attempt)
+  const stageIndex = progress.stageIndex
+  const stage = findStage(pack.payload, stageIndex)
+  if (!stage) throw createError('No more stages', 400)
+
+  const before =
+    (progress.versions.length
+      ? (progress.versions[progress.versions.length - 1]?.diagram as Record<string, unknown>)
+      : null) ??
+    (pack.diagramSnapshot as Record<string, unknown>) ??
+    {}
+
+  const after =
+    submission.decision === 'noop'
+      ? before
+      : ((submission.diagram ?? attempt.diagramData ?? before) as Record<string, unknown>)
+
+  // Surface deferred debt coming due
+  const dueDebt = progress.debt.open.filter(id => {
+    const earlier = stages.find(s => s.debtOpportunity?.id === id)
+    return earlier?.debtOpportunity?.laterStageId === stage.id
+  })
+
+  const grade = gradeEvolutionStage(
+    before,
+    after,
+    stage,
+    submission,
+    progress.debt.open.length,
+  )
+
+  if (dueDebt.length) {
+    grade.narrative =
+      `Deferred debt is due (${dueDebt.join(', ')}). ${grade.narrative}`
+    grade.dimensions = [
+      ...grade.dimensions,
+      {
+        key: 'debt_due',
+        label: 'Deferred debt due',
+        ok: false,
+        detail: dueDebt
+          .map(id => {
+            const s = stages.find(x => x.debtOpportunity?.id === id)
+            return s?.debtOpportunity?.costIfDeferred ?? id
+          })
+          .join('; '),
+        score: 30,
+      },
+    ]
+  }
+
+  // Update debt ledger
+  for (const act of submission.debtActions ?? []) {
+    if (act.action === 'defer' && !progress.debt.open.includes(act.id)) {
+      progress.debt.open.push(act.id)
+      progress.debt.score += 1
+    }
+    if (act.action === 'fix') {
+      progress.debt.open = progress.debt.open.filter(id => id !== act.id)
+      if (!progress.debt.resolved.includes(act.id)) progress.debt.resolved.push(act.id)
+    }
+  }
+  // Auto-resolve due debt ids that were fixed this stage (touched expected hints)
+  for (const id of dueDebt) {
+    if (submission.decision === 'change' && grade.accepted) {
+      progress.debt.open = progress.debt.open.filter(x => x !== id)
+      if (!progress.debt.resolved.includes(id)) progress.debt.resolved.push(id)
+    }
+  }
+
+  const versionEntry = {
+    stageId: stage.id,
+    dayLabel: stage.dayLabel,
+    title: stage.title,
+    decision: grade.decision,
+    diagram: after,
+    pressures: submission.pressures ?? [],
+    classify: submission.classify ?? {},
+    why: submission.why ?? [],
+    whyNote: submission.whyNote,
+    tradeoffsAck: submission.tradeoffsAck ?? [],
+    debtActions: submission.debtActions ?? [],
+    score: grade,
+    accepted: grade.accepted,
+  }
+  progress.versions.push(versionEntry)
+
+  if (submission.why?.length || submission.whyNote) {
+    progress.decisionLog.push({
+      stageId: stage.id,
+      at: Date.now(),
+      why: submission.why ?? [],
+      whyNote: submission.whyNote,
+      components: submission.classify?.introduce ?? [],
+      decision: grade.decision,
+    })
+  }
+
+  progress.lastStageGrade = grade as unknown as Record<string, unknown>
+  progress.draft = null
+
+  const nextIndex = stageIndex + 1
+  const complete = nextIndex >= stages.length
+  if (grade.accepted) {
+    progress.stageIndex = nextIndex
+  }
+
+  attempt.diagramData = after
+  attempt.progress = progress as unknown as Record<string, unknown>
+  attempt.markModified('progress')
+  attempt.result = {
+    ...(attempt.result && typeof attempt.result === 'object' ? attempt.result : {}),
+    lastStageGrade: grade,
+    stageIndex: progress.stageIndex,
+    complete,
+  }
+
+  if (complete && grade.accepted) {
+    attempt.status = 'submitted'
+    attempt.stage = 'complete'
+  }
+
+  pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
+  await attempt.save()
+
+  return {
+    grade,
+    progress: attempt.progress,
+    complete: complete && grade.accepted,
+    nextStageIndex: progress.stageIndex,
+    consoleLog: attempt.consoleLog,
+  }
+}
+
+export async function getEvolutionJourney(attemptId: string, userId: string) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'evolution') throw createError('Not an evolution session', 400)
+  const pack = await ChallengePack.findById(attempt.packId)
+  const progress = readEvolutionProgress(attempt)
+  const stages = getEvolutionStages(pack?.payload)
+
+  return {
+    pack: pack ? serializePack(pack) : null,
+    progress,
+    stages: stages.map(s => ({
+      id: s.id,
+      dayLabel: s.dayLabel,
+      title: s.title,
+      category: s.category,
+      mustChange: s.mustChange,
+    })),
+    complete: attempt.status === 'submitted',
+  }
 }
 
 export async function listPublishedPacks(type?: ChallengePackType) {

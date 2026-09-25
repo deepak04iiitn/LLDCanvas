@@ -1,0 +1,1374 @@
+{
+  "checkout-to-marketplace": {
+    "title": "Checkout → marketplace",
+    "description": "Evolve simple checkout into marketplace stages.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "hard",
+    "order": 1,
+    "tags": [
+      "evolution",
+      "marketplace"
+    ],
+    "briefing": "What’s going on\nChallenge: Checkout → marketplace.\nDiagram involves: Order, Payment, Razorpay, Database.\n\nEvolve simple checkout into marketplace stages.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with Order — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Baseline checkout",
+        "requirement": "Keep Order → Payment for a single provider."
+      },
+      {
+        "id": "s2",
+        "title": "Multi-provider payments",
+        "requirement": "≥2 providers without editing Order per provider."
+      },
+      {
+        "id": "s3",
+        "title": "Marketplace sellers",
+        "requirement": "Add Seller + split payouts; Order is not a god object."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-order",
+        "name": "Order",
+        "x": 0,
+        "y": 0,
+        "methods": [
+          "checkout"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-payment",
+        "name": "Payment",
+        "x": 280,
+        "y": 0,
+        "methods": [
+          "charge"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-razorpay",
+        "name": "Razorpay",
+        "x": 280,
+        "y": 160,
+        "methods": []
+      },
+      {
+        "id": "n4",
+        "elementId": "el-db",
+        "name": "Database",
+        "x": 0,
+        "y": 160,
+        "methods": [
+          "save"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-1",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-2",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-3",
+        "source": "n1",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  },
+  "ride-to-platform": {
+    "title": "Ride → platform",
+    "description": "Grow ride pricing into a platform with promotions.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "hard",
+    "order": 2,
+    "tags": [
+      "evolution",
+      "rides"
+    ],
+    "briefing": "What’s going on\nChallenge: Ride → platform.\nDiagram involves: Ride, EconomyPricing, PremiumPricing, SurgePricing.\n\nGrow ride pricing into a platform with promotions.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with Ride — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Strategy pricing",
+        "requirement": "All pricing behind Strategy."
+      },
+      {
+        "id": "s2",
+        "title": "Promotions",
+        "requirement": "Stackable promo rules without editing Ride."
+      },
+      {
+        "id": "s3",
+        "title": "Corporate accounts",
+        "requirement": "Different billing profiles per account type."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-ride",
+        "name": "Ride",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "price",
+          "start"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-economy",
+        "name": "EconomyPricing",
+        "x": 300,
+        "y": 0,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-premium",
+        "name": "PremiumPricing",
+        "x": 300,
+        "y": 120,
+        "methods": []
+      },
+      {
+        "id": "n4",
+        "elementId": "el-surge",
+        "name": "SurgePricing",
+        "x": 300,
+        "y": 240,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-r-econ",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-r-prem",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-r-surge",
+        "source": "n1",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  },
+  "notifier-to-orchestrator": {
+    "title": "Notifier → campaign engine",
+    "description": "From channels to campaigns and preferences.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "medium",
+    "order": 3,
+    "tags": [
+      "evolution",
+      "notify"
+    ],
+    "briefing": "What’s going on\nChallenge: Notifier → campaign engine.\nDiagram involves: Notifier, EmailService, SmsService.\n\nFrom channels to campaigns and preferences.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with Notifier — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Channels",
+        "requirement": "Email/SMS/Push behind one channel port."
+      },
+      {
+        "id": "s2",
+        "title": "Preferences",
+        "requirement": "Respect user channel preferences."
+      },
+      {
+        "id": "s3",
+        "title": "Campaigns",
+        "requirement": "Batch campaigns without coupling to channels."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-notifier",
+        "name": "Notifier",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "send"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-email",
+        "name": "EmailService",
+        "x": 300,
+        "y": 40,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-sms",
+        "name": "SmsService",
+        "x": 300,
+        "y": 180,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-email",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-sms",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "cart-to-checkout-os": {
+    "title": "Cart → checkout OS",
+    "description": "Cart becomes a checkout platform.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "hard",
+    "order": 4,
+    "tags": [
+      "evolution",
+      "commerce"
+    ],
+    "briefing": "What’s going on\nChallenge: Cart → checkout OS.\nDiagram involves: Cart, CartItem, InventoryDb, StripeApi.\n\nCart becomes a checkout platform.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with Cart — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Ports",
+        "requirement": "Payment + inventory behind ports."
+      },
+      {
+        "id": "s2",
+        "title": "Coupons",
+        "requirement": "Discount engine pluggable."
+      },
+      {
+        "id": "s3",
+        "title": "Multi-warehouse",
+        "requirement": "Fulfillment routing without Cart edits per warehouse."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-cart",
+        "name": "Cart",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "add",
+          "checkout"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-item",
+        "name": "CartItem",
+        "x": 300,
+        "y": 40,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-inv",
+        "name": "InventoryDb",
+        "x": 300,
+        "y": 180,
+        "methods": []
+      },
+      {
+        "id": "n4",
+        "elementId": "el-stripe",
+        "name": "StripeApi",
+        "x": 40,
+        "y": 200,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-cart-item",
+        "source": "n1",
+        "target": "n2",
+        "type": "composition"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-cart-inv",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-cart-stripe",
+        "source": "n1",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  },
+  "parking-to-smart-city": {
+    "title": "Parking → smart city",
+    "description": "Lot evolves into multi-site smart parking.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "medium",
+    "order": 5,
+    "tags": [
+      "evolution",
+      "parking"
+    ],
+    "briefing": "What’s going on\nChallenge: Parking → smart city.\nDiagram involves: ParkingLot, Car, Bike, Spot.\n\nLot evolves into multi-site smart parking.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with ParkingLot — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Polymorphic vehicles",
+        "requirement": "Fees via Vehicle/FeePolicy."
+      },
+      {
+        "id": "s2",
+        "title": "Reservations",
+        "requirement": "Book spots ahead of time."
+      },
+      {
+        "id": "s3",
+        "title": "Multi-lot network",
+        "requirement": "Several lots, one account."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-lot",
+        "name": "ParkingLot",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "park",
+          "unpark",
+          "fee"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-car",
+        "name": "Car",
+        "x": 300,
+        "y": 0,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-bike",
+        "name": "Bike",
+        "x": 300,
+        "y": 120,
+        "methods": []
+      },
+      {
+        "id": "n4",
+        "elementId": "el-spot",
+        "name": "Spot",
+        "x": 40,
+        "y": 200,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-lot-car",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-lot-bike",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-lot-spot",
+        "source": "n1",
+        "target": "n4",
+        "type": "composition"
+      }
+    ]
+  },
+  "media-to-streaming": {
+    "title": "Media → streaming app",
+    "description": "Local player becomes a streaming client.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "medium",
+    "order": 6,
+    "tags": [
+      "evolution",
+      "media"
+    ],
+    "briefing": "What’s going on\nChallenge: Media → streaming app.\nDiagram involves: MediaPlayer, Mp3Decoder, FlacDecoder.\n\nLocal player becomes a streaming client.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with MediaPlayer — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Decoder plugins",
+        "requirement": "All codecs via Decoder."
+      },
+      {
+        "id": "s2",
+        "title": "Streaming source",
+        "requirement": "Local file vs stream source abstraction."
+      },
+      {
+        "id": "s3",
+        "title": "DRM / licenses",
+        "requirement": "License checks without polluting Player."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-player-ui",
+        "name": "MediaPlayer",
+        "x": 40,
+        "y": 80,
+        "methods": [
+          "play"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-mp3",
+        "name": "Mp3Decoder",
+        "x": 300,
+        "y": 0,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-flac",
+        "name": "FlacDecoder",
+        "x": 300,
+        "y": 160,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-mp-mp3",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-mp-flac",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "booking-to-ota": {
+    "title": "Booking → OTA",
+    "description": "Single-hotel booking becomes an OTA.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "hard",
+    "order": 7,
+    "tags": [
+      "evolution",
+      "travel"
+    ],
+    "briefing": "What’s going on\nChallenge: Booking → OTA.\nDiagram involves: BookingService, HotelApi, PayU, WhatsAppApi.\n\nSingle-hotel booking becomes an OTA.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with BookingService — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Supplier port",
+        "requirement": "Multiple hotel suppliers."
+      },
+      {
+        "id": "s2",
+        "title": "Payments",
+        "requirement": "Multi-acquirer payments."
+      },
+      {
+        "id": "s3",
+        "title": "Notify + refunds",
+        "requirement": "Refunds and multi-channel notify as separate flows."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-booking",
+        "name": "BookingService",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "book",
+          "cancel",
+          "refund",
+          "notify"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-hotel",
+        "name": "HotelApi",
+        "x": 300,
+        "y": 0,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-pay",
+        "name": "PayU",
+        "x": 300,
+        "y": 140,
+        "methods": []
+      },
+      {
+        "id": "n4",
+        "elementId": "el-wa",
+        "name": "WhatsAppApi",
+        "x": 300,
+        "y": 280,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-b-hotel",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-b-pay",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-b-wa",
+        "source": "n1",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  },
+  "feed-to-social": {
+    "title": "Feed → social graph",
+    "description": "Simple feed becomes a social platform core.. Open the challenge for a plain-language brief of what is wrong and what to change.",
+    "difficulty": "hard",
+    "order": 8,
+    "tags": [
+      "evolution",
+      "social"
+    ],
+    "briefing": "What’s going on\nChallenge: Feed → social graph.\nDiagram involves: FeedService, FollowerStore, PushGateway.\n\nSimple feed becomes a social platform core.\n\nThe problem (simple terms)\nSomething about this design makes the next product change expensive, confusing, or unsafe. Your job is to understand that pressure and improve the design carefully.\n\nWhat you should do\nRead the diagram before changing anything. Prefer focused edits over a full rewrite. Preserve behavior that should still work.\n\nWhere to start\nStart with FeedService — read methods and follow arrows.",
+    "stageTitles": [
+      {
+        "id": "s1",
+        "title": "Events out",
+        "requirement": "No direct PushGateway."
+      },
+      {
+        "id": "s2",
+        "title": "Timelines",
+        "requirement": "Fan-out vs fan-in as a strategy."
+      },
+      {
+        "id": "s3",
+        "title": "Moderation",
+        "requirement": "Moderation pipeline without FeedService edits per rule."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-feed",
+        "name": "FeedService",
+        "x": 40,
+        "y": 80,
+        "methods": [
+          "publish"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-followers",
+        "name": "FollowerStore",
+        "x": 300,
+        "y": 0,
+        "methods": []
+      },
+      {
+        "id": "n3",
+        "elementId": "el-push",
+        "name": "PushGateway",
+        "x": 300,
+        "y": 160,
+        "methods": []
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-f-fol",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-f-push",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-multi-provider": {
+    "title": "Evolve to Multi-Provider Payments",
+    "description": "Year-1 single provider → multi-provider without breaking Order. A short evolution track.",
+    "difficulty": "medium",
+    "order": 8,
+    "tags": [
+      "evolution",
+      "payments"
+    ],
+    "briefing": "What’s going on\nYear 1 supports a single payment provider. Evolve so more providers can be added without breaking Order.",
+    "stageTitles": [
+      {
+        "id": "mp-hold",
+        "title": "Single provider OK",
+        "dayLabel": "Year 1",
+        "requirement": "Only Razorpay exists. No second provider yet. Hold is fine."
+      },
+      {
+        "id": "mp-multi",
+        "title": "Add Stripe",
+        "dayLabel": "Year 2",
+        "requirement": "Stripe must be supported beside Razorpay. Order must not depend on concrete providers."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-order",
+        "name": "Order",
+        "x": 40,
+        "y": 80,
+        "methods": [
+          "checkout"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-pay",
+        "name": "Payment",
+        "x": 280,
+        "y": 80,
+        "methods": [
+          "charge"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-rz",
+        "name": "Razorpay",
+        "x": 520,
+        "y": 80,
+        "methods": [
+          "createPayment"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-ord-pay",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-pay-rz",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-food-delivery": {
+    "title": "Food Delivery Platform",
+    "description": "Start from a simple food-delivery MVP and evolve it through growth, payments, async notifications, regions, and reliability — including stages where holding is correct.",
+    "difficulty": "hard",
+    "order": 1,
+    "tags": [
+      "product",
+      "scale",
+      "reliability"
+    ],
+    "briefing": "What’s going on\nYou are the architect for a food-delivery startup. Day 0 is intentionally simple: Customer → OrderService → Restaurant / PaymentService / Database.\n\nThe journey\nOver ~a year the business will add users, payment providers, async messaging, multi-region restaurants, and a hard availability target.\n\nThe rule\nEvolve the existing design. Do not wipe and redraw. Sometimes the right move is to hold.",
+    "stageTitles": [
+      {
+        "id": "fd-day0",
+        "title": "MVP launch",
+        "dayLabel": "Day 0",
+        "requirement": "You launch with a handful of restaurants in one city. Customers place orders; restaurants accept; payments charge cards; everything persists to one database.\n\nTraffic is low. Latency is fine. The team is three engineers.\n\nLook at the baseline. Does anything need to change for launch day?"
+      },
+      {
+        "id": "fd-day30",
+        "title": "10K daily orders",
+        "dayLabel": "Day 30",
+        "requirement": "Orders are up to ~10,000/day. Peak dinner hours feel a bit slower, but p95 is still under 300ms and error rates are fine.\n\nLeadership asks “should we microservices this?”\n\nDecide whether the current architecture still works."
+      },
+      {
+        "id": "fd-day90",
+        "title": "Payment bottleneck",
+        "dayLabel": "Day 90",
+        "requirement": "Daily orders hit ~1M. PaymentService is now the bottleneck — synchronous charge calls stretch p95 past 2s at peak.\n\nUsers abandon carts. Finance also wants a second provider next quarter.\n\nThis time, holding is unlikely to be enough."
+      },
+      {
+        "id": "fd-day150",
+        "title": "Multiple payment providers",
+        "dayLabel": "Day 150",
+        "requirement": "Finance signed Razorpay beside Stripe. Checkout must support both. OrderService should not grow provider if/else forever.\n\nIf you deferred the payment abstraction earlier, that debt is due now."
+      },
+      {
+        "id": "fd-day240",
+        "title": "Notification delays",
+        "dayLabel": "Day 240",
+        "requirement": "Incident: email/SMS sends are blocking order completion. Support tickets spike when the email vendor slows down.\n\nNotifications must not block the order happy path."
+      },
+      {
+        "id": "fd-day365",
+        "title": "Multi-region restaurants",
+        "dayLabel": "Day 365",
+        "requirement": "Restaurants now operate in five countries. Latency to a single region DB hurts. Local payment methods differ. A full region outage must not take down every market.\n\nAvailability target moves toward 99.99%."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-cust",
+        "name": "Customer",
+        "x": 40,
+        "y": 40,
+        "methods": [
+          "placeOrder"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-os",
+        "name": "OrderService",
+        "x": 280,
+        "y": 40,
+        "methods": [
+          "createOrder",
+          "assignRestaurant"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-rest",
+        "name": "Restaurant",
+        "x": 520,
+        "y": 40,
+        "methods": [
+          "acceptOrder"
+        ]
+      },
+      {
+        "id": "n4",
+        "elementId": "el-pay",
+        "name": "PaymentService",
+        "x": 280,
+        "y": 220,
+        "methods": [
+          "charge"
+        ]
+      },
+      {
+        "id": "n5",
+        "elementId": "el-db",
+        "name": "Database",
+        "x": 280,
+        "y": 380,
+        "methods": [
+          "save"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-c-o",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-o-r",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-o-p",
+        "source": "n2",
+        "target": "n4",
+        "type": "dependency"
+      },
+      {
+        "id": "e4",
+        "elementId": "ed-o-d",
+        "source": "n2",
+        "target": "n5",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-parking-lot": {
+    "title": "Parking Lot Over Years",
+    "description": "Evolve a parking lot from a single floor through EV charging, reservations, and dynamic pricing — product growth without premature scale theater.",
+    "difficulty": "medium",
+    "order": 2,
+    "tags": [
+      "product"
+    ],
+    "briefing": "What’s going on\nYear-by-year product evolution of a parking system. Start simple. Add floors, EV, reservations, then pricing — only when the story demands it.",
+    "stageTitles": [
+      {
+        "id": "pk-y1",
+        "title": "Single lot MVP",
+        "dayLabel": "Year 1",
+        "requirement": "One lot, cars and bikes, park/unpark/fee. City council just approved the lot. No multi-floor requirement yet."
+      },
+      {
+        "id": "pk-y2",
+        "title": "Multiple floors",
+        "dayLabel": "Year 2",
+        "requirement": "The building adds floors. Spots must be tracked per floor. Fee rules still exist, but inventory is now multi-level."
+      },
+      {
+        "id": "pk-y3",
+        "title": "EV charging",
+        "dayLabel": "Year 3",
+        "requirement": "EV spots with chargers arrive. Not every spot is EV. Charging sessions must be modeled without breaking normal park/unpark."
+      },
+      {
+        "id": "pk-y4",
+        "title": "Reservations",
+        "dayLabel": "Year 4",
+        "requirement": "Users can reserve spots ahead of time. Holds expire. Walk-ins still work."
+      },
+      {
+        "id": "pk-y5",
+        "title": "Dynamic pricing",
+        "dayLabel": "Year 5",
+        "requirement": "Pricing now varies by hour, floor, and EV. Fee logic should not live forever inside ParkingLot."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-lot",
+        "name": "ParkingLot",
+        "x": 200,
+        "y": 40,
+        "methods": [
+          "park",
+          "unpark",
+          "fee"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-car",
+        "name": "Car",
+        "x": 40,
+        "y": 220,
+        "methods": [
+          "enter"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-bike",
+        "name": "Bike",
+        "x": 360,
+        "y": 220,
+        "methods": [
+          "enter"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-lot-car",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-lot-bike",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-ride-share": {
+    "title": "Ride-Share Matching Growth",
+    "description": "Grow a ride-share matcher from city MVP through surge pricing to multi-city — scale and geo pressures.",
+    "difficulty": "hard",
+    "order": 3,
+    "tags": [
+      "scale",
+      "geo"
+    ],
+    "briefing": "What’s going on\nA ride-share MVP matches riders to drivers in one city. Grow carefully through surge and multi-city expansion.",
+    "stageTitles": [
+      {
+        "id": "rs-mvp",
+        "title": "City MVP",
+        "dayLabel": "Day 0",
+        "requirement": "One city, simple matching. Hold unless you see a real pressure."
+      },
+      {
+        "id": "rs-surge",
+        "title": "Surge pricing",
+        "dayLabel": "Day 120",
+        "requirement": "Peak hours need surge multipliers. Pricing policy should not tangle forever inside MatchingService."
+      },
+      {
+        "id": "rs-multi",
+        "title": "Multi-city",
+        "dayLabel": "Day 300",
+        "requirement": "Launch in 12 cities. Matching must be city-scoped. A city outage must not freeze the whole network."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-rider",
+        "name": "Rider",
+        "x": 40,
+        "y": 80,
+        "methods": [
+          "requestRide"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-match",
+        "name": "MatchingService",
+        "x": 280,
+        "y": 40,
+        "methods": [
+          "match",
+          "dispatch"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-driver",
+        "name": "Driver",
+        "x": 520,
+        "y": 80,
+        "methods": [
+          "accept"
+        ]
+      },
+      {
+        "id": "n4",
+        "elementId": "el-trip",
+        "name": "Trip",
+        "x": 280,
+        "y": 220,
+        "methods": [
+          "start",
+          "complete"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-r-m",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-m-d",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-m-t",
+        "source": "n2",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-payments-growth": {
+    "title": "Payments Under Fire",
+    "description": "Single PSP → multi-provider → timeout incident → audit. Business + incident pressures on payments.",
+    "difficulty": "medium",
+    "order": 4,
+    "tags": [
+      "business",
+      "incident"
+    ],
+    "briefing": "What’s going on\nPayments start glued to Stripe. Grow providers, survive an outage, then satisfy audit.",
+    "stageTitles": [
+      {
+        "id": "pay-multi",
+        "title": "Add second PSP",
+        "dayLabel": "Day 60",
+        "requirement": "Razorpay is signed. Stripe must keep working. Prefer a gateway so Order stays clean."
+      },
+      {
+        "id": "pay-incident",
+        "title": "Provider outage 15 minutes",
+        "dayLabel": "Day 120",
+        "requirement": "Production incident: primary PSP unavailable for 15 minutes. Checkout failed hard. How should architecture reduce blast radius next time?"
+      },
+      {
+        "id": "pay-audit",
+        "title": "Audit every payment",
+        "dayLabel": "Day 200",
+        "requirement": "Compliance needs an audit trail for charge and refund across providers — one choke point, not copy-paste in each adapter."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-order",
+        "name": "Order",
+        "x": 200,
+        "y": 40,
+        "methods": [
+          "checkout"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-pay",
+        "name": "PaymentService",
+        "x": 200,
+        "y": 200,
+        "methods": [
+          "charge",
+          "refund"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-stripe",
+        "name": "StripeClient",
+        "x": 200,
+        "y": 360,
+        "methods": [
+          "charge"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-o-p",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-p-s",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-notifications": {
+    "title": "Notifications Under Load",
+    "description": "Sync email → multi-channel → backlog incident → async. Product + incident pressures.",
+    "difficulty": "medium",
+    "order": 5,
+    "tags": [
+      "product",
+      "incident"
+    ],
+    "briefing": "What’s going on\nNotifications start as a synchronous email send after order complete. Evolve channels and isolate failures.",
+    "stageTitles": [
+      {
+        "id": "nt-channels",
+        "title": "Add SMS + WhatsApp",
+        "dayLabel": "Day 45",
+        "requirement": "Support wants SMS and WhatsApp beside email. Prefer a channel abstraction."
+      },
+      {
+        "id": "nt-backlog",
+        "title": "Vendor backlog incident",
+        "dayLabel": "Day 100",
+        "requirement": "Email vendor queues for 40 minutes. Order completion waits on notify(). Checkout looks “down”."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-order",
+        "name": "OrderService",
+        "x": 200,
+        "y": 40,
+        "methods": [
+          "complete"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-notif",
+        "name": "Notifier",
+        "x": 200,
+        "y": 200,
+        "methods": [
+          "notify"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-email",
+        "name": "EmailSender",
+        "x": 200,
+        "y": 360,
+        "methods": [
+          "send"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-o-n",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-n-e",
+        "source": "n2",
+        "target": "n3",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-team-boundaries": {
+    "title": "Team Topology Pressure",
+    "description": "A monolith owned by 3 engineers becomes painful when 8 teams need independent delivery. Architecture must respect ownership boundaries.",
+    "difficulty": "hard",
+    "order": 6,
+    "tags": [
+      "team"
+    ],
+    "briefing": "What’s going on\nArchitecture is also about how teams work. Watch org growth force module boundaries — not because of runtime TPS, but because of ownership.",
+    "stageTitles": [
+      {
+        "id": "tm-3eng",
+        "title": "Three engineers",
+        "dayLabel": "Day 0",
+        "requirement": "Three engineers own everything. Shared DB and monolith are fine. Don’t invent platforms yet."
+      },
+      {
+        "id": "tm-8teams",
+        "title": "Eight teams",
+        "dayLabel": "Day 400",
+        "requirement": "Eight teams now ship independently. Deploying auth blocks checkout. SharedDatabase becomes a conflict magnet.\n\nArchitecture must introduce clearer ownership boundaries / modules / APIs — not necessarily a full microservice zoo."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-app",
+        "name": "AppMonolith",
+        "x": 240,
+        "y": 40,
+        "methods": [
+          "auth",
+          "catalog",
+          "cart",
+          "checkout",
+          "notify",
+          "admin"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-db",
+        "name": "SharedDatabase",
+        "x": 240,
+        "y": 240,
+        "methods": [
+          "query"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-a-d",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      }
+    ]
+  },
+  "evo-legacy-checkout": {
+    "title": "Legacy Checkout Untangle",
+    "description": "Inherit a tangled checkout. Grow traffic while gradually untangling — legacy evolution under scale pressure.",
+    "difficulty": "hard",
+    "order": 7,
+    "tags": [
+      "legacy",
+      "scale"
+    ],
+    "briefing": "What’s going on\nYou inherit a god CheckoutController. You cannot rewrite everything on day one. Evolve under increasing load — sometimes hold, sometimes extract.",
+    "stageTitles": [
+      {
+        "id": "lg-inherit",
+        "title": "Inherit the mess",
+        "dayLabel": "Day 0",
+        "requirement": "Traffic is modest. The code is ugly but paying the bills. A full rewrite is riskier than living with it short-term."
+      },
+      {
+        "id": "lg-extract-pay",
+        "title": "Payment extraction",
+        "dayLabel": "Day 90",
+        "requirement": "Fraud team needs cleaner payment hooks. Extract payment without boiling the ocean."
+      },
+      {
+        "id": "lg-scale",
+        "title": "Traffic 20×",
+        "dayLabel": "Day 200",
+        "requirement": "Orders 20×. Synchronous email and fat controller become visible latency. Deferred email debt may be due."
+      }
+    ],
+    "nodes": [
+      {
+        "id": "n1",
+        "elementId": "el-co",
+        "name": "CheckoutController",
+        "x": 240,
+        "y": 20,
+        "methods": [
+          "checkout",
+          "price",
+          "pay",
+          "email",
+          "log",
+          "fraud"
+        ]
+      },
+      {
+        "id": "n2",
+        "elementId": "el-stripe",
+        "name": "Stripe",
+        "x": 40,
+        "y": 220,
+        "methods": [
+          "charge"
+        ]
+      },
+      {
+        "id": "n3",
+        "elementId": "el-email",
+        "name": "SmtpClient",
+        "x": 240,
+        "y": 220,
+        "methods": [
+          "send"
+        ]
+      },
+      {
+        "id": "n4",
+        "elementId": "el-db",
+        "name": "SqlDb",
+        "x": 440,
+        "y": 220,
+        "methods": [
+          "save"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "elementId": "ed-c-s",
+        "source": "n1",
+        "target": "n2",
+        "type": "dependency"
+      },
+      {
+        "id": "e2",
+        "elementId": "ed-c-e",
+        "source": "n1",
+        "target": "n3",
+        "type": "dependency"
+      },
+      {
+        "id": "e3",
+        "elementId": "ed-c-d",
+        "source": "n1",
+        "target": "n4",
+        "type": "dependency"
+      }
+    ]
+  }
+}
