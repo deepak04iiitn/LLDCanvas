@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from 'express'
+import mongoose from 'mongoose'
 import { JourneyProfile, ISkills } from '../../models/journey/journey-profile.model'
 import { JourneyTopic } from '../../models/journey/journey-topic.model'
 import { JourneyExperience } from '../../models/journey/journey-experience.model'
 import { JourneyActivity } from '../../models/journey/journey-activity.model'
 import { JourneyTip } from '../../models/journey/journey-tip.model'
+import { QuizAttempt } from '../../models/learn/quiz-attempt.model'
+import { ExperienceAttempt } from '../../models/journey/experience-attempt.model'
+import { applySkillDeltas } from '../../utils/skill-updater'
+import { SpacedRepetitionQueue } from '../../models/spaced-repetition-queue.model'
 
 // ── Stage labels ──────────────────────────────────────────────────────────────
 const STAGE_META: Record<number, { label: string; description: string }> = {
@@ -230,7 +235,16 @@ export async function getTopic(req: Request, res: Response, next: NextFunction):
     else if (profile?.topicsInProgress.includes(topic.slug)) userStatus = 'in_progress'
     else if (profile?.currentFocusSlug === topic.slug)   userStatus = 'recommended'
 
-    res.json({ topic: { ...topic.toObject(), userStatus } })
+    res.json({
+      topic: {
+        ...topic.toObject(),
+        userStatus,
+        exerciseType:        topic.exerciseType,
+        exerciseId:          topic.exerciseId,
+        linkedStudioPack:    topic.linkedStudioPack,
+        linkedLearnExercise: topic.linkedLearnExercise,
+      },
+    })
   } catch (err) {
     next(err)
   }
@@ -240,7 +254,7 @@ export async function getTopic(req: Request, res: Response, next: NextFunction):
 export async function completeTopic(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { slug } = req.params
-    const { performance = 'good' } = req.body
+    const { performance = 'good', exerciseScore, exerciseType: submittedExerciseType } = req.body
     const userId = req.user!.id
 
     const topic = await JourneyTopic.findOne({ slug, status: 'published' })
@@ -249,8 +263,10 @@ export async function completeTopic(req: Request, res: Response, next: NextFunct
     const profile = await JourneyProfile.findOne({ userId, isActive: true })
     if (!profile) { res.status(400).json({ error: 'Journey not set up yet' }); return }
 
-    // Skill gain by performance
-    const gain = performance === 'excellent' ? 15 : performance === 'good' ? 10 : performance === 'fair' ? 5 : 3
+    // Skill gain: use exerciseScore (0–100) if provided, otherwise fall back to performance tiers
+    const gain = exerciseScore !== undefined
+      ? Math.round(exerciseScore / 10)
+      : (performance === 'excellent' ? 15 : performance === 'good' ? 10 : performance === 'fair' ? 5 : 3)
 
     const skillUpdates: Partial<Record<keyof ISkills, number>> = {}
     for (const skillKey of (topic.buildsSkills ?? [])) {
@@ -611,4 +627,169 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
   } catch (err) {
     next(err)
   }
+}
+
+/** POST /plannr/experiences/:slug/attempt */
+export async function submitExperienceAttempt(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { slug } = req.params
+    const { probeAnswers, classesDrawn } = req.body
+    const userId = req.user!.id
+
+    // Score: classesDrawn → 40% (max 5 classes = full 40pts), probeAnswers → 60%
+    const designScore = Math.min(40, ((classesDrawn ?? 0) / 5) * 40)
+    const probeScore = Array.isArray(probeAnswers) && probeAnswers.length > 0
+      ? (probeAnswers.filter((a: { probe: string; answer: string }) => a.answer && a.answer.length > 20).length / probeAnswers.length) * 60
+      : 30
+    const score = Math.round(designScore + probeScore)
+
+    const attempt = await ExperienceAttempt.create({
+      userId,
+      experienceSlug: slug,
+      probeAnswers:   probeAnswers ?? [],
+      classesDrawn:   classesDrawn ?? 0,
+      score,
+    })
+
+    // Improve skills based on score
+    const experience = await JourneyExperience.findOne({ slug })
+    const skillsToUpdate = experience?.skillBars?.map((s: { skill: string; weight: number }) => s.skill) ?? ['communication', 'designThinking']
+    const skillDelta = Math.ceil(score / 20) // 0–5 pts
+    const deltas: Record<string, number> = {}
+    for (const skill of skillsToUpdate) {
+      deltas[skill] = skillDelta
+    }
+    await applySkillDeltas(userId, 'experience', deltas)
+
+    res.json({ score, attempt: attempt.id, skillsImproved: skillsToUpdate })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// ── Readiness label helper ────────────────────────────────────────────────────
+function readinessLabel(avg: number): string {
+  if (avg >= 80) return 'Expert'
+  if (avg >= 65) return 'Interview Ready'
+  if (avg >= 50) return 'Competent'
+  if (avg >= 30) return 'Developing'
+  return 'Beginner'
+}
+
+/** GET /journey/skills/page — unified skills page data */
+export async function getSkillsPage(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const profile = await JourneyProfile.findOne({ userId: req.user!.id, isActive: true })
+    if (!profile) { res.json({ skills: null }); return }
+
+    const skills = profile.toObject().skills as ISkills
+    const entries = SKILL_KEYS.map(
+      k => ({ key: k as string, label: SKILL_LABELS[k] ?? k, score: (skills as unknown as Record<string, number>)[k] ?? 10 })
+    )
+    const avg = Math.round(entries.reduce((s, e) => s + e.score, 0) / entries.length)
+
+    const sorted = [...entries].sort((a, b) => b.score - a.score)
+    const topSkills  = sorted.slice(0, 3).map(e => ({ key: e.key, label: e.label, score: e.score }))
+    const weakSkills = [...sorted].reverse().slice(0, 3).map(e => ({ key: e.key, label: e.label, score: e.score }))
+
+    const totalTopicsCompleted = profile.topicsCompleted.length
+    const stageReached         = profile.currentStage
+
+    res.json({
+      skills,
+      interviewReadiness: avg,
+      readinessLabel:     readinessLabel(avg),
+      topSkills,
+      weakSkills,
+      breakdown: {
+        skillAverage:         avg,
+        totalTopicsCompleted,
+        stageReached,
+      },
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/** GET /journey/spaced-repetition — items due for review */
+export async function getSpacedRepetition(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id
+    const items  = await SpacedRepetitionQueue
+      .find({ userId, isActive: true, dueDate: { $lte: new Date() } })
+      .sort({ dueDate: 1 })
+      .limit(10)
+    res.json({ items, count: items.length })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/** PATCH /journey/spaced-repetition/:id/dismiss — mark item reviewed */
+export async function dismissSpacedRepetitionItem(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    await SpacedRepetitionQueue.findByIdAndUpdate(req.params.id, {
+      isActive:       false,
+      lastReviewedAt: new Date(),
+      $inc:           { reviewCount: 1 },
+    })
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/** GET /plannr/daily-practice */
+export async function getDailyPractice(req: Request, res: Response, next: NextFunction) {
+  try {
+    const userId = req.user!.id
+    const profile = await JourneyProfile.findOne({ userId, isActive: true })
+    const dateKey = new Date().toISOString().slice(0, 10)
+
+    // 1. Quiz status: check if user completed today's quiz
+    const quizAttempt = await QuizAttempt.findOne({ userId, dateKey })
+    const quizDone = !!quizAttempt
+
+    // 2. Studio challenge recommendation: pick a challenge targeting weakest skill
+    let studioChallenge = null
+    if (profile) {
+      const weakest = getWeakestSkill(profile.skills as ISkills)
+      // Map weakest skill to studio mode:
+      const skillToMode: Record<string, string> = {
+        coupling: 'debugger', cohesion: 'refactor', solid: 'debugger',
+        patterns: 'refactor', extensibility: 'change_one', designThinking: 'change_one',
+        tradeoffReasoning: 'evolution', requirementAnalysis: 'evolution',
+        responsibilities: 'refactor', relationships: 'refactor',
+      }
+      const mode = skillToMode[weakest.key] ?? 'debugger'
+      const ChallengePack = mongoose.model('ChallengePack') // use existing model
+      const pack = await ChallengePack.findOne({ type: mode, status: 'published' }).sort({ order: 1 }).lean()
+      if (pack) {
+        studioChallenge = { mode, slug: (pack as any).slug, title: (pack as any).title, reason: `targets your weakest skill: ${weakest.key}`, difficulty: (pack as any).difficulty }
+      }
+    }
+
+    // 3. Roguelike quick run CTA
+    const quickRunCTA = { label: 'Quick Run', description: '3 stages · ~10 minutes', href: '/learn/roguelike?mode=quick' }
+
+    // 4. Plannr topic recommendation (from existing recommendation logic)
+    let plannrTopic = null
+    if (profile) {
+      const rec = await computeRecommendation(profile)
+      if (rec) plannrTopic = { slug: rec.topicSlug, title: rec.topicTitle, reason: rec.reason }
+    }
+
+    // Estimate time: 5min quiz + 20min studio + 10min roguelike + 15min plannr
+    const estimatedMinutes = (quizDone ? 0 : 5) + (studioChallenge ? 20 : 0) + 10 + (plannrTopic ? 15 : 0)
+
+    res.json({
+      date: dateKey,
+      quiz: { done: quizDone, streak: 0 }, // streak is computed elsewhere
+      studioChallenge,
+      quickRun: quickRunCTA,
+      plannrTopic,
+      estimatedMinutes,
+    })
+  } catch(e) { next(e) }
 }

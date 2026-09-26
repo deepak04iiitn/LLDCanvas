@@ -32,9 +32,11 @@ import artifactRouter      from './routes/artifact.route'
 import studioRouter        from './routes/studio.route'
 import learnRouter         from './routes/learn.route'
 import journeyRouter       from './routes/journey.route'
+import skillsRouter        from './routes/skills.route'
 import adminStudioRouter   from './routes/admin/studio.route'
 import adminLearnRouter    from './routes/admin/learn.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
+import { startSpacedRepetitionJob } from './jobs/spaced-repetition'
 
 const app    = express()
 const httpServer = createServer(app)
@@ -120,6 +122,7 @@ app.use('/artifacts',       artifactRouter)
 app.use('/studio',          studioRouter)
 app.use('/learn',           learnRouter)
 app.use('/plannr',         journeyRouter)
+app.use('/skills',         skillsRouter)
 app.use('/admin/studio',    adminStudioRouter)
 app.use('/admin/learn',     adminLearnRouter)
 
@@ -134,6 +137,7 @@ async function start() {
   await ensureAdminUser()
   initSocketServer(httpServer, allowedOrigins)
   startSubscriptionExpiryJob()
+  startSpacedRepetitionJob()
   httpServer.listen(PORT, () => {
     console.log(`✓ API + Socket.io listening on http://localhost:${PORT}`)
   })

@@ -155,6 +155,46 @@ export function RunSummary({ run, scenario, onPlayAgain, onBrowse }: Props) {
           )}
         </div>
 
+        {/* Skill gains */}
+        {run.skillDeltas && Object.keys(run.skillDeltas).length > 0 && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 mb-6">
+            <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-emerald-700 mb-3">Skills Gained</h3>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(run.skillDeltas)
+                .filter(([, delta]) => delta > 0)
+                .map(([skill, delta]) => (
+                  <div key={skill} className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5">
+                    <span className="text-[12px] font-medium text-ink capitalize">
+                      {skill.replace(/([A-Z])/g, ' $1').trim()}
+                    </span>
+                    <span className="font-mono text-[12px] font-bold text-emerald-600">+{delta}</span>
+                  </div>
+                ))}
+            </div>
+            {run.interviewReadiness !== undefined && (
+              <p className="mt-3 text-[12px] text-emerald-700">
+                Interview Readiness: <span className="font-mono font-bold">{run.interviewReadiness}</span>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Plannr Recommendation */}
+        {run.skillDeltas && (
+          (run.skillDeltas.tradeoffReasoning !== undefined && run.skillDeltas.tradeoffReasoning < 4) ||
+          (run.skillDeltas.extensibility !== undefined && run.skillDeltas.extensibility < 3)
+        ) && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-5 mb-6">
+            <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-blue-700 mb-2">Plannr Recommendation</h3>
+            <p className="text-[13px] text-ink-muted">
+              Your tradeoff reasoning needs practice. Continue with your Plannr roadmap →{' '}
+              <a href="/plannr/roadmap" className="text-brand font-medium hover:underline">
+                Open Roadmap
+              </a>
+            </p>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
           <button

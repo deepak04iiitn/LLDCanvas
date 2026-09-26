@@ -48,14 +48,17 @@ export function RoguelikeLobby() {
   const [fullScenario, setFullScenario] = useState<RoguelikeScenario | null>(null)
   const [loadingScenario, setLoadingScenario] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [startingQuick, setStartingQuick] = useState(false)
+  const [featuredScenario, setFeaturedScenario] = useState<ScenarioSummary | null>(null)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const [scenariosRes, runsRes] = await Promise.allSettled([
+        const [scenariosRes, runsRes, featuredRes] = await Promise.allSettled([
           learnApi.roguelikeV2.listScenarios(),
           learnApi.roguelikeV2.listRuns(),
+          learnApi.roguelikeV2.getFeaturedScenario(),
         ])
         if (cancelled) return
         if (scenariosRes.status === 'fulfilled') {
@@ -63,6 +66,9 @@ export function RoguelikeLobby() {
         }
         if (runsRes.status === 'fulfilled') {
           setRecentRuns(runsRes.value.runs.slice(0, 5))
+        }
+        if (featuredRes.status === 'fulfilled' && featuredRes.value.scenario) {
+          setFeaturedScenario(featuredRes.value.scenario)
         }
       } catch (e) {
         if (!cancelled) toast.error(e instanceof Error ? e.message : 'Failed to load scenarios')
@@ -99,6 +105,17 @@ export function RoguelikeLobby() {
     }
   }
 
+  async function handleQuickRun() {
+    setStartingQuick(true)
+    try {
+      const { runId } = await learnApi.roguelikeV2.startQuickRun()
+      router.push(`/learn/roguelike/${runId}`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to start Quick Run')
+      setStartingQuick(false)
+    }
+  }
+
   return (
     <CategoryShell
       title="LLD Roguelike"
@@ -108,6 +125,55 @@ export function RoguelikeLobby() {
     >
       <div className="overflow-y-auto flex-1">
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+
+          {/* Quick Run card */}
+          <div className="mb-8 rounded-2xl border-2 border-brand/30 bg-gradient-to-r from-brand/5 to-purple-500/5 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">⚡</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-brand font-semibold">Daily Quick Run</span>
+              </div>
+              <h2 className="font-serif text-[17px] font-semibold text-ink">3 stages · ~10 minutes</h2>
+              <p className="text-[12px] text-ink-muted mt-0.5">Jump straight in. Auto-selected scenario, beginner mode, no setup required.</p>
+            </div>
+            <button
+              onClick={handleQuickRun}
+              disabled={startingQuick}
+              className="shrink-0 rounded-xl bg-brand px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-brand/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+            >
+              {startingQuick && <Loader2 className="h-4 w-4 animate-spin" />}
+              Start Quick Run
+            </button>
+          </div>
+
+          {/* Daily Featured Scenario */}
+          {featuredScenario && (
+            <div className="mb-8">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">Today's Featured</p>
+              <button
+                onClick={() => handleScenarioClick(featuredScenario)}
+                className="w-full rounded-2xl border border-amber-300 bg-amber-50/60 p-5 text-left hover:border-amber-400 hover:shadow-md transition-all group"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl leading-none shrink-0">{featuredScenario.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-semibold text-white">🌟 Today's Featured</span>
+                      <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-mono uppercase font-medium', DIFFICULTY_COLORS[featuredScenario.difficulty])}>
+                        {featuredScenario.difficulty}
+                      </span>
+                      <span className="text-[11px] text-ink-faint">~{featuredScenario.estimatedMinutes}m</span>
+                    </div>
+                    <h3 className="mt-1 font-serif text-base font-medium text-ink group-hover:text-brand transition-colors">
+                      {featuredScenario.title}
+                    </h3>
+                    <p className="mt-1 text-[12px] text-ink-muted leading-snug">{featuredScenario.description}</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+
           {/* Mode selector */}
           <div className="mb-8">
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">Select Mode</p>

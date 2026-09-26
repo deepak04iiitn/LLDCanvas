@@ -122,6 +122,7 @@ Member.borrow() accepts a BookItem, so it works for both without any changes. Th
       { label: 'Create Objects', description: 'Instances with actual data: user=Alice, movie="Inception"' },
     ],
     tags: ['oop', 'fundamentals', 'classes'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   {
@@ -236,6 +237,7 @@ The key insight: encapsulation gives you a single controlled point of entry. Onc
       { label: 'Enforce invariants', description: 'Class guarantees balance >= 0 always' },
     ],
     tags: ['oop', 'encapsulation', 'access-control'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   {
@@ -368,6 +370,7 @@ In most LLD interviews, composition is the safer choice.`,
       { label: 'Change test', description: 'What happens when requirements change?' },
     ],
     tags: ['oop', 'inheritance', 'lsp'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   {
@@ -482,6 +485,7 @@ For complex configuration, I could use the Builder pattern to construct each gen
       { label: 'Call uniformly', description: 'generator.generate(data) — no type checks' },
     ],
     tags: ['oop', 'polymorphism', 'interfaces'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   {
@@ -632,6 +636,7 @@ This is the Decorator pattern — composition at work again.`,
       { label: 'Compose freely', description: 'Service holds a list of channels — mix any way' },
     ],
     tags: ['oop', 'composition', 'inheritance', 'design-principles'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   {
@@ -744,6 +749,7 @@ The relationship type directly drives the data model.`,
       { label: 'Design ownership', description: 'Who creates, owns, and destroys the objects?' },
     ],
     tags: ['oop', 'relationships', 'uml'], status: 'published',
+    linkedLearnExercise: 'sample-detective-001',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -876,6 +882,7 @@ Small, focused classes = fast, reliable, readable tests.`,
       { label: 'Validate', description: 'One reason to change → one class' },
     ],
     tags: ['solid', 'srp', 'design-principles'], status: 'published',
+    linkedStudioPack: 'sample-debugger-001',
   },
 
   {
@@ -991,6 +998,7 @@ The solution: keep the high cohesion, but replace concrete dependencies with int
       { label: 'Validate change isolation', description: 'Can I change each dependency independently?' },
     ],
     tags: ['solid', 'cohesion', 'coupling', 'design-quality'], status: 'published',
+    linkedStudioPack: 'sample-refactor-001',
   },
 
   {
@@ -1116,6 +1124,8 @@ Martin Fowler calls this: "make the mistake once, then fix it."`,
       { label: 'Caller uses interface', description: 'New variants = new class, no existing changes' },
     ],
     tags: ['solid', 'ocp', 'design-principles'], status: 'published',
+    linkedStudioPack: 'sample-debugger-001',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   {
@@ -1243,6 +1253,7 @@ Together: you define interfaces (DIP), then inject concrete implementations from
       { label: 'Wire externally', description: 'Callers decide which concrete implementation to use' },
     ],
     tags: ['solid', 'dependency-injection', 'testability'], status: 'published',
+    linkedStudioPack: 'sample-debugger-001',
   },
 
   {
@@ -1353,6 +1364,7 @@ Practically: review every override. Does the subclass honor the parent's contrac
       { label: 'Implement selectively', description: 'Each class only implements relevant interfaces' },
     ],
     tags: ['solid', 'isp', 'lsp'], status: 'published',
+    linkedStudioPack: 'sample-debugger-001',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1480,6 +1492,7 @@ You can violate DIP even while using a DI container — for example, injecting a
       { label: 'Low-level implements abstraction', description: 'StripeService implements IPaymentProcessor' },
     ],
     tags: ['solid', 'dip', 'abstractions'], status: 'published',
+    linkedStudioPack: 'sample-debugger-001',
   },
 
   {
@@ -1611,6 +1624,7 @@ If the inputs are radically different, you might be mixing unrelated behaviors a
       { label: 'Inject or pass strategy', description: 'Caller decides which strategy to use' },
     ],
     tags: ['patterns', 'strategy', 'gof'], status: 'published',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   {
@@ -1743,6 +1757,7 @@ If creation is simple (just new SomeStrategy()), a factory might be overkill. Us
       { label: 'Extension point', description: 'Adding a new type = one change in factory' },
     ],
     tags: ['patterns', 'factory', 'creation-patterns'], status: 'published',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   {
@@ -1888,6 +1903,7 @@ Observer is a pattern that EDA often uses at scale. In an interview, explaining 
       { label: 'Publish and decouple', description: 'OrderService fires event, listeners react independently' },
     ],
     tags: ['patterns', 'observer', 'event-driven'], status: 'published',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   {
@@ -2045,6 +2061,7 @@ The key: existing state classes (PendingState, ConfirmedState) don't change. Onl
       { label: 'States manage transitions', description: 'Each state knows where it can go next' },
     ],
     tags: ['patterns', 'state', 'lifecycle'], status: 'published',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   {
@@ -2172,6 +2189,7 @@ This enforces the algorithm structure. The subclass can only customize specific 
       { label: 'Base class controls flow', description: 'Subclasses cannot change the algorithm order' },
     ],
     tags: ['patterns', 'template-method', 'inheritance-patterns'], status: 'published',
+    linkedLearnExercise: 'sample-detective-002',
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2654,6 +2672,7 @@ Both require the same underlying ability: identify what is unknown, make informe
       { label: 'Design with extension points', description: 'PricingStrategy leaves room for dynamic pricing later' },
     ],
     tags: ['interview-skills', 'ambiguity', 'communication'], status: 'published',
+    linkedStudioPack: 'sample-evolution-001',
   },
 
   {
@@ -2910,6 +2929,7 @@ Don't defend a design that is genuinely wrong for the new requirement. Good engi
       { label: 'Surgical modification', description: 'SurgePricingStrategy added. Nothing else changes.' },
     ],
     tags: ['interview-skills', 'followup', 'extensibility'], status: 'published',
+    linkedStudioPack: 'sample-change-one-001',
   },
 
   {
@@ -3152,6 +3172,7 @@ Also: the interviewer might have been about to point it out anyway. You catching
       { label: '10 min', description: 'Patterns + follow-ups' },
     ],
     tags: ['interview-skills', 'simulation', 'full-interview'], status: 'published',
+    linkedStudioPack: 'sample-evolution-001',
   },
 
   {

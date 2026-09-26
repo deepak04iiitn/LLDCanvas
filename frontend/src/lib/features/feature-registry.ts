@@ -95,14 +95,25 @@ export const FEATURES: FeatureDefinition[] = [
     flagKey: 'FF_STUDIO_DEPWEB',
     analyticsPrefix: 'studio_depweb',
   },
+  {
+    id: 'analysis',
+    category: 'design-studio',
+    label: 'Architecture Analysis',
+    description:
+      'Investigate designs with guided protocols — coupling, dependency cycles, and responsibility analysis.',
+    href: '/design-studio/analysis',
+    adminHref: '/admin/studio/tools',
+    flagKey: 'FF_STUDIO_ANALYSIS',
+    analyticsPrefix: 'studio_analysis',
+  },
 
   // ── Learn & Practice (5) ───────────────────────────────────────────────────
   {
     id: 'score',
     category: 'learn',
     label: 'Design Score',
-    description: 'Heuristic feedback across dimensions — not an absolute grade. Also on diagram → Analyze.',
-    href: '/learn',
+    description: 'Track your UML design quality and score history over time.',
+    href: '/learn/score',
     adminHref: '/admin/learn/score',
     flagKey: 'FF_LEARN_SCORE',
     analyticsPrefix: 'learn_score',
@@ -142,8 +153,8 @@ export const FEATURES: FeatureDefinition[] = [
   {
     id: 'code-debugger',
     category: 'learn',
-    label: 'Bug Hunt',
-    description: 'Find and fix the bug. Run buggy code, observe the wrong output, debug it yourself, and verify your fix.',
+    label: 'Debug Lab',
+    description: 'Code bugs & Design bugs — fix buggy code or hunt structural flaws in UML diagrams and sharpen your design instincts.',
     href: '/learn/debugger',
     flagKey: 'FF_LEARN_DEBUGGER',
     analyticsPrefix: 'learn_debugger',

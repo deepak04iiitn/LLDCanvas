@@ -13,10 +13,19 @@ router.post('/topics/:slug/complete',   requireAuth, journey.completeTopic)
 router.get('/recommendation',           requireAuth, journey.getRecommendation)
 router.get('/experiences',              requireAuth, journey.listExperiences)
 router.get('/experiences/:slug',        requireAuth, journey.getExperience)
+router.post('/experiences/:slug/attempt', requireAuth, journey.submitExperienceAttempt)
+router.get('/skills/page',              requireAuth, journey.getSkillsPage)
 router.get('/skills',                   requireAuth, journey.getSkills)
 router.get('/plan',                     requireAuth, journey.getPlan)
 router.get('/tips',                     requireAuth, journey.getTips)
 router.post('/activity',                requireAuth, journey.logActivity)
+
+// Spaced repetition
+router.get('/spaced-repetition',                requireAuth, journey.getSpacedRepetition)
+router.patch('/spaced-repetition/:id/dismiss',  requireAuth, journey.dismissSpacedRepetitionItem)
+
+// Daily practice
+router.get('/daily-practice',           requireAuth, journey.getDailyPractice)
 
 // Multi-plan endpoints
 router.get('/plans',                    requireAuth, journey.listPlans)

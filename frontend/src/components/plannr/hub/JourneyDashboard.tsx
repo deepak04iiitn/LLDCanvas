@@ -7,6 +7,8 @@ import { ArrowRight, BookOpen, Briefcase, Trophy, Zap, Clock, Target, TrendingUp
 import { journeyApi, type JourneyProfile, type JourneyRecommendation, type JourneyActivity } from '@/lib/plannr-api'
 import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { ProgressRing } from '@/components/plannr/shared/ProgressRing'
+import { DailyPracticeWidget } from '@/components/shared/DailyPracticeWidget'
+import { SpacedRepetitionWidget } from '@/components/plannr/hub/SpacedRepetitionWidget'
 import { cn } from '@/lib/utils'
 
 function RecommendationCard({ rec }: { rec: JourneyRecommendation }) {
@@ -182,6 +184,11 @@ export function JourneyDashboard() {
             </p>
           </div>
 
+          {/* Daily Practice Widget — shown at the top of the dashboard */}
+          <div className="mb-6">
+            <DailyPracticeWidget />
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Left column */}
             <div className="lg:col-span-2 space-y-5">
@@ -233,6 +240,9 @@ export function JourneyDashboard() {
             {/* Right column */}
             <div className="space-y-4">
               <QuickStats completed={completedCount} total={totalTopics} percent={progressPercent} />
+
+              {/* Spaced repetition */}
+              <SpacedRepetitionWidget />
 
               {/* Quick links */}
               <div className="rounded-xl border border-hairline bg-paper-elevated p-4 space-y-1">

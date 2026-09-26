@@ -8,6 +8,7 @@ import {
   RunEnding,
 } from '../../models/learn/roguelike-run.model'
 import { createError } from '../../middleware/error'
+import { applySkillDeltas } from '../../utils/skill-updater'
 
 function paramId(id: string | string[]): string {
   return Array.isArray(id) ? id[0] : id
@@ -90,33 +91,59 @@ export async function startRun(req: Request, res: Response, next: NextFunction) 
       scenarioSlug?: string
       mode?: string
     }
-    if (!scenarioSlug) throw createError('scenarioSlug is required', 400)
 
-    const scenario = await RoguelikeScenario.findOne({
-      slug: scenarioSlug,
-      status: 'published',
-    })
-    if (!scenario) throw createError('Scenario not found', 404)
+    // ── Quick Run mode ──────────────────────────────────────────────────────
+    let isQuickRun = false
+    let maxStages: number | undefined
+    let resolvedMode = mode
 
-    const validModes = ['beginner', 'interview', 'survival', 'hardcore', 'endless']
-    if (!validModes.includes(mode)) throw createError('Invalid run mode', 400)
+    if (mode === 'quick') {
+      isQuickRun = true
+      maxStages = 3
+      resolvedMode = 'beginner'
+    } else {
+      if (!scenarioSlug) throw createError('scenarioSlug is required', 400)
+      const validModes = ['beginner', 'interview', 'survival', 'hardcore', 'endless']
+      if (!validModes.includes(mode)) throw createError('Invalid run mode', 400)
+    }
+
+    // ── Scenario resolution ─────────────────────────────────────────────────
+    let scenario = await RoguelikeScenario.findOne({ status: 'published' }).limit(0) // typed placeholder
+
+    if (isQuickRun) {
+      // Find first published scenario with at least 3 stages, ordered by display order
+      const candidates = await RoguelikeScenario.find({ status: 'published' }).sort({ order: 1 })
+      const suitable = candidates.find(s => s.stages.length >= 3) ?? null
+      if (!suitable) throw createError('No scenarios available for Quick Run', 404)
+      scenario = suitable
+    } else {
+      scenario = await RoguelikeScenario.findOne({
+        slug: scenarioSlug,
+        status: 'published',
+      })
+      if (!scenario) throw createError('Scenario not found', 404)
+    }
 
     const health: ArchitectureHealth = { ...INITIAL_HEALTH }
 
     const resources: RunResources = {
-      engineeringHoursRemaining: scenario.initialConstraints.engineeringHours,
-      complexityBudgetRemaining: scenario.initialConstraints.complexityBudget,
-      teamSize: scenario.initialConstraints.teamSize,
-      infraBudgetRemaining: scenario.initialConstraints.infraBudget,
-      changesRemaining: scenario.initialConstraints.maxStructuralChanges,
+      engineeringHoursRemaining: scenario!.initialConstraints.engineeringHours,
+      complexityBudgetRemaining: scenario!.initialConstraints.complexityBudget,
+      teamSize: scenario!.initialConstraints.teamSize,
+      infraBudgetRemaining: scenario!.initialConstraints.infraBudget,
+      changesRemaining: scenario!.initialConstraints.maxStructuralChanges,
     }
+
+    const effectiveStagesTotal = isQuickRun
+      ? Math.min(maxStages!, scenario!.stages.length)
+      : scenario!.stages.length
 
     const run = await RoguelikeRun.create({
       userId: new Types.ObjectId(req.user!.id),
-      scenarioId: scenario._id,
-      scenarioSlug: scenario.slug,
-      scenarioTitle: scenario.title,
-      mode,
+      scenarioId: scenario!._id,
+      scenarioSlug: scenario!.slug,
+      scenarioTitle: scenario!.title,
+      mode: resolvedMode,
       status: 'active',
       currentStageOrder: 1,
       stages: [],
@@ -126,7 +153,8 @@ export async function startRun(req: Request, res: Response, next: NextFunction) 
       totalDecisions: 0,
       totalRefactors: 0,
       majorFailures: 0,
-      stagesTotal: scenario.stages.length,
+      stagesTotal: effectiveStagesTotal,
+      ...(isQuickRun ? { maxStages } : {}),
       startedAt: new Date(),
     })
 
@@ -424,7 +452,42 @@ export async function endRun(req: Request, res: Response, next: NextFunction) {
     }
 
     run.endedAt = new Date()
+
+    // ── Skill delta computation ──────────────────────────────────────────────
+    const skillDeltas: Record<string, number> = {}
+    const stagesPassed = run.stages.filter(s => s.passed).length
+    const stagesTotal = run.stages.length > 0 ? run.stages.length : 1
+    const passRate = stagesPassed / stagesTotal
+
+    skillDeltas.tradeoffReasoning = Math.ceil(passRate * 8)
+    skillDeltas.extensibility = Math.ceil(passRate * 5)
+
+    if (run.ending === 'survived') {
+      skillDeltas.coupling = 4
+      skillDeltas.cohesion = 3
+    } else if (run.ending === 'survived_with_debt') {
+      skillDeltas.coupling = 2
+      skillDeltas.cohesion = 1
+    } else {
+      skillDeltas.coupling = 1
+    }
+
+    // Persist skill deltas on the run document
+    run.skillDeltas = skillDeltas
+
     await run.save()
+
+    // Apply to user profile
+    const { interviewReadiness } = await applySkillDeltas(
+      run.userId.toString(),
+      'roguelike',
+      skillDeltas,
+    )
+
+    if (interviewReadiness !== undefined) {
+      run.interviewReadiness = interviewReadiness
+      await run.save()
+    }
 
     res.json({
       run: {
@@ -438,11 +501,27 @@ export async function endRun(req: Request, res: Response, next: NextFunction) {
         stages: run.stages.length,
         health: run.health,
         endedAt: run.endedAt,
+        skillDeltas,
+        interviewReadiness,
       },
     })
   } catch (e) {
     next(e)
   }
+}
+
+// ── Featured scenario ─────────────────────────────────────────────────────────
+
+export async function getFeaturedScenario(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Rotate daily: use today's date as seed
+    const dateStr = new Date().toISOString().slice(0, 10)
+    const dateNum = parseInt(dateStr.replace(/-/g, ''), 10)
+    const scenarios = await RoguelikeScenario.find({ status: 'published' }).lean()
+    if (!scenarios.length) { res.json({ scenario: null }); return }
+    const idx = dateNum % scenarios.length
+    res.json({ scenario: scenarios[idx], date: dateStr })
+  } catch (e) { next(e) }
 }
 
 // ── Legacy exports (backward-compat) ─────────────────────────────────────────

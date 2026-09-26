@@ -23,6 +23,7 @@ import {
   Quote,
   ArrowUpRight,
   Plus,
+  Brain,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -93,6 +94,12 @@ const NAV_GROUPS: NavGroup[] = [
         href: '/dashboard/stats',
         Icon: BarChart2,
         isActive: p => p.startsWith('/dashboard/stats'),
+      },
+      {
+        label: 'Skills',
+        href: '/dashboard/skills',
+        Icon: Brain,
+        isActive: p => p.startsWith('/dashboard/skills'),
       },
       {
         label: 'Collaborations',

@@ -1,10 +1,11 @@
 ﻿'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, Circle, Clock, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Circle, Clock, Send, Star } from 'lucide-react'
 import { journeyApi, type JourneyExperience } from '@/lib/plannr-api'
 import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
+import { DesignSketchpad } from '@/components/plannr/experiences/DesignSketchpad'
 import { cn } from '@/lib/utils'
 
 function PrereqBadge({ slug, title, icon, completed }: { slug: string; title: string; icon: string; completed: boolean }) {
@@ -41,26 +42,89 @@ function SkillBarRow({ skill, weight }: { skill: string; weight: number }) {
 
 // ─── Practice Simulation ──────────────────────────────────────────────────────
 
-const PRACTICE_STEPS = [
-  { id: 'clarify',   label: '1. Clarify Requirements', icon: '🔍', tip: 'Ask about scale, users, core features. Never skip this.' },
-  { id: 'entities',  label: '2. Identify Entities',    icon: '📦', tip: 'Write out all the nouns from the problem. Those become your classes.' },
-  { id: 'design',    label: '3. Design Classes',       icon: '🏗️', tip: 'For each entity: what data does it hold? What can it do?' },
-  { id: 'relations', label: '4. Define Relationships', icon: '🔗', tip: 'Decide: is it inheritance, composition, or aggregation?' },
-  { id: 'patterns',  label: '5. Apply Patterns',       icon: '🧩', tip: 'Do you need a Factory? Observer? Strategy? Justify your choice.' },
-  { id: 'tradeoffs', label: '6. Discuss Trade-offs',   icon: '⚖️', tip: 'What did you sacrifice for simplicity? What would change at scale?' },
-]
+interface ScoreResult {
+  score: number
+  skillsImproved: string[]
+}
 
 function PracticeSimulation({ exp }: { exp: JourneyExperience }) {
-  const [step, setStep] = useState(0)
-  const [done, setDone] = useState(false)
-  const [showFollowUps, setShowFollowUps] = useState(false)
-  const current = PRACTICE_STEPS[step]
+  const [classesDrawn, setClassesDrawn] = useState(0)
+  const [probeAnswers, setProbeAnswers] = useState<Record<number, string>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [result, setResult] = useState<ScoreResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleDesignChange = useCallback((count: number) => setClassesDrawn(count), [])
+
+  const probes = exp.interviewerProbes ?? []
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setError(null)
+    try {
+      const answers = probes.map((probe, i) => ({
+        probe,
+        answer: probeAnswers[i] ?? '',
+      }))
+      const res = await journeyApi.submitExperienceAttempt(exp.slug, {
+        probeAnswers: answers,
+        classesDrawn,
+      })
+      setResult({ score: res.score, skillsImproved: res.skillsImproved })
+    } catch {
+      setError('Failed to submit. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (result) {
+    return (
+      <div className="rounded-2xl border border-green-200 bg-green-50 p-6 space-y-5">
+        <div className="text-center space-y-2">
+          <p className="text-4xl">🎉</p>
+          <h3 className="font-serif text-xl font-medium text-ink">Session Complete!</h3>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 border border-green-200">
+            <Star size={14} className="text-green-600" />
+            <span className="text-[15px] font-semibold text-green-800">{result.score} / 100</span>
+          </div>
+        </div>
+
+        {result.skillsImproved.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint">Skills Improved</p>
+            <div className="flex flex-wrap gap-2">
+              {result.skillsImproved.map(s => (
+                <span key={s} className="px-2.5 py-1 rounded-full bg-green-100 border border-green-200 text-[11px] font-medium text-green-800 capitalize">
+                  {s.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint">Interviewer&apos;s Checklist</p>
+          {exp.interviewerChecklist.map((item, i) => (
+            <ChecklistItem key={i} label={item} />
+          ))}
+        </div>
+
+        <button
+          onClick={() => { setResult(null); setProbeAnswers({}); setClassesDrawn(0) }}
+          className="text-[12px] text-brand underline"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="rounded-2xl border border-hairline bg-paper-elevated p-6 space-y-5">
-      <div className="flex items-center gap-2">
-        <MessageSquare size={16} className="text-brand" />
-        <h3 className="font-medium text-[15px] text-ink">Practice Simulation</h3>
+    <div className="rounded-2xl border border-hairline bg-paper-elevated p-6 space-y-6">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint mb-1">Practice Simulation</p>
+        <h3 className="font-medium text-[16px] text-ink">Design it yourself</h3>
       </div>
 
       {/* Problem */}
@@ -70,95 +134,64 @@ function PracticeSimulation({ exp }: { exp: JourneyExperience }) {
         <p className="text-[13px] text-ink-muted mt-2">{exp.problemDescription}</p>
       </div>
 
-      {/* Steps tracker */}
-      {!done ? (
-        <>
-          <div className="flex gap-1.5 flex-wrap">
-            {PRACTICE_STEPS.map((s, i) => (
-              <button
-                key={s.id}
-                onClick={() => setStep(i)}
-                className={cn(
-                  'text-[10px] font-medium px-2 py-1 rounded-full transition-colors',
-                  i === step ? 'bg-brand text-white' : i < step ? 'bg-green-100 text-green-700' : 'bg-paper border border-hairline text-ink-faint',
-                )}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+      {/* Step 1: Design sketchpad */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white text-[10px] font-bold">1</span>
+          <p className="text-[13px] font-semibold text-ink">Sketch your design</p>
+        </div>
+        <DesignSketchpad onDesignChange={handleDesignChange} />
+        <p className="text-[11px] text-ink-faint">
+          {classesDrawn === 0
+            ? 'Add at least 1 class to contribute to your design score'
+            : `${classesDrawn} class${classesDrawn !== 1 ? 'es' : ''} · 5 classes = full design score`}
+        </p>
+      </div>
 
-          <div className="bg-white rounded-xl border border-hairline p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{current.icon}</span>
-              <h4 className="font-medium text-ink text-[15px]">{current.label}</h4>
-            </div>
-            <div className="bg-amber-50 rounded-lg border border-amber-100 p-3">
-              <p className="text-[13px] text-amber-800">💡 {current.tip}</p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            {step > 0 && (
-              <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 rounded-xl border border-hairline text-[13px] text-ink-muted hover:bg-paper-elevated">
-                Back
-              </button>
-            )}
-            <div className="flex-1" />
-            {step < PRACTICE_STEPS.length - 1 ? (
-              <button onClick={() => setStep(s => s + 1)} className="px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90">
-                Next Step
-              </button>
-            ) : (
-              <button onClick={() => setDone(true)} className="px-5 py-2.5 rounded-xl bg-green-600 text-white text-[13px] font-medium hover:opacity-90">
-                ✅ Practice Complete
-              </button>
-            )}
-          </div>
-        </>
-      ) : (
+      {/* Step 2: Probe answers */}
+      {probes.length > 0 && (
         <div className="space-y-4">
-          <div className="bg-green-50 rounded-xl border border-green-200 p-4 text-center">
-            <p className="text-2xl mb-1">🎉</p>
-            <p className="font-medium text-green-800">Great practice session!</p>
-            <p className="text-[13px] text-green-700">Now check your thinking against the interviewer's checklist below.</p>
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white text-[10px] font-bold">2</span>
+            <p className="text-[13px] font-semibold text-ink">Answer the interviewer</p>
           </div>
-
-          {/* Interviewer checklist */}
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-muted">Interviewer's Checklist</p>
-            {exp.interviewerChecklist.map((item, i) => (
-              <ChecklistItem key={i} label={item} />
+          <div className="space-y-4">
+            {probes.map((probe, i) => (
+              <div key={i} className="space-y-1.5">
+                <p className="text-[13px] text-ink leading-relaxed">
+                  <span className="text-amber-600 font-medium">Q:</span> {probe}
+                </p>
+                <textarea
+                  value={probeAnswers[i] ?? ''}
+                  onChange={e => setProbeAnswers(prev => ({ ...prev, [i]: e.target.value }))}
+                  placeholder="Your answer… (at least 30 characters for full score)"
+                  rows={3}
+                  className="w-full rounded-xl border border-hairline bg-paper p-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
+                />
+                <p className={cn(
+                  'text-[10px]',
+                  (probeAnswers[i]?.length ?? 0) >= 30 ? 'text-green-600' : 'text-ink-faint',
+                )}>
+                  {probeAnswers[i]?.length ?? 0} / 30 chars minimum
+                </p>
+              </div>
             ))}
           </div>
-
-          {/* Follow-ups */}
-          <button
-            onClick={() => setShowFollowUps(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-hairline text-[13px] text-ink-muted hover:bg-paper-elevated"
-          >
-            <span>Common Follow-up Questions ({exp.followUps.length})</span>
-            {showFollowUps ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-          {showFollowUps && (
-            <ul className="space-y-2 pl-2">
-              {exp.followUps.map((q, i) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-ink-muted">
-                  <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-brand" />
-                  {q}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <button
-            onClick={() => { setStep(0); setDone(false) }}
-            className="text-[12px] text-brand underline"
-          >
-            Restart Practice
-          </button>
         </div>
       )}
+
+      {error && <p className="text-[13px] text-red-600">{error}</p>}
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || classesDrawn === 0}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+      >
+        {submitting
+          ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          : <Send size={14} />}
+        {submitting ? 'Submitting…' : 'Submit Design'}
+      </button>
     </div>
   )
 }

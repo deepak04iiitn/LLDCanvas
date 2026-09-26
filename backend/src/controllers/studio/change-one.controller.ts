@@ -6,6 +6,7 @@ import {
   startSession,
   submitChange,
 } from '../../services/studio/challenge-session.service'
+import { applySkillDeltas } from '../../utils/skill-updater'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
@@ -61,7 +62,16 @@ export async function submit(req: Request, res: Response, next: NextFunction) {
       req.body.diagramData ?? {},
       req.body.prediction ?? null,
     )
-    res.json(result)
+    const passed = !!(result.result as { accepted?: boolean })?.accepted
+    const skillDeltas: Record<string, number> = passed
+      ? { designThinking: 4, coupling: 3, extensibility: 2 }
+      : { designThinking: 1 }
+    let interviewReadiness: number | undefined
+    try {
+      const skillResult = await applySkillDeltas(req.user!.id, 'studio_change_one', skillDeltas)
+      interviewReadiness = skillResult.interviewReadiness
+    } catch { /* skill update must never crash the submit */ }
+    res.json({ ...result, skillDeltas, interviewReadiness })
   } catch (e) {
     next(e)
   }

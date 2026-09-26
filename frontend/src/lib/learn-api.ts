@@ -149,6 +149,9 @@ export interface RunState {
 export interface FullRun extends RunState {
   stages: StageResult[]
   checkpoints: RunCheckpoint[]
+  maxStages?: number
+  skillDeltas?: Record<string, number>
+  interviewReadiness?: number
 }
 
 export interface QuizQuestion {
@@ -165,6 +168,32 @@ export interface QuizSubmitDetail {
   correct: boolean
   explanation: string
   correctIndex: number
+  skillTag?: string
+}
+
+export interface QuizSubmitResult {
+  attemptId: string
+  correct: number
+  total: number
+  details: QuizSubmitDetail[]
+  skillDeltas?: Record<string, number>
+  interviewReadiness?: number
+}
+
+export interface QuizStreak {
+  currentStreak: number
+  longestStreak: number
+  totalDays: number
+  last30Days: string[]
+}
+
+export interface LeaderboardEntry {
+  rank: number
+  userId: string
+  name: string
+  totalCorrect: number
+  totalAttempts: number
+  accuracy: number
 }
 
 export interface DetectiveScenario {
@@ -221,24 +250,61 @@ export interface DebuggerChallenge {
 }
 
 /** Learn & Practice API — matches backend /learn routes. */
+export interface DiagramScoreRecord {
+  _id: string
+  userId: string
+  diagramId: string
+  diagramTitle: string
+  scores: {
+    coupling: number
+    cohesion: number
+    complexity: number
+    extensibility: number
+    solid: number
+    overall: number
+  }
+  timestamp: string
+}
+
+export interface ScoreTrendEntry {
+  date: string
+  coupling: number
+  cohesion: number
+  complexity: number
+  extensibility: number
+  solid: number
+  overall: number
+}
+
 export const learnApi = {
   score: {
     run: (artifactId: string) =>
       request<{ score: ScoreResultPayload }>(`/learn/score/${artifactId}`, {
         method: 'POST',
       }),
+    history: () =>
+      request<{ records: DiagramScoreRecord[] }>('/learn/score/history'),
+    trends: () =>
+      request<{ trends: ScoreTrendEntry[] }>('/learn/score/trends'),
   },
 
   quiz: {
     today: () => request<{ questions: QuizQuestion[] }>('/learn/quiz/today'),
-    submit: (answers: { questionId: string; choiceIndex: number }[]) =>
-      request<{ correct: number; total: number; details: QuizSubmitDetail[] }>(
+    submit: (answers: { questionId: string; choiceIndex: number }[], setId?: string) =>
+      request<QuizSubmitResult>(
         '/learn/quiz/submit',
         {
           method: 'POST',
-          body: JSON.stringify({ answers }),
+          body: JSON.stringify({ answers, setId }),
         },
       ),
+    streak: () => request<QuizStreak>('/learn/quiz/streak'),
+    leaderboard: () =>
+      request<{ leaderboard: LeaderboardEntry[]; currentUser: LeaderboardEntry | null }>(
+        '/learn/quiz/leaderboard',
+      ),
+    revisitBank: () =>
+      request<{ questions: QuizQuestion[]; count: number }>('/learn/quiz/revisit'),
   },
 
   detective: {
@@ -247,11 +313,34 @@ export const learnApi = {
       request<{
         attemptId: string
         scenario: DetectiveScenario & {
-          explanation?: string
-          answer?: string
-          diagramSnapshot?: unknown
+          diagramSnapshot?: string
         }
       }>(`/learn/detective/${id}/start`, { method: 'POST' }),
+    submit: (
+      id: string,
+      body: { answer: string; scenarioId: string; timeTakenSeconds: number },
+    ) =>
+      request<{
+        correct: boolean
+        correctAnswer: string
+        explanation: string
+        skillDeltas: Record<string, number>
+        interviewReadiness?: number
+      }>(`/learn/detective/${id}/submit`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    history: () =>
+      request<{
+        attempts: {
+          scenarioId: string
+          title: string
+          slug: string
+          correctCount: number
+          totalCount: number
+        }[]
+        patternMastery: Record<string, { correct: number; total: number }>
+      }>('/learn/detective/history'),
   },
 
   roguelike: {
@@ -313,10 +402,20 @@ export const learnApi = {
         },
       ),
     endRun: (runId: string, ending?: string) =>
-      request<{ run: RunState }>(`/learn/roguelike/runs/${runId}/end`, {
+      request<{ run: RunState & { skillDeltas?: Record<string, number>; interviewReadiness?: number } }>(
+        `/learn/roguelike/runs/${runId}/end`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ ending }),
+        },
+      ),
+    startQuickRun: () =>
+      request<{ runId: string; run: RunState }>('/learn/roguelike/runs', {
         method: 'POST',
-        body: JSON.stringify({ ending }),
+        body: JSON.stringify({ mode: 'quick' }),
       }),
+    getFeaturedScenario: () =>
+      request<{ scenario: ScenarioSummary | null; date: string }>('/learn/roguelike/featured'),
   },
 
   debugger: {

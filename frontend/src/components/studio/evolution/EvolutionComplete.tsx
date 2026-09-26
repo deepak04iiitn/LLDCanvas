@@ -58,6 +58,19 @@ export function EvolutionComplete({
   return (
     <div className={cn('pb-16', className)}>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        {/* Interview Framing Panel */}
+        <div className="rounded-xl border border-blue-200/40 bg-blue-50/30 p-4 mb-6">
+          <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide mb-1">Interview Context</p>
+          <p className="text-[13px] text-ink leading-relaxed">
+            When interviewers ask &ldquo;how would you scale this?&rdquo;, they expect exactly this reasoning:
+            identify the pressure → classify its impact → decide how to respond → track the debt.
+            Completing this challenge means you can now structure that answer confidently.
+          </p>
+          <p className="text-[12px] text-ink-muted mt-2">
+            Bonus: mention tech debt awareness — most candidates skip it, interviewers notice.
+          </p>
+        </div>
+
         <h2 className="font-serif text-2xl text-ink">Architecture journey complete</h2>
         <p className="mt-2 text-[13px] text-ink-muted">
           You evolved the design through {Math.max(0, versions.length - 1)} pressure stage(s). Click a

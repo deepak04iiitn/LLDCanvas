@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { IssueTypeTooltip } from '@/components/studio/debugger/IssueTypeTooltip'
 
 export const DEBUGGER_CATEGORIES = [
   'Tight Coupling',
@@ -66,24 +67,25 @@ export function MarkIssueForm({
           What do you think is wrong?
         </legend>
         {DEBUGGER_CATEGORIES.map(c => (
-          <label
-            key={c}
-            className={cn(
-              'flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12px] transition-colors',
-              category === c
-                ? 'border-brand/40 bg-brand-tint text-ink'
-                : 'border-transparent hover:bg-hairline/40 text-ink-muted',
-            )}
-          >
-            <input
-              type="radio"
-              name="dbg-cat"
-              className="accent-brand"
-              checked={category === c}
-              onChange={() => setCategory(c)}
-            />
-            {c}
-          </label>
+          <IssueTypeTooltip key={c} issueType={c}>
+            <label
+              className={cn(
+                'flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-[12px] transition-colors',
+                category === c
+                  ? 'border-brand/40 bg-brand-tint text-ink'
+                  : 'border-transparent hover:bg-hairline/40 text-ink-muted',
+              )}
+            >
+              <input
+                type="radio"
+                name="dbg-cat"
+                className="accent-brand"
+                checked={category === c}
+                onChange={() => setCategory(c)}
+              />
+              {c}
+            </label>
+          </IssueTypeTooltip>
         ))}
       </fieldset>
 

@@ -11,6 +11,9 @@ import { RefactorToolbar } from '@/components/studio/refactor/RefactorToolbar'
 import { ExtractClassPanel } from '@/components/studio/refactor/ExtractClassPanel'
 import { BeforeAfterDiff, type DiffEntryLike } from '@/components/studio/refactor/BeforeAfterDiff'
 import { RefactorComplete } from '@/components/studio/refactor/RefactorComplete'
+import { GuidedStartPanel } from '@/components/studio/refactor/GuidedStartPanel'
+import { InterviewerAssessmentPanel } from '@/components/studio/refactor/InterviewerAssessmentPanel'
+import { PostChallengeDebrief } from '@/components/shared/PostChallengeDebrief'
 import type { DebuggerDiagram } from '@/components/studio/debugger/DebuggerCanvas'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
 
@@ -50,6 +53,9 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
   const [extractMode, setExtractMode] = useState(false)
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<Record<string, unknown> | null>(null)
+  const [skillDeltas, setSkillDeltas] = useState<Record<string, number>>({})
+  const [interviewReadiness, setInterviewReadiness] = useState<number | undefined>()
+  const [showDebrief, setShowDebrief] = useState(true)
   const [startedAt, setStartedAt] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
   const [submitted, setSubmitted] = useState(false)
@@ -182,8 +188,15 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
     setBusy(true)
     try {
       await studioApi.saveRefactor(attemptId, working).catch(() => undefined)
-      const res = await studioApi.submitRefactor(attemptId, working)
+      const rawRes = await studioApi.submitRefactor(attemptId, working)
+      const res = rawRes as typeof rawRes & {
+        skillDeltas?: Record<string, number>
+        interviewReadiness?: number
+      }
       setResult(res.result)
+      setSkillDeltas(res.skillDeltas ?? {})
+      setInterviewReadiness(res.interviewReadiness)
+      setShowDebrief(true)
       setSubmitted(true)
       toast.success(res.result?.accepted ? 'Refactor accepted' : 'Refactor reviewed')
     } catch (err) {
@@ -207,6 +220,12 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
     return cr?.checks ?? []
   }, [result])
 
+  // IDs of behavior flows that passed – used by BehaviorFlowChecklist in result screen
+  const satisfiedFlowIds = useMemo(
+    () => behaviorChecks.filter(c => c.ok).map(c => c.id),
+    [behaviorChecks],
+  )
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center gap-2 text-ink-muted">
@@ -225,6 +244,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
   }
 
   if (submitted && result) {
+    const accepted = Boolean(result.accepted)
     return (
       <CategoryShell
         title={pack.title}
@@ -233,6 +253,37 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         backLabel="Challenges"
       >
         <RefactorComplete result={result} elapsedSec={elapsed} />
+
+        {/* Interviewer assessment */}
+        <div className="mx-auto max-w-lg px-6 pb-4">
+          <InterviewerAssessmentPanel
+            result={result}
+            scoreDeltas={{
+              coupling: Number(result.couplingReduction ?? 0),
+              cohesion: Number(result.cohesionImprovement ?? 0),
+              extensibility: Number(result.extensibility ?? 0),
+            }}
+          />
+        </div>
+
+        {/* Post-challenge skill debrief */}
+        {showDebrief && Object.keys(skillDeltas).length > 0 && (
+          <div className="mx-auto max-w-lg px-6 pb-4 flex justify-center">
+            <PostChallengeDebrief
+              source="studio_refactor"
+              skillDeltas={skillDeltas}
+              interviewReadiness={interviewReadiness}
+              passed={accepted}
+              nextAction={{
+                label: 'Next refactoring',
+                href: '/design-studio/refactor',
+                description: 'Pick another broken design to fix',
+              }}
+              onDismiss={() => setShowDebrief(false)}
+            />
+          </div>
+        )}
+
         <div className="mx-auto max-w-lg px-6 pb-12">
           <BeforeAfterDiff
             diff={(result.diff as DiffEntryLike[]) ?? []}
@@ -267,11 +318,21 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         </button>
       }
     >
+      {/* Guided start hints – visible while working */}
+      {payload.briefing && (
+        <GuidedStartPanel
+          briefing={payload.briefing}
+          requirements={payload.requirements ?? []}
+          constraints={payload.constraints}
+          submitted={submitted}
+        />
+      )}
       <RequirementsPanel
         briefing={payload.briefing}
         requirements={payload.requirements}
         constraints={payload.constraints}
         flows={payload.behaviorContract?.flows}
+        satisfiedFlowIds={submitted ? satisfiedFlowIds : undefined}
       />
       <RefactorToolbar
         extractMode={extractMode}

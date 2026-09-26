@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
@@ -23,6 +24,7 @@ import { WhyChangePanel } from '@/components/studio/evolution/WhyChangePanel'
 import { TradeoffAck } from '@/components/studio/evolution/TradeoffAck'
 import { EvolutionToolbar } from '@/components/studio/evolution/EvolutionToolbar'
 import { EvolutionComplete } from '@/components/studio/evolution/EvolutionComplete'
+import { GuidedModeOverlay } from '@/components/studio/evolution/GuidedModeOverlay'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
 
 export interface EvolutionSessionProps {
@@ -96,6 +98,7 @@ function nodeName(n: unknown): string {
 }
 
 export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
+  const router = useRouter()
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [gate, setGate] = useState<Gate>('brief')
@@ -125,17 +128,26 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
   const [viewVersionIndex, setViewVersionIndex] = useState<number | null>(null)
   const [startedAt] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
+  const [showGuidedOverlay, setShowGuidedOverlay] = useState(false)
 
   const payload = (pack?.payload ?? {}) as {
     briefing?: string
     stages?: EvoStage[]
     checkpoints?: EvoStage[]
+    guidedMode?: boolean
   }
   const stages: EvoStage[] = useMemo(
     () => payload.stages ?? payload.checkpoints ?? [],
     [payload.stages, payload.checkpoints],
   )
   const stage = stages[stageIndex]
+
+  // Guided mode: enabled when pack says so OR user hasn't done a first run yet
+  const isGuidedMode = useMemo(() => {
+    if (payload.guidedMode === true) return true
+    if (typeof window === 'undefined') return false
+    return !localStorage.getItem('evolution_first_run')
+  }, [payload.guidedMode])
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
@@ -341,6 +353,11 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
         toast.success('Track complete')
         setGate('plannr')
         setJourneyIndex(Math.max(0, (prog.versions?.length ?? 1) - 1))
+        // Mark first guided run as done, show overlay
+        if (isGuidedMode && typeof window !== 'undefined' && !localStorage.getItem('evolution_first_run')) {
+          localStorage.setItem('evolution_first_run', 'done')
+          setShowGuidedOverlay(true)
+        }
       } else if (res.grade?.accepted) {
         toast.success('Stage accepted')
         const nextDiag = normalizeDiagram(
@@ -403,6 +420,18 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
         backHref="/design-studio/evolution"
         backLabel="Tracks"
       >
+        {showGuidedOverlay && (
+          <GuidedModeOverlay
+            onDismiss={() => {
+              setShowGuidedOverlay(false)
+              router.push('/design-studio/evolution')
+            }}
+            onTryFullMode={() => {
+              setShowGuidedOverlay(false)
+              router.push('/design-studio/evolution')
+            }}
+          />
+        )}
         <EvolutionComplete
           versions={versions as never[]}
           decisionLog={decisionLog as never[]}
@@ -479,12 +508,25 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
       {gate === 'brief' && (
         <>
           <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
-            <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
-              Track brief
-            </p>
+            <div className="flex items-center gap-2 mb-2">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
+                Track brief
+              </p>
+              {isGuidedMode && (
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-brand">
+                  Guided Mode
+                </span>
+              )}
+            </div>
             <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink">
               {payload.briefing ?? pack.description}
             </p>
+            {isGuidedMode && (
+              <p className="mt-2 text-[12px] text-ink-muted">
+                🧭 Guided Mode simplifies the flow — classification, debt, and tradeoff steps are
+                unlocked after your first run.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => setGate('pressure')}
@@ -514,7 +556,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
             category={stage.category}
             narrative={stage.narrative}
             metrics={stage.metrics}
-            debtDueNote={debtDueNote}
+            debtDueNote={isGuidedMode ? undefined : debtDueNote}
           />
           <PressurePicker
             options={stage.pressureOptions}
@@ -528,7 +570,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               })
             }}
           />
-          {stage.approachHints && stage.approachHints.length > 0 && (
+          {!isGuidedMode && stage.approachHints && stage.approachHints.length > 0 && (
             <p className="px-4 pb-2 text-[12px] text-ink-faint sm:px-6">
               Soft hints (many paths can work): {stage.approachHints.join(' · ')}
             </p>
@@ -538,15 +580,20 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               type="button"
               disabled={pressures.size === 0}
               onClick={() => {
-                // seed classify defaults to keep
-                const init: Record<string, ClassifyBucket> = {}
-                for (const n of componentNames) init[n] = 'keep'
-                setBuckets(init)
-                setGate('classify')
+                if (isGuidedMode) {
+                  // Guided mode: skip classify, go straight to decide
+                  setGate('decide')
+                } else {
+                  // Full mode: seed classify defaults to keep
+                  const init: Record<string, ClassifyBucket> = {}
+                  for (const n of componentNames) init[n] = 'keep'
+                  setBuckets(init)
+                  setGate('classify')
+                }
               }}
               className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50"
             >
-              Continue to classify
+              {isGuidedMode ? 'Continue to decide' : 'Continue to classify'}
             </button>
           </div>
         </>
@@ -575,6 +622,13 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
 
       {gate === 'decide' && stage && (
         <>
+          {isGuidedMode && (
+            <div className="mx-auto max-w-3xl px-4 pt-3 sm:px-6">
+              <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-brand">
+                Guided Mode · Stage {stageIndex + 1}
+              </span>
+            </div>
+          )}
           <EvolveOrHold
             mustChange={stage.mustChange}
             doNothingHint={stage.doNothingHint}
@@ -583,6 +637,9 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               setDecision(d)
               if (d === 'noop') {
                 // go straight to submit path after confirm
+              } else if (isGuidedMode) {
+                // Guided mode: skip debt, why, tradeoffs — go straight to edit
+                setGate('edit')
               } else if (stage.debtOpportunity) {
                 setGate('debt')
               } else {

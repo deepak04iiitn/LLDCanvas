@@ -1,4 +1,4 @@
-import { TopicFlow } from '@/components/journey/topic/TopicFlow'
+import { TopicFlow } from '@/components/plannr/topic/TopicFlow'
 
 interface Props {
   params: Promise<{ slug: string }>

@@ -8,6 +8,7 @@ export interface IQuizQuestion extends Document {
   choices: string[]
   correctIndex: number
   explanation: string
+  skillTag: string
   status: 'draft' | 'published' | 'archived'
   createdAt: Date
   updatedAt: Date
@@ -22,6 +23,7 @@ const quizQuestionSchema = new Schema<IQuizQuestion>(
     choices: { type: [String], required: true },
     correctIndex: { type: Number, required: true },
     explanation: { type: String, default: '' },
+    skillTag: { type: String, default: '' },
     status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft' },
   },
   { timestamps: true },

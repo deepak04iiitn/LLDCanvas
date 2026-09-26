@@ -48,6 +48,10 @@ export interface IJourneyTopic extends Document {
   patternMapSteps: IPatternMapStep[]
   tags: string[]
   status: 'published' | 'draft'
+  exerciseType?: 'detective_scenario' | 'design_bug' | 'quiz_set' | 'none'
+  exerciseId?: string // ID or slug of the linked exercise
+  linkedStudioPack?: string // slug of a linked Design Studio pack
+  linkedLearnExercise?: string // slug/id of a linked Learn exercise
   createdAt: Date
   updatedAt: Date
 }
@@ -110,6 +114,10 @@ const journeyTopicSchema = new Schema<IJourneyTopic>(
     patternMapSteps:     { type: [patternMapStepSchema], default: [] },
     tags:                { type: [String], default: [] },
     status:              { type: String, enum: ['published', 'draft'], default: 'published', index: true },
+    exerciseType:        { type: String, enum: ['detective_scenario', 'design_bug', 'quiz_set', 'none'] },
+    exerciseId:          { type: String },
+    linkedStudioPack:    { type: String },
+    linkedLearnExercise: { type: String },
   },
   { timestamps: true },
 )

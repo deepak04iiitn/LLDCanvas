@@ -1,4 +1,4 @@
-import { ExperienceDetail } from '@/components/journey/experiences/ExperienceDetail'
+import { ExperienceDetail } from '@/components/plannr/experiences/ExperienceDetail'
 
 interface Props {
   params: Promise<{ slug: string }>

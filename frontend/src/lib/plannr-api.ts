@@ -103,6 +103,10 @@ export interface JourneyTopic {
   commonMistakes: string[]
   patternMapSteps: { label: string; description: string }[]
   tags: string[]
+  exerciseType?: 'detective_scenario' | 'design_bug' | 'quiz_set' | 'none'
+  exerciseId?: string
+  linkedStudioPack?: string
+  linkedLearnExercise?: string
   userStatus?: TopicUserStatus
 }
 
@@ -210,10 +214,46 @@ export interface PlannrSummary {
   createdAt: string
 }
 
+export interface DailyPractice {
+  date: string
+  quiz: { done: boolean; streak: number }
+  studioChallenge: { mode: string; slug: string; title: string; reason: string; difficulty: string } | null
+  quickRun: { label: string; description: string; href: string }
+  plannrTopic: { slug: string; title: string; reason: string } | null
+  estimatedMinutes: number
+}
+
+export interface SpacedRepetitionItem {
+  _id: string
+  userId: string
+  itemType: 'topic' | 'studio_challenge' | 'quiz_question'
+  itemId: string
+  itemTitle: string
+  itemHref: string
+  dueDate: string
+  lastReviewedAt?: string
+  reviewCount: number
+  isActive: boolean
+}
+
+export interface SkillsPageResponse {
+  skills: JourneySkills | null
+  interviewReadiness: number
+  readinessLabel: string
+  topSkills: Array<{ key: string; label: string; score: number }>
+  weakSkills: Array<{ key: string; label: string; score: number }>
+  breakdown: {
+    skillAverage: number
+    totalTopicsCompleted: number
+    stageReached: number
+  }
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const journeyApi = {
   setup: (body: {
+    planName?: string
     targetRole: string
     preparationDays: number
     currentLevel: string
@@ -243,10 +283,10 @@ export const journeyApi = {
   getTopic: (slug: string) =>
     request<{ topic: JourneyTopic }>(`/plannr/topics/${slug}`),
 
-  completeTopic: (slug: string, performance: 'excellent' | 'good' | 'fair' | 'poor') =>
+  completeTopic: (slug: string, payload: { performance?: 'excellent' | 'good' | 'fair' | 'poor'; exerciseScore?: number; exerciseType?: string }) =>
     request<{ profile: JourneyProfile; nextRecommendation: JourneyRecommendation | null }>(
       `/plannr/topics/${slug}/complete`,
-      { method: 'POST', body: JSON.stringify({ performance }) },
+      { method: 'POST', body: JSON.stringify(payload) },
     ),
 
   getRecommendation: () =>
@@ -260,6 +300,12 @@ export const journeyApi = {
       experience: JourneyExperience
       prereqDetails: { slug: string; title: string; icon: string; completed: boolean }[]
     }>(`/plannr/experiences/${slug}`),
+
+  submitExperienceAttempt: (slug: string, body: { probeAnswers: { probe: string; answer: string }[]; classesDrawn: number }) =>
+    request<{ score: number; attempt: string; skillsImproved: string[] }>(`/plannr/experiences/${slug}/attempt`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   getSkills: () =>
     request<SkillsResponse>('/plannr/skills'),
@@ -306,4 +352,24 @@ export const journeyApi = {
 
   deletePlan: (id: string) =>
     request<{ success: boolean }>(`/plannr/plans/${id}`, { method: 'DELETE' }),
+
+  /** GET /skills/readiness — overall interview readiness score + per-skill scores. */
+  getSkillReadiness: () =>
+    request<{ interviewReadiness: number; skills: Record<string, number> | null }>('/skills/readiness'),
+
+  /** GET /plannr/daily-practice — today's recommended practice plan. */
+  getDailyPractice: () =>
+    request<DailyPractice>('/plannr/daily-practice'),
+
+  /** GET /plannr/skills/page — full unified skills page data. */
+  getSkillsPage: () =>
+    request<SkillsPageResponse>('/plannr/skills/page'),
+
+  /** GET /plannr/spaced-repetition — items due for review today. */
+  getSpacedRepetition: () =>
+    request<{ items: SpacedRepetitionItem[]; count: number }>('/plannr/spaced-repetition'),
+
+  /** PATCH /plannr/spaced-repetition/:id/dismiss — mark an item as reviewed. */
+  dismissSpacedRepetitionItem: (id: string) =>
+    request<{ ok: boolean }>(`/plannr/spaced-repetition/${id}/dismiss`, { method: 'PATCH' }),
 }

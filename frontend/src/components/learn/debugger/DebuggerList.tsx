@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, History, Loader2, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { learnApi, type DebuggerChallenge } from '@/lib/learn-api'
@@ -41,6 +41,7 @@ export function DebuggerList() {
   const [challenges, setChallenges] = useState<DebuggerChallenge[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all')
+  const [mode, setMode] = useState<'code' | 'design'>('code')
 
   useEffect(() => {
     let cancelled = false
@@ -63,13 +64,62 @@ export function DebuggerList() {
 
   return (
     <CategoryShell
-      title="Bug Hunt"
-      subtitle="Find and fix the bug. Run your fix to verify."
+      title="Debug Lab"
+      subtitle="Fix code bugs or hunt structural design violations in UML"
       backHref="/learn"
       backLabel="Learn"
     >
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-        {/* Filter tabs */}
+
+        {/* Mode switcher */}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex rounded-xl border border-hairline bg-paper-elevated p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setMode('code')}
+              className={cn(
+                'rounded-lg px-4 py-2 text-[13px] font-semibold transition',
+                mode === 'code'
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'text-ink-muted hover:text-ink',
+              )}
+            >
+              🐛 Code Bugs
+            </button>
+            <Link
+              href="/learn/debugger/design"
+              className={cn(
+                'rounded-lg px-4 py-2 text-[13px] font-semibold transition',
+                mode === 'design'
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
+              )}
+            >
+              🔍 Design Bugs
+            </Link>
+          </div>
+          <Link
+            href="/learn/debugger/history"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] text-ink-muted border border-hairline hover:border-brand/30 hover:text-brand transition-colors"
+          >
+            <History size={13} />
+            History
+          </Link>
+        </div>
+
+        {/* Info callout for code bugs */}
+        <div className="mb-5 rounded-xl border border-amber-200/50 bg-amber-50/40 p-4">
+          <p className="text-[12px] font-semibold text-amber-700 mb-1 uppercase tracking-wide">
+            Code Bug Hunt
+          </p>
+          <p className="text-[13px] text-ink leading-relaxed">
+            Each challenge has intentionally broken code. Run it, read the output, fix the bug.
+            Switch to <strong>Design Bugs</strong> to practice spotting structural violations in UML diagrams — 
+            the kind interviewers specifically test.
+          </p>
+        </div>
+
+        {/* Difficulty filter */}
         <div className="mb-6 flex gap-1.5">
           {(['all', 'easy', 'medium', 'hard'] as const).map(d => (
             <button
@@ -156,3 +206,4 @@ export function DebuggerList() {
     </CategoryShell>
   )
 }
+

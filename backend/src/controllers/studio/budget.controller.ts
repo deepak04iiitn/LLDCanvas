@@ -8,6 +8,7 @@ import {
   submitBudgetStage,
 } from '../../services/studio/challenge-session.service'
 import type { BudgetStageSubmission } from '../../services/studio/budgetGrade'
+import { applySkillDeltas } from '../../utils/skill-updater'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
@@ -73,7 +74,16 @@ export async function submitStage(req: Request, res: Response, next: NextFunctio
       req.user!.id,
       submission,
     )
-    res.json(result)
+    const passed = !!result.grade?.accepted
+    const skillDeltas: Record<string, number> = passed
+      ? { tradeoffReasoning: 5, extensibility: 2 }
+      : { tradeoffReasoning: 1 }
+    let interviewReadiness: number | undefined
+    try {
+      const skillResult = await applySkillDeltas(req.user!.id, 'studio_budget', skillDeltas)
+      interviewReadiness = skillResult.interviewReadiness
+    } catch { /* skill update must never crash the submit */ }
+    res.json({ ...result, skillDeltas, interviewReadiness })
   } catch (e) {
     next(e)
   }

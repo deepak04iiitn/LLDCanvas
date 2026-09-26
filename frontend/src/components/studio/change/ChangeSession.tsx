@@ -11,6 +11,8 @@ import { ChangeRequestCard } from '@/components/studio/change/ChangeRequestCard'
 import { PredictImpactPanel } from '@/components/studio/change/PredictImpactPanel'
 import { ChangeToolbar } from '@/components/studio/change/ChangeToolbar'
 import { ChangeComplete } from '@/components/studio/change/ChangeComplete'
+import { ConceptPrimerOverlay } from '@/components/studio/change/ConceptPrimerOverlay'
+import { InterviewerPerspectivePanel } from '@/components/studio/change/InterviewerPerspectivePanel'
 import {
   DebuggerCanvas,
   type DebuggerDiagram,
@@ -64,6 +66,10 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
   const [now, setNow] = useState(Date.now())
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
   const [selectedRels, setSelectedRels] = useState<Set<string>>(new Set())
+  const [showConceptPrimer, setShowConceptPrimer] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !localStorage.getItem('change_concept_seen')
+  })
 
   const payload = (pack?.payload ?? {}) as {
     changeRequest?: { title?: string; body?: string; type?: string }
@@ -270,12 +276,15 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
         backLabel="Challenges"
       >
         <ChangeComplete result={result} elapsedSec={elapsed} nameById={nameById} />
-        <div className="mx-auto max-w-lg px-6 pb-12">
+        <div className="mx-auto max-w-lg px-6 pb-6">
           <BeforeAfterDiff
             diff={(result.diff as DiffEntryLike[]) ?? []}
             behaviorChecks={behaviorChecks}
             constraintChecks={constraintChecks}
           />
+        </div>
+        <div className="mx-auto max-w-lg px-6 pb-12">
+          <InterviewerPerspectivePanel result={result} />
         </div>
       </CategoryShell>
     )
@@ -298,6 +307,9 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
           </button>
         }
       >
+        {showConceptPrimer && (
+          <ConceptPrimerOverlay onDismiss={() => setShowConceptPrimer(false)} />
+        )}
         <ChangeRequestCard
           title={cr?.title}
           body={requestBody}

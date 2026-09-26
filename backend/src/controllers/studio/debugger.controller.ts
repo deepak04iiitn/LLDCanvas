@@ -10,6 +10,7 @@ import {
   startSession,
   submitDebugger,
 } from '../../services/studio/challenge-session.service'
+import { applySkillDeltas } from '../../utils/skill-updater'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
@@ -81,7 +82,18 @@ export async function submit(req: Request, res: Response, next: NextFunction) {
   try {
     const marks = Array.isArray(req.body.marks) ? req.body.marks : []
     const result = await submitDebugger(paramId(req.params.sessionId), req.user!.id, marks)
-    res.json(result)
+    // Passed = fully identified all issues (investigationPct at 100%)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const passed = ((result.result as any)?.investigationPct ?? 0) >= 100
+    const skillDeltas: Record<string, number> = passed
+      ? { coupling: 4, cohesion: 3, solid: 3 }
+      : { coupling: 1, solid: 1 }
+    let interviewReadiness: number | undefined
+    try {
+      const skillResult = await applySkillDeltas(req.user!.id, 'studio_debugger', skillDeltas)
+      interviewReadiness = skillResult.interviewReadiness
+    } catch { /* skill update must never crash the submit */ }
+    res.json({ ...result, skillDeltas, interviewReadiness })
   } catch (e) { next(e) }
 }
 

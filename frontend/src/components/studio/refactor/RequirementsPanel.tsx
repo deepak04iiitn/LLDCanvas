@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BehaviorFlowChecklist } from '@/components/studio/refactor/BehaviorFlowChecklist'
 
 export interface ContractFlow {
   id?: string
@@ -15,6 +16,11 @@ export interface RequirementsPanelProps {
   requirements?: string[]
   constraints?: string[]
   flows?: ContractFlow[]
+  /**
+   * IDs (or labels) of flows that passed the behavior check.
+   * When undefined the checklist shows all as pending.
+   */
+  satisfiedFlowIds?: string[]
   className?: string
 }
 
@@ -23,6 +29,7 @@ export function RequirementsPanel({
   requirements = [],
   constraints = [],
   flows = [],
+  satisfiedFlowIds,
   className,
 }: RequirementsPanelProps) {
   const [open, setOpen] = useState(true)
@@ -92,23 +99,10 @@ export function RequirementsPanel({
               <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
                 Behavior we will check
               </p>
-              <ul className="space-y-2">
-                {flows.map(f => (
-                  <li
-                    key={f.id ?? f.label}
-                    className="rounded-md border border-hairline bg-paper-elevated px-3 py-2"
-                  >
-                    <p className="font-medium text-ink">{f.label}</p>
-                    {f.steps && f.steps.length > 0 && (
-                      <ol className="mt-1 list-decimal space-y-0.5 pl-4 text-[12px] text-ink-muted">
-                        {f.steps.map(s => (
-                          <li key={s}>{s}</li>
-                        ))}
-                      </ol>
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <BehaviorFlowChecklist
+                flows={flows}
+                satisfiedFlowIds={satisfiedFlowIds}
+              />
             </div>
           )}
         </div>

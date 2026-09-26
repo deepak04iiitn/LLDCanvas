@@ -63,6 +63,12 @@ export interface IRoguelikeRun extends Document {
   totalRefactors: number
   majorFailures: number
   stagesTotal: number
+  /** For quick runs: cap stages at this number */
+  maxStages?: number
+  /** Skill deltas applied when this run was ended */
+  skillDeltas?: Record<string, number>
+  /** Interview readiness score at time of run end */
+  interviewReadiness?: number
   startedAt: Date
   endedAt?: Date
   createdAt: Date
@@ -165,6 +171,9 @@ const roguelikeRunSchema = new Schema<IRoguelikeRun>(
     totalRefactors: { type: Number, default: 0 },
     majorFailures: { type: Number, default: 0 },
     stagesTotal: { type: Number, required: true },
+    maxStages: { type: Number },
+    skillDeltas: { type: Schema.Types.Mixed },
+    interviewReadiness: { type: Number },
     startedAt: { type: Date, required: true },
     endedAt: Date,
   },

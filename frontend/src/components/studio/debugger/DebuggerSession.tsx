@@ -19,6 +19,7 @@ import { StageBanner } from '@/components/studio/debugger/StageBanner'
 import { HintButton } from '@/components/studio/debugger/HintButton'
 import { VerifyReport } from '@/components/studio/debugger/VerifyReport'
 import { DebugComplete } from '@/components/studio/debugger/DebugComplete'
+import { DebuggerWalkthrough, shouldShowWalkthrough } from '@/components/studio/debugger/DebuggerWalkthrough'
 import {
   studioApi,
   type DebuggerMark,
@@ -60,6 +61,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
   const [startedAt, setStartedAt] = useState<number>(Date.now())
   const [now, setNow] = useState(Date.now())
   const [hintsUsed, setHintsUsed] = useState(0)
+  const [showWalkthrough, setShowWalkthrough] = useState(false)
 
   const payload = (pack?.payload ?? {}) as {
     briefing?: string
@@ -73,6 +75,13 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  // Show walkthrough on first visit, after the pack data has loaded
+  useEffect(() => {
+    if (!loading && stage === 'detect') {
+      setShowWalkthrough(shouldShowWalkthrough())
+    }
+  }, [loading, stage])
 
   useEffect(() => {
     let cancelled = false
@@ -244,6 +253,9 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
           refactoringPct={Number(result.refactoringPct ?? 0)}
           elapsedSec={Number(result.elapsedSec ?? elapsed)}
           hintsUsed={Number(result.hintsUsed ?? hintsUsed)}
+          gradedMarks={
+            ((result.gradedMarks as DebuggerMark[] | undefined) ?? marks)
+          }
         />
         <VerifyReport
           checks={
@@ -400,6 +412,10 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
       </div>
 
       <DebugConsole entries={consoleLog} />
+
+      {showWalkthrough && (
+        <DebuggerWalkthrough onDismiss={() => setShowWalkthrough(false)} />
+      )}
     </CategoryShell>
   )
 }

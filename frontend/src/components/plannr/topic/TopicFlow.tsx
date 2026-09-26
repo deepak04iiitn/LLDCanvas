@@ -1,11 +1,12 @@
 ﻿'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, CheckCircle2, BookOpen, Lightbulb, Briefcase, Eye, Wrench, MessageSquare, Repeat } from 'lucide-react'
 import { journeyApi, type JourneyTopic } from '@/lib/plannr-api'
 import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { StageTag } from '@/components/plannr/shared/StageTag'
+import { MiniExerciseGate } from '@/components/plannr/topic/MiniExerciseGate'
+import { AfterTopicActions } from '@/components/plannr/topic/AfterTopicActions'
 import { cn } from '@/lib/utils'
 
 type Step = 'learn' | 'whyItMatters' | 'interviewTip' | 'realExperience' | 'spotIt' | 'fixIt' | 'interviewQuestion' | 'followUp'
@@ -245,46 +246,15 @@ function FollowUpStep({ topic }: { topic: JourneyTopic }) {
   )
 }
 
-// ─── Completion Modal ─────────────────────────────────────────────────────────
+// ─── Well Done Screen ─────────────────────────────────────────────────────────
 
-function CompletionModal({
-  onSelect,
-  loading,
-}: {
-  onSelect: (p: 'excellent' | 'good' | 'fair' | 'poor') => void
-  loading: boolean
-}) {
-  const options: { id: 'excellent' | 'good' | 'fair' | 'poor'; label: string; desc: string; color: string }[] = [
-    { id: 'excellent', label: '🚀 Excellent', desc: 'I nailed every part', color: 'border-green-400 hover:bg-green-50' },
-    { id: 'good',      label: '✅ Good',      desc: 'Understood with minor help', color: 'border-blue-400 hover:bg-blue-50' },
-    { id: 'fair',      label: '🤔 Fair',      desc: 'Got the gist, needs review', color: 'border-amber-400 hover:bg-amber-50' },
-    { id: 'poor',      label: '😅 Struggled', desc: 'Will revisit this topic', color: 'border-red-400 hover:bg-red-50' },
-  ]
+function CompletedBanner() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-paper rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
-        <div className="text-center">
-          <p className="text-2xl">🎉</p>
-          <h2 className="font-serif text-xl font-medium text-ink mt-2">Topic Complete!</h2>
-          <p className="text-[13px] text-ink-muted mt-1">How well did you understand this topic?</p>
-        </div>
-        <div className="space-y-2">
-          {options.map(o => (
-            <button
-              key={o.id}
-              onClick={() => onSelect(o.id)}
-              disabled={loading}
-              className={cn(
-                'w-full text-left rounded-xl border-2 p-3 transition-all',
-                o.color,
-                loading && 'opacity-50 cursor-not-allowed',
-              )}
-            >
-              <p className="font-medium text-[14px] text-ink">{o.label}</p>
-              <p className="text-[12px] text-ink-muted">{o.desc}</p>
-            </button>
-          ))}
-        </div>
+    <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 mb-6">
+      <CheckCircle2 size={20} className="text-green-600 shrink-0" />
+      <div>
+        <p className="font-medium text-[14px] text-green-800">Topic complete! 🎉</p>
+        <p className="text-[12px] text-green-700 mt-0.5">Your skills have been updated.</p>
       </div>
     </div>
   )
@@ -293,12 +263,10 @@ function CompletionModal({
 // ─── Main TopicFlow ───────────────────────────────────────────────────────────
 
 export function TopicFlow({ slug }: { slug: string }) {
-  const router = useRouter()
   const [topic, setTopic] = useState<JourneyTopic | null>(null)
   const [loading, setLoading] = useState(true)
   const [stepIdx, setStepIdx] = useState(0)
-  const [showCompletion, setShowCompletion] = useState(false)
-  const [completing, setCompleting] = useState(false)
+  const [isCompleted, setIsCompleted] = useState(false)
 
   useEffect(() => {
     journeyApi.getTopic(slug)
@@ -310,15 +278,17 @@ export function TopicFlow({ slug }: { slug: string }) {
   const isLast = stepIdx === STEPS.length - 1
   const progress = ((stepIdx + 1) / STEPS.length) * 100
 
-  async function handleComplete(performance: 'excellent' | 'good' | 'fair' | 'poor') {
+  async function handleExerciseComplete(score: number) {
     if (!topic) return
-    setCompleting(true)
     try {
-      await journeyApi.completeTopic(topic.slug, performance)
-      router.push('/plannr/roadmap')
-    } finally {
-      setCompleting(false)
+      await journeyApi.completeTopic(topic.slug, {
+        exerciseScore: score,
+        exerciseType: topic.exerciseType,
+      })
+    } catch {
+      // best-effort — still show completed state
     }
+    setIsCompleted(true)
   }
 
   if (loading) {
@@ -342,7 +312,16 @@ export function TopicFlow({ slug }: { slug: string }) {
       case 'realExperience':   return <RealExperienceStep content={topic.content.realExperience} />
       case 'spotIt':           return <SpotItStep topic={topic} />
       case 'fixIt':            return <FixItStep topic={topic} />
-      case 'interviewQuestion':return <InterviewQuestionStep topic={topic} />
+      case 'interviewQuestion':
+        return (
+          <MiniExerciseGate
+            exerciseType={topic.exerciseType ?? 'none'}
+            exerciseId={topic.exerciseId ?? ''}
+            topicSlug={topic.slug}
+            buildsSkills={topic.buildsSkills}
+            onComplete={handleExerciseComplete}
+          />
+        )
       case 'followUp':         return <FollowUpStep topic={topic} />
     }
   }
@@ -368,73 +347,85 @@ export function TopicFlow({ slug }: { slug: string }) {
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              {STEPS.map((s, i) => {
-                const Icon = s.icon
-                return (
+          {isCompleted ? (
+            <>
+              <CompletedBanner />
+              <AfterTopicActions
+                topicTitle={topic.title}
+                linkedStudioPack={topic.linkedStudioPack}
+                linkedLearnExercise={topic.linkedLearnExercise}
+                studioMode={topic.linkedStudioPack?.includes('refactor') ? 'refactor' : topic.linkedStudioPack?.includes('evolution') ? 'evolution' : topic.linkedStudioPack?.includes('change') ? 'change-one' : 'debugger'}
+              />
+            </>
+          ) : (
+            <>
+              {/* Progress bar */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  {STEPS.map((s, i) => {
+                    const Icon = s.icon
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setStepIdx(i)}
+                        title={s.label}
+                        className={cn(
+                          'flex-1 flex justify-center py-1 text-[9px] font-medium transition-colors',
+                          i === stepIdx ? 'text-brand' : i < stepIdx ? 'text-green-600' : 'text-ink-faint',
+                        )}
+                      >
+                        <Icon size={14} />
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="h-1 rounded-full bg-hairline overflow-hidden">
+                  <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-ink-faint">{currentStep.label}</span>
+                  <span className="text-[10px] text-ink-faint">{stepIdx + 1}/{STEPS.length}</span>
+                </div>
+              </div>
+
+              {/* Step content */}
+              <div className="mb-8">
+                {renderStep()}
+              </div>
+
+              {/* Navigation — hide Next/Complete on the Practice Q step since gate handles completion */}
+              <div className="flex items-center gap-3">
+                {stepIdx > 0 && (
                   <button
-                    key={s.id}
-                    onClick={() => setStepIdx(i)}
-                    title={s.label}
-                    className={cn(
-                      'flex-1 flex justify-center py-1 text-[9px] font-medium transition-colors',
-                      i === stepIdx ? 'text-brand' : i < stepIdx ? 'text-green-600' : 'text-ink-faint',
-                    )}
+                    onClick={() => setStepIdx(s => s - 1)}
+                    className="flex items-center gap-1 px-4 py-2 rounded-xl border border-hairline text-[13px] text-ink-muted hover:bg-paper-elevated transition-colors"
                   >
-                    <Icon size={14} />
+                    <ChevronLeft size={14} /> Back
                   </button>
-                )
-              })}
-            </div>
-            <div className="h-1 rounded-full bg-hairline overflow-hidden">
-              <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-[10px] text-ink-faint">{currentStep.label}</span>
-              <span className="text-[10px] text-ink-faint">{stepIdx + 1}/{STEPS.length}</span>
-            </div>
-          </div>
-
-          {/* Step content */}
-          <div className="mb-8">
-            {renderStep()}
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center gap-3">
-            {stepIdx > 0 && (
-              <button
-                onClick={() => setStepIdx(s => s - 1)}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl border border-hairline text-[13px] text-ink-muted hover:bg-paper-elevated transition-colors"
-              >
-                <ChevronLeft size={14} /> Back
-              </button>
-            )}
-            <div className="flex-1" />
-            {!isLast ? (
-              <button
-                onClick={() => setStepIdx(s => s + 1)}
-                className="flex items-center gap-1 px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
-              >
-                Next <ChevronRight size={14} />
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowCompletion(true)}
-                className="flex items-center gap-1 px-5 py-2.5 rounded-xl bg-green-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
-              >
-                <CheckCircle2 size={14} /> Complete Topic
-              </button>
-            )}
-          </div>
+                )}
+                <div className="flex-1" />
+                {currentStep.id !== 'interviewQuestion' && (
+                  !isLast ? (
+                    <button
+                      onClick={() => setStepIdx(s => s + 1)}
+                      className="flex items-center gap-1 px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Next <ChevronRight size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setStepIdx(STEPS.findIndex(s => s.id === 'interviewQuestion'))}
+                      className="flex items-center gap-1 px-5 py-2.5 rounded-xl bg-green-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity"
+                    >
+                      <CheckCircle2 size={14} /> Go to Practice
+                    </button>
+                  )
+                )}
+              </div>
+            </>
+          )}
         </div>
       </main>
-
-      {showCompletion && (
-        <CompletionModal onSelect={handleComplete} loading={completing} />
-      )}
     </div>
   )
 }
