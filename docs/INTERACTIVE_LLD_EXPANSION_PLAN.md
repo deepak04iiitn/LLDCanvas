@@ -1,4 +1,4 @@
-﻿# Interactive LLD Expansion — Full Architecture & Implementation Plan
+# Interactive LLD Expansion — Full Architecture & Implementation Plan
 
 Companion to the interactive canvas overview. Spec source: `docs/LLDCanvas — Interactive LLD Feature Specification.md`.
 
@@ -14,13 +14,13 @@ Companion to the interactive canvas overview. Spec source: `docs/LLDCanvas — I
 
 | Category | Spec section | Features | Hub route |
 |----------|--------------|----------|-----------|
-| **Design Studio** | Â§3 (+ History tools Â§6â€“7) | Design Debugger, Refactoring Mode, Change One Thing, Architecture Evolution, Architecture Budget, Architecture Microscope, Dependency Web, UML Diff, Explain as Story, Design Replay, Design Decision Log | `/design-studio` |
-| **Learn & Practice** | Â§4 | Design Pattern Detective, Daily Quiz + Leaderboard, Architecture Mashup, LLD Roguelike, UML â†” Code, Design Score | `/learn` |
+| **Design Studio** | Â§3 (+ History tools Â§6â€“7) | Design Debugger, Refactoring Mode, Change One Thing, Architecture Evolution, Architecture Budget, Architecture Microscope, Dependency Web, Design Replay | `/design-studio` |
+| **Learn & Practice** | Â§4 | Design Pattern Detective, Daily Quiz + Leaderboard, Architecture Mashup, LLD Roguelike, Design Score | `/learn` |
 | **Community** | Â§5 (+ Â§8) | Community Design Gallery, Watch Someone's Design, Design Forks, Alternative Solutions | `/community` |
 
 > **Note:** Existing `/playground` stays the Draft Notation tryout. The new hub is **`/design-studio`** so the two are not confused.
 
-**In-editor Design Workspace** (`/editor/[id]`): tabs Canvas | Analyze | Evolve | History | Share â€” hosts Design Studio tools that attach to the open design (Microscope, Dep Web, Score entry, Diff, Decisions, Replay, Publish). Standalone challenge runs still open from the Design Studio hub.
+**In-editor Design Workspace** (`/editor/[id]`): tabs Canvas | Analyze | Evolve | History | Share â€” hosts Design Studio tools that attach to the open design (Microscope, Dep Web, Score entry, Replay, Publish). Standalone challenge runs still open from the Design Studio hub.
 
 ---
 
@@ -87,18 +87,13 @@ Every canvas-centric feature operates on a **Design Artifact** (evolved from tod
 |------|-------------|
 | **Core** | Alternate graph layout; cycles, hubs, impact radius; virtualize large graphs. |
 
-### A.8 UML Diff â€” *Design Studio*
+### A.8 UML Diff â€” *REMOVED*
 
-| Area | Requirement |
-|------|-------------|
-| **Foundation** | Must ship early â€” Evolution, Change One, Refactor, Forks depend on it. |
-| **Risk** | Stable `elementId` UUIDs required. |
+Product UI removed. Internal `structuralDiff` kernel remains for Change / Evolution / Refactor grading.
 
-### A.9 Explain This Design as a Story â€” *Design Studio*
+### A.9 Explain This Design as a Story â€” *REMOVED*
 
-| Area | Requirement |
-|------|-------------|
-| **Core** | Graph-walk narration + highlights; templates first, optional LLM polish later. |
+Product UI, Analyze Story tab, studio challenges, and story APIs removed.
 
 ### A.10 Design Score â€” *Learn & Practice*
 
@@ -135,11 +130,9 @@ Every canvas-centric feature operates on a **Design Artifact** (evolved from tod
 | **FE** | `/learn/roguelike/[runId]` |
 | **Deps** | Session runtime + modifiers DSL â€” late phase. |
 
-### A.15 UML â†” Code â€” *Learn & Practice*
+### A.15 UML â†” Code â€” *REMOVED*
 
-| Area | Requirement |
-|------|-------------|
-| **FE** | `/learn/uml-code` and/or editor panel; TS/Java first. |
+Learn/admin routes and generate API removed. Editor Code runner panel is unrelated and kept.
 
 ### A.16 Community Design Gallery â€” *Community*
 
@@ -160,17 +153,16 @@ Every canvas-centric feature operates on a **Design Artifact** (evolved from tod
 |------|-------------|
 | **Core** | Clone with `parentId`, Diff vs parent, fork tree. |
 
-### A.19 Design Replay â€” *Design Studio (History)*
+### A.19 Design Replay — *Design Studio*
 
 | Area | Requirement |
 |------|-------------|
-| **FE** | Design Workspace History tab; powers Community Watch. |
+| **FE** | `/design-studio/replay` catalog (all saved diagrams, title-only) + player; History tab reuses player. |
+| **API** | `GET /studio/replay/catalog`, `GET /studio/replay/:id` — no author fields. |
 
-### A.20 Design Decision Log â€” *Design Studio (History)*
+### A.20 Design Decision Log â€” *REMOVED*
 
-| Area | Requirement |
-|------|-------------|
-| **Core** | Annotate elements with why / alternatives / trade-offs. |
+History Decisions tab and `/artifacts/:id/decisions` APIs removed. History tab keeps Design Replay only.
 
 ### A.21 Alternative Solutions â€” *Community*
 
@@ -241,9 +233,9 @@ Reuse existing FeatureFaq / FeatureCrossLinks / JsonLd kit.
 
 ### Per-feature pages (by category)
 
-**Design Studio:** `/features/design-debugger`, `refactoring-mode`, `change-one-thing`, `architecture-evolution`, `architecture-budget`, `architecture-microscope`, `dependency-web`, `uml-diff`, `explain-design`, `design-replay`, `design-decision-log`
+**Design Studio:** `/features/design-debugger`, `refactoring-mode`, `change-one-thing`, `architecture-evolution`, `architecture-budget`, `architecture-microscope`, `dependency-web`, `design-replay`
 
-**Learn & Practice:** `/features/design-score`, `uml-to-code`, `design-pattern-detective`, `daily-lld-quiz`, `architecture-mashup`, `lld-roguelike`
+**Learn & Practice:** `/features/design-score`, `design-pattern-detective`, `daily-lld-quiz`, `architecture-mashup`, `lld-roguelike`
 
 **Community:** `/features/design-gallery`, `alternative-solutions`, plus hub `/community`
 
@@ -258,8 +250,8 @@ Reuse existing FeatureFaq / FeatureCrossLinks / JsonLd kit.
 |--------|---------|
 | **DesignArtifact** + stable element IDs | Shared object model |
 | **Graph Analysis Kernel** | Microscope, Dep Web, Score, Budget, Story |
-| **Structural UML Diff** | Evolution, Change, Refactor, Forks |
-| **Version / Snapshot store** | Evolution, Diff, Replay checkpoints |
+| **Structural Diff (internal)** | Evolution, Change, Refactor grading |
+| **Version / Snapshot store** | Evolution, Replay checkpoints |
 | **Replay Event Bus** | Replay + Watch |
 | **Challenge Session runtime** | Debugger, Refactor, Change, Mashup, Roguelike |
 | **Content Pack schema** | Debugger, Detective, Quiz, Mashup |
@@ -298,7 +290,6 @@ Quiz                     /admin/learn/quiz
 Pattern Detective        /admin/learn/detective
 Mashup                   /admin/learn/mashup
 Roguelike                /admin/learn/roguelike
-UML ↔ Code Config        /admin/learn/uml-code
 
 ── Interactive · Community ──
 Gallery Moderation       /admin/community/gallery
@@ -321,7 +312,6 @@ Alternative Solutions    /admin/community/alternatives
 | `/admin/learn/detective` | Scenarios + modes (incl. “no pattern”) | **15–20** scenarios |
 | `/admin/learn/mashup` | Curated problem pairs + brief templates | **10** mashups |
 | `/admin/learn/roguelike` | Modifiers, base problems, level curves | **1** run config + **8–12** modifiers |
-| `/admin/learn/uml-code` | Languages, skeleton templates | **TS + Java** templates |
 | `/admin/community/gallery` | Unpublish / hide / feature published designs | Tools ready |
 | `/admin/community/reports` | Abuse/spam queue | Tools ready |
 | `/admin/community/alternatives` | Groups of approaches per problem + trade-off blurbs | **3** problems × **2–3** alts |
@@ -386,14 +376,13 @@ POST         /admin/community/gallery/:id/feature|unpublish
 | Phase | Objective |
 |-------|-----------|
 | **0** | Artifact, three hubs, registry, SEO template, flags, **AdminShell Interactive nav + challenge-pack scaffold** |
-| **1** | Graph kernel, UML Diff, versions, replay capture |
+| **1** | Graph kernel, versions, replay capture |
 | **2** | Studio Understand + Design Score + **admin Score / Budget / Tools tabs** |
 | **3** | Debugger, Refactor + **admin CRUD + seeds** |
 | **4** | Change One Thing, Evolution + **admin CRUD + seeds** |
 | **5** | Replay polish → Watch; studio tools analytics |
-| **6** | UML ↔ Code + **admin uml-code config** |
-| **7** | Quiz, Detective, Mashup, Roguelike + **admin CRUD + large seeds** |
-| **8** | Community + **gallery / reports / alternatives admin** |
+| **6** | Quiz, Detective, Mashup, Roguelike + **admin CRUD + large seeds** |
+| **7** | Community + **gallery / reports / alternatives admin** |
 
 **First shippable slice:** Phases 0–2 with admin config tabs; each content feature ships with its admin tab + seeds.
 
@@ -461,7 +450,7 @@ Preserve `paper` / `ink` / `brand` / `hairline`. Hubs use product chrome. Admin 
 
 | Free | Pro+ | Ultimate / caps |
 |------|------|-----------------|
-| Microscope, Dep Web, Score lite, Decision Log, Daily Quiz | Debugger, Refactor, Change One, Evolution, Budget, Detective | Higher publish limits, Roguelike, more codegen languages |
+| Microscope, Dep Web, Score lite, Daily Quiz | Debugger, Refactor, Change One, Evolution, Budget, Detective | Higher publish limits, Roguelike, more codegen languages |
 
 ---
 

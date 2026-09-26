@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
-import { DesignDecision } from '../../models/artifact/design-decision.model'
 import { ReplayEvent } from '../../models/artifact/replay-event.model'
-import { ArtifactVersion } from '../../models/artifact/artifact-version.model'
 import { analyzeDiagram } from '../../services/graph/analyze'
-import { structuralDiff } from '../../services/graph/structuralDiff'
 import { scoreDiagram } from '../../services/graph/scoreEngine'
-import { buildStory } from '../../services/graph/storyWalk'
 import { calcBudget } from '../../services/graph/budgetCalc'
 import {
   createVersion,
@@ -69,25 +65,6 @@ export async function getVersions(req: Request, res: Response, next: NextFunctio
   } catch (e) { next(e) }
 }
 
-export async function getDiff(req: Request, res: Response, next: NextFunction) {
-  try {
-    const diagramId = paramId(req.params.id)
-    await getDiagramForUser(diagramId, req.user!.id)
-    const fromId = String(req.query.from ?? '')
-    const toId = String(req.query.to ?? '')
-    const [from, to] = await Promise.all([
-      ArtifactVersion.findOne({ _id: fromId, diagramId }),
-      ArtifactVersion.findOne({ _id: toId, diagramId }),
-    ])
-    if (!from || !to) throw createError('Version not found', 404)
-    const entries = structuralDiff(
-      from.diagramData as { nodes?: unknown[]; edges?: unknown[] },
-      to.diagramData as { nodes?: unknown[]; edges?: unknown[] },
-    )
-    res.json({ entries })
-  } catch (e) { next(e) }
-}
-
 export async function postReplayEvents(req: Request, res: Response, next: NextFunction) {
   try {
     const artifactId = paramId(req.params.id)
@@ -110,58 +87,21 @@ export async function postReplayEvents(req: Request, res: Response, next: NextFu
   } catch (e) { next(e) }
 }
 
-export async function listDecisions(req: Request, res: Response, next: NextFunction) {
-  try {
-    const artifactId = paramId(req.params.id)
-    await getDiagramForUser(artifactId, req.user!.id)
-    const decisions = await DesignDecision.find({ artifactId }).sort({ createdAt: -1 }).lean()
-    res.json({ decisions })
-  } catch (e) { next(e) }
-}
 
-export async function createDecision(req: Request, res: Response, next: NextFunction) {
+
+
+
+export async function getReplay(req: Request, res: Response, next: NextFunction) {
   try {
     const artifactId = paramId(req.params.id)
     await getDiagramForUser(artifactId, req.user!.id)
-    const doc = await DesignDecision.create({
-      artifactId,
-      userId: req.user!.id,
-      elementId: String(req.body.elementId ?? ''),
-      decision: String(req.body.decision ?? ''),
-      why: String(req.body.why ?? ''),
-      alternatives: String(req.body.alternatives ?? ''),
-      tradeoffs: String(req.body.tradeoffs ?? ''),
+    const recorded = await ReplayEvent.find({
+      $or: [{ artifactId }, { diagramId: artifactId }],
     })
-    res.status(201).json(doc)
-  } catch (e) { next(e) }
-}
+      .sort({ t: 1 })
+      .lean()
 
-export async function updateDecision(req: Request, res: Response, next: NextFunction) {
-  try {
-    const artifactId = paramId(req.params.id)
-    await getDiagramForUser(artifactId, req.user!.id)
-    const doc = await DesignDecision.findOneAndUpdate(
-      { _id: paramId(req.params.decisionId), artifactId },
-      {
-        decision: req.body.decision,
-        why: req.body.why,
-        alternatives: req.body.alternatives,
-        tradeoffs: req.body.tradeoffs,
-        elementId: req.body.elementId,
-      },
-      { new: true },
-    )
-    if (!doc) throw createError('Decision not found', 404)
-    res.json(doc)
-  } catch (e) { next(e) }
-}
-
-export async function deleteDecision(req: Request, res: Response, next: NextFunction) {
-  try {
-    const artifactId = paramId(req.params.id)
-    await getDiagramForUser(artifactId, req.user!.id)
-    await DesignDecision.deleteOne({ _id: paramId(req.params.decisionId), artifactId })
-    res.json({ ok: true })
+    res.json({ events: recorded })
   } catch (e) { next(e) }
 }
 
@@ -192,13 +132,6 @@ export async function postScore(req: Request, res: Response, next: NextFunction)
   } catch (e) { next(e) }
 }
 
-export async function postStory(req: Request, res: Response, next: NextFunction) {
-  try {
-    const diagram = await getDiagramForUser(paramId(req.params.id), req.user!.id)
-    const g = asGraph(diagram.diagramData)
-    res.json(buildStory(g.nodes, g.edges))
-  } catch (e) { next(e) }
-}
 
 export async function postBudget(req: Request, res: Response, next: NextFunction) {
   try {

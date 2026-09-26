@@ -1,4 +1,4 @@
-/** Shared diagram graph analysis — used by Microscope, Dep Web, Score, Budget, Story. */
+/** Shared diagram graph analysis — used by Microscope, Dep Web, Score, Budget. */
 
 export type GraphNode = { id: string; data?: { name?: string; nodeType?: string; methods?: unknown[]; attributes?: unknown[]; noteText?: string; elementId?: string }; [k: string]: unknown }
 export type GraphEdge = { id: string; source: string; target: string; data?: { relationshipType?: string; elementId?: string }; [k: string]: unknown }

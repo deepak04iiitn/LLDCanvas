@@ -14,7 +14,6 @@ const NAV_LINKS = [
   { label: 'Features',       href: '/features' },
   { label: 'Design Studio',  href: '/design-studio' },
   { label: 'Learn',          href: '/learn' },
-  { label: 'Community',      href: '/community' },
   { label: 'Blogs',          href: '/blog' },
   { label: 'Playground',     href: '/playground' },
   { label: 'Pricing',        href: '/pricing' },

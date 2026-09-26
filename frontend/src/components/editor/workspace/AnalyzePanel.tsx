@@ -1,28 +1,26 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import {
   analyzeDiagram,
   type DiagramLike,
   type AnalyzeEdge,
 } from '@/lib/graph/analyzeDiagram'
-import { toDependencyGraph } from '@/lib/graph/toDependencyGraph'
-import { storyWalk } from '@/lib/graph/storyWalk'
 import { scoreEngine } from '@/lib/graph/scoreEngine'
 import { MicroscopeSession } from '@/components/studio/microscope/MicroscopeSession'
 import type { MicroscopeHighlightState } from '@/components/studio/microscope/MicroscopeSession'
 import type { MicroscopeOverlay } from '@/lib/graph/microscope'
-import { DependencyWebView } from '@/components/studio/dependency-web/DependencyWebView'
-import { StoryPlayer } from '@/components/studio/story/StoryPlayer'
+import { DependencyWebSession } from '@/components/studio/dependency-web/DependencyWebSession'
 import { ScoreOverview } from '@/components/learn/score/ScoreOverview'
 
-type AnalyzeView = 'microscope' | 'depweb' | 'score' | 'story'
+type AnalyzeView = 'microscope' | 'depweb' | 'score'
 
 export interface AnalyzePanelProps {
   selectedNode?: { id: string; name?: string; elementId?: string } | null
   selectedEdge?: AnalyzeEdge | null
   diagram?: { nodes: unknown[]; edges: unknown[] } | null
+  compareDiagram?: { nodes: unknown[]; edges: unknown[] } | null
   overlay?: MicroscopeOverlay
   onFocusElement?: (elementId: string) => void
   onHighlightChange?: (state: MicroscopeHighlightState) => void
@@ -30,12 +28,13 @@ export interface AnalyzePanelProps {
 }
 
 /**
- * Hosts Analyze tools — Microscope is the primary interactive instrument.
+ * Hosts Analyze tools — Microscope, Dependency Web, Score.
  */
 export function AnalyzePanel({
   selectedNode = null,
   selectedEdge = null,
   diagram = null,
+  compareDiagram = null,
   overlay,
   onFocusElement,
   onHighlightChange,
@@ -51,18 +50,16 @@ export function AnalyzePanel({
     [diagram],
   )
 
+  const compareLike = useMemo<DiagramLike | null>(() => {
+    if (!compareDiagram) return null
+    return {
+      nodes: (compareDiagram.nodes ?? []) as DiagramLike['nodes'],
+      edges: (compareDiagram.edges ?? []) as DiagramLike['edges'],
+    }
+  }, [compareDiagram])
+
   const analysis = useMemo(
     () => (diagram ? analyzeDiagram(diagramLike) : null),
-    [diagram, diagramLike],
-  )
-
-  const depGraph = useMemo(
-    () => (diagram ? toDependencyGraph(diagramLike) : null),
-    [diagram, diagramLike],
-  )
-
-  const story = useMemo(
-    () => (diagram ? storyWalk(diagramLike) : null),
     [diagram, diagramLike],
   )
 
@@ -71,21 +68,13 @@ export function AnalyzePanel({
     [diagram, diagramLike],
   )
 
-  const handleIsolate = useCallback(
-    (nodeId: string) => {
-      const n = diagramLike.nodes.find(x => x.id === nodeId || (x.elementId ?? x.id) === nodeId)
-      if (n) onFocusElement?.(n.elementId ?? n.id)
-      setView('microscope')
-    },
-    [diagramLike.nodes, onFocusElement],
-  )
-
   const views: { id: AnalyzeView; label: string }[] = [
     { id: 'microscope', label: 'Microscope' },
     { id: 'depweb', label: 'Dependency Web' },
     { id: 'score', label: 'Score' },
-    { id: 'story', label: 'Story' },
   ]
+
+  const initialFocus = selectedNode?.elementId ?? selectedNode?.id ?? null
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col bg-paper', className)}>
@@ -124,11 +113,33 @@ export function AnalyzePanel({
             embedded
           />
         )}
-        {view === 'depweb' && (
-          <DependencyWebView graph={depGraph} onIsolate={handleIsolate} />
+        {view === 'depweb' && diagram && (
+          <DependencyWebSession
+            diagram={diagramLike}
+            compareDiagram={compareLike}
+            overlay={
+              overlay
+                ? {
+                    layers: overlay.layers,
+                    flows: overlay.flows?.map(f => ({
+                      id: f.id,
+                      label: f.label,
+                      steps: f.steps,
+                    })),
+                  }
+                : undefined
+            }
+            initialFocusId={initialFocus}
+            guided
+            guideText="Zoom out: see connections. Select a node → Trace deps/dependents → Blast / Simulate. Open Microscope to zoom in."
+            onOpenMicroscope={id => {
+              onFocusElement?.(id)
+              setView('microscope')
+            }}
+            onFocusElement={onFocusElement}
+          />
         )}
         {view === 'score' && <ScoreOverview score={score} />}
-        {view === 'story' && <StoryPlayer story={story} />}
       </div>
     </div>
   )

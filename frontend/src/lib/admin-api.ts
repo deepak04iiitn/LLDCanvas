@@ -522,22 +522,12 @@ export const adminApi = {
       req<{ ok: boolean }>(`/learn/quiz/${id}`, { method: 'DELETE' }),
   },
 
-  community: {
-    listGallery: () =>
-      req<{ designs: AdminPublishedDesign[] }>('/community/gallery'),
-    moderate: (id: string, action: GalleryModerateAction) =>
-      req<AdminPublishedDesign>(`/community/gallery/${id}/moderate`, {
-        method: 'POST',
-        body: JSON.stringify({ action }),
-      }),
-  },
 }
 
 // ─── Interactive LLD admin types ──────────────────────────────────────────────
 
 export type ChallengePackType = 'debugger' | 'refactor' | 'change_one' | 'evolution'
 export type ChallengePackStatus = 'draft' | 'published' | 'archived'
-export type GalleryModerateAction = 'feature' | 'unfeature' | 'unpublish' | 'publish'
 
 export interface AdminChallengePack {
   _id: string
@@ -567,23 +557,6 @@ export interface AdminQuizQuestion {
   correctIndex: number
   explanation: string
   status: 'draft' | 'published' | 'archived'
-  createdAt: string
-  updatedAt: string
-}
-
-export interface AdminPublishedDesign {
-  _id: string
-  diagramId: string
-  userId: string
-  slug: string
-  title: string
-  summary: string
-  visibility: 'public' | 'unlisted' | 'private'
-  featured: boolean
-  thumbnail?: string
-  problemId?: string
-  forkParentId?: string
-  replayEnabled: boolean
   createdAt: string
   updatedAt: string
 }

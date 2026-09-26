@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -410,6 +410,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
         payload: {
           id: nodeId,
           name: (erased?.data as UMLNodeData | undefined)?.name,
+          position: erased?.position,
+          data: erased?.data,
+          nodeType: (erased?.data as UMLNodeData | undefined)?.nodeType,
         },
       })
     },
@@ -514,7 +517,10 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           id: edgeId,
           source: pendingConn.source,
           target: pendingConn.target,
+          sourceHandle: pendingConn.sourceHandle ?? null,
+          targetHandle: pendingConn.targetHandle ?? null,
           relationshipType: relType,
+          type: relType,
         },
       })
       setPendingConn(null)
@@ -535,6 +541,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           id: node.id,
           name: (node.data as UMLNodeData)?.name,
           nodeType,
+          type: node.type,
+          position: node.position,
+          data: node.data,
         },
       })
     },
@@ -600,10 +609,39 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       setNodes(prev => [...prev, ...newNodes as Node[]])
       setEdges(prev => [...prev, ...newEdges as Edge[]])
 
+      for (const n of newNodes) {
+        recordReplay({
+          type: 'add_node',
+          payload: {
+            id: n.id,
+            name: (n.data as UMLNodeData | undefined)?.name,
+            nodeType: (n.data as UMLNodeData | undefined)?.nodeType,
+            type: n.type,
+            position: n.position,
+            data: n.data,
+          },
+        })
+      }
+      for (const e of newEdges) {
+        const ed = e.data as UMLEdgeData | undefined
+        recordReplay({
+          type: 'add_edge',
+          payload: {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? null,
+            targetHandle: e.targetHandle ?? null,
+            relationshipType: ed?.relationshipType ?? e.type,
+            type: e.type,
+          },
+        })
+      }
+
       toast.success(`${pattern.name} pattern inserted`)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, edges, history, setNodes, setEdges],
+    [nodes, edges, history, setNodes, setEdges, recordReplay],
   )
 
   // ── Import a Draft Notation snippet - one-shot, additive (not a live panel) ─
@@ -635,10 +673,40 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       setNodes(prev => [...prev, ...newNodes as Node[]])
       setEdges(prev => [...prev, ...parsedEdges as Edge[]])
       setImportDraftOpen(false)
+
+      for (const n of newNodes) {
+        recordReplay({
+          type: 'add_node',
+          payload: {
+            id: n.id,
+            name: (n.data as UMLNodeData | undefined)?.name,
+            nodeType: (n.data as UMLNodeData | undefined)?.nodeType,
+            type: n.type,
+            position: n.position,
+            data: n.data,
+          },
+        })
+      }
+      for (const e of parsedEdges) {
+        const ed = e.data as UMLEdgeData | undefined
+        recordReplay({
+          type: 'add_edge',
+          payload: {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? null,
+            targetHandle: e.targetHandle ?? null,
+            relationshipType: ed?.relationshipType ?? e.type,
+            type: e.type,
+          },
+        })
+      }
+
       toast.success(`Imported ${parsedNodes.length} class${parsedNodes.length === 1 ? '' : 'es'}`)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, edges, history, setNodes, setEdges],
+    [nodes, edges, history, setNodes, setEdges, recordReplay],
   )
 
   // ── Delete selected ───────────────────────────────────────────────────────

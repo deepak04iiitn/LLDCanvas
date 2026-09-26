@@ -72,7 +72,7 @@ export function LearnHub() {
               Learn &amp; Practice
             </h1>
             <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-              Quiz, detective scenarios, mashups, and design score — deliberate
+              Quiz, detective scenarios, roguelike runs, and bug hunt — deliberate
               practice for LLD interviews.
             </p>
           </div>

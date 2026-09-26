@@ -36,6 +36,7 @@ export type StudioPackType =
   | 'evolution'
   | 'budget'
   | 'microscope'
+  | 'depweb'
 
 export interface StudioPackSummary {
   _id?: string
@@ -377,6 +378,31 @@ export const studioApi = {
       body: JSON.stringify(body),
     }),
 
+  saveDepWeb: (attemptId: string, draft: Record<string, unknown>) =>
+    request<{ ok: boolean; progress?: Record<string, unknown> }>(
+      `/studio/depweb/${attemptId}/save`,
+      { method: 'POST', body: JSON.stringify(draft) },
+    ),
+
+  submitDepWeb: (
+    attemptId: string,
+    body: {
+      focusElementIds?: string[]
+      pathIds?: string[]
+      freeText?: string
+      lensUsed?: string[]
+      notes?: string
+    },
+  ) =>
+    request<{
+      grade: Record<string, unknown>
+      progress: Record<string, unknown>
+      complete: boolean
+    }>(`/studio/depweb/${attemptId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
   /** Score an owned artifact (also usable as a diagram-inflation proxy). */
   budget: {
     scoreArtifact: (artifactId: string) =>
@@ -385,11 +411,4 @@ export const studioApi = {
       }),
   },
 
-  story: {
-    generate: (artifactId: string) =>
-      request<{ steps?: { elementIds: string[]; text: string }[]; [key: string]: unknown }>(
-        `/artifacts/${artifactId}/story`,
-        { method: 'POST' },
-      ),
-  },
 }

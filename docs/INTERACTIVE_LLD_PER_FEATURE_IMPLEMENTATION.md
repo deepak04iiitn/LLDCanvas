@@ -30,14 +30,13 @@ This document is the **engineering execution guide**: phase-by-phase, step-by-st
 
 ```text
 Phase 0  Shared foundation (artifact, hubs, registry, admin shell)
-Phase 1  Graph kernel + UML Diff + versions + replay capture
-Phase 2  Microscope, Dependency Web, Explain Story, Decision Log, Design Score
+Phase 1  Graph kernel + versions + replay capture
+Phase 2  Microscope, Dependency Web, Design Score
 Phase 3  Design Debugger, Refactoring Mode, Architecture Budget
 Phase 4  Change One Thing, Architecture Evolution
 Phase 5  Design Replay player (+ enables Watch)
-Phase 6  UML ↔ Code
-Phase 7  Daily Quiz, Pattern Detective, Mashup, Roguelike
-Phase 8  Gallery, Forks, Watch, Alternative Solutions
+Phase 6  Daily Quiz, Pattern Detective, Mashup, Roguelike
+Phase 7  Gallery, Forks, Watch, Alternative Solutions
 ```
 
 ### 0.3 File & folder conventions (mandatory)
@@ -113,7 +112,6 @@ frontend/src/
       detective/[id]/page.tsx
       mashup/[id]/page.tsx
       roguelike/[runId]/page.tsx
-      uml-code/page.tsx
     community/
       page.tsx
       layout.tsx
@@ -144,10 +142,6 @@ frontend/src/
       budget/
       microscope/
       dependency-web/
-      uml-diff/
-      story/
-      replay/
-      decisions/
       shell/                           # CategoryShell, timers, panels
     learn/
       hub/
@@ -156,7 +150,6 @@ frontend/src/
       mashup/
       roguelike/
       score/
-      uml-code/
     community/
       hub/
       gallery/
@@ -165,7 +158,7 @@ frontend/src/
       alternatives/
     editor/
       workspace/                       # Analyze/Evolve/History/Share tab hosts
-        AnalyzePanel.tsx               # composes microscope, dep-web, score entry, story
+        AnalyzePanel.tsx               # composes microscope, dep-web, score entry
         EvolvePanel.tsx
         HistoryPanel.tsx
         SharePanel.tsx
@@ -258,7 +251,7 @@ frontend/src/
 
 ## Phase 1 — Shared analysis kernel
 
-**Objective:** Graph analysis, structural UML Diff, versions, replay event capture (write path).
+**Objective:** Graph analysis, structuralDiff kernel (internal grading), versions, replay event capture (write path).
 
 ### Steps
 
@@ -339,117 +332,49 @@ services/studio/microscopeGrade.ts
 
 | | |
 |--|--|
-| **Category** | Design Studio |
-| **Phase** | 2 |
+| **Category** | Design Studio + Editor Analyze |
+| **Phase** | 2 (+ full interactive web) |
 | **Depends on** | Graph kernel |
-| **User route** | Analyze panel alternate view |
+| **User route** | Editor Analyze → Dependency Web; `/design-studio/depweb` |
 | **Admin** | Studio Tools |
+
+### Product
+
+Interactive reasoning graph — not a static list. Core loop: **See → Select → Trace → Isolate → Simulate → Understand**.
+
+Complement to Microscope (zoom out vs zoom in). Lenses: deps/dependents, blast, cycles, layers, external, paths, hotspots. Matrix toggle. Studio challenges with soft grade.
 
 ### Folders
 
 ```text
 components/studio/dependency-web/
-  DependencyWebView.tsx
-  DependencyWebToolbar.tsx
-  CycleHighlight.tsx
+  DependencyWebSession.tsx
+  DependencyGraphCanvas.tsx
+  NodeInspector.tsx
+  DependencyMatrix.tsx
+  DepWebChallengeSession.tsx
+lib/graph/dependencyWeb.ts
 lib/graph/toDependencyGraph.ts
+services/studio/depwebVerify.ts / depwebGrade.ts
 ```
 
-### Backend steps
+### DoD
 
-1. Optional cache endpoint `GET /artifacts/:id/dependency-graph`.  
-2. Otherwise pure client transform from DiagramData.
-
-### Frontend steps
-
-1. Toggle UML ↔ Dependency Web in Analyze.  
-2. Force-directed or layered layout (start with simple layered).  
-3. Actions: isolate, highlight in/out, show cycles, search.  
-4. Virtualize or simplify labels when nodes > 150.
-
-### SEO / Analytics / DoD
-
-- SEO: `/features/dependency-web`  
-- Events: `studio_depweb_open`, `studio_depweb_isolate`  
-- DoD: cycle detection correct on fixture; perf OK at 200 nodes.
+- Interactive React Flow web in Analyze with focus/fade.
+- Blast / cycles / paths / filters / matrix.
+- Studio challenges seeded; CTAs to Microscope + Change One Thing.
 
 ---
 
-## F3. Explain This Design as a Story
+## F3. Explain This Design as a Story — REMOVED
 
-| | |
-|--|--|
-| **Category** | Design Studio |
-| **Phase** | 2 (v1 templates); optional LLM later |
-| **Depends on** | Graph walk |
-| **Admin** | Studio Tools (+ optional template CRUD later) |
-
-### Folders
-
-```text
-components/studio/story/
-  StoryPlayer.tsx
-  StoryStepCard.tsx
-services/graph/storyWalk.ts      # BE optional
-lib/graph/storyWalk.ts
-```
-
-### Backend steps
-
-1. `POST /artifacts/:id/story` → generate + cache by version hash.  
-2. Store in `artifact.meta.storyCache`.  
-3. No chatbot UI — return structured `{ steps: [{ elementIds, text }] }`.
-
-### Frontend steps
-
-1. StoryPlayer with prev/next; highlight canvas elements per step.  
-2. Loading/error/empty (can’t find a path).  
-3. Wire into Analyze panel.
-
-### SEO / Analytics / DoD
-
-- SEO: `/features/explain-design`  
-- Events: `studio_story_generate`, `studio_story_step`  
-- DoD: deterministic story on seeded Parking Lot fixture.
+Product UI, Analyze Story tab, studio challenges, and story APIs removed.
 
 ---
 
-## F4. Design Decision Log
+## F4. Design Decision Log — REMOVED
 
-| | |
-|--|--|
-| **Category** | Design Studio (History) |
-| **Phase** | 2 |
-| **Depends on** | Artifact |
-| **Admin** | none (user content); Studio Tools metrics only |
-
-### Folders
-
-```text
-components/studio/decisions/
-  DecisionList.tsx
-  DecisionEditor.tsx
-  DecisionMarker.tsx
-models/artifact/design-decision.model.ts   # or embed in artifact
-```
-
-### Backend steps
-
-1. Model: decision text, why, alternatives, tradeoffs, `elementId`, `artifactId`, `userId`.  
-2. CRUD under `/artifacts/:id/decisions`.  
-3. AuthZ: owner or collab editor.
-
-### Frontend steps
-
-1. “+ Add Decision” on selection.  
-2. History panel list.  
-3. Markers on canvas for elements with decisions.
-
-### SEO / Analytics / DoD
-
-- SEO: `/features/design-decision-log`  
-- Events: `studio_decision_create`, `studio_decision_edit`  
-- DoD: survives refresh; exportable later with publish.
+History Decisions tab and `/artifacts/:id/decisions` APIs removed. History tab keeps Design Replay only.
 
 ---
 
@@ -501,38 +426,9 @@ app/features/design-score/page.tsx
 
 ---
 
-## F6. UML Diff (product UI)
+## F6. UML Diff — REMOVED
 
-| | |
-|--|--|
-| **Category** | Design Studio |
-| **Phase** | 2 UI (engine in Phase 1) |
-| **Depends on** | structuralDiff, versions |
-| **Admin** | Studio Tools |
-
-### Folders
-
-```text
-components/studio/uml-diff/
-  DiffSideBySide.tsx
-  DiffChangeList.tsx
-  DiffLegend.tsx
-```
-
-### Backend steps
-
-1. `GET /artifacts/:id/diff?fromVersion=&toVersion=` using Phase 1 engine.
-
-### Frontend steps
-
-1. History panel: pick two versions → Diff view.  
-2. List +/−/~ with click-to-focus on canvas.  
-3. Used later by Evolution / Change / Forks.
-
-### SEO / DoD
-
-- SEO: `/features/uml-diff`  
-- DoD: layout-only move does not appear as change.
+Product UI and `/artifacts/:id/diff` endpoint removed. `structuralDiff` remains as an internal kernel for Change / Evolution / Refactor grading only.
 
 ---
 
@@ -755,85 +651,63 @@ models/studio/evolution-run.model.ts
 
 ---
 
-## F12. Design Replay (player)
+## F12. Design Replay (catalog + player)
 
 | | |
 |--|--|
-| **Category** | Design Studio (History) |
+| **Category** | Design Studio |
 | **Phase** | 5 (capture was Phase 1) |
-| **Depends on** | Replay events + snapshots |
-| **Admin** | Studio Tools (retention, enable) |
-| **Enables** | Community Watch |
+| **Depends on** | Replay events + diagram snapshots |
+| **Admin** | Studio Tools (retention) |
+| **Enables** | Community Watch (shared player) |
+
+### Product rules
+
+- Catalog lists **all saved diagrams** (including interview) with ≥2 nodes and ≥2 edges (no public/private gate).
+- Responses show **title only** — never author name / userId.
+- No challenges or questions — browse → search → replay.
+- Share `replayEnabled` remains Gallery-only; Design Replay ignores it.
 
 ### Folders
 
 ```text
 components/studio/replay/
+  ReplayCatalog.tsx
   ReplayPlayer.tsx
   ReplayTimeline.tsx
   ReplayControls.tsx
-services/artifact/replay.service.ts
+  ReplayCanvas.tsx
+lib/graph/replayApply.ts
+controllers/studio/replay.controller.ts
+app/design-studio/replay/page.tsx
+app/design-studio/replay/[id]/page.tsx
+app/features/design-replay/page.tsx
 ```
 
 ### Backend steps
 
-1. `GET /artifacts/:id/replay` → events + keyframes.  
-2. Retention job enforces caps.  
-3. Privacy: only owner unless published.
+1. `GET /studio/replay/catalog?q=&page=&limit=` → title-only items + eventCount.  
+2. `GET /studio/replay/:diagramId` → `{ title, diagramData, events }` (no owner fields).  
+3. Owner write path unchanged: `POST /artifacts/:id/replay/events`.  
+4. Capture payloads include position + node/edge data for reconstruction.
 
 ### Frontend steps
 
-1. History tab player: scrub, play, pause.  
-2. Reconstruct canvas state at t.  
-3. Performance: use snapshots + interpolate events.
+1. Catalog hub with search + pagination.  
+2. Player: play/pause, scrub, speed, timeline, canvas reconstruction.  
+3. Editor History tab reuses `ReplayPlayer`.  
+4. Feature registry href → `/design-studio/replay`.
 
 ### SEO / DoD
 
 - SEO: `/features/design-replay`  
-- DoD: 10-minute session replays without loading entire raw pointer stream.
+- DoD: browse any saved design by title; replay reconstructs from semantic events (legacy events fall back to final snapshot on last step).
 
 ---
 
-## F13. UML ↔ Code
+## F13. UML ↔ Code — REMOVED
 
-| | |
-|--|--|
-| **Category** | Learn & Practice |
-| **Phase** | 6 |
-| **Depends on** | Artifact |
-| **Admin** | `/admin/learn/uml-code` |
-| **Seed** | TS + Java templates |
-
-### Folders
-
-```text
-components/learn/uml-code/
-  UmlCodeWorkspace.tsx
-  MappingHighlighter.tsx
-  LanguagePicker.tsx
-lib/uml-code/
-  codegen/typescript.ts
-  codegen/java.ts
-  parse/typescriptStub.ts   # limited subset
-services/learn/uml-code.service.ts
-```
-
-### Backend steps
-
-1. `POST /learn/uml-code/generate` (UML→code).  
-2. `POST /learn/uml-code/parse` (code→UML) — unsupported constructs return warnings.  
-3. Admin: enable languages, edit templates.  
-4. Seed TS/Java skeletons.
-
-### Frontend steps
-
-1. `/learn/uml-code` split view + mapping highlights.  
-2. Also optional editor panel entry.  
-3. Clear “lossy / subset” messaging.
-
-### DoD
-
-- Round-trip works for supported subset fixtures; admin toggles Python off without deploy.
+Learn/admin routes, generate API, and workspace UI removed. Editor **Code** panel (run code) is unrelated and kept.
 
 ---
 
@@ -1182,7 +1056,7 @@ Copy into PR description:
 ## Suggested first vertical slice (ship)
 
 1. Phase 0 + 1  
-2. F1 Microscope + F2 Dependency Web + F5 Design Score + F4 Decision Log  
+2. F1 Microscope + F2 Dependency Web + F5 Design Score  
 3. SEO pages for those four  
 4. Admin Score + Studio Tools tabs  
 

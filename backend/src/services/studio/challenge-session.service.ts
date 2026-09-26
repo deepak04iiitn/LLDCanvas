@@ -30,6 +30,8 @@ import {
 } from './budgetGrade'
 import { parseMicroscopePayload } from './microscopeVerify'
 import { gradeMicroscope, type MicroscopeSubmission } from './microscopeGrade'
+import { parseDepWebPayload } from './depwebVerify'
+import { gradeDepWeb, type DepWebSubmission } from './depwebGrade'
 
 async function resolvePublishedPack(idOrSlug: string, type?: ChallengePackType) {
   let pack = null
@@ -113,7 +115,9 @@ export async function openSession(
               ? 'Architecture Budget started — read the scenario, then spend where it matters.'
               : pack.type === 'microscope'
                 ? 'Microscope investigate started — select → zoom → trace → understand.'
-                : 'Session started — investigate the design.',
+                : pack.type === 'depweb'
+                  ? 'Dependency Web started — see → select → trace → isolate → simulate.'
+                  : 'Session started — investigate the design.',
       },
     ],
     startedAt: new Date(),
@@ -167,7 +171,19 @@ export async function openSession(
                   draft: null,
                 }
               })()
-            : {},
+            : pack.type === 'depweb'
+              ? (() => {
+                  const dp = parseDepWebPayload(pack.payload)
+                  return {
+                    focusElementIds: dp.starterFocusId ? [dp.starterFocusId] : [],
+                    pathIds: [] as string[],
+                    lensUsed: [] as string[],
+                    notes: '',
+                    freeText: '',
+                    draft: null,
+                  }
+                })()
+              : {},
   })
   return {
     attemptId: attempt.id,
@@ -1040,6 +1056,55 @@ export async function submitMicroscope(
   await attempt.save()
   return { grade, progress: attempt.progress, complete: attempt.status === 'submitted' }
 }
+
+export async function saveDepWeb(
+  attemptId: string,
+  userId: string,
+  draft: Record<string, unknown>,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'depweb') throw createError('Not a dependency-web session', 400)
+  if (attempt.status === 'submitted') throw createError('Already submitted', 400)
+  attempt.progress = {
+    ...(attempt.progress && typeof attempt.progress === 'object' ? attempt.progress : {}),
+    ...draft,
+  }
+  attempt.markModified('progress')
+  pushLog(attempt, 'info', 'Dependency Web progress saved')
+  await attempt.save()
+  return { ok: true, progress: attempt.progress }
+}
+
+export async function submitDepWeb(
+  attemptId: string,
+  userId: string,
+  submission: DepWebSubmission,
+) {
+  const attempt = await ChallengeAttempt.findOne({ _id: attemptId, userId })
+  if (!attempt) throw createError('Session not found', 404)
+  if (attempt.type !== 'depweb') throw createError('Not a dependency-web session', 400)
+
+  const pack = await ChallengePack.findById(attempt.packId)
+  if (!pack) throw createError('Pack missing', 404)
+
+  const grade = gradeDepWeb(pack.payload, submission)
+  attempt.progress = {
+    ...(attempt.progress && typeof attempt.progress === 'object' ? attempt.progress : {}),
+    ...submission,
+    lastGrade: grade,
+  }
+  attempt.markModified('progress')
+  attempt.result = { grade }
+  if (grade.accepted) {
+    attempt.status = 'submitted'
+    attempt.stage = 'complete'
+  }
+  pushLog(attempt, grade.accepted ? 'ok' : 'warn', grade.narrative)
+  await attempt.save()
+  return { grade, progress: attempt.progress, complete: attempt.status === 'submitted' }
+}
+
 
 export async function listPublishedPacks(type?: ChallengePackType) {
   const filter: Record<string, unknown> = { status: 'published' }

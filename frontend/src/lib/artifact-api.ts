@@ -50,27 +50,6 @@ export interface ArtifactVersion {
   diagramData?: DiagramData
 }
 
-export interface DiffEntry {
-  kind: 'added' | 'removed' | 'modified' | 'changed'
-  entity: 'node' | 'edge'
-  id?: string
-  elementId?: string
-  name?: string
-  detail?: string
-  summary?: string
-}
-
-export interface DesignDecisionDoc {
-  _id: string
-  id?: string
-  elementId?: string
-  decision?: string
-  why: string
-  alternatives?: string
-  tradeoffs?: string
-  createdAt?: string
-}
-
 export interface ReplayEventDoc {
   _id?: string
   t: number
@@ -105,11 +84,6 @@ export const artifactApi = {
   getVersions: (id: string) =>
     request<{ versions: ArtifactVersion[] }>(`/artifacts/${id}/versions`),
 
-  getDiff: (id: string, from: string, to: string) => {
-    const qs = new URLSearchParams({ from, to })
-    return request<{ entries: DiffEntry[] }>(`/artifacts/${id}/diff?${qs}`)
-  },
-
   postReplayEvents: (
     id: string,
     events: { t: number; type: string; payload?: Record<string, unknown> }[],
@@ -120,46 +94,7 @@ export const artifactApi = {
     }),
 
   getReplay: (id: string) =>
-    request<{ events: ReplayEventDoc[] }>(`/artifacts/${id}/replay`),
-
-  listDecisions: (id: string) =>
-    request<{ decisions: DesignDecisionDoc[] }>(`/artifacts/${id}/decisions`),
-
-  createDecision: (
-    id: string,
-    payload: {
-      elementId?: string
-      decision?: string
-      why?: string
-      alternatives?: string
-      tradeoffs?: string
-    },
-  ) =>
-    request<DesignDecisionDoc>(`/artifacts/${id}/decisions`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-
-  updateDecision: (
-    id: string,
-    decisionId: string,
-    payload: Partial<{
-      elementId: string
-      decision: string
-      why: string
-      alternatives: string
-      tradeoffs: string
-    }>,
-  ) =>
-    request<DesignDecisionDoc>(`/artifacts/${id}/decisions/${decisionId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    }),
-
-  deleteDecision: (id: string, decisionId: string) =>
-    request<{ ok: boolean }>(`/artifacts/${id}/decisions/${decisionId}`, {
-      method: 'DELETE',
-    }),
+    request<{ events: ReplayEventDoc[]; synthetic?: boolean }>(`/artifacts/${id}/replay`),
 
   analysis: (id: string) => request<unknown>(`/artifacts/${id}/analysis`),
 
@@ -171,6 +106,4 @@ export const artifactApi = {
   score: (id: string) =>
     request<unknown>(`/artifacts/${id}/score`, { method: 'POST' }),
 
-  story: (id: string) =>
-    request<unknown>(`/artifacts/${id}/story`, { method: 'POST' }),
 }

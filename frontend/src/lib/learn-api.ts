@@ -28,6 +28,129 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+// ─── Roguelike V2 Types ───────────────────────────────────────────────────────
+
+export interface ArchitectureHealth {
+  coupling: number       // 0-100, LOWER is better
+  cohesion: number       // 0-100, HIGHER is better
+  extensibility: number  // 0-100, HIGHER is better
+  complexity: number     // 0-100, LOWER is better
+  reliability: number    // 0-100, HIGHER is better
+  debt: number           // accumulated, no upper bound
+}
+
+export interface RunResources {
+  engineeringHoursRemaining: number
+  complexityBudgetRemaining: number
+  teamSize: number
+  infraBudgetRemaining: number
+  changesRemaining: number
+}
+
+export interface DecisionOption {
+  id: 'A' | 'B' | 'C' | 'D'
+  label: string
+  description: string
+  healthDelta: Partial<Record<keyof ArchitectureHealth, number>>
+  tags: string[]
+  consequence: string
+}
+
+export interface StageEvent {
+  type: 'requirement' | 'scale' | 'failure' | 'business' | 'team' | 'time' | 'constraint' | 'boss'
+  title: string
+  description: string
+  icon: string
+  decisions?: DecisionOption[]
+  requiresDesign: boolean
+  hint?: string
+  successCriteria?: string
+}
+
+export interface Stage {
+  id: string
+  order: number
+  title: string
+  event: StageEvent
+  isBoss: boolean
+  isCheckpoint: boolean
+  failureExplanation?: string
+}
+
+export interface InitialConstraints {
+  complexityBudget: number
+  engineeringHours: number
+  teamSize: number
+  infraBudget: number
+  maxStructuralChanges: number
+  expectedUsers: string
+}
+
+export interface ScenarioSummary {
+  slug: string
+  title: string
+  icon: string
+  description: string
+  difficulty: 'easy' | 'medium' | 'hard' | 'hardcore'
+  modes: string[]
+  tags: string[]
+  order: number
+  estimatedMinutes: number
+  initialConstraints: InitialConstraints
+}
+
+export interface RoguelikeScenario extends ScenarioSummary {
+  systemContext: string
+  initialRequirement: string
+  stages: Stage[]
+}
+
+export interface StageResult {
+  stageId: string
+  stageOrder: number
+  stageTitle: string
+  eventType: string
+  decisionMade?: string
+  decisionLabel?: string
+  architectureNotes?: string
+  healthBefore: ArchitectureHealth
+  healthAfter: ArchitectureHealth
+  resourcesAfter: RunResources
+  passed: boolean
+  completedAt: string
+}
+
+export interface RunCheckpoint {
+  stageOrder: number
+  health: ArchitectureHealth
+  resources: RunResources
+  savedAt: string
+}
+
+export interface RunState {
+  id: string
+  scenarioSlug: string
+  scenarioTitle: string
+  mode: 'beginner' | 'interview' | 'survival' | 'hardcore' | 'endless'
+  status: 'active' | 'completed' | 'failed' | 'abandoned'
+  currentStageOrder: number
+  health: ArchitectureHealth
+  resources: RunResources
+  stagesTotal: number
+  totalDecisions: number
+  totalRefactors: number
+  majorFailures: number
+  ending?: 'survived' | 'survived_with_debt' | 'refactor_required' | 'collapse' | 'strategic_exit'
+  endingReason?: string
+  startedAt?: string
+  endedAt?: string
+}
+
+export interface FullRun extends RunState {
+  stages: StageResult[]
+  checkpoints: RunCheckpoint[]
+}
+
 export interface QuizQuestion {
   _id: string
   slug: string
@@ -56,17 +179,6 @@ export interface DetectiveScenario {
   order?: number
 }
 
-export interface MashupRecipe {
-  _id?: string
-  id?: string
-  slug: string
-  title: string
-  difficulty: string
-  summary: string
-  constraints: string[]
-  problemLabels: string[]
-}
-
 export interface RoguelikeRun {
   id: string
   level: number
@@ -87,6 +199,25 @@ export interface ScoreResultPayload {
     highlightIds: string[]
   }[]
   disclaimer: string
+}
+
+// ─── Debugger Types ───────────────────────────────────────────────────────────
+
+export interface DebuggerChallenge {
+  _id?: string
+  id?: string
+  slug: string
+  title: string
+  description: string
+  variants: { language: string; buggyCode: string }[]
+  expectedOutput: string
+  testInput: string
+  hint: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  bugType: string
+  tags: string[]
+  order?: number
+  // explanation is NOT included in list/get — only returned after solve
 }
 
 /** Learn & Practice API — matches backend /learn routes. */
@@ -123,15 +254,6 @@ export const learnApi = {
       }>(`/learn/detective/${id}/start`, { method: 'POST' }),
   },
 
-  mashup: {
-    list: () => request<{ recipes: MashupRecipe[] }>('/learn/mashup'),
-    start: (id: string) =>
-      request<{ sessionId: string; recipe: MashupRecipe }>(
-        `/learn/mashup/${id}/start`,
-        { method: 'POST' },
-      ),
-  },
-
   roguelike: {
     start: () =>
       request<{ runId: string; run: RoguelikeRun }>('/learn/roguelike/start', {
@@ -141,18 +263,70 @@ export const learnApi = {
       request<{ run: RoguelikeRun }>(`/learn/roguelike/${runId}`),
   },
 
-  umlCode: {
-    generate: (payload: {
-      artifactId?: string
-      diagramData?: unknown
-      language: string
-    }) =>
-      request<{ code: string; language: string; nodeCount: number }>(
-        '/learn/uml-code/generate',
+  roguelikeV2: {
+    listScenarios: () =>
+      request<{ scenarios: ScenarioSummary[] }>('/learn/roguelike/scenarios'),
+    getScenario: (slug: string) =>
+      request<{ scenario: RoguelikeScenario }>(`/learn/roguelike/scenarios/${slug}`),
+    startRun: (scenarioSlug: string, mode: string) =>
+      request<{ runId: string; run: RunState }>('/learn/roguelike/runs', {
+        method: 'POST',
+        body: JSON.stringify({ scenarioSlug, mode }),
+      }),
+    listRuns: () =>
+      request<{ runs: RunState[] }>('/learn/roguelike/runs'),
+    getRun: (runId: string) =>
+      request<{ run: FullRun }>(`/learn/roguelike/runs/${runId}`),
+    submitStage: (
+      runId: string,
+      body: {
+        stageId?: string
+        decisionMade?: string
+        decisionLabel?: string
+        diagramSnapshot?: { nodes: unknown[]; edges: unknown[] }
+        architectureNotes?: string
+        isSkip?: boolean
+        isRefactor?: boolean
+      },
+    ) =>
+      request<{
+        run: RunState
+        stageResult: {
+          passed: boolean
+          stageTitle: string
+          healthBefore: ArchitectureHealth
+          healthAfter: ArchitectureHealth
+          resourcesAfter: RunResources
+        }
+        currentStage: Stage
+        nextStage: Stage | null
+      }>(`/learn/roguelike/runs/${runId}/stage`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+    restoreCheckpoint: (runId: string, checkpointStageOrder: number) =>
+      request<{ run: RunState; restoredFrom: number }>(
+        `/learn/roguelike/runs/${runId}/checkpoint`,
         {
           method: 'POST',
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ checkpointStageOrder }),
         },
       ),
+    endRun: (runId: string, ending?: string) =>
+      request<{ run: RunState }>(`/learn/roguelike/runs/${runId}/end`, {
+        method: 'POST',
+        body: JSON.stringify({ ending }),
+      }),
   },
+
+  debugger: {
+    list: () => request<{ challenges: DebuggerChallenge[] }>('/learn/debugger'),
+    get: (id: string) => request<{ challenge: DebuggerChallenge }>(`/learn/debugger/${id}`),
+    recordSolve: (id: string, timeTakenSeconds?: number) =>
+      request<{ explanation: string; bugType: string; message: string }>(
+        `/learn/debugger/${id}/solve`,
+        { method: 'POST', body: JSON.stringify({ timeTakenSeconds }) },
+      ),
+  },
+
 }

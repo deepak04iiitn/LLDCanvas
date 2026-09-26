@@ -12,7 +12,7 @@ export default function AdminStudioToolsPage() {
         </div>
         <h1 className="font-serif text-2xl font-medium text-ink">Studio Tools</h1>
         <p className="mt-2 text-[14px] text-ink-muted">
-          Microscope, Dependency Web, Diff, Story, and Replay are editor tools — no dedicated CMS.
+          Microscope, Dependency Web, and Replay are editor tools — no dedicated CMS.
           Challenge content lives under Studio Packs.
         </p>
         <Link

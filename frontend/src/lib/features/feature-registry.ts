@@ -1,4 +1,4 @@
-export type FeatureCategory = 'design-studio' | 'learn' | 'community'
+export type FeatureCategory = 'design-studio' | 'learn'
 
 export type FeaturePlan = 'free' | 'pro' | 'ultimate'
 
@@ -16,7 +16,7 @@ export interface FeatureDefinition {
 
 /** All Interactive LLD features — hubs and plan gates read from this list. */
 export const FEATURES: FeatureDefinition[] = [
-  // ── Design Studio (11) ─────────────────────────────────────────────────────
+  // ── Design Studio (8) ─────────────────────────────────────────────────────
   {
     id: 'debugger',
     category: 'design-studio',
@@ -88,55 +88,15 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'dependency-web',
     category: 'design-studio',
     label: 'Dependency Web',
-    description: 'Graph view of couplings, hubs, cycles, and impact radius. Open any diagram → Analyze.',
-    href: '/dashboard',
+    description:
+      'Understand how architecture is connected — and how changes propagate through it.',
+    href: '/design-studio/depweb',
     adminHref: '/admin/studio/tools',
     flagKey: 'FF_STUDIO_DEPWEB',
     analyticsPrefix: 'studio_depweb',
   },
-  {
-    id: 'uml-diff',
-    category: 'design-studio',
-    label: 'UML Diff',
-    description: 'Structural before/after diff by stable element IDs — not layout. Open a diagram → History.',
-    href: '/dashboard',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_UML_DIFF',
-    analyticsPrefix: 'studio_uml_diff',
-  },
-  {
-    id: 'story',
-    category: 'design-studio',
-    label: 'Explain as a Story',
-    description: 'Walk the design as a narrated path with highlighted elements. Open any diagram → Analyze.',
-    href: '/dashboard',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_STORY',
-    analyticsPrefix: 'studio_story',
-  },
-  {
-    id: 'replay',
-    category: 'design-studio',
-    label: 'Design Replay',
-    description: 'Replay how a design was built — powers Community Watch. Open a diagram → History.',
-    href: '/dashboard',
-    adminHref: '/admin/studio/tools',
-    minPlan: 'pro',
-    flagKey: 'FF_STUDIO_REPLAY',
-    analyticsPrefix: 'studio_replay',
-  },
-  {
-    id: 'decisions',
-    category: 'design-studio',
-    label: 'Design Decision Log',
-    description: 'Annotate why, alternatives, and trade-offs on design elements. Open a diagram → History.',
-    href: '/dashboard',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_DECISIONS',
-    analyticsPrefix: 'studio_decisions',
-  },
 
-  // ── Learn & Practice (6) ───────────────────────────────────────────────────
+  // ── Learn & Practice (5) ───────────────────────────────────────────────────
   {
     id: 'score',
     category: 'learn',
@@ -169,17 +129,6 @@ export const FEATURES: FeatureDefinition[] = [
     analyticsPrefix: 'learn_detective',
   },
   {
-    id: 'mashup',
-    category: 'learn',
-    label: 'Architecture Mashup',
-    description: 'Combine problem constraints into a single design challenge.',
-    href: '/learn/mashup',
-    adminHref: '/admin/learn/mashup',
-    minPlan: 'pro',
-    flagKey: 'FF_LEARN_MASHUP',
-    analyticsPrefix: 'learn_mashup',
-  },
-  {
     id: 'roguelike',
     category: 'learn',
     label: 'LLD Roguelike',
@@ -191,58 +140,13 @@ export const FEATURES: FeatureDefinition[] = [
     analyticsPrefix: 'learn_roguelike',
   },
   {
-    id: 'uml-code',
+    id: 'code-debugger',
     category: 'learn',
-    label: 'UML ↔ Code',
-    description: 'Round-trip between class diagrams and TypeScript / Java skeletons.',
-    href: '/learn/uml-code',
-    adminHref: '/admin/learn/uml-code',
-    minPlan: 'pro',
-    flagKey: 'FF_LEARN_UML_CODE',
-    analyticsPrefix: 'learn_uml_code',
-  },
-
-  // ── Community (4) ──────────────────────────────────────────────────────────
-  {
-    id: 'gallery',
-    category: 'community',
-    label: 'Design Gallery',
-    description: 'Browse published community designs and learn from approaches.',
-    href: '/community',
-    adminHref: '/admin/community/gallery',
-    flagKey: 'FF_COMMUNITY_GALLERY',
-    analyticsPrefix: 'community_gallery',
-  },
-  {
-    id: 'watch',
-    category: 'community',
-    label: "Watch Someone's Design",
-    description: 'Replay how another designer built their solution step by step.',
-    href: '/community',
-    adminHref: '/admin/community/gallery',
-    minPlan: 'pro',
-    flagKey: 'FF_COMMUNITY_WATCH',
-    analyticsPrefix: 'community_watch',
-  },
-  {
-    id: 'forks',
-    category: 'community',
-    label: 'Design Forks',
-    description: 'Fork a published design, compare lineage, and diverge intentionally.',
-    href: '/community',
-    adminHref: '/admin/community/gallery',
-    flagKey: 'FF_COMMUNITY_FORKS',
-    analyticsPrefix: 'community_forks',
-  },
-  {
-    id: 'alternatives',
-    category: 'community',
-    label: 'Alternative Solutions',
-    description: 'Compare curated approaches to the same problem with trade-offs.',
-    href: '/community',
-    adminHref: '/admin/community/alternatives',
-    flagKey: 'FF_COMMUNITY_ALTERNATIVES',
-    analyticsPrefix: 'community_alternatives',
+    label: 'Bug Hunt',
+    description: 'Find and fix the bug. Run buggy code, observe the wrong output, debug it yourself, and verify your fix.',
+    href: '/learn/debugger',
+    flagKey: 'FF_LEARN_DEBUGGER',
+    analyticsPrefix: 'learn_debugger',
   },
 ]
 

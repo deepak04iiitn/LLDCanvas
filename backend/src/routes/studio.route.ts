@@ -17,13 +17,14 @@ import {
   getEvolutionJourney,
   saveMicroscope,
   submitMicroscope,
+  saveDepWeb,
+  submitDepWeb,
 } from '../services/studio/challenge-session.service'
 import * as debuggerCtrl from '../controllers/studio/debugger.controller'
 import * as refactorCtrl from '../controllers/studio/refactor.controller'
 import * as changeOneCtrl from '../controllers/studio/change-one.controller'
 import * as evolutionCtrl from '../controllers/studio/evolution.controller'
 import * as budgetCtrl from '../controllers/studio/budget.controller'
-
 const router = Router()
 
 function paramId(id: string | string[]) {
@@ -47,6 +48,7 @@ router.get('/change-one/packs', changeOneCtrl.listChangeOnePacks)
 router.get('/evolution/packs', evolutionCtrl.listEvolutionPacks)
 router.get('/budget/packs', budgetCtrl.listBudgetPacks)
 
+/** Design Replay — catalog + open read (title-only; no author fields). */
 /** Auth required for sessions / attempts. */
 router.post('/start', requireAuth, async (req, res, next) => {
   try {
@@ -233,6 +235,34 @@ router.post('/microscope/:attemptId/submit', requireAuth, async (req, res, next)
     const result = await submitMicroscope(paramId(req.params.attemptId), req.user!.id, {
       focusElementIds: Array.isArray(req.body.focusElementIds) ? req.body.focusElementIds : [],
       selectedEdgeId: typeof req.body.selectedEdgeId === 'string' ? req.body.selectedEdgeId : undefined,
+      freeText: typeof req.body.freeText === 'string' ? req.body.freeText : undefined,
+      lensUsed: Array.isArray(req.body.lensUsed) ? req.body.lensUsed : [],
+      notes: typeof req.body.notes === 'string' ? req.body.notes : undefined,
+    })
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/depweb/:attemptId/save', requireAuth, async (req, res, next) => {
+  try {
+    const result = await saveDepWeb(
+      paramId(req.params.attemptId),
+      req.user!.id,
+      req.body ?? {},
+    )
+    res.json(result)
+  } catch (e) {
+    next(e)
+  }
+})
+
+router.post('/depweb/:attemptId/submit', requireAuth, async (req, res, next) => {
+  try {
+    const result = await submitDepWeb(paramId(req.params.attemptId), req.user!.id, {
+      focusElementIds: Array.isArray(req.body.focusElementIds) ? req.body.focusElementIds : [],
+      pathIds: Array.isArray(req.body.pathIds) ? req.body.pathIds : [],
       freeText: typeof req.body.freeText === 'string' ? req.body.freeText : undefined,
       lensUsed: Array.isArray(req.body.lensUsed) ? req.body.lensUsed : [],
       notes: typeof req.body.notes === 'string' ? req.body.notes : undefined,

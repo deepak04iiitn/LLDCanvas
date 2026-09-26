@@ -1,5 +1,7 @@
 # LLDCanvas — Interactive LLD Feature Specification
 
+> **Product note (current):** **UML Diff** (version compare UI) and **UML ↔ Code** are removed from the product. Internal structural diff still powers challenge grading. The editor Code runner is separate and remains.
+
 ## 1. Product Vision
 
 LLDCanvas should go beyond being a UML drawing tool or an LLD question bank.
