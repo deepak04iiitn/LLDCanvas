@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { AppShell } from '@/components/dashboard/AppShell'
 import { journeyApi, type SkillsPageResponse } from '@/lib/plannr-api'
 import { cn } from '@/lib/utils'
 
@@ -26,12 +27,11 @@ const SKILL_PRACTICE: Record<string, { label: string; href: string }> = {
 
 // ─── Readiness ring ───────────────────────────────────────────────────────────
 function ReadinessRing({ score, label }: { score: number; label: string }) {
-  const size    = 160
-  const stroke  = 14
-  const radius  = (size - stroke) / 2
-  const circ    = 2 * Math.PI * radius
-  const offset  = circ - (score / 100) * circ
-  const color   = score >= 65 ? '#22c55e' : score >= 40 ? '#f59e0b' : '#ef4444'
+  const size   = 160
+  const stroke = 14
+  const radius = (size - stroke) / 2
+  const circ   = 2 * Math.PI * radius
+  const offset = circ - (score / 100) * circ
 
   return (
     <div className="flex flex-col items-center gap-3">
@@ -45,12 +45,12 @@ function ReadinessRing({ score, label }: { score: number; label: string }) {
           />
           <circle
             cx={size / 2} cy={size / 2} r={radius}
-            fill="none" stroke={color}
+            fill="none" stroke="currentColor"
             strokeWidth={stroke}
             strokeDasharray={circ}
             strokeDashoffset={offset}
             strokeLinecap="round"
-            className="transition-all duration-700"
+            className="text-brand transition-all duration-700"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
@@ -59,17 +59,10 @@ function ReadinessRing({ score, label }: { score: number; label: string }) {
         </div>
       </div>
       <div className="text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
           Interview Readiness
         </p>
-        <p
-          className={cn(
-            'font-serif text-xl font-medium mt-0.5',
-            score >= 65 ? 'text-green-600' : score >= 40 ? 'text-amber-600' : 'text-red-500',
-          )}
-        >
-          {label}
-        </p>
+        <p className="font-serif text-xl font-medium mt-0.5 text-ink">{label}</p>
       </div>
     </div>
   )
@@ -78,18 +71,16 @@ function ReadinessRing({ score, label }: { score: number; label: string }) {
 // ─── Individual skill card ─────────────────────────────────────────────────────
 function SkillCard({ skillKey, label, score }: { skillKey: string; label: string; score: number }) {
   const practice = SKILL_PRACTICE[skillKey]
-  const color    = score >= 70 ? 'bg-green-500' : score >= 40 ? 'bg-amber-500' : 'bg-red-400'
-  const textColor = score >= 70 ? 'text-green-600' : score >= 40 ? 'text-amber-600' : 'text-red-500'
 
   return (
     <div className="rounded-xl border border-hairline bg-paper-elevated p-4 space-y-2.5">
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-ink">{label}</span>
-        <span className={cn('font-mono text-[13px] font-bold', textColor)}>{score}</span>
+        <span className="font-mono text-[13px] font-bold text-ink">{score}</span>
       </div>
       <div className="h-2 rounded-full bg-hairline overflow-hidden">
         <div
-          className={cn('h-full rounded-full transition-all duration-700', color)}
+          className="h-full rounded-full bg-brand transition-all duration-700"
           style={{ width: `${score}%` }}
         />
       </div>
@@ -119,7 +110,7 @@ export default function DashboardSkillsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="h-full flex items-center justify-center">
         <div className="h-7 w-7 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     )
@@ -127,7 +118,7 @@ export default function DashboardSkillsPage() {
 
   if (!data || !data.skills) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-ink-muted text-sm">
+      <div className="h-full flex items-center justify-center text-ink-muted text-sm">
         Could not load skills. Start your Plannr journey first.
       </div>
     )
@@ -136,7 +127,8 @@ export default function DashboardSkillsPage() {
   const skillKeys = Object.keys(data.skills) as string[]
 
   return (
-    <div className="min-h-screen bg-paper overflow-y-auto">
+    <AppShell>
+    <div className="h-full overflow-y-auto bg-paper">
       <div className="mx-auto max-w-5xl px-6 py-10 space-y-10">
 
         {/* Header */}
@@ -156,9 +148,9 @@ export default function DashboardSkillsPage() {
         {/* Breakdown row */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Skill Average',      value: `${data.breakdown.skillAverage}/100` },
-            { label: 'Topics Completed',   value: String(data.breakdown.totalTopicsCompleted) },
-            { label: 'Stage Reached',      value: `Stage ${data.breakdown.stageReached}` },
+            { label: 'Skill Average',    value: `${data.breakdown.skillAverage}/100` },
+            { label: 'Topics Completed', value: String(data.breakdown.totalTopicsCompleted) },
+            { label: 'Stage Reached',    value: `Stage ${data.breakdown.stageReached}` },
           ].map(s => (
             <div key={s.label} className="rounded-xl border border-hairline bg-paper-elevated p-4 text-center">
               <p className="font-mono text-2xl font-bold text-ink">{s.value}</p>
@@ -170,15 +162,13 @@ export default function DashboardSkillsPage() {
         {/* Strengths & focus areas */}
         <div className="grid gap-5 sm:grid-cols-2">
           {/* Top skills */}
-          <div className="rounded-2xl border border-green-200 bg-green-50 p-5 space-y-3">
-            <h2 className="font-medium text-[13px] text-green-800 uppercase tracking-wider">
-              ✦ Your Strengths
-            </h2>
+          <div className="rounded-2xl border border-brand/20 bg-brand-tint/20 p-5 space-y-3">
+            <h2 className="font-serif text-base font-medium text-ink">Your Strengths</h2>
             <div className="flex flex-wrap gap-2">
               {data.topSkills.map(s => (
                 <span
                   key={s.key}
-                  className="rounded-full bg-green-100 border border-green-200 px-3 py-1 text-[12px] font-medium text-green-700"
+                  className="rounded-full bg-paper border border-hairline px-3 py-1 text-[12px] font-medium text-ink"
                 >
                   {s.label} · {s.score}
                 </span>
@@ -187,22 +177,20 @@ export default function DashboardSkillsPage() {
           </div>
 
           {/* Weak skills */}
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 space-y-3">
-            <h2 className="font-medium text-[13px] text-red-700 uppercase tracking-wider">
-              ◎ Focus Areas
-            </h2>
+          <div className="rounded-2xl border border-hairline bg-paper-elevated p-5 space-y-3">
+            <h2 className="font-serif text-base font-medium text-ink">Focus Areas</h2>
             <div className="space-y-2">
               {data.weakSkills.map(s => {
                 const practice = SKILL_PRACTICE[s.key]
                 return (
-                  <div key={s.key} className="flex items-center justify-between">
-                    <span className="text-[12px] text-red-700 font-medium">
-                      {s.label} <span className="font-normal text-red-400">({s.score})</span>
+                  <div key={s.key} className="flex items-center justify-between gap-2">
+                    <span className="text-[12px] text-ink-muted font-medium">
+                      {s.label} <span className="font-normal text-ink-faint">({s.score})</span>
                     </span>
                     {practice && (
                       <Link
                         href={practice.href}
-                        className="text-[11px] font-medium text-red-600 hover:underline"
+                        className="text-[11px] font-medium text-brand hover:underline shrink-0"
                       >
                         {practice.label} →
                       </Link>
@@ -220,7 +208,7 @@ export default function DashboardSkillsPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {skillKeys.map((key: string) => {
               const score = (data.skills as unknown as Record<string, number>)[key] ?? 0
-              const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
+              const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())
               return (
                 <SkillCard
                   key={key}
@@ -235,5 +223,6 @@ export default function DashboardSkillsPage() {
 
       </div>
     </div>
+    </AppShell>
   )
 }

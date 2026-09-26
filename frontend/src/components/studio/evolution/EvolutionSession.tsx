@@ -5,43 +5,27 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
-import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import { CategoryShell, type BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 import { SplitCanvas } from '@/components/studio/refactor/SplitCanvas'
 import {
   DebuggerCanvas,
   type DebuggerDiagram,
 } from '@/components/studio/debugger/DebuggerCanvas'
-import { EvolutionTimeline } from '@/components/studio/evolution/EvolutionTimeline'
 import { StagePressureCard } from '@/components/studio/evolution/StagePressureCard'
 import { PressurePicker } from '@/components/studio/evolution/PressurePicker'
-import {
-  ClassifyPanel,
-  type ClassifyBucket,
-} from '@/components/studio/evolution/ClassifyPanel'
 import { EvolveOrHold } from '@/components/studio/evolution/EvolveOrHold'
-import { DebtPrompt } from '@/components/studio/evolution/DebtPrompt'
-import { WhyChangePanel } from '@/components/studio/evolution/WhyChangePanel'
-import { TradeoffAck } from '@/components/studio/evolution/TradeoffAck'
 import { EvolutionToolbar } from '@/components/studio/evolution/EvolutionToolbar'
 import { EvolutionComplete } from '@/components/studio/evolution/EvolutionComplete'
 import { GuidedModeOverlay } from '@/components/studio/evolution/GuidedModeOverlay'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
+import { cn } from '@/lib/utils'
 
 export interface EvolutionSessionProps {
   attemptId: string
+  breadcrumb?: BreadcrumbSegment[]
 }
 
-type Gate =
-  | 'brief'
-  | 'pressure'
-  | 'classify'
-  | 'decide'
-  | 'debt'
-  | 'why'
-  | 'tradeoffs'
-  | 'edit'
-  | 'stageResult'
-  | 'plannr'
+type Gate = 'context' | 'decide' | 'edit' | 'result' | 'complete'
 
 interface EvoStage {
   id: string
@@ -97,11 +81,11 @@ function nodeName(n: unknown): string {
   return String(node.data?.name ?? node.id ?? 'Class')
 }
 
-export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
+export function EvolutionSession({ attemptId, breadcrumb }: EvolutionSessionProps) {
   const router = useRouter()
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
-  const [gate, setGate] = useState<Gate>('brief')
+  const [gate, setGate] = useState<Gate>('context')
   const [stageIndex, setStageIndex] = useState(0)
   const [baseline, setBaseline] = useState<DebuggerDiagram>({ nodes: [], edges: [] })
   const [working, setWorking] = useState<DebuggerDiagram>({ nodes: [], edges: [] })
@@ -109,13 +93,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [pressures, setPressures] = useState<Set<string>>(new Set())
-  const [buckets, setBuckets] = useState<Record<string, ClassifyBucket>>({})
-  const [introduceText, setIntroduceText] = useState('')
   const [decision, setDecision] = useState<'change' | 'noop' | null>(null)
-  const [debtAction, setDebtAction] = useState<'fix' | 'defer' | null>(null)
-  const [why, setWhy] = useState<Set<string>>(new Set())
-  const [whyNote, setWhyNote] = useState('')
-  const [tradeoffs, setTradeoffs] = useState<Set<string>>(new Set())
   const [lastGrade, setLastGrade] = useState<Record<string, unknown> | null>(null)
   const [versions, setVersions] = useState<Record<string, unknown>[]>([])
   const [decisionLog, setDecisionLog] = useState<Record<string, unknown>[]>([])
@@ -125,7 +103,6 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     score: 0,
   })
   const [journeyIndex, setJourneyIndex] = useState(0)
-  const [viewVersionIndex, setViewVersionIndex] = useState<number | null>(null)
   const [startedAt] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
   const [showGuidedOverlay, setShowGuidedOverlay] = useState(false)
@@ -142,13 +119,6 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
   )
   const stage = stages[stageIndex]
 
-  // Guided mode: enabled when pack says so OR user hasn't done a first run yet
-  const isGuidedMode = useMemo(() => {
-    if (payload.guidedMode === true) return true
-    if (typeof window === 'undefined') return false
-    return !localStorage.getItem('evolution_first_run')
-  }, [payload.guidedMode])
-
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(t)
@@ -156,13 +126,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
 
   const resetStageForm = useCallback(() => {
     setPressures(new Set())
-    setBuckets({})
-    setIntroduceText('')
     setDecision(null)
-    setDebtAction(null)
-    setWhy(new Set())
-    setWhyNote('')
-    setTradeoffs(new Set())
     setLastGrade(null)
     setUndoStack([])
     setSelectedId(null)
@@ -202,12 +166,12 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           score: d?.score ?? 0,
         })
         if ((res.attempt as { status?: string })?.status === 'submitted') {
-          setGate('plannr')
+          setGate('complete')
           setJourneyIndex(Math.max(0, vers.length - 1))
         } else if (idx === 0 && vers.length <= 1) {
-          setGate('brief')
+          setGate('context')
         } else {
-          setGate('pressure')
+          setGate('decide')
         }
       } catch (err) {
         if (!cancelled) toast.error((err as Error).message ?? 'Failed to load')
@@ -224,18 +188,6 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     () => (working.nodes ?? []).map(nodeName),
     [working.nodes],
   )
-
-  const debtDueNote = useMemo(() => {
-    if (!stage) return undefined
-    const due = debt.open.filter(id => {
-      const owner = stages.find(s => s.debtOpportunity?.id === id)
-      return owner?.debtOpportunity?.laterStageId === stage.id
-    })
-    if (!due.length) return undefined
-    return due
-      .map(id => stages.find(s => s.debtOpportunity?.id === id)?.debtOpportunity?.costIfDeferred ?? id)
-      .join('; ')
-  }, [debt.open, stage, stages])
 
   const onWorkingChange = useCallback(
     (next: DebuggerDiagram) => {
@@ -295,22 +247,6 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     setSelectedId(null)
   }, [selectedId, working, onWorkingChange])
 
-  const buildClassifyPayload = () => {
-    const keep: string[] = []
-    const change: string[] = []
-    const remove: string[] = []
-    for (const [name, b] of Object.entries(buckets)) {
-      if (b === 'keep') keep.push(name)
-      else if (b === 'change') change.push(name)
-      else if (b === 'remove') remove.push(name)
-    }
-    const introduce = introduceText
-      .split(/[,;]+/)
-      .map(s => s.trim())
-      .filter(Boolean)
-    return { keep, change, introduce, remove }
-  }
-
   const submitStage = async (forced?: 'change' | 'noop') => {
     const d = forced ?? decision
     if (!d) {
@@ -324,19 +260,15 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     setBusy(true)
     try {
       await studioApi.saveEvolution(attemptId, working).catch(() => undefined)
-      const debtActions =
-        stage?.debtOpportunity && debtAction
-          ? [{ id: stage.debtOpportunity.id, action: debtAction }]
-          : []
       const res = await studioApi.submitEvolutionStage(attemptId, {
         decision: d,
         pressures: [...pressures],
-        classify: buildClassifyPayload(),
+        classify: { keep: componentNames, change: [], introduce: [], remove: [] },
         diagramData: d === 'change' ? working : undefined,
-        why: [...why],
-        whyNote: whyNote || undefined,
-        tradeoffsAck: [...tradeoffs],
-        debtActions,
+        why: [],
+        whyNote: undefined,
+        tradeoffsAck: (stage?.introduceCatalog ?? []).map(i => i.namePattern),
+        debtActions: stage?.debtOpportunity ? [{ id: stage.debtOpportunity.id, action: 'fix' as const }] : [],
       })
       setLastGrade(res.grade)
       const prog = res.progress as {
@@ -351,24 +283,14 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
       setStageIndex(res.nextStageIndex)
       if (res.complete) {
         toast.success('Track complete')
-        setGate('plannr')
+        setGate('complete')
         setJourneyIndex(Math.max(0, (prog.versions?.length ?? 1) - 1))
-        // Mark first guided run as done, show overlay
-        if (isGuidedMode && typeof window !== 'undefined' && !localStorage.getItem('evolution_first_run')) {
+        if (typeof window !== 'undefined' && !localStorage.getItem('evolution_first_run')) {
           localStorage.setItem('evolution_first_run', 'done')
           setShowGuidedOverlay(true)
         }
-      } else if (res.grade?.accepted) {
-        toast.success('Stage accepted')
-        const nextDiag = normalizeDiagram(
-          (prog.versions?.[prog.versions.length - 1] as { diagram?: unknown })?.diagram ?? working,
-        )
-        setBaseline(nextDiag)
-        setWorking(cloneDiagram(nextDiag))
-        setGate('stageResult')
       } else {
-        toast.message(String(res.grade?.narrative ?? 'Not accepted yet'))
-        setGate('stageResult')
+        setGate('result')
       }
     } catch (err) {
       toast.error((err as Error).message ?? 'Submit failed')
@@ -379,17 +301,21 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
 
   const continueAfterStage = () => {
     if (!lastGrade?.accepted) {
-      // retry same stage
       resetStageForm()
-      setGate('pressure')
+      setGate('decide')
       return
     }
     if (stageIndex >= stages.length) {
-      setGate('plannr')
+      setGate('complete')
       return
     }
     resetStageForm()
-    setGate('pressure')
+    const nextDiag = normalizeDiagram(
+      (versions[versions.length - 1] as { diagram?: unknown })?.diagram ?? working,
+    )
+    setBaseline(nextDiag)
+    setWorking(cloneDiagram(nextDiag))
+    setGate('context')
   }
 
   const elapsed = Math.floor((now - startedAt) / 1000)
@@ -406,19 +332,20 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
 
   if (!pack) {
     return (
-      <CategoryShell title="Not found" backHref="/design-studio/evolution" backLabel="Evolution">
+      <CategoryShell title="Not found" backHref="/design-studio/evolution" backLabel="Evolution" breadcrumb={breadcrumb}>
         <p className="p-8 text-center text-[13px] text-ink-muted">Attempt or pack missing.</p>
       </CategoryShell>
     )
   }
 
-  if (gate === 'plannr') {
+  if (gate === 'complete') {
     return (
       <CategoryShell
         title={pack.title}
         subtitle="Architecture journey"
         backHref="/design-studio/evolution"
         backLabel="Tracks"
+        breadcrumb={breadcrumb}
       >
         {showGuidedOverlay && (
           <GuidedModeOverlay
@@ -438,15 +365,38 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           debt={debt}
           selectedIndex={journeyIndex}
           onSelectVersion={setJourneyIndex}
+          packSlug={pack?.slug ?? ''}
         />
       </CategoryShell>
     )
   }
 
-  const viewingPast =
-    viewVersionIndex != null && versions[viewVersionIndex]
-      ? normalizeDiagram((versions[viewVersionIndex] as { diagram?: unknown }).diagram)
-      : null
+  // Horizontal stage pill strip component (rendered in edit gate)
+  const StagePills = () => (
+    <div className="flex items-center gap-1.5 overflow-x-auto border-b border-hairline bg-paper px-4 py-2 shrink-0">
+      {stages.map((s, i) => {
+        const isDone = i < versions.length - 1
+        const isCurrent = i === stageIndex
+        return (
+          <button
+            key={s.id}
+            type="button"
+            disabled={!isDone}
+            className={cn(
+              'shrink-0 rounded-full px-3 py-1 font-mono text-[10px] font-semibold transition-colors',
+              isCurrent
+                ? 'bg-brand text-white'
+                : isDone
+                  ? 'bg-brand-tint text-brand hover:opacity-80'
+                  : 'bg-paper-elevated text-ink-faint cursor-default',
+            )}
+          >
+            {s.dayLabel}
+          </button>
+        )
+      })}
+    </div>
+  )
 
   return (
     <CategoryShell
@@ -454,47 +404,76 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
       subtitle={stage?.title ?? pack.description}
       backHref="/design-studio/evolution"
       backLabel="Tracks"
+      breadcrumb={breadcrumb}
       timer={<span className="tabular-nums">{timerLabel}</span>}
       actions={
         gate === 'edit' ? (
           <button
             type="button"
             disabled={busy}
-            onClick={() => submitStage('change')}
+            onClick={() => void submitStage('change')}
             className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-60"
           >
             {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send size={14} />}
-            Submit stage
+            Submit Stage {stageIndex + 1}
           </button>
         ) : null
       }
+      contentClassName={gate === 'edit' ? 'min-h-0 flex-1 flex flex-col overflow-hidden' : undefined}
     >
-      <EvolutionTimeline
-        stages={stages}
-        stageIndex={stageIndex}
-        completedCount={Math.max(0, versions.length - 1)}
-        onSelectCompleted={i => {
-          // versions[0] is baseline; stage i completed lives at versions[i+1]
-          const vi = i + 1
-          if (versions[vi]) setViewVersionIndex(vi)
-        }}
-      />
+      {/* ── context gate ──────────────────────────────────────────────── */}
+      {gate === 'context' && stage && (
+        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+          {stageIndex === 0 && payload.briefing && (
+            <div className="mb-6 rounded-xl border border-hairline bg-paper-elevated p-5">
+              <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
+                Track brief
+              </p>
+              <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink">
+                {payload.briefing ?? pack.description}
+              </p>
+            </div>
+          )}
 
-      {viewingPast && (
-        <div className="border-b border-hairline bg-paper">
-          <div className="flex items-center justify-between px-4 py-2 sm:px-6">
-            <p className="font-mono text-[10px] uppercase text-ink-faint">Viewing past version</p>
+          <div className="rounded-xl border border-hairline bg-paper-elevated p-5">
+            <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+              {stage.dayLabel}
+            </p>
+            <h2 className="font-serif text-xl font-medium text-ink">{stage.title}</h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-ink-muted">{stage.narrative}</p>
+
+            {stage.metrics && (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {stage.metrics.users != null && (
+                  <span className="rounded-md border border-hairline bg-paper px-2 py-1 font-mono text-[11px] text-ink-muted">
+                    {stage.metrics.users.toLocaleString()} users
+                  </span>
+                )}
+                {stage.metrics.latencyMs != null && (
+                  <span className="rounded-md border border-hairline bg-paper px-2 py-1 font-mono text-[11px] text-ink-muted">
+                    {stage.metrics.latencyMs}ms latency
+                  </span>
+                )}
+                {stage.metrics.availability && (
+                  <span className="rounded-md border border-hairline bg-paper px-2 py-1 font-mono text-[11px] text-ink-muted">
+                    {stage.metrics.availability} uptime
+                  </span>
+                )}
+              </div>
+            )}
+
             <button
               type="button"
-              className="text-[12px] text-brand"
-              onClick={() => setViewVersionIndex(null)}
+              onClick={() => setGate('decide')}
+              className="mt-5 rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white hover:opacity-90 transition-opacity"
             >
-              Back to current stage
+              Begin {stage.dayLabel}
             </button>
           </div>
-          <div className="relative h-[40vh] min-h-[280px]">
+
+          <div className="relative mt-5 h-[40vh] min-h-[280px] rounded-xl overflow-hidden border border-hairline">
             <DebuggerCanvas
-              diagram={viewingPast}
+              diagram={baseline}
               readOnly
               selectedId={null}
               onSelect={() => {}}
@@ -505,59 +484,17 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
         </div>
       )}
 
-      {gate === 'brief' && (
-        <>
-          <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6">
-            <div className="flex items-center gap-2 mb-2">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-brand">
-                Track brief
-              </p>
-              {isGuidedMode && (
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-brand">
-                  Guided Mode
-                </span>
-              )}
-            </div>
-            <p className="whitespace-pre-line text-[14px] leading-relaxed text-ink">
-              {payload.briefing ?? pack.description}
-            </p>
-            {isGuidedMode && (
-              <p className="mt-2 text-[12px] text-ink-muted">
-                🧭 Guided Mode simplifies the flow — classification, debt, and tradeoff steps are
-                unlocked after your first run.
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() => setGate('pressure')}
-              className="mt-4 rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white"
-            >
-              Start Day 0 / first pressure
-            </button>
-          </div>
-          <div className="relative h-[50vh] min-h-[360px] border-t border-hairline">
-            <DebuggerCanvas
-              diagram={baseline}
-              readOnly
-              selectedId={null}
-              onSelect={() => {}}
-              className="absolute inset-0"
-              hideEditChrome
-            />
-          </div>
-        </>
-      )}
-
-      {gate === 'pressure' && stage && (
-        <>
+      {/* ── decide gate ───────────────────────────────────────────────── */}
+      {gate === 'decide' && stage && (
+        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 space-y-4">
           <StagePressureCard
             dayLabel={stage.dayLabel}
             title={stage.title}
             category={stage.category}
             narrative={stage.narrative}
             metrics={stage.metrics}
-            debtDueNote={isGuidedMode ? undefined : debtDueNote}
           />
+
           <PressurePicker
             options={stage.pressureOptions}
             selected={pressures}
@@ -570,182 +507,39 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               })
             }}
           />
-          {!isGuidedMode && stage.approachHints && stage.approachHints.length > 0 && (
-            <p className="px-4 pb-2 text-[12px] text-ink-faint sm:px-6">
-              Soft hints (many paths can work): {stage.approachHints.join(' · ')}
-            </p>
-          )}
-          <div className="px-4 pb-4 sm:px-6">
-            <button
-              type="button"
-              disabled={pressures.size === 0}
-              onClick={() => {
-                if (isGuidedMode) {
-                  // Guided mode: skip classify, go straight to decide
-                  setGate('decide')
-                } else {
-                  // Full mode: seed classify defaults to keep
-                  const init: Record<string, ClassifyBucket> = {}
-                  for (const n of componentNames) init[n] = 'keep'
-                  setBuckets(init)
-                  setGate('classify')
-                }
-              }}
-              className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50"
-            >
-              {isGuidedMode ? 'Continue to decide' : 'Continue to classify'}
-            </button>
-          </div>
-        </>
-      )}
 
-      {gate === 'classify' && stage && (
-        <>
-          <ClassifyPanel
-            componentNames={componentNames}
-            buckets={buckets}
-            onSet={(name, b) => setBuckets(prev => ({ ...prev, [name]: b }))}
-            introduceText={introduceText}
-            onIntroduceText={setIntroduceText}
-          />
-          <div className="px-4 pb-4 sm:px-6">
-            <button
-              type="button"
-              onClick={() => setGate('decide')}
-              className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white"
-            >
-              Continue
-            </button>
-          </div>
-        </>
-      )}
-
-      {gate === 'decide' && stage && (
-        <>
-          {isGuidedMode && (
-            <div className="mx-auto max-w-3xl px-4 pt-3 sm:px-6">
-              <span className="rounded-full bg-brand/10 px-2 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-brand">
-                Guided Mode · Stage {stageIndex + 1}
-              </span>
-            </div>
-          )}
           <EvolveOrHold
             mustChange={stage.mustChange}
             doNothingHint={stage.doNothingHint}
             decision={decision}
             onDecide={d => {
               setDecision(d)
-              if (d === 'noop') {
-                // go straight to submit path after confirm
-              } else if (isGuidedMode) {
-                // Guided mode: skip debt, why, tradeoffs — go straight to edit
+              if (d === 'change') {
                 setGate('edit')
-              } else if (stage.debtOpportunity) {
-                setGate('debt')
-              } else {
-                setGate('why')
               }
             }}
           />
+
           {decision === 'noop' && (
-            <div className="px-4 pb-4 sm:px-6">
+            <div className="flex">
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => submitStage('noop')}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-60"
+                disabled={busy || pressures.size === 0}
+                onClick={() => void submitStage('noop')}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white disabled:opacity-60"
               >
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 Confirm hold &amp; submit
               </button>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {gate === 'debt' && stage?.debtOpportunity && (
-        <>
-          <DebtPrompt
-            id={stage.debtOpportunity.id}
-            prompt={stage.debtOpportunity.prompt}
-            costIfDeferred={stage.debtOpportunity.costIfDeferred}
-            action={debtAction}
-            onChoose={a => {
-              setDebtAction(a)
-              setGate('why')
-            }}
-          />
-        </>
-      )}
-
-      {gate === 'why' && stage && (
-        <>
-          <WhyChangePanel
-            selected={why}
-            onToggle={w => {
-              setWhy(prev => {
-                const next = new Set(prev)
-                if (next.has(w)) next.delete(w)
-                else next.add(w)
-                return next
-              })
-            }}
-            note={whyNote}
-            onNote={setWhyNote}
-          />
-          <div className="px-4 pb-4 sm:px-6">
-            <button
-              type="button"
-              disabled={why.size === 0}
-              onClick={() => {
-                if ((stage.introduceCatalog?.length ?? 0) > 0) setGate('tradeoffs')
-                else setGate('edit')
-              }}
-              className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-50"
-            >
-              {(stage.introduceCatalog?.length ?? 0) > 0
-                ? 'Continue to tradeoffs'
-                : 'Unlock canvas'}
-            </button>
-          </div>
-        </>
-      )}
-
-      {gate === 'tradeoffs' && stage && (
-        <>
-          <TradeoffAck
-            items={stage.introduceCatalog ?? []}
-            acknowledged={tradeoffs}
-            onToggle={label => {
-              setTradeoffs(prev => {
-                const next = new Set(prev)
-                if (next.has(label)) next.delete(label)
-                else next.add(label)
-                return next
-              })
-            }}
-          />
-          <div className="px-4 pb-4 sm:px-6">
-            <button
-              type="button"
-              onClick={() => setGate('edit')}
-              className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white"
-            >
-              Unlock canvas
-            </button>
-          </div>
-        </>
-      )}
-
+      {/* ── edit gate ────────────────────────────────────────────────── */}
       {gate === 'edit' && stage && (
         <>
-          <StagePressureCard
-            dayLabel={stage.dayLabel}
-            title={stage.title}
-            category={stage.category}
-            narrative={stage.narrative}
-            metrics={stage.metrics}
-          />
+          <StagePills />
           <EvolutionToolbar
             onUndo={onUndo}
             canUndo={undoStack.length > 0}
@@ -755,29 +549,37 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
             canDelete={Boolean(selectedId)}
             disabled={busy}
           />
-          <SplitCanvas
-            original={baseline}
-            working={working}
-            selectedId={selectedId}
-            onSelect={id => setSelectedId(id)}
-            onWorkingChange={onWorkingChange}
-            originalLabel="Previous version"
-            workingLabel="Your evolved design"
-          />
+          <div className="min-h-0 flex-1">
+            <SplitCanvas
+              original={baseline}
+              working={working}
+              selectedId={selectedId}
+              onSelect={id => setSelectedId(id)}
+              onWorkingChange={onWorkingChange}
+              originalLabel="Previous version"
+              workingLabel="Your evolved design"
+            />
+          </div>
         </>
       )}
 
-      {gate === 'stageResult' && lastGrade && (
+      {/* ── result gate ──────────────────────────────────────────────── */}
+      {gate === 'result' && lastGrade && (
         <div className="mx-auto max-w-lg space-y-4 px-4 py-8 sm:px-6">
-          <p
-            className={
+          <div
+            className={cn(
+              'rounded-xl border px-5 py-4 text-[13px]',
               lastGrade.accepted
-                ? 'rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-900'
-                : 'rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900'
-            }
+                ? 'border-hairline bg-brand-tint text-ink'
+                : 'border-hairline bg-paper-elevated text-ink',
+            )}
           >
-            {String(lastGrade.narrative)}
-          </p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint mb-2">
+              Stage result
+            </p>
+            <p>{String(lastGrade.narrative)}</p>
+          </div>
+
           <ul className="space-y-2">
             {((lastGrade.dimensions as { key: string; label: string; ok: boolean; detail?: string }[]) ?? []).map(
               d => (
@@ -788,20 +590,23 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
                       <span className="block text-[11px] text-ink-muted">{d.detail}</span>
                     ) : null}
                   </span>
-                  <span>{d.ok ? '✓' : '!'}</span>
+                  <span className={d.ok ? 'text-brand' : 'text-ink-muted'}>
+                    {d.ok ? 'Pass' : 'Miss'}
+                  </span>
                 </li>
               ),
             )}
           </ul>
+
           <button
             type="button"
             onClick={continueAfterStage}
-            className="rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white"
+            className="rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white"
           >
             {lastGrade.accepted
               ? stageIndex >= stages.length
                 ? 'View journey'
-                : 'Next stage'
+                : 'Continue'
               : 'Retry stage'}
           </button>
         </div>

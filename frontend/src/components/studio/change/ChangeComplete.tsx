@@ -3,11 +3,14 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { BlastRadiusView } from '@/components/studio/change/BlastRadiusView'
+import { CompletionNext } from '@/components/studio/shell/CompletionNext'
 
 export interface ChangeCompleteProps {
   result: Record<string, unknown>
   elapsedSec?: number
   nameById?: Record<string, string>
+  /** Slug of the completed pack — used for next-problem recommendation */
+  packSlug?: string
   className?: string
 }
 
@@ -18,7 +21,7 @@ function fmtTime(sec?: number) {
   return `${m}m ${String(s).padStart(2, '0')}s`
 }
 
-export function ChangeComplete({ result, elapsedSec, nameById, className }: ChangeCompleteProps) {
+export function ChangeComplete({ result, elapsedSec, nameById, packSlug = '', className }: ChangeCompleteProps) {
   const accepted = Boolean(result.accepted)
   const dimensions = Array.isArray(result.dimensions)
     ? (result.dimensions as { key: string; label: string; ok: boolean; detail?: string; score?: number }[])
@@ -113,7 +116,15 @@ export function ChangeComplete({ result, elapsedSec, nameById, className }: Chan
         {fmtTime(elapsedSec)}
       </p>
 
-      <div className="mt-8 flex justify-center">
+      <div className="mt-8 border-t border-hairline pt-6">
+        <CompletionNext
+          packType="change_one"
+          currentSlug={packSlug}
+          libraryHref="/design-studio/change/problems"
+        />
+      </div>
+
+      <div className="mt-6 flex justify-center">
         <Link
           href="/design-studio/change"
           className="rounded-lg bg-brand px-4 py-2.5 text-center text-[13px] font-medium text-white"

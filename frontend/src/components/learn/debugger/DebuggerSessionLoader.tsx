@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import { CategoryShell, type BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 import { learnApi, type DebuggerChallenge } from '@/lib/learn-api'
 import { DebuggerSession } from './DebuggerSession'
 
-export function DebuggerSessionLoader() {
+export interface DebuggerSessionLoaderProps {
+  breadcrumb?: BreadcrumbSegment[]
+}
+
+export function DebuggerSessionLoader({ breadcrumb }: DebuggerSessionLoaderProps) {
   const params = useParams()
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? '')
 
@@ -38,8 +42,9 @@ export function DebuggerSessionLoader() {
     return (
       <CategoryShell
         title="Bug Hunt"
-        backHref="/learn/debugger"
-        backLabel="Bug Hunt"
+        backHref="/learn/debugger/problems"
+        backLabel="Problems"
+        breadcrumb={breadcrumb}
       >
         <div className="flex flex-1 items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-ink-faint" />
@@ -52,8 +57,9 @@ export function DebuggerSessionLoader() {
     return (
       <CategoryShell
         title="Bug Hunt"
-        backHref="/learn/debugger"
-        backLabel="Bug Hunt"
+        backHref="/learn/debugger/problems"
+        backLabel="Problems"
+        breadcrumb={breadcrumb}
       >
         <div className="flex flex-1 items-center justify-center py-20">
           <p className="text-[14px] text-ink-muted">{error ?? 'Challenge not found.'}</p>
@@ -66,8 +72,9 @@ export function DebuggerSessionLoader() {
     <CategoryShell
       title={challenge.title}
       subtitle="Find and fix the bug — then run to verify"
-      backHref="/learn/debugger"
-      backLabel="Bug Hunt"
+      backHref="/learn/debugger/problems"
+      backLabel="Problems"
+      breadcrumb={breadcrumb}
       contentClassName="flex min-h-0 flex-1"
     >
       <DebuggerSession challenge={challenge} />

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ISSUE_TYPE_INFO } from '@/components/studio/debugger/IssueTypeTooltip'
 import type { DebuggerMark } from '@/lib/studio-api'
+import { CompletionNext } from '@/components/studio/shell/CompletionNext'
 
 export interface DebugCompleteProps {
   found?: number
@@ -15,6 +16,8 @@ export interface DebugCompleteProps {
   hintsUsed?: number
   /** All graded marks from the session — used to suggest what to study next */
   gradedMarks?: DebuggerMark[]
+  /** Slug of the completed pack — used for next-problem recommendation */
+  packSlug?: string
   className?: string
 }
 
@@ -72,6 +75,7 @@ export function DebugComplete({
   elapsedSec,
   hintsUsed = 0,
   gradedMarks = [],
+  packSlug = '',
   className,
 }: DebugCompleteProps) {
   const practiceLinks = getPracticeLinks(gradedMarks, found, total)
@@ -129,7 +133,15 @@ export function DebugComplete({
         </div>
       )}
 
-      <div className="mt-8 flex w-full flex-col gap-2">
+      <div className="mt-8 w-full border-t border-hairline pt-6">
+        <CompletionNext
+          packType="debugger"
+          currentSlug={packSlug}
+          libraryHref="/design-studio/debugger/problems"
+        />
+      </div>
+
+      <div className="mt-6 flex w-full flex-col gap-2">
         <Link
           href="/design-studio/debugger"
           className="rounded-md bg-brand px-4 py-2.5 text-[13px] font-medium text-brand-foreground hover:bg-brand-hover"

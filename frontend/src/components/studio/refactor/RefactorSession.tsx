@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
@@ -11,14 +11,17 @@ import { RefactorToolbar } from '@/components/studio/refactor/RefactorToolbar'
 import { ExtractClassPanel } from '@/components/studio/refactor/ExtractClassPanel'
 import { BeforeAfterDiff, type DiffEntryLike } from '@/components/studio/refactor/BeforeAfterDiff'
 import { RefactorComplete } from '@/components/studio/refactor/RefactorComplete'
-import { GuidedStartPanel } from '@/components/studio/refactor/GuidedStartPanel'
 import { InterviewerAssessmentPanel } from '@/components/studio/refactor/InterviewerAssessmentPanel'
 import { PostChallengeDebrief } from '@/components/shared/PostChallengeDebrief'
 import type { DebuggerDiagram } from '@/components/studio/debugger/DebuggerCanvas'
+import { DebuggerCanvas } from '@/components/studio/debugger/DebuggerCanvas'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
+import { cn } from '@/lib/utils'
+import type { BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 
 export interface RefactorSessionProps {
   attemptId: string
+  breadcrumb?: BreadcrumbSegment[]
 }
 
 function normalizeDiagram(raw: unknown): DebuggerDiagram {
@@ -43,7 +46,7 @@ function cloneDiagram(d: DebuggerDiagram): DebuggerDiagram {
   return JSON.parse(JSON.stringify(d)) as DebuggerDiagram
 }
 
-export function RefactorSession({ attemptId }: RefactorSessionProps) {
+export function RefactorSession({ attemptId, breadcrumb }: RefactorSessionProps) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [original, setOriginal] = useState<DebuggerDiagram>({ nodes: [], edges: [] })
@@ -59,6 +62,8 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
   const [startedAt, setStartedAt] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
   const [submitted, setSubmitted] = useState(false)
+  const [localStage, setLocalStage] = useState<'brief' | 'work'>('brief')
+  const [reqPanelOpen, setReqPanelOpen] = useState(true)
 
   const payload = (pack?.payload ?? {}) as {
     briefing?: string
@@ -92,6 +97,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         if (res.attempt?.status === 'submitted' && res.attempt.result) {
           setResult(res.attempt.result as Record<string, unknown>)
           setSubmitted(true)
+          setLocalStage('work')
         }
       } catch (err) {
         if (!cancelled) toast.error((err as Error).message ?? 'Failed to load session')
@@ -220,7 +226,6 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
     return cr?.checks ?? []
   }, [result])
 
-  // IDs of behavior flows that passed – used by BehaviorFlowChecklist in result screen
   const satisfiedFlowIds = useMemo(
     () => behaviorChecks.filter(c => c.ok).map(c => c.id),
     [behaviorChecks],
@@ -237,7 +242,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
 
   if (!pack) {
     return (
-      <CategoryShell title="Not found" backHref="/design-studio/refactor" backLabel="Refactor">
+      <CategoryShell title="Not found" backHref="/design-studio/refactor" backLabel="Refactor" breadcrumb={breadcrumb}>
         <p className="p-8 text-center text-[13px] text-ink-muted">Attempt or pack missing.</p>
       </CategoryShell>
     )
@@ -251,10 +256,10 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         subtitle="Refactoring results"
         backHref="/design-studio/refactor"
         backLabel="Challenges"
+        breadcrumb={breadcrumb}
       >
-        <RefactorComplete result={result} elapsedSec={elapsed} />
+        <RefactorComplete result={result} elapsedSec={elapsed} packSlug={pack?.slug ?? ''} />
 
-        {/* Interviewer assessment */}
         <div className="mx-auto max-w-lg px-6 pb-4">
           <InterviewerAssessmentPanel
             result={result}
@@ -266,7 +271,6 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
           />
         </div>
 
-        {/* Post-challenge skill debrief */}
         {showDebrief && Object.keys(skillDeltas).length > 0 && (
           <div className="mx-auto max-w-lg px-6 pb-4 flex justify-center">
             <PostChallengeDebrief
@@ -295,6 +299,79 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
     )
   }
 
+  // ── Brief stage ────────────────────────────────────────────────────────────
+  if (localStage === 'brief') {
+    return (
+      <CategoryShell
+        title={pack.title}
+        subtitle={pack.description ?? 'Improve structure without breaking behavior'}
+        backHref="/design-studio/refactor"
+        backLabel="Challenges"
+        breadcrumb={breadcrumb}
+      >
+        <div className="mx-auto w-full max-w-2xl px-6 py-10">
+          <div className="rounded-xl border border-hairline bg-paper-elevated p-6">
+            {payload.scenario && (
+              <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                Scenario
+              </p>
+            )}
+            <h2 className="font-serif text-2xl font-medium text-ink">{pack.title}</h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-ink-muted">
+              {payload.scenario ?? pack.description}
+            </p>
+
+            {payload.briefing && (
+              <div className="mt-4 border-t border-hairline pt-4">
+                <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Brief
+                </p>
+                <p className="whitespace-pre-line text-[13px] leading-relaxed text-ink">
+                  {payload.briefing}
+                </p>
+              </div>
+            )}
+
+            {payload.requirements && payload.requirements.length > 0 && (
+              <div className="mt-4 border-t border-hairline pt-4">
+                <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Must still work
+                </p>
+                <ul className="space-y-1">
+                  {payload.requirements.map(r => (
+                    <li key={r} className="text-[13px] text-ink-muted">
+                      · {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Small canvas preview */}
+            <div className="mt-5 h-48 overflow-hidden rounded-lg border border-hairline">
+              <DebuggerCanvas
+                diagram={original}
+                readOnly
+                selectedId={null}
+                onSelect={() => {}}
+                hideEditChrome
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setLocalStage('work')}
+              className="mt-6 w-full rounded-lg bg-brand py-2.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
+            >
+              Start Refactoring
+            </button>
+          </div>
+        </div>
+      </CategoryShell>
+    )
+  }
+
+  // ── Work stage ─────────────────────────────────────────────────────────────
   return (
     <CategoryShell
       title={pack.title}
@@ -305,48 +382,66 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
       }
       backHref="/design-studio/refactor"
       backLabel="Challenges"
+      breadcrumb={breadcrumb}
       timer={<span className="tabular-nums">{timerLabel}</span>}
-      actions={
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onSubmit}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[13px] font-medium text-white disabled:opacity-60"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send size={14} />}
-          Submit Refactoring
-        </button>
-      }
+      contentClassName="min-h-0 flex-1 flex flex-col overflow-hidden"
     >
-      {/* Guided start hints – visible while working */}
-      {payload.briefing && (
-        <GuidedStartPanel
-          briefing={payload.briefing}
-          requirements={payload.requirements ?? []}
-          constraints={payload.constraints}
-          submitted={submitted}
+      {/* Slim toolbar row */}
+      <div className="shrink-0 border-b border-hairline bg-paper px-3 py-1.5">
+        <RefactorToolbar
+          extractMode={extractMode}
+          onToggleExtract={() => setExtractMode(v => !v)}
+          onUndo={onUndo}
+          canUndo={undoStack.length > 0}
+          onAddClass={() => addNode('class')}
+          onAddInterface={() => addNode('interface')}
+          onDeleteSelected={deleteSelected}
+          canDelete={Boolean(selectedId)}
+          disabled={busy}
         />
-      )}
-      <RequirementsPanel
-        briefing={payload.briefing}
-        requirements={payload.requirements}
-        constraints={payload.constraints}
-        flows={payload.behaviorContract?.flows}
-        satisfiedFlowIds={submitted ? satisfiedFlowIds : undefined}
-      />
-      <RefactorToolbar
-        extractMode={extractMode}
-        onToggleExtract={() => setExtractMode(v => !v)}
-        onUndo={onUndo}
-        canUndo={undoStack.length > 0}
-        onAddClass={() => addNode('class')}
-        onAddInterface={() => addNode('interface')}
-        onDeleteSelected={deleteSelected}
-        canDelete={Boolean(selectedId)}
-        disabled={busy}
-      />
-      <div className="flex min-w-0">
-        <div className="min-w-0 flex-1">
+      </div>
+
+      {/* Canvas area with collapsible requirements panel */}
+      <div className="flex min-h-0 flex-1">
+        {/* Collapsible requirements panel */}
+        {reqPanelOpen && (
+          <aside className="w-60 shrink-0 overflow-y-auto border-r border-hairline">
+            <div className="flex items-center justify-between border-b border-hairline px-3 py-2">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                Requirements
+              </p>
+              <button
+                type="button"
+                onClick={() => setReqPanelOpen(false)}
+                className="rounded p-0.5 text-ink-faint hover:text-ink"
+              >
+                <ChevronLeft size={14} />
+              </button>
+            </div>
+            <RequirementsPanel
+              briefing={payload.briefing}
+              requirements={payload.requirements}
+              constraints={payload.constraints}
+              flows={payload.behaviorContract?.flows}
+              satisfiedFlowIds={submitted ? satisfiedFlowIds : undefined}
+            />
+          </aside>
+        )}
+
+        {/* Toggle button when closed */}
+        {!reqPanelOpen && (
+          <button
+            type="button"
+            onClick={() => setReqPanelOpen(true)}
+            className="shrink-0 border-r border-hairline bg-paper-elevated px-1.5 hover:bg-hairline/40"
+            title="Show requirements"
+          >
+            <ChevronRight size={14} className="text-ink-faint" />
+          </button>
+        )}
+
+        {/* Split canvas + extract panel */}
+        <div className="relative min-w-0 flex-1">
           <SplitCanvas
             original={original}
             working={working}
@@ -354,19 +449,36 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
             onSelect={id => setSelectedId(id)}
             onWorkingChange={onWorkingChange}
           />
+          {extractMode && (
+            <div className="absolute inset-y-0 right-0 w-72 border-l border-hairline bg-paper">
+              <ExtractClassPanel
+                diagram={working}
+                selectedElementId={selectedId}
+                onApply={next => {
+                  onWorkingChange(next)
+                  setExtractMode(false)
+                  toast.success('Class extracted')
+                }}
+                onCancel={() => setExtractMode(false)}
+              />
+            </div>
+          )}
         </div>
-        {extractMode && (
-          <ExtractClassPanel
-            diagram={working}
-            selectedElementId={selectedId}
-            onApply={next => {
-              onWorkingChange(next)
-              setExtractMode(false)
-              toast.success('Class extracted')
-            }}
-            onCancel={() => setExtractMode(false)}
-          />
-        )}
+      </div>
+
+      {/* Sticky bottom bar with always-visible submit */}
+      <div className="shrink-0 border-t border-hairline bg-paper-elevated px-4 py-3">
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onSubmit}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white disabled:opacity-60"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send size={14} />}
+            Submit Refactoring
+          </button>
+        </div>
       </div>
     </CategoryShell>
   )

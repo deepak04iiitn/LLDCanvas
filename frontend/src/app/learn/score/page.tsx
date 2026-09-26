@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { learnApi, DiagramScoreRecord } from '@/lib/learn-api'
+import { ChevronDown, ChevronUp, Loader2, PencilRuler } from 'lucide-react'
+import { learnApi, type DiagramScoreRecord } from '@/lib/learn-api'
+import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import { cn } from '@/lib/utils'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 type Dimension = 'coupling' | 'cohesion' | 'complexity' | 'extensibility' | 'solid'
 
 const DIMENSIONS: { key: Dimension; label: string }[] = [
-  { key: 'coupling', label: 'Coupling' },
-  { key: 'cohesion', label: 'Cohesion' },
-  { key: 'complexity', label: 'Complexity' },
+  { key: 'coupling',      label: 'Coupling' },
+  { key: 'cohesion',      label: 'Cohesion' },
+  { key: 'complexity',    label: 'Complexity' },
   { key: 'extensibility', label: 'Extensibility' },
-  { key: 'solid', label: 'SOLID' },
+  { key: 'solid',         label: 'SOLID' },
 ]
 
 const IMPROVEMENT_ACTIONS: {
@@ -22,51 +25,14 @@ const IMPROVEMENT_ACTIONS: {
   action: string
   href: string
 }[] = [
-  {
-    dimension: 'coupling',
-    label: 'Coupling',
-    action: 'Try Refactoring Mode challenges',
-    href: '/design-studio/refactor',
-  },
-  {
-    dimension: 'cohesion',
-    label: 'Cohesion',
-    action: 'Study Responsibility Assignment in Plannr',
-    href: '/plannr',
-  },
-  {
-    dimension: 'complexity',
-    label: 'Complexity',
-    action: 'Try Architecture Budget challenges',
-    href: '/design-studio/budget',
-  },
-  {
-    dimension: 'extensibility',
-    label: 'Extensibility',
-    action: 'Study Design Patterns in Plannr',
-    href: '/plannr',
-  },
-  {
-    dimension: 'solid',
-    label: 'SOLID',
-    action: 'Try Design Debugger challenges',
-    href: '/design-studio/debugger',
-  },
+  { dimension: 'coupling',      label: 'Coupling',      action: 'Try Refactoring Mode challenges',          href: '/design-studio/refactor' },
+  { dimension: 'cohesion',      label: 'Cohesion',      action: 'Study Responsibility Assignment in Plannr', href: '/plannr' },
+  { dimension: 'complexity',    label: 'Complexity',    action: 'Try Architecture Budget challenges',        href: '/design-studio/budget' },
+  { dimension: 'extensibility', label: 'Extensibility', action: 'Study Design Patterns in Plannr',          href: '/plannr' },
+  { dimension: 'solid',         label: 'SOLID',         action: 'Try Design Debugger challenges',           href: '/design-studio/debugger' },
 ]
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function scoreBadgeClass(score: number): string {
-  if (score >= 70) return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-  if (score >= 50) return 'bg-orange-100 text-orange-700 border border-orange-200'
-  return 'bg-red-100 text-red-700 border border-red-200'
-}
-
-function miniBarColor(score: number): string {
-  if (score >= 70) return 'bg-emerald-400'
-  if (score >= 50) return 'bg-orange-400'
-  return 'bg-red-400'
-}
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, {
@@ -81,24 +47,28 @@ function avg(nums: number[]): number {
   return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length)
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
 function SummaryCard({
   label,
   value,
   sub,
-  accent,
+  positive,
 }: {
   label: string
   value: string | number
   sub?: string
-  accent?: string
+  positive?: boolean
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 flex flex-col gap-1 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{label}</p>
-      <p className={`text-3xl font-bold ${accent ?? 'text-zinc-800'}`}>{value}</p>
-      {sub && <p className="text-sm text-zinc-500">{sub}</p>}
+    <div className="flex flex-col gap-1 rounded-xl border border-hairline bg-paper-elevated p-5">
+      <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        {label}
+      </p>
+      <p className={cn('text-3xl font-bold', positive ? 'text-brand' : 'text-ink')}>
+        {value}
+      </p>
+      {sub && <p className="text-[13px] text-ink-muted">{sub}</p>}
     </div>
   )
 }
@@ -106,40 +76,46 @@ function SummaryCard({
 function MiniBar({ score, label }: { score: number; label: string }) {
   return (
     <div className="flex items-center gap-1.5 min-w-0">
-      <span className="w-16 shrink-0 text-[10px] text-zinc-400 truncate">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-zinc-100 overflow-hidden">
+      <span className="w-20 shrink-0 text-[10px] text-ink-faint truncate">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-[hsl(var(--color-hairline)/0.6)] overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${miniBarColor(score)}`}
+          className="h-full rounded-full bg-brand transition-all"
           style={{ width: `${Math.min(100, score)}%` }}
         />
       </div>
-      <span className="w-7 shrink-0 text-right text-[10px] text-zinc-500">{score}</span>
+      <span className="w-7 shrink-0 text-right text-[10px] text-ink-muted">{score}</span>
     </div>
   )
 }
 
 function HistoryItem({ record }: { record: DiagramScoreRecord }) {
+  const overall = record.scores.overall
   return (
-    <div className="flex flex-col sm:flex-row sm:items-start gap-3 rounded-xl border border-zinc-100 bg-white px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex flex-col gap-3 rounded-xl border border-hairline bg-paper-elevated px-4 py-3 transition-shadow hover:shadow-sm sm:flex-row sm:items-start">
       {/* Left: title + date */}
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-zinc-800 truncate">
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-ink">
           {record.diagramTitle || 'Untitled'}
         </p>
-        <p className="text-xs text-zinc-400 mt-0.5">{formatDate(record.timestamp)}</p>
+        <p className="mt-0.5 text-[12px] text-ink-faint">{formatDate(record.timestamp)}</p>
       </div>
 
       {/* Overall badge */}
       <div className="flex items-center gap-3">
         <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${scoreBadgeClass(record.scores.overall)}`}
+          className={cn(
+            'inline-flex items-center rounded-full border px-2.5 py-0.5 font-mono text-[12px] font-semibold',
+            overall >= 70
+              ? 'border-brand/30 bg-brand-tint text-brand'
+              : 'border-hairline bg-paper text-ink-muted',
+          )}
         >
-          {record.scores.overall}
+          {overall}
         </span>
       </div>
 
       {/* Mini bars */}
-      <div className="sm:w-52 flex flex-col gap-1 mt-1 sm:mt-0">
+      <div className="flex flex-col gap-1 mt-1 sm:mt-0 sm:w-52">
         {DIMENSIONS.map(d => (
           <MiniBar key={d.key} score={record.scores[d.key]} label={d.label} />
         ))}
@@ -150,45 +126,65 @@ function HistoryItem({ record }: { record: DiagramScoreRecord }) {
 
 function ImprovementActions({
   weakest,
+  open,
+  onToggle,
 }: {
   weakest: Dimension | null
+  open: boolean
+  onToggle: () => void
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-zinc-700 mb-3">💡 Improvement Actions</h2>
-      <ul className="divide-y divide-zinc-100">
-        {IMPROVEMENT_ACTIONS.map(item => (
-          <li
-            key={item.dimension}
-            className={`flex items-center gap-3 py-2.5 ${
-              weakest === item.dimension ? 'text-rose-700' : 'text-zinc-700'
-            }`}
-          >
-            <span className="w-24 shrink-0 text-xs font-semibold">
-              {item.label}
-              {weakest === item.dimension && (
-                <span className="ml-1 text-rose-500 text-[10px]">↓ weakest</span>
-              )}
-            </span>
-            <Link
-              href={item.href}
-              className="text-sm text-indigo-600 hover:underline hover:text-indigo-800 transition-colors"
-            >
-              {item.action} →
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div className="rounded-xl border border-hairline bg-paper-elevated">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-5 py-3.5"
+      >
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+          Improvement Actions
+        </span>
+        {open ? (
+          <ChevronUp size={14} className="text-ink-faint" />
+        ) : (
+          <ChevronDown size={14} className="text-ink-faint" />
+        )}
+      </button>
+      {open && (
+        <ul className="divide-y divide-hairline border-t border-hairline px-5 pb-3">
+          {IMPROVEMENT_ACTIONS.map(item => (
+            <li key={item.dimension} className="flex items-center gap-3 py-2.5">
+              <span
+                className={cn(
+                  'w-24 shrink-0 text-[12px] font-medium',
+                  weakest === item.dimension ? 'text-brand' : 'text-ink-muted',
+                )}
+              >
+                {item.label}
+                {weakest === item.dimension && (
+                  <span className="ml-1 font-mono text-[9px] text-brand">↓</span>
+                )}
+              </span>
+              <Link
+                href={item.href}
+                className="text-[13px] text-brand hover:underline"
+              >
+                {item.action}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ScoreHistoryPage() {
   const [records, setRecords] = useState<DiagramScoreRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionsOpen, setActionsOpen] = useState(false)
 
   useEffect(() => {
     learnApi.score
@@ -198,7 +194,7 @@ export default function ScoreHistoryPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // ── Derived stats ──────────────────────────────────────────────────────────
+  // ── Derived stats ────────────────────────────────────────────────────────────
 
   const last7Days = records.filter(r => {
     const cutoff = new Date()
@@ -208,7 +204,6 @@ export default function ScoreHistoryPage() {
 
   const avgOverall = avg(last7Days.map(r => r.scores.overall))
 
-  // Most improved: highest gain comparing first half vs second half of last 30 records
   const last30 = records.slice(0, 30)
   const half = Math.floor(last30.length / 2)
   const older = last30.slice(half)
@@ -216,7 +211,6 @@ export default function ScoreHistoryPage() {
 
   let mostImproved: Dimension | null = null
   let mostImprovedGain = -Infinity
-
   let weakest: Dimension | null = null
   let weakestAvg = Infinity
 
@@ -246,93 +240,95 @@ export default function ScoreHistoryPage() {
     ? `${DIMENSIONS.find(d => d.key === weakest)!.label} (avg ${weakestAvg})`
     : '—'
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-w-0 w-full">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-900">Design Score History</h1>
-        <p className="text-sm text-zinc-500 mt-1">
-          Track how your diagram quality improves over time
-        </p>
-      </div>
+    <CategoryShell
+      title="Design Score"
+      subtitle="Track how your diagram quality improves over time"
+      backHref="/learn"
+      backLabel="Learn"
+    >
+      <div className="h-full overflow-y-auto bg-paper">
+        <div className="mx-auto max-w-4xl px-6 py-8 sm:px-8">
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <SummaryCard
-          label="Avg Overall (last 7 days)"
-          value={last7Days.length > 0 ? avgOverall : '—'}
-          sub={last7Days.length > 0 ? `${last7Days.length} diagram${last7Days.length !== 1 ? 's' : ''}` : 'No scores yet'}
-          accent={
-            last7Days.length === 0
-              ? 'text-zinc-400'
-              : avgOverall >= 70
-              ? 'text-emerald-600'
-              : avgOverall >= 50
-              ? 'text-orange-500'
-              : 'text-rose-600'
-          }
-        />
-        <SummaryCard
-          label="Most Improved Dimension"
-          value={mostImprovedLabel}
-          sub="Last 30 scores compared"
-          accent="text-indigo-600"
-        />
-        <SummaryCard
-          label="Weakest Dimension"
-          value={weakestLabel}
-          sub="Lowest average across all time"
-          accent="text-rose-600"
-        />
-      </div>
+          {/* Summary cards */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <SummaryCard
+              label="Avg Overall (7 days)"
+              value={last7Days.length > 0 ? avgOverall : '—'}
+              sub={
+                last7Days.length > 0
+                  ? `${last7Days.length} diagram${last7Days.length !== 1 ? 's' : ''}`
+                  : 'No scores yet'
+              }
+              positive={last7Days.length > 0 && avgOverall >= 70}
+            />
+            <SummaryCard
+              label="Most Improved"
+              value={mostImprovedLabel}
+              sub="Last 30 scores compared"
+            />
+            <SummaryCard
+              label="Weakest Dimension"
+              value={weakestLabel}
+              sub="Lowest average, all time"
+            />
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Score history list */}
-        <div className="lg:col-span-2 flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-zinc-600 uppercase tracking-wide">
-            Score History
-          </h2>
+          {/* Improvement actions (collapsible) */}
+          <div className="mb-6">
+            <ImprovementActions
+              weakest={weakest}
+              open={actionsOpen}
+              onToggle={() => setActionsOpen(o => !o)}
+            />
+          </div>
 
-          {loading && (
-            <div className="flex flex-col gap-2">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-20 rounded-xl border border-zinc-100 bg-zinc-50 animate-pulse"
-                />
-              ))}
-            </div>
-          )}
+          {/* Score history */}
+          <div>
+            <p className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              Score History
+            </p>
 
-          {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+            {loading && (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-5 w-5 animate-spin text-ink-faint" />
+              </div>
+            )}
 
-          {!loading && !error && records.length === 0 && (
-            <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-6 py-8 text-center">
-              <p className="text-zinc-500 text-sm">No score records yet.</p>
-              <p className="text-zinc-400 text-xs mt-1">
-                Open any diagram and run <strong>Analyze → Score</strong> to get started.
-              </p>
-            </div>
-          )}
+            {error && (
+              <div className="rounded-xl border border-hairline bg-paper-elevated px-4 py-3 text-[13px] text-ink-muted">
+                {error}
+              </div>
+            )}
 
-          {!loading &&
-            records.map(r => <HistoryItem key={r._id} record={r} />)}
+            {!loading && !error && records.length === 0 && (
+              <div className="rounded-xl border border-hairline bg-paper-elevated px-6 py-12 text-center">
+                <div className="mb-3 flex justify-center">
+                  <PencilRuler size={28} className="text-ink-faint" strokeWidth={1.25} />
+                </div>
+                <p className="font-serif text-lg font-medium text-ink">No scores yet</p>
+                <p className="mt-1 text-[13px] text-ink-muted">
+                  Open any diagram and run Analyze to get your first score.
+                </p>
+                <Link
+                  href="/design-studio"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                >
+                  Go to Design Studio
+                </Link>
+              </div>
+            )}
+
+            {!loading && records.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {records.map(r => (
+                  <HistoryItem key={r._id} record={r} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Improvement actions */}
-        <div className="lg:col-span-1">
-          <h2 className="text-sm font-semibold text-zinc-600 uppercase tracking-wide mb-3">
-            Next Steps
-          </h2>
-          <ImprovementActions weakest={weakest} />
-        </div>
       </div>
-    </div>
+    </CategoryShell>
   )
 }

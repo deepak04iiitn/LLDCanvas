@@ -1,5 +1,6 @@
 'use client'
 
+import { Flame } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface StreakCalendarProps {
@@ -14,6 +15,7 @@ function todayKey() {
 /**
  * Renders a 5-row × 6-column contribution grid covering the last 30 days.
  * Newest day = bottom-right cell.
+ * Compact — can be shown/hidden via a parent toggle.
  */
 export function StreakCalendar({ last30Days, currentStreak }: StreakCalendarProps) {
   const doneSet = new Set(last30Days)
@@ -32,14 +34,14 @@ export function StreakCalendar({ last30Days, currentStreak }: StreakCalendarProp
     <div className="rounded-xl border border-hairline bg-paper-elevated p-4">
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[13px] font-medium text-ink">
+        <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
           {currentStreak > 0 ? (
             <>
-              <span className="mr-1">🔥</span>
+              <Flame size={14} className="text-brand" />
               {currentStreak}-day streak
             </>
           ) : (
-            "No streak yet \u2014 complete today's quiz!"
+            "No streak yet — complete today's quiz!"
           )}
         </span>
         <span className="font-mono text-[11px] text-ink-faint">Last 30 days</span>
@@ -58,7 +60,7 @@ export function StreakCalendar({ last30Days, currentStreak }: StreakCalendarProp
             className={cn(
               'aspect-square rounded-sm transition-colors',
               done
-                ? 'bg-emerald-500'
+                ? 'bg-brand'
                 : 'bg-[hsl(var(--color-hairline)/0.6)]',
               isToday && 'ring-2 ring-brand ring-offset-1 ring-offset-paper-elevated',
             )}

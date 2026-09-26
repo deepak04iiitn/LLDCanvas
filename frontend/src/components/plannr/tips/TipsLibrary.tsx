@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { journeyApi, type JourneyTip } from '@/lib/plannr-api'
-import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { cn } from '@/lib/utils'
 
 type Moment = 'starting' | 'designing' | 'patterns' | 'followups' | 'explaining'
@@ -67,9 +66,7 @@ export function TipsLibrary() {
   const moments: Moment[] = ['starting', 'designing', 'patterns', 'followups', 'explaining']
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-      <JourneySidebar />
-      <main className="flex-1 overflow-y-auto">
+    <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-3xl px-6 py-8 space-y-10">
           <div>
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-1">
@@ -91,7 +88,6 @@ export function TipsLibrary() {
             ) : null)
           )}
         </div>
-      </main>
     </div>
   )
 }

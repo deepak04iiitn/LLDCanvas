@@ -7,13 +7,19 @@ import {
   useOpenStudioAttempt,
 } from '@/components/studio/challenges/useOpenStudioAttempt'
 
+const BREADCRUMB = [
+  { label: 'Design Studio', href: '/design-studio' },
+  { label: 'Change One Thing', href: '/design-studio/change' },
+  { label: 'Problems', href: '/design-studio/change/problems' },
+]
+
 export default function ChangeChallengePage() {
   const { slug } = useParams<{ slug: string }>()
   const { attemptId, loading, error } = useOpenStudioAttempt('change_one', slug)
 
   return (
     <StudioAttemptLoader loading={loading} error={error}>
-      {attemptId ? <ChangeSession attemptId={attemptId} /> : null}
+      {attemptId ? <ChangeSession attemptId={attemptId} breadcrumb={BREADCRUMB} /> : null}
     </StudioAttemptLoader>
   )
 }

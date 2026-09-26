@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { journeyApi, type SkillsResponse } from '@/lib/plannr-api'
-import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { ProgressRing } from '@/components/plannr/shared/ProgressRing'
 import { cn } from '@/lib/utils'
 
@@ -94,22 +93,16 @@ export function SkillDashboard() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-        <JourneySidebar />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-        </main>
+      <div className="h-full flex items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     )
   }
 
   if (!data) {
     return (
-      <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-        <JourneySidebar />
-        <main className="flex-1 flex items-center justify-center text-ink-muted">
-          Could not load skills. Please try again.
-        </main>
+      <div className="h-full flex items-center justify-center text-ink-muted">
+        Could not load skills. Please try again.
       </div>
     )
   }
@@ -117,9 +110,7 @@ export function SkillDashboard() {
   const readiness = READINESS_CONFIG[data.readinessLevel]
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-      <JourneySidebar />
-      <main className="flex-1 overflow-y-auto">
+    <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-4xl px-6 py-8 space-y-8">
           {/* Header */}
           <div>
@@ -160,7 +151,6 @@ export function SkillDashboard() {
             ))}
           </div>
         </div>
-      </main>
     </div>
   )
 }

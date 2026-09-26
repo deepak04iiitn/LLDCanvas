@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, PenLine, Search, Bug, ClipboardList } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -15,68 +15,47 @@ export interface MiniExerciseGateProps {
   buildsSkills?: string[]
 }
 
-// ─── Performance buttons (exerciseType === 'none') ───────────────────────────
-
-const PERFORMANCE_OPTIONS: {
-  id: 'excellent' | 'good' | 'fair' | 'poor'
-  label: string
-  desc: string
-  score: number
-  color: string
-}[] = [
-  {
-    id: 'excellent',
-    label: '🚀 Excellent',
-    desc: 'I fully understood the concept and can explain it clearly',
-    score: 100,
-    color: 'border-green-400 hover:bg-green-50',
-  },
-  {
-    id: 'good',
-    label: '✅ Good',
-    desc: 'I understood the main points, some parts need more practice',
-    score: 75,
-    color: 'border-blue-400 hover:bg-blue-50',
-  },
-  {
-    id: 'fair',
-    label: '🤔 Fair',
-    desc: 'I partially understood. Will need to revisit',
-    score: 50,
-    color: 'border-amber-400 hover:bg-amber-50',
-  },
-  {
-    id: 'poor',
-    label: '😅 Struggled',
-    desc: 'This was mostly new to me. Needs more study',
-    score: 25,
-    color: 'border-red-400 hover:bg-red-50',
-  },
-]
+// ─── Reflection prompt (exerciseType === 'none') ──────────────────────────────
 
 function SelfAssessmentGate({ onComplete }: { onComplete: (score: number) => void }) {
+  const [text, setText] = useState('')
+  const [submitted, setSubmitted] = useState(false)
+
+  function handleSubmit() {
+    if (!text.trim()) return
+    setSubmitted(true)
+    setTimeout(() => onComplete(75), 600)
+  }
+
   return (
     <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 space-y-4">
-      <div className="text-center mb-2">
-        <p className="text-2xl">🎯</p>
-        <h3 className="font-serif text-lg font-medium text-ink mt-2">How well did you understand this topic?</h3>
-        <p className="text-[13px] text-ink-muted mt-1">Be honest — your skill scores are based on your answer.</p>
+      <div className="flex items-start gap-2">
+        <PenLine size={15} className="shrink-0 mt-0.5 text-brand" />
+        <p className="text-[14px] text-ink leading-relaxed">
+          Describe how you would apply this in an LLD interview.
+        </p>
       </div>
-      <div className="space-y-2">
-        {PERFORMANCE_OPTIONS.map(o => (
-          <button
-            key={o.id}
-            onClick={() => onComplete(o.score)}
-            className={cn(
-              'w-full text-left rounded-xl border-2 p-3 transition-all',
-              o.color,
-            )}
-          >
-            <p className="font-medium text-[14px] text-ink">{o.label}</p>
-            <p className="text-[12px] text-ink-muted">{o.desc}</p>
-          </button>
-        ))}
-      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        disabled={submitted}
+        rows={4}
+        placeholder="Write your reflection here…"
+        className="w-full rounded-xl border border-hairline bg-paper p-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none disabled:opacity-60"
+      />
+      {!submitted ? (
+        <button
+          onClick={handleSubmit}
+          disabled={!text.trim()}
+          className="w-full py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
+        >
+          Submit Reflection
+        </button>
+      ) : (
+        <div className="flex items-center gap-2 text-[13px] text-brand">
+          <CheckCircle2 size={16} /> Reflection submitted — moving on.
+        </div>
+      )}
     </div>
   )
 }
@@ -128,7 +107,6 @@ function DetectiveGate({
       })
       const data = await res.json()
       setResult({ isCorrect: data.isCorrect, feedback: data.feedback })
-      // Delay slightly to show result before calling onComplete
       setTimeout(() => onComplete(data.isCorrect ? 90 : 30), 1500)
     } catch {
       setError('Failed to submit answer.')
@@ -139,7 +117,7 @@ function DetectiveGate({
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-8 flex items-center justify-center gap-2 text-indigo-600">
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-8 flex items-center justify-center gap-2 text-brand">
         <Loader2 size={16} className="animate-spin" />
         <span className="text-[13px]">Loading scenario…</span>
       </div>
@@ -148,8 +126,8 @@ function DetectiveGate({
 
   if (error || !scenario) {
     return (
-      <div className="rounded-2xl bg-red-50 border border-red-100 p-6 text-center">
-        <p className="text-[14px] text-red-600">{error ?? 'Scenario not available.'}</p>
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 text-center">
+        <p className="text-[14px] text-ink-muted">{error ?? 'Scenario not available.'}</p>
         <button
           onClick={() => onComplete(30)}
           className="mt-3 text-[12px] text-ink-muted underline"
@@ -163,12 +141,13 @@ function DetectiveGate({
   const isChoice = !scenario.inputType || scenario.inputType === 'choice'
 
   return (
-    <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-6 space-y-4">
+    <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 space-y-4">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-indigo-600">🔍 Detective Scenario</span>
+        <Search size={14} className="text-brand" />
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-brand">Detective Scenario</span>
       </div>
 
-      <div className="bg-white rounded-xl border border-indigo-100 p-4">
+      <div className="bg-paper rounded-xl border border-hairline p-4">
         <p className="text-[15px] text-ink leading-relaxed">{scenario.stem}</p>
       </div>
 
@@ -176,13 +155,13 @@ function DetectiveGate({
         <div
           className={cn(
             'rounded-xl p-4 flex items-center gap-3',
-            result.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-amber-50 border border-amber-200',
+            result.isCorrect ? 'bg-brand-tint/30 border border-brand/20' : 'bg-paper-elevated border border-hairline',
           )}
         >
           {result.isCorrect ? (
-            <CheckCircle2 size={20} className="text-green-600 shrink-0" />
+            <CheckCircle2 size={20} className="text-brand shrink-0" />
           ) : (
-            <XCircle size={20} className="text-amber-600 shrink-0" />
+            <XCircle size={20} className="text-ink-muted shrink-0" />
           )}
           <p className="text-[14px] text-ink">
             {result.isCorrect ? 'Correct! Well done.' : 'Not quite — keep that in mind.'}
@@ -198,7 +177,7 @@ function DetectiveGate({
               className={cn(
                 'w-full text-left rounded-xl border-2 p-3 transition-all text-[13px]',
                 selected === c.id
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-800'
+                  ? 'border-brand bg-brand-tint/30 text-ink'
                   : 'border-hairline hover:bg-paper-elevated text-ink',
               )}
             >
@@ -208,7 +187,7 @@ function DetectiveGate({
           <button
             onClick={handleSubmit}
             disabled={!selected || submitting}
-            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40 mt-1"
+            className="w-full py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40 mt-1"
           >
             {submitting ? 'Submitting…' : 'Submit Answer'}
           </button>
@@ -220,12 +199,12 @@ function DetectiveGate({
             onChange={e => setTextAnswer(e.target.value)}
             rows={3}
             placeholder="Type your answer…"
-            className="w-full rounded-xl border border-hairline p-3 text-[13px] text-ink resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            className="w-full rounded-xl border border-hairline p-3 text-[13px] text-ink resize-none focus:outline-none focus:ring-2 focus:ring-brand/30"
           />
           <button
             onClick={handleSubmit}
             disabled={!textAnswer.trim() || submitting}
-            className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="w-full py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {submitting ? 'Submitting…' : 'Submit Answer'}
           </button>
@@ -310,7 +289,7 @@ function DesignBugGate({
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-red-50 border border-red-100 p-8 flex items-center justify-center gap-2 text-red-600">
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-8 flex items-center justify-center gap-2 text-brand">
         <Loader2 size={16} className="animate-spin" />
         <span className="text-[13px]">Loading design bug…</span>
       </div>
@@ -319,8 +298,8 @@ function DesignBugGate({
 
   if (error || !bug) {
     return (
-      <div className="rounded-2xl bg-red-50 border border-red-100 p-6 text-center">
-        <p className="text-[14px] text-red-600">{error ?? 'Exercise not available.'}</p>
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 text-center">
+        <p className="text-[14px] text-ink-muted">{error ?? 'Exercise not available.'}</p>
         <button
           onClick={() => onComplete(30)}
           className="mt-3 text-[12px] text-ink-muted underline"
@@ -332,19 +311,20 @@ function DesignBugGate({
   }
 
   return (
-    <div className="rounded-2xl bg-red-50 border border-red-100 p-6 space-y-4">
+    <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 space-y-4">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-red-600">🐛 Design Bug</span>
+        <Bug size={14} className="text-brand" />
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-brand">Design Bug</span>
       </div>
 
-      <div className="bg-white rounded-xl border border-red-100 p-4 space-y-2">
+      <div className="bg-paper rounded-xl border border-hairline p-4 space-y-2">
         <p className="text-[15px] text-ink leading-relaxed">{bug.description}</p>
         {bug.classNames && bug.classNames.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {bug.classNames.map(c => (
               <code
                 key={c}
-                className="px-2 py-0.5 rounded-md bg-red-50 border border-red-200 text-[12px] font-mono text-red-700"
+                className="px-2 py-0.5 rounded-md bg-paper-elevated border border-hairline text-[12px] font-mono text-ink-muted"
               >
                 {c}
               </code>
@@ -354,13 +334,13 @@ function DesignBugGate({
       </div>
 
       {result ? (
-        <div className="rounded-xl p-4 bg-green-50 border border-green-200">
+        <div className="rounded-xl p-4 bg-brand-tint/20 border border-brand/20">
           <p className="text-[14px] text-ink font-medium">Score: {result.score}/100</p>
           {result.feedback && <p className="text-[13px] text-ink-muted mt-1">{result.feedback}</p>}
         </div>
       ) : (
         <>
-          <p className="text-[12px] font-semibold uppercase tracking-widest text-ink-muted">
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
             Pick the issue types present in this design:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -371,7 +351,7 @@ function DesignBugGate({
                 className={cn(
                   'px-3 py-1.5 rounded-lg border text-[12px] font-medium transition-all',
                   selectedIssues.includes(issue)
-                    ? 'bg-red-600 border-red-600 text-white'
+                    ? 'bg-brand border-brand text-white'
                     : 'border-hairline text-ink-muted hover:bg-paper-elevated',
                 )}
               >
@@ -382,7 +362,7 @@ function DesignBugGate({
           <button
             onClick={handleSubmit}
             disabled={selectedIssues.length === 0 || submitting}
-            className="w-full py-2.5 rounded-xl bg-red-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+            className="w-full py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
           >
             {submitting ? 'Submitting…' : 'Submit Issues'}
           </button>
@@ -421,7 +401,6 @@ function QuizSetGate({
       .then(r => r.json())
       .then(d => {
         const allQ: QuizQuestion[] = d.questions ?? []
-        // Filter by skill tags matching buildsSkills, fall back to first 3
         const filtered = allQ.filter(q => q.skillTag && buildsSkills.includes(q.skillTag))
         setQuestions((filtered.length >= 3 ? filtered : allQ).slice(0, 3))
       })
@@ -437,8 +416,6 @@ function QuizSetGate({
   async function handleSubmit() {
     if (questions.some(q => !answers[q._id])) return
     setSubmitted(true)
-    // For a local score, we'd need correctAnswers from the server.
-    // We'll do a best-effort: submit each question and check isCorrect.
     const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
     let correct = 0
     const newResults: Record<string, boolean> = {}
@@ -465,7 +442,7 @@ function QuizSetGate({
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-violet-50 border border-violet-100 p-8 flex items-center justify-center gap-2 text-violet-600">
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-8 flex items-center justify-center gap-2 text-brand">
         <Loader2 size={16} className="animate-spin" />
         <span className="text-[13px]">Loading quiz…</span>
       </div>
@@ -474,8 +451,8 @@ function QuizSetGate({
 
   if (error || questions.length === 0) {
     return (
-      <div className="rounded-2xl bg-violet-50 border border-violet-100 p-6 text-center">
-        <p className="text-[14px] text-violet-600">{error ?? 'No quiz questions available for this topic.'}</p>
+      <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 text-center">
+        <p className="text-[14px] text-ink-muted">{error ?? 'No quiz questions available for this topic.'}</p>
         <button
           onClick={() => onComplete(50)}
           className="mt-3 text-[12px] text-ink-muted underline"
@@ -489,15 +466,18 @@ function QuizSetGate({
   const allAnswered = questions.every(q => answers[q._id])
 
   return (
-    <div className="rounded-2xl bg-violet-50 border border-violet-100 p-6 space-y-5">
+    <div className="rounded-2xl bg-paper-elevated border border-hairline p-6 space-y-5">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-violet-600">📝 Quick Quiz ({questions.length} questions)</span>
+        <ClipboardList size={14} className="text-brand" />
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-widest text-brand">
+          Quick Quiz &middot; {questions.length} questions
+        </span>
       </div>
 
       {questions.map((q, i) => (
-        <div key={q._id} className="bg-white rounded-xl border border-violet-100 p-4 space-y-3">
+        <div key={q._id} className="bg-paper rounded-xl border border-hairline p-4 space-y-3">
           <p className="text-[14px] font-medium text-ink">
-            <span className="text-violet-500 mr-1">Q{i + 1}.</span> {q.question}
+            <span className="text-brand mr-1">Q{i + 1}.</span> {q.question}
           </p>
           <div className="space-y-1.5">
             {q.choices.map(c => (
@@ -510,11 +490,11 @@ function QuizSetGate({
                   submitted
                     ? answers[q._id] === c.id
                       ? results[q._id]
-                        ? 'border-green-500 bg-green-50 text-green-800'
-                        : 'border-red-400 bg-red-50 text-red-800'
+                        ? 'border-brand bg-brand-tint/30 text-ink'
+                        : 'border-ink-faint bg-paper-elevated text-ink-muted'
                       : 'border-hairline text-ink-muted opacity-60'
                     : answers[q._id] === c.id
-                    ? 'border-violet-500 bg-violet-50 text-violet-800'
+                    ? 'border-brand bg-brand-tint/30 text-ink'
                     : 'border-hairline hover:bg-paper-elevated text-ink',
                 )}
               >
@@ -523,13 +503,11 @@ function QuizSetGate({
             ))}
           </div>
           {submitted && (
-            <p
-              className={cn(
-                'text-[12px] font-medium',
-                results[q._id] ? 'text-green-600' : 'text-red-500',
-              )}
-            >
-              {results[q._id] ? '✓ Correct' : '✗ Incorrect'}
+            <p className={cn('text-[12px] font-medium flex items-center gap-1', results[q._id] ? 'text-brand' : 'text-ink-muted')}>
+              {results[q._id]
+                ? <><CheckCircle2 size={12} /> Correct</>
+                : <><XCircle size={12} /> Incorrect</>
+              }
             </p>
           )}
         </div>
@@ -539,7 +517,7 @@ function QuizSetGate({
         <button
           onClick={handleSubmit}
           disabled={!allAnswered}
-          className="w-full py-2.5 rounded-xl bg-violet-600 text-white text-[13px] font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
+          className="w-full py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-40"
         >
           Submit Answers
         </button>
@@ -557,18 +535,25 @@ export function MiniExerciseGate({
   onComplete,
   buildsSkills = [],
 }: MiniExerciseGateProps) {
-  switch (exerciseType) {
-    case 'detective_scenario':
-      return <DetectiveGate exerciseId={exerciseId} onComplete={onComplete} />
-
-    case 'design_bug':
-      return <DesignBugGate exerciseId={exerciseId} onComplete={onComplete} />
-
-    case 'quiz_set':
-      return <QuizSetGate buildsSkills={buildsSkills} onComplete={onComplete} />
-
-    case 'none':
-    default:
-      return <SelfAssessmentGate onComplete={onComplete} />
-  }
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint mb-1">Practice</p>
+        <h3 className="font-serif text-lg font-medium text-ink">Check Your Understanding</h3>
+      </div>
+      {(() => {
+        switch (exerciseType) {
+          case 'detective_scenario':
+            return <DetectiveGate exerciseId={exerciseId} onComplete={onComplete} />
+          case 'design_bug':
+            return <DesignBugGate exerciseId={exerciseId} onComplete={onComplete} />
+          case 'quiz_set':
+            return <QuizSetGate buildsSkills={buildsSkills} onComplete={onComplete} />
+          case 'none':
+          default:
+            return <SelfAssessmentGate onComplete={onComplete} />
+        }
+      })()}
+    </div>
+  )
 }

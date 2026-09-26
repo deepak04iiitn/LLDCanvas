@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  AlignLeft,
   Bug,
   Crosshair,
-  Eye,
   Loader2,
-  Route,
   Send,
+  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { DebuggerCanvas, traceOutbound } from '@/components/studio/debugger/DebuggerCanvas'
-import { InspectPanel } from '@/components/studio/debugger/InspectPanel'
 import { MarkIssueForm } from '@/components/studio/debugger/MarkIssueForm'
 import { DebugConsole, type ConsoleLogEntry } from '@/components/studio/debugger/DebugConsole'
 import { StageBanner } from '@/components/studio/debugger/StageBanner'
@@ -27,11 +26,11 @@ import {
   type StudioPackDetail,
 } from '@/lib/studio-api'
 import { cn } from '@/lib/utils'
-
-type Tool = 'inspect' | 'mark' | 'trace'
+import type { BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 
 export interface DebuggerSessionProps {
   attemptId: string
+  breadcrumb?: BreadcrumbSegment[]
 }
 
 function labelFor(diagram: { nodes: unknown[]; edges: unknown[] }, elementId: string | null) {
@@ -43,7 +42,7 @@ function labelFor(diagram: { nodes: unknown[]; edges: unknown[] }, elementId: st
   return elementId
 }
 
-export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
+export function DebuggerSession({ attemptId, breadcrumb }: DebuggerSessionProps) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [stage, setStage] = useState<DebuggerStage | string>('detect')
@@ -55,13 +54,14 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
     edges: [],
   })
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [tool, setTool] = useState<Tool>('inspect')
   const [traceIds, setTraceIds] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [startedAt, setStartedAt] = useState<number>(Date.now())
   const [now, setNow] = useState(Date.now())
   const [hintsUsed, setHintsUsed] = useState(0)
   const [showWalkthrough, setShowWalkthrough] = useState(false)
+  const [briefOpen, setBriefOpen] = useState(false)
+  const [markDrawerOpen, setMarkDrawerOpen] = useState(false)
 
   const payload = (pack?.payload ?? {}) as {
     briefing?: string
@@ -76,7 +76,6 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
     return () => clearInterval(t)
   }, [])
 
-  // Show walkthrough on first visit, after the pack data has loaded
   useEffect(() => {
     if (!loading && stage === 'detect') {
       setShowWalkthrough(shouldShowWalkthrough())
@@ -157,17 +156,11 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
   const onSelect = useCallback(
     (elementId: string, kind: 'node' | 'edge') => {
       setSelectedId(elementId)
-      if (tool === 'inspect') {
-        appendLocal('info', `Inspected ${kind} ${elementId}`)
-      } else if (tool === 'trace' && kind === 'node') {
-        const path = traceOutbound(diagram, elementId)
-        setTraceIds(path)
-        appendLocal('ok', `Traced dependency from ${elementId} (${path.length} elements)`)
-      } else if (tool === 'mark') {
-        appendLocal('info', `Selected ${elementId} for marking`)
-      }
+      const path = traceOutbound(diagram, elementId)
+      setTraceIds(path)
+      appendLocal('info', `Selected ${kind} ${elementId}`)
     },
-    [tool, diagram, appendLocal],
+    [diagram, appendLocal],
   )
 
   const handleSaveMark = async (body: {
@@ -183,6 +176,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
       if (res.consoleLog) setConsoleLog(res.consoleLog as ConsoleLogEntry[])
       else appendLocal('ok', `Issue marked: ${body.category}`)
       toast.success('Mark saved')
+      setMarkDrawerOpen(false)
     } catch (err) {
       toast.error((err as Error).message ?? 'Failed to save mark')
     } finally {
@@ -244,6 +238,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         subtitle="Session complete"
         backHref="/design-studio/debugger"
         backLabel="Challenges"
+        breadcrumb={breadcrumb}
       >
         <DebugComplete
           found={Number(result.found ?? foundCount)}
@@ -256,6 +251,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
           gradedMarks={
             ((result.gradedMarks as DebuggerMark[] | undefined) ?? marks)
           }
+          packSlug={pack?.slug ?? ''}
         />
         <VerifyReport
           checks={
@@ -273,43 +269,26 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
     ? `${foundCount}/${totalIssues || '?'}`
     : `${marks.length} marked`
 
+  const hasBrief = Boolean(payload.briefing || payload.requirement)
+
   return (
     <CategoryShell
       title={pack?.title ?? 'Design Debugger'}
       subtitle={pack?.description ?? 'Inspect the diagram, mark what feels wrong, explain why.'}
       backHref="/design-studio/debugger"
       backLabel="Challenges"
+      breadcrumb={breadcrumb}
       timer={
         <span className="inline-flex items-center gap-3">
           <span className="tabular-nums">{timerLabel}</span>
-          <span className="inline-flex items-center gap-1 text-amber-700">
+          <span className="inline-flex items-center gap-1 text-ink-muted">
             <Bug size={14} /> {bugLabel}
           </span>
         </span>
       }
+      contentClassName="min-h-0 flex-1 flex flex-col overflow-hidden"
     >
       <StageBanner stage={stage} />
-
-      {(payload.briefing || payload.requirement) && stage === 'detect' && marks.length === 0 && (
-        <div className="max-h-[40vh] shrink-0 overflow-y-auto border-b border-hairline bg-brand-tint/30 px-4 py-4 text-[13px] leading-relaxed text-ink-muted sm:px-6">
-          <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-            Problem brief
-          </p>
-          {payload.briefing && (
-            <div className="space-y-2.5 whitespace-pre-line text-ink-muted">
-              {payload.briefing}
-            </div>
-          )}
-          {payload.requirement && (
-            <p className="mt-3 border-t border-hairline/60 pt-3 font-medium leading-relaxed text-ink">
-              <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
-                Your goal ·{' '}
-              </span>
-              {payload.requirement}
-            </p>
-          )}
-        </div>
-      )}
 
       {result?.feedbackSummary != null && stage === 'repair' && (
         <div className="shrink-0 border-b border-hairline bg-paper px-4 py-3 sm:px-6">
@@ -321,8 +300,8 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
                   <span
                     className={cn(
                       'font-mono text-[10px] uppercase',
-                      m.verdict === 'exact' && 'text-emerald-700',
-                      m.verdict === 'partial' && 'text-amber-700',
+                      m.verdict === 'exact' && 'text-brand',
+                      m.verdict === 'partial' && 'text-ink',
                       m.verdict === 'miss' && 'text-ink-faint',
                     )}
                   >
@@ -339,76 +318,163 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         </div>
       )}
 
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-hairline bg-paper-elevated px-3 py-2">
-        <ToolBtn active={tool === 'inspect'} onClick={() => setTool('inspect')} icon={Eye} label="Inspect" />
-        <ToolBtn
-          active={tool === 'mark'}
-          onClick={() => setTool('mark')}
-          icon={Crosshair}
-          label="Mark Issue"
-          disabled={!canMark}
-        />
-        <ToolBtn active={tool === 'trace'} onClick={() => setTool('trace')} icon={Route} label="Trace" />
-        <HintButton
-          attemptId={attemptId}
-          elementId={selectedId}
-          disabled={stage === 'complete'}
-          onHint={(hint, used) => {
-            setHintsUsed(used)
-            appendLocal('warn', `Hint: ${hint}`)
-          }}
-        />
-        <div className="ml-auto flex gap-2">
-          {(stage === 'detect' || stage === 'diagnose') && (
-            <button
-              type="button"
-              disabled={busy || marks.length === 0}
-              onClick={handleDiagnose}
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-[12px] font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50"
-            >
-              <Send size={12} /> Submit diagnosis
-            </button>
-          )}
-          {stage === 'repair' && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={handleRepair}
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-[12px] font-medium text-brand-foreground hover:bg-brand-hover disabled:opacity-50"
-            >
-              <Send size={12} /> Submit repair
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex h-[70vh] flex-col lg:flex-row">
-        <div className="min-h-0 flex-1">
+      {/* Main canvas area */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="relative min-h-0 flex-1">
           <DebuggerCanvas
             diagram={diagram}
             readOnly={readOnly}
             selectedId={selectedId}
-            highlightedIds={tool === 'trace' ? traceIds : []}
+            highlightedIds={traceIds}
             markedIds={markedIds}
             onSelect={onSelect}
             onDiagramChange={d => setDiagram(d)}
             className="h-full"
           />
-        </div>
-        <aside className="h-64 shrink-0 border-t border-hairline lg:h-full lg:w-80 lg:border-l lg:border-t-0">
-          {tool === 'mark' ? (
-            <MarkIssueForm
-              elementId={selectedId}
-              elementLabel={labelFor(diagram, selectedId)}
-              disabled={!canMark || busy}
-              initialCategory={marks.find(m => m.elementId === selectedId)?.category}
-              initialWhy={marks.find(m => m.elementId === selectedId)?.why}
-              onSave={handleSaveMark}
-            />
-          ) : (
-            <InspectPanel diagram={diagram} selectedId={selectedId} />
+
+          {/* Brief collapsible overlay */}
+          {briefOpen && hasBrief && (
+            <div className="absolute inset-x-0 top-0 z-10 max-h-[45%] overflow-y-auto border-b border-hairline bg-paper/95 backdrop-blur-sm">
+              <div className="px-4 py-4 sm:px-6">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                    Problem brief
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setBriefOpen(false)}
+                    className="rounded p-1 text-ink-faint hover:text-ink"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                {payload.briefing && (
+                  <div className="space-y-2.5 whitespace-pre-line text-[13px] leading-relaxed text-ink-muted">
+                    {payload.briefing}
+                  </div>
+                )}
+                {payload.requirement && (
+                  <p className="mt-3 border-t border-hairline/60 pt-3 font-medium leading-relaxed text-ink">
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                      Your goal ·{' '}
+                    </span>
+                    {payload.requirement}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
-        </aside>
+
+          {/* Mark Issue slide-in drawer */}
+          {markDrawerOpen && (
+            <div className="absolute inset-y-0 right-0 z-10 w-80 border-l border-hairline bg-paper shadow-lg">
+              <div className="flex items-center justify-between border-b border-hairline px-4 py-2.5">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Mark Issue
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setMarkDrawerOpen(false)}
+                  className="rounded p-1 text-ink-faint hover:text-ink"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="h-[calc(100%-41px)] overflow-y-auto">
+                <MarkIssueForm
+                  elementId={selectedId}
+                  elementLabel={labelFor(diagram, selectedId)}
+                  disabled={!canMark || busy}
+                  initialCategory={marks.find(m => m.elementId === selectedId)?.category}
+                  initialWhy={marks.find(m => m.elementId === selectedId)?.why}
+                  onSave={handleSaveMark}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sticky bottom action bar */}
+        <div className="shrink-0 border-t border-hairline bg-paper-elevated px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            {/* Brief toggle */}
+            {hasBrief && (
+              <button
+                type="button"
+                onClick={() => setBriefOpen(v => !v)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+                  briefOpen
+                    ? 'bg-brand-tint text-brand'
+                    : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
+                )}
+              >
+                <AlignLeft size={13} strokeWidth={1.75} />
+                Brief
+              </button>
+            )}
+
+            {/* Hint */}
+            <HintButton
+              attemptId={attemptId}
+              elementId={selectedId}
+              disabled={stage === 'complete'}
+              onHint={(hint, used) => {
+                setHintsUsed(used)
+                appendLocal('warn', `Hint: ${hint}`)
+              }}
+            />
+
+            {/* Mark Issue */}
+            {canMark && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedId) {
+                    toast.info('Click a component in the diagram first')
+                    return
+                  }
+                  setMarkDrawerOpen(v => !v)
+                }}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors',
+                  markDrawerOpen
+                    ? 'bg-brand-tint text-brand'
+                    : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
+                )}
+              >
+                <Crosshair size={13} strokeWidth={1.75} />
+                Mark Issue
+              </button>
+            )}
+
+            {/* Submit */}
+            <div className="ml-auto flex gap-2">
+              {(stage === 'detect' || stage === 'diagnose') && (
+                <button
+                  type="button"
+                  disabled={busy || marks.length === 0}
+                  onClick={handleDiagnose}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send size={12} />}
+                  Submit: {marks.length} issue{marks.length !== 1 ? 's' : ''}
+                </button>
+              )}
+              {stage === 'repair' && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={handleRepair}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-medium text-white disabled:opacity-50"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send size={12} />}
+                  Submit repair
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       <DebugConsole entries={consoleLog} />
@@ -417,36 +483,5 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         <DebuggerWalkthrough onDismiss={() => setShowWalkthrough(false)} />
       )}
     </CategoryShell>
-  )
-}
-
-function ToolBtn({
-  active,
-  onClick,
-  icon: Icon,
-  label,
-  disabled,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: typeof Eye
-  label: string
-  disabled?: boolean
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-40',
-        active
-          ? 'bg-brand-tint text-brand'
-          : 'text-ink-muted hover:bg-hairline/50 hover:text-ink',
-      )}
-    >
-      <Icon size={13} strokeWidth={1.75} />
-      {label}
-    </button>
   )
 }

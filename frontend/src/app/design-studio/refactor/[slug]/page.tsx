@@ -7,13 +7,19 @@ import {
   useOpenStudioAttempt,
 } from '@/components/studio/challenges/useOpenStudioAttempt'
 
+const BREADCRUMB = [
+  { label: 'Design Studio', href: '/design-studio' },
+  { label: 'Refactor', href: '/design-studio/refactor' },
+  { label: 'Problems', href: '/design-studio/refactor/problems' },
+]
+
 export default function RefactorChallengePage() {
   const { slug } = useParams<{ slug: string }>()
   const { attemptId, loading, error } = useOpenStudioAttempt('refactor', slug)
 
   return (
     <StudioAttemptLoader loading={loading} error={error}>
-      {attemptId ? <RefactorSession attemptId={attemptId} /> : null}
+      {attemptId ? <RefactorSession attemptId={attemptId} breadcrumb={BREADCRUMB} /> : null}
     </StudioAttemptLoader>
   )
 }

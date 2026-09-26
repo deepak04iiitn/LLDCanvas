@@ -1,226 +1,121 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { Loader2, Microscope, Network, Play } from 'lucide-react'
-import { toast } from 'sonner'
-import { CategoryShell } from '@/components/studio/shell/CategoryShell'
-import {
-  packIdOf,
-  studioApi,
-  type StudioPackSummary,
-} from '@/lib/studio-api'
-import { useSession } from '@/lib/auth'
-import { useAuthModal } from '@/lib/auth-modal-store'
-import { cn } from '@/lib/utils'
-
-type Tab = 'all' | 'microscope' | 'depweb'
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'microscope', label: 'Microscope' },
-  { id: 'depweb', label: 'Dependency Web' },
-]
-
-const PACK_TYPE_BADGE: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
-  microscope: {
-    label: 'Microscope',
-    icon: <Microscope size={10} />,
-    className: 'bg-violet-100 text-violet-700 border-violet-200',
-  },
-  depweb: {
-    label: 'Dep. Web',
-    icon: <Network size={10} />,
-    className: 'bg-sky-100 text-sky-700 border-sky-200',
-  },
-}
-
-const DIFFICULTY_TONE: Record<string, string> = {
-  easy: 'text-emerald-700',
-  medium: 'text-amber-700',
-  hard: 'text-rose-700',
-}
-
-const ATTEMPT_BASE: Record<string, string> = {
-  microscope: '/design-studio/microscope',
-  depweb: '/design-studio/depweb',
-}
-
-function PackCard({
-  pack,
-  busy,
-  onStart,
-}: {
-  pack: StudioPackSummary
-  busy: boolean
-  onStart: (pack: StudioPackSummary) => void
-}) {
-  const badge = PACK_TYPE_BADGE[pack.type] ?? null
-
-  return (
-    <li className="flex flex-col rounded-xl border border-hairline bg-paper-elevated p-5">
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <h3 className="font-serif text-base font-medium text-ink">{pack.title}</h3>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {badge && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide',
-                badge.className,
-              )}
-            >
-              {badge.icon}
-              {badge.label}
-            </span>
-          )}
-          <span
-            className={cn(
-              'font-mono text-[9px] font-semibold uppercase tracking-wide',
-              DIFFICULTY_TONE[pack.difficulty] ?? 'text-ink-faint',
-            )}
-          >
-            {pack.difficulty}
-          </span>
-        </div>
-      </div>
-      {pack.description && (
-        <p className="mb-3 flex-1 text-[13px] leading-relaxed text-ink-muted">
-          {pack.description}
-        </p>
-      )}
-      {pack.tags && pack.tags.length > 0 && (
-        <p className="mb-4 font-mono text-[10px] text-ink-faint">{pack.tags.join(' · ')}</p>
-      )}
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => onStart(pack)}
-        className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand px-3 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
-        {busy ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Play className="h-3.5 w-3.5" fill="currentColor" />
-        )}
-        {busy ? 'Starting…' : 'Start'}
-      </button>
-    </li>
-  )
-}
+import Link from 'next/link'
+import { ArrowRight, Info, Network, ZoomIn } from 'lucide-react'
 
 export default function ArchitectureAnalysisPage() {
-  const router = useRouter()
-  const pathname = usePathname()
-  const { data: session } = useSession()
-  const { openAuthModal } = useAuthModal()
-
-  const [microscopePacks, setMicroscopePacks] = useState<StudioPackSummary[]>([])
-  const [depwebPacks, setDepwebPacks] = useState<StudioPackSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [startingId, setStartingId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('all')
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const [mRes, dRes] = await Promise.all([
-          studioApi.packs.list('microscope'),
-          studioApi.packs.list('depweb'),
-        ])
-        if (!cancelled) {
-          setMicroscopePacks(mRes.packs ?? [])
-          setDepwebPacks(dRes.packs ?? [])
-        }
-      } catch (err) {
-        if (!cancelled) {
-          toast.error((err as Error).message ?? 'Failed to load packs')
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const visiblePacks: StudioPackSummary[] =
-    activeTab === 'all'
-      ? [...microscopePacks, ...depwebPacks]
-      : activeTab === 'microscope'
-        ? microscopePacks
-        : depwebPacks
-
-  const onStart = useCallback(
-    async (pack: StudioPackSummary) => {
-      if (!session) {
-        openAuthModal(pathname, 'signin')
-        return
-      }
-      const slug = pack.slug || packIdOf(pack)
-      const base = ATTEMPT_BASE[pack.type] ?? '/design-studio/microscope'
-      setStartingId(packIdOf(pack))
-      try {
-        router.push(`${base}/${encodeURIComponent(slug)}`)
-      } catch (err) {
-        toast.error((err as Error).message ?? 'Failed to open challenge')
-        setStartingId(null)
-      }
-    },
-    [openAuthModal, pathname, router, session],
-  )
-
   return (
-    <CategoryShell
-      title="Architecture Analysis"
-      subtitle="Guided investigation — coupling, dependency cycles, and responsibility analysis"
-      backHref="/design-studio"
-      backLabel="Design Studio"
-    >
-      <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
-        {/* Tab strip */}
-        <div className="mb-6 flex gap-1 rounded-lg border border-hairline bg-paper-elevated p-1">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                'flex-1 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
-                activeTab === tab.id
-                  ? 'bg-brand text-white shadow-sm'
-                  : 'text-ink-muted hover:text-ink',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+    <div className="h-full overflow-y-auto bg-paper">
+
+      {/* Hero */}
+      <div className="bg-linear-to-b from-brand-tint/35 to-paper border-b border-hairline/60 px-6 pt-10 pb-8">
+        <div className="mx-auto max-w-5xl">
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand mb-2">
+            Design Studio
+          </p>
+          <h1 className="font-serif text-3xl font-medium text-ink leading-tight mb-2">
+            Architecture Analysis
+          </h1>
+          <p className="text-[15px] text-ink-muted leading-relaxed max-w-2xl">
+            Understand how your designs work — and where they break
+          </p>
+        </div>
+      </div>
+
+      {/* Feature tiles */}
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="grid gap-5 lg:grid-cols-2">
+
+          {/* Microscope tile — solid brand CTA */}
+          <div className="flex flex-col rounded-2xl border border-hairline bg-paper-elevated overflow-hidden">
+            <div className="flex flex-col flex-1 p-7">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-tint">
+                  <ZoomIn size={22} className="text-brand" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <h2 className="font-serif text-xl font-medium text-ink leading-tight">
+                    Architecture Microscope
+                  </h2>
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-brand mt-1">
+                    Structural Investigation
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-[14px] text-ink-muted leading-relaxed flex-1 mb-6">
+                Zoom into a design at multiple levels — system, service, class, and method. Use structured lenses to analyse coupling, cohesion, and responsibility distribution.
+              </p>
+
+              <div className="mb-6 rounded-xl bg-brand-tint/40 border border-brand/10 px-4 py-3 space-y-1.5">
+                {['Inspect coupling between components', 'Map cohesion across service boundaries', 'Build structured analysis reports'].map(item => (
+                  <div key={item} className="flex items-start gap-2">
+                    <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand/50" />
+                    <p className="text-[12px] text-ink-muted">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/design-studio/microscope/problems"
+                className="flex items-center justify-between gap-2 rounded-xl bg-brand px-5 py-3 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity group"
+              >
+                <span>Explore Microscope</span>
+                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Dependency Web tile — outlined brand CTA */}
+          <div className="flex flex-col rounded-2xl border border-hairline bg-paper-elevated overflow-hidden">
+            <div className="flex flex-col flex-1 p-7">
+              <div className="flex items-start gap-4 mb-5">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-tint">
+                  <Network size={22} className="text-brand" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <h2 className="font-serif text-xl font-medium text-ink leading-tight">
+                    Dependency Web
+                  </h2>
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-brand mt-1">
+                    Coupling &amp; Change Propagation
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-[14px] text-ink-muted leading-relaxed flex-1 mb-6">
+                Map the dependency graph of a real system. Visualise coupling hotspots, identify circular dependencies, and reason about change propagation paths.
+              </p>
+
+              <div className="mb-6 rounded-xl bg-brand-tint/40 border border-brand/10 px-4 py-3 space-y-1.5">
+                {['Trace dependency graphs across components', 'Find circular dependencies and coupling hotspots', 'Reason about which changes cascade'].map(item => (
+                  <div key={item} className="flex items-start gap-2">
+                    <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand/50" />
+                    <p className="text-[12px] text-ink-muted">{item}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/design-studio/depweb/problems"
+                className="flex items-center justify-between gap-2 rounded-xl border border-brand text-brand px-5 py-3 text-[13px] font-semibold hover:bg-brand-tint/40 transition-colors group"
+              >
+                <span>Explore Dependency Web</span>
+                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
         </div>
 
-        {/* Pack list */}
-        {loading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-ink-muted">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-[13px]">Loading packs…</span>
-          </div>
-        ) : visiblePacks.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-[13px] text-ink-muted">No challenges published yet.</p>
-          </div>
-        ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {visiblePacks.map(pack => (
-              <PackCard
-                key={`${pack.type}-${packIdOf(pack)}`}
-                pack={pack}
-                busy={startingId === packIdOf(pack)}
-                onStart={onStart}
-              />
-            ))}
-          </ul>
-        )}
+        {/* Bottom callout */}
+        <div className="mt-6 flex items-start gap-3 rounded-2xl border border-brand/20 bg-brand-tint/20 px-6 py-5">
+          <Info size={16} className="text-brand shrink-0 mt-0.5" />
+          <p className="text-[13px] text-ink leading-relaxed">
+            <span className="font-semibold">Not sure where to start?</span>{' '}
+            Begin with Architecture Microscope — it gives you the structural vocabulary you will use in Dependency Web.
+          </p>
+        </div>
       </div>
-    </CategoryShell>
+    </div>
   )
 }

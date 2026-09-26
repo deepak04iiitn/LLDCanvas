@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Clock, Zap, Lock, ArrowRight, Users } from 'lucide-react'
 import { journeyApi, type JourneyExperience, type JourneyProfile } from '@/lib/plannr-api'
-import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { cn } from '@/lib/utils'
 
 const DIFF_COLORS: Record<string, string> = {
@@ -112,9 +111,7 @@ export function ExperienceList() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-      <JourneySidebar />
-      <main className="flex-1 overflow-y-auto">
+    <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-5xl px-6 py-8">
           <div className="mb-8">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-1">
@@ -138,7 +135,6 @@ export function ExperienceList() {
             </div>
           )}
         </div>
-      </main>
     </div>
   )
 }

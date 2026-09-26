@@ -1,7 +1,9 @@
-﻿/**
+/**
  * Feature flags — `NEXT_PUBLIC_FF_*` env vars.
  * Foundation Analyze tools default ON when unset so hubs/scaffolding work locally.
  */
+
+import { DEV_UNLOCK } from '@/lib/dev-unlock'
 
 const FOUNDATION_DEFAULT_ON = new Set([
   'FF_STUDIO_DEBUGGER',
@@ -31,6 +33,7 @@ function envKey(flagKey: string): string {
 }
 
 export function isFeatureEnabled(flagKey: string): boolean {
+  if (DEV_UNLOCK) return true
   const raw = process.env[envKey(flagKey)]
   if (raw === undefined || raw === '') {
     return FOUNDATION_DEFAULT_ON.has(flagKey.replace(/^NEXT_PUBLIC_/, '')) || FOUNDATION_DEFAULT_ON.has(flagKey)

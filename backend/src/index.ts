@@ -135,6 +135,26 @@ const PORT = Number(process.env.PORT) || 4000
 async function start() {
   await connectDB()
   await ensureAdminUser()
+  // Drop stale unique index on userId that predates multi-Plannr support.
+  // Safe to run on every start — silently ignored if already gone.
+  try {
+    const mongoose = await import('mongoose')
+    const col = mongoose.default.connection.collection('journeyprofiles')
+    const indexes = await col.indexes()
+    const stale = indexes.find(
+      (ix: Record<string, unknown>) =>
+        ix.unique === true &&
+        ix.key &&
+        typeof ix.key === 'object' &&
+        Object.keys(ix.key as object).join(',') === 'userId',
+    )
+    if (stale) {
+      await col.dropIndex('userId_1')
+      console.log('✓ Dropped stale journeyprofiles.userId_1 unique index')
+    }
+  } catch (e) {
+    console.warn('Index migration skipped:', e)
+  }
   initSocketServer(httpServer, allowedOrigins)
   startSubscriptionExpiryJob()
   startSpacedRepetitionJob()

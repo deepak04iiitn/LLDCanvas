@@ -2,37 +2,41 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, ArrowLeft, CheckCircle, Clock, Target, Zap } from 'lucide-react'
+import {
+  ArrowRight, ArrowLeft, CheckCircle, Zap, MapPin,
+  Sprout, Leaf, Settings2, Shuffle, Target,
+  Flame, CalendarDays, Mountain, BookOpen, Wrench,
+} from 'lucide-react'
 import { journeyApi } from '@/lib/plannr-api'
 import { cn } from '@/lib/utils'
 
 // ── Step 1: Target Role ───────────────────────────────────────────────────────
 const ROLES = [
-  { value: 'sde1', label: 'SDE-1', desc: 'Entry-level engineering role', icon: '🌱' },
-  { value: 'sde2', label: 'SDE-2', desc: 'Mid-level with more depth expected', icon: '🌿' },
-  { value: 'backend', label: 'Backend Engineer', desc: 'Backend-focused role', icon: '⚙️' },
-  { value: 'fullstack', label: 'Full Stack Engineer', desc: 'Frontend + backend', icon: '🔄' },
-  { value: 'general', label: 'General LLD', desc: 'Just want to learn LLD well', icon: '🎯' },
+  { value: 'sde1',      label: 'SDE-1',               desc: 'Entry-level engineering role',        Icon: Sprout },
+  { value: 'sde2',      label: 'SDE-2',               desc: 'Mid-level with more depth expected',  Icon: Leaf },
+  { value: 'backend',   label: 'Backend Engineer',    desc: 'Backend-focused role',                Icon: Settings2 },
+  { value: 'fullstack', label: 'Full Stack Engineer', desc: 'Frontend + backend',                  Icon: Shuffle },
+  { value: 'general',   label: 'General LLD',         desc: 'Just want to learn LLD well',         Icon: Target },
 ]
 
 const TIMELINES = [
-  { value: 7, label: '7 Days', desc: 'Crash course — essentials only', icon: '⚡', color: 'text-red-600' },
-  { value: 14, label: '14 Days', desc: 'Focused preparation', icon: '🎯', color: 'text-amber-600' },
-  { value: 30, label: '30 Days', desc: 'Comfortable, thorough prep', icon: '📅', color: 'text-blue-600' },
-  { value: 60, label: '60 Days', desc: 'Deep mastery — no rush', icon: '🏔️', color: 'text-green-600' },
+  { value: 7,  label: '7 Days',  desc: 'Crash course — essentials only',  Icon: Flame,       color: 'text-red-600' },
+  { value: 14, label: '14 Days', desc: 'Focused preparation',             Icon: Target,      color: 'text-amber-600' },
+  { value: 30, label: '30 Days', desc: 'Comfortable, thorough prep',      Icon: CalendarDays,color: 'text-blue-600' },
+  { value: 60, label: '60 Days', desc: 'Deep mastery — no rush',          Icon: Mountain,    color: 'text-brand' },
 ]
 
 const LEVELS = [
-  { value: 'scratch', label: 'Starting from scratch', desc: "New to OOP and design patterns", icon: '🌱' },
-  { value: 'oop', label: 'Know OOP', desc: 'Understand classes, inheritance, polymorphism', icon: '📚' },
-  { value: 'basic-lld', label: 'Know basic LLD', desc: 'Familiar with SOLID, some patterns', icon: '🔧' },
-  { value: 'solving', label: 'Already solving problems', desc: 'Practiced LLD problems before', icon: '⚡' },
+  { value: 'scratch',   label: 'Starting from scratch',     desc: 'New to OOP and design patterns',          Icon: Sprout },
+  { value: 'oop',       label: 'Know OOP',                  desc: 'Understand classes, inheritance, polymorphism', Icon: BookOpen },
+  { value: 'basic-lld', label: 'Know basic LLD',            desc: 'Familiar with SOLID, some patterns',      Icon: Wrench },
+  { value: 'solving',   label: 'Already solving problems',  desc: 'Practiced LLD problems before',           Icon: Zap },
 ]
 
 function OptionCard<T>({
   option, selected, onSelect,
 }: {
-  option: { value: T; label: string; desc: string; icon: string; color?: string }
+  option: { value: T; label: string; desc: string; Icon: React.ElementType; color?: string }
   selected: boolean
   onSelect: (v: T) => void
 }) {
@@ -47,7 +51,7 @@ function OptionCard<T>({
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="text-xl">{option.icon}</span>
+        <option.Icon size={18} className={cn('mt-0.5 shrink-0', selected ? 'text-brand' : (option.color ?? 'text-ink-faint'))} />
         <div>
           <p className={cn('font-medium text-[13px]', selected ? 'text-brand' : 'text-ink')}>
             {option.label}
@@ -88,7 +92,9 @@ export function OnboardingWizard() {
       <div className="w-full max-w-xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="text-4xl mb-3">🧭</div>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-tint">
+            <MapPin size={22} className="text-brand" />
+          </div>
           <h1 className="font-serif text-2xl font-medium text-ink">Set Up Your Plannr</h1>
           <p className="text-[13px] text-ink-muted mt-2">Quick setup to personalize your preparation plan</p>
         </div>
@@ -101,7 +107,7 @@ export function OnboardingWizard() {
                 'h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors',
                 i < step ? 'bg-brand text-white' : i === step ? 'bg-brand text-white' : 'bg-hairline text-ink-faint',
               )}>
-                {i < step ? '✓' : i + 1}
+                {i < step ? <CheckCircle size={12} /> : i + 1}
               </div>
               <p className={cn('text-[11px] font-medium', i === step ? 'text-ink' : 'text-ink-faint')}>{s}</p>
               {i < steps.length - 1 && <div className="flex-1 h-px bg-hairline" />}
@@ -132,6 +138,7 @@ export function OnboardingWizard() {
             </div>
           </div>
         )}
+        {step > 0 && (
         <div className="rounded-2xl border border-hairline bg-paper-elevated p-6 mb-5">
           {step === 1 && (
             <div className="space-y-3">
@@ -158,6 +165,7 @@ export function OnboardingWizard() {
             </div>
           )}
         </div>
+        )}
 
         {/* Navigation */}
         <div className="flex items-center justify-between">

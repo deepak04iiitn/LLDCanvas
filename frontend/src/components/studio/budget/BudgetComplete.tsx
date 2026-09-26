@@ -6,12 +6,15 @@ import { cn } from '@/lib/utils'
 import { budgetCalc } from '@/lib/graph/budgetCalc'
 import type { DiagramLike } from '@/lib/graph/analyzeDiagram'
 import type { DebuggerDiagram } from '@/components/studio/debugger/DebuggerCanvas'
+import { CompletionNext } from '@/components/studio/shell/CompletionNext'
 
 export interface BudgetCompleteProps {
   report: Record<string, unknown>
   unitLabel: string
   diagram?: DebuggerDiagram | null
   onReplay?: () => void
+  /** Slug of the completed pack — used for next-problem recommendation */
+  packSlug?: string
   className?: string
 }
 
@@ -20,6 +23,7 @@ export function BudgetComplete({
   unitLabel,
   diagram,
   onReplay,
+  packSlug = '',
   className,
 }: BudgetCompleteProps) {
   const budget = (report.budget ?? {}) as Record<string, unknown>
@@ -296,7 +300,15 @@ export function BudgetComplete({
         </section>
       )}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="border-t border-hairline pt-6">
+        <CompletionNext
+          packType="budget"
+          currentSlug={packSlug}
+          libraryHref="/design-studio/budget/problems"
+        />
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
         {onReplay && (
           <button
             type="button"

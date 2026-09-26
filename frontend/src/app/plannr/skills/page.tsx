@@ -1,5 +1,5 @@
-﻿import { SkillDashboard } from '@/components/plannr/skills/SkillDashboard'
+﻿import { redirect } from 'next/navigation'
 
-export default function JourneySkillsPage() {
-  return <SkillDashboard />
+export default function PlannrSkillsPage() {
+  redirect('/dashboard/skills')
 }

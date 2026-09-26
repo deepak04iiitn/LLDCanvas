@@ -72,7 +72,6 @@ export function RunPlayer({ runId }: Props) {
         if (cancelled) return
         setScenario(sc)
 
-        // Find current stage
         const stage = sc.stages.find(s => s.order === fullRun.currentStageOrder) ?? sc.stages[0]
         setCurrentStage(stage ?? null)
         setPhase('event')
@@ -109,7 +108,6 @@ export function RunPlayer({ runId }: Props) {
       setStageResult(res.stageResult)
       setPhase('result')
 
-      // Auto-advance after 3 seconds
       if (resultTimerRef.current) clearTimeout(resultTimerRef.current)
       resultTimerRef.current = setTimeout(() => {
         advanceFromResult(res.run as FullRun, res.nextStage, res.currentStage)
@@ -124,14 +122,8 @@ export function RunPlayer({ runId }: Props) {
   function advanceFromResult(updatedRun: FullRun, nextStage: Stage | null, _currentStage: Stage) {
     if (resultTimerRef.current) clearTimeout(resultTimerRef.current)
 
-    if (updatedRun.status === 'completed') {
-      setPhase('complete')
-      return
-    }
-    if (updatedRun.status === 'failed') {
-      setPhase('failed')
-      return
-    }
+    if (updatedRun.status === 'completed') { setPhase('complete'); return }
+    if (updatedRun.status === 'failed')    { setPhase('failed');   return }
 
     if (nextStage) {
       setCurrentStage(nextStage)
@@ -160,21 +152,20 @@ export function RunPlayer({ runId }: Props) {
     }
   }
 
-  // Derived
-  const mapStages = scenario?.stages ?? []
+  const mapStages       = scenario?.stages ?? []
   const completedStages = run?.stages ?? []
-  const checkpoints = run?.checkpoints ?? []
+  const checkpoints     = run?.checkpoints ?? []
 
   // Loading
   if (phase === 'loading' || !run || !scenario) {
     return (
-      <div className="flex h-screen items-center justify-center bg-paper">
+      <div className="flex h-full items-center justify-center bg-paper">
         <Loader2 className="h-6 w-6 animate-spin text-ink-faint" />
       </div>
     )
   }
 
-  // Complete / failed → full RunSummary
+  // Complete / failed → RunSummary
   if ((phase === 'complete' || phase === 'failed') && run.stages) {
     return (
       <RunSummary
@@ -187,7 +178,7 @@ export function RunPlayer({ runId }: Props) {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-paper">
+    <div className="flex h-full flex-col overflow-hidden bg-paper">
       {/* Resource bar */}
       <ResourceTracker
         resources={run.resources}
@@ -200,16 +191,16 @@ export function RunPlayer({ runId }: Props) {
         onRestoreCheckpoint={handleRestoreCheckpoint}
       />
 
-      {/* Main layout */}
-      <div className="flex flex-1 min-h-0">
-        {/* Left: Run Map */}
-        <RunMap
-          stages={mapStages}
-          currentOrder={run.currentStageOrder}
-          completedStages={completedStages}
-          checkpoints={checkpoints}
-        />
+      {/* RunMap — horizontal bar at top */}
+      <RunMap
+        stages={mapStages}
+        currentOrder={run.currentStageOrder}
+        completedStages={completedStages}
+        checkpoints={checkpoints}
+      />
 
+      {/* Main layout — no left rail */}
+      <div className="flex flex-1 min-h-0">
         {/* Center: Main content */}
         <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
           {phase === 'canvas' && currentStage ? (
@@ -255,11 +246,10 @@ export function RunPlayer({ runId }: Props) {
               </div>
             </div>
           ) : (
-            /* Default: show stage summary */
+            /* Default: stage summary */
             <div className="flex flex-1 items-center justify-center p-8">
               {currentStage ? (
                 <div className="max-w-lg text-center">
-                  <div className="text-5xl mb-4">{currentStage.event.icon || '❓'}</div>
                   <h2 className="font-serif text-2xl font-medium text-ink mb-2">{currentStage.title}</h2>
                   <p className="text-[14px] leading-relaxed text-ink-muted">{currentStage.event.description}</p>
                   <p className="mt-6 text-[12px] text-ink-faint">Waiting for your decision…</p>
@@ -320,9 +310,8 @@ export function RunPlayer({ runId }: Props) {
           result={stageResult}
           onNext={() => {
             if (resultTimerRef.current) clearTimeout(resultTimerRef.current)
-            // We need to refetch to get next stage info — use current run state
             if (run.status === 'completed') { setPhase('complete'); return }
-            if (run.status === 'failed') { setPhase('failed'); return }
+            if (run.status === 'failed')    { setPhase('failed');   return }
             const nextOrder = run.currentStageOrder
             const nextStage = scenario.stages.find(s => s.order === nextOrder) ?? null
             setCurrentStage(nextStage)
@@ -353,7 +342,11 @@ function StageResultOverlay({
       <div className="mx-4 w-full max-w-md rounded-2xl border border-hairline bg-paper shadow-2xl overflow-hidden">
         {/* Result banner */}
         <div className={cn('px-5 py-4 text-center', result.passed ? 'bg-emerald-50' : 'bg-red-50')}>
-          <div className="text-4xl mb-2">{result.passed ? '✓' : '✗'}</div>
+          <div className="flex justify-center mb-2">
+            {result.passed
+              ? <Check className="h-10 w-10 text-emerald-600" />
+              : <X     className="h-10 w-10 text-red-600" />}
+          </div>
           <h2 className={cn('font-serif text-xl font-semibold', result.passed ? 'text-emerald-700' : 'text-red-700')}>
             {result.passed ? 'Stage Passed' : 'Stage Failed'}
           </h2>
@@ -365,11 +358,11 @@ function StageResultOverlay({
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">Health Changes</p>
           <div className="space-y-1.5">
             {healthKeys.map(k => {
-              const before = result.healthBefore[k] as number
-              const after = result.healthAfter[k] as number
-              const delta = after - before
+              const before  = result.healthBefore[k] as number
+              const after   = result.healthAfter[k] as number
+              const delta   = after - before
               const isLower = k === 'coupling' || k === 'complexity'
-              const isGood = delta === 0 ? true : (isLower ? delta < 0 : delta > 0)
+              const isGood  = delta === 0 ? true : (isLower ? delta < 0 : delta > 0)
               return (
                 <div key={k} className="flex items-center justify-between">
                   <span className="text-[12px] text-ink-muted capitalize">{k}</span>
@@ -394,8 +387,12 @@ function StageResultOverlay({
                 <span className="text-ink-faint">→</span>
                 <span className="font-mono text-[11px] text-ink tabular-nums">{result.healthAfter.debt}</span>
                 {result.healthAfter.debt !== result.healthBefore.debt && (
-                  <span className={cn('font-mono text-[11px] font-medium', result.healthAfter.debt > result.healthBefore.debt ? 'text-red-500' : 'text-emerald-600')}>
-                    {result.healthAfter.debt > result.healthBefore.debt ? '+' : ''}{result.healthAfter.debt - result.healthBefore.debt}
+                  <span className={cn(
+                    'font-mono text-[11px] font-medium',
+                    result.healthAfter.debt > result.healthBefore.debt ? 'text-red-500' : 'text-emerald-600',
+                  )}>
+                    {result.healthAfter.debt > result.healthBefore.debt ? '+' : ''}
+                    {result.healthAfter.debt - result.healthBefore.debt}
                   </span>
                 )}
               </div>

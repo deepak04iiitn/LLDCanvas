@@ -1,5 +1,5 @@
-import InteractivePublicLayout from '@/components/marketing/InteractivePublicLayout'
+import { AppShell } from '@/components/dashboard/AppShell'
 
 export default function JourneyLayout({ children }: { children: React.ReactNode }) {
-  return <InteractivePublicLayout>{children}</InteractivePublicLayout>
+  return <AppShell>{children}</AppShell>
 }

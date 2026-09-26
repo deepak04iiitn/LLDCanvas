@@ -1,7 +1,8 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
+import { DEV_UNLOCK } from '@/lib/dev-unlock'
 
 export type PlanName = 'free' | 'pro' | 'ultimate'
 
@@ -152,9 +153,12 @@ export function usePlan() {
 
   // Key fix: isFree / isPro are false while loading so gates stay hidden
   // until we actually know the plan - preventing the lock-flicker
-  const isPro      = !state.loading && (state.plan === 'pro' || state.plan === 'ultimate')
-  const isUltimate = !state.loading && state.plan === 'ultimate'
-  const isFree     = !state.loading && state.plan === 'free'
+  const isPro      = DEV_UNLOCK || (!state.loading && (state.plan === 'pro' || state.plan === 'ultimate'))
+  const isUltimate = DEV_UNLOCK || (!state.loading && state.plan === 'ultimate')
+  const isFree     = !DEV_UNLOCK && !state.loading && state.plan === 'free'
 
-  return { ...state, isPro, isUltimate, isFree, refresh }
+  // When DEV_UNLOCK is on, surface as ultimate so every gate passes
+  const plan: PlanName = DEV_UNLOCK ? 'ultimate' : state.plan
+
+  return { ...state, plan, isPro, isUltimate, isFree, refresh }
 }

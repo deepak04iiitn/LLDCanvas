@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, CheckCircle2, ChevronLeft } from 'lucide-react'
+import { Loader2, CheckCircle2, ChevronLeft, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { learnApi } from '@/lib/learn-api'
+import { cn } from '@/lib/utils'
+
+// NOTE: The current /learn/detective/history API returns attempt groups (per scenario)
+// and per-pattern mastery, but does not include per-attempt date or mode.
+// To add date/mode columns, the backend would need to expose a flat attempt log.
 
 type AttemptGroup = {
   scenarioId: string
@@ -29,32 +34,27 @@ export default function DetectiveHistoryPage() {
         setAttempts(data.attempts)
         setPatternMastery(data.patternMastery)
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Failed to load history')
+        toast.error(e instanceof Error ? e.message : 'Failed to load progress')
       } finally {
         setLoading(false)
       }
     })()
   }, [])
 
-  // Overall mastery percentage
-  const totalCorrect = Object.values(patternMastery).reduce((s, v) => s + v.correct, 0)
-  const totalAttempts = Object.values(patternMastery).reduce((s, v) => s + v.total, 0)
-  const overallPct = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0
-
   return (
     <CategoryShell
-      title="Pattern History"
-      subtitle="Your Pattern Detective attempt log"
+      title="Pattern Progress"
+      subtitle="Your learning journey through design patterns"
       backHref="/learn/detective"
       backLabel="Scenarios"
     >
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 space-y-8">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 space-y-10">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="h-5 w-5 animate-spin text-ink-faint" />
           </div>
         ) : attempts.length === 0 ? (
-          <div className="text-center py-16 space-y-3">
+          <div className="py-16 text-center space-y-3">
             <p className="text-[15px] text-ink-muted">No attempts yet.</p>
             <Link
               href="/learn/detective"
@@ -66,38 +66,20 @@ export default function DetectiveHistoryPage() {
           </div>
         ) : (
           <>
-            {/* Overall mastery card */}
-            <div className="rounded-xl border border-hairline bg-paper-elevated p-6 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] text-ink-muted uppercase tracking-wider font-medium">
-                  Overall Pattern Mastery
-                </p>
-                <p className="mt-1 text-[32px] font-bold text-ink tabular-nums">
-                  {overallPct}%
-                </p>
-                <p className="text-[12px] text-ink-faint">
-                  {totalCorrect} correct out of {totalAttempts} attempts
-                </p>
-              </div>
-              <div className="h-16 w-16 rounded-full border-4 border-brand flex items-center justify-center">
-                <span className="text-[15px] font-bold text-brand">{overallPct}%</span>
-              </div>
-            </div>
-
-            {/* Per-scenario table */}
-            <div>
-              <h2 className="text-[13px] font-semibold text-ink-muted uppercase tracking-wider mb-3">
-                Scenarios
-              </h2>
-              <div className="rounded-xl border border-hairline overflow-hidden">
+            {/* ── PRIMARY: Attempt log table ────────────────────────────────── */}
+            <section>
+              <p className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                Attempt Log
+              </p>
+              <div className="overflow-hidden rounded-xl border border-hairline">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="border-b border-hairline bg-paper text-ink-muted">
-                      <th className="px-4 py-3 text-left font-medium">Pattern / Scenario</th>
+                      <th className="px-4 py-3 text-left font-medium">Scenario</th>
                       <th className="px-4 py-3 text-center font-medium">Correct</th>
                       <th className="px-4 py-3 text-center font-medium">Attempts</th>
                       <th className="px-4 py-3 text-center font-medium">Rate</th>
-                      <th className="px-4 py-3 text-center font-medium">Retry</th>
+                      <th className="px-4 py-3 text-center font-medium">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -109,15 +91,13 @@ export default function DetectiveHistoryPage() {
                       return (
                         <tr
                           key={group.scenarioId}
-                          className={
-                            i % 2 === 0
-                              ? 'bg-paper'
-                              : 'bg-paper-elevated'
-                          }
+                          className={i % 2 === 0 ? 'bg-paper' : 'bg-paper-elevated'}
                         >
-                          <td className="px-4 py-3 text-ink font-medium">{group.title}</td>
+                          <td className="px-4 py-3 font-medium text-ink">
+                            {group.title}
+                          </td>
                           <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
+                            <span className="inline-flex items-center gap-1 font-medium text-brand">
                               <CheckCircle2 className="h-3.5 w-3.5" />
                               {group.correctCount}
                             </span>
@@ -127,13 +107,14 @@ export default function DetectiveHistoryPage() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span
-                              className={
+                              className={cn(
+                                'font-semibold',
                                 rate >= 70
-                                  ? 'text-emerald-600 font-semibold'
+                                  ? 'text-brand'
                                   : rate >= 40
-                                    ? 'text-amber-600 font-semibold'
-                                    : 'text-red-600 font-semibold'
-                              }
+                                  ? 'text-ink-muted'
+                                  : 'text-ink-faint',
+                              )}
                             >
                               {rate}%
                             </span>
@@ -141,8 +122,9 @@ export default function DetectiveHistoryPage() {
                           <td className="px-4 py-3 text-center">
                             <Link
                               href={`/learn/detective/${group.slug}`}
-                              className="text-brand hover:underline"
+                              className="inline-flex items-center gap-1 text-[12px] text-brand hover:underline"
                             >
+                              <RotateCcw className="h-3 w-3" />
                               Try again
                             </Link>
                           </td>
@@ -152,60 +134,52 @@ export default function DetectiveHistoryPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </section>
 
-            {/* Pattern mastery breakdown */}
+            {/* ── SECONDARY: Mastery bars per pattern (compact) ─────────────── */}
             {Object.keys(patternMastery).length > 0 && (
-              <div>
-                <h2 className="text-[13px] font-semibold text-ink-muted uppercase tracking-wider mb-3">
-                  Pattern Mastery Breakdown
-                </h2>
+              <section>
+                <p className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                  Pattern Mastery
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {Object.entries(patternMastery).map(([slug, stats]) => {
                     const pct =
-                      stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0
+                      stats.total > 0
+                        ? Math.round((stats.correct / stats.total) * 100)
+                        : 0
                     return (
                       <div
                         key={slug}
-                        className="rounded-xl border border-hairline bg-paper-elevated p-4"
+                        className="rounded-xl border border-hairline bg-paper-elevated px-4 py-3"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[13px] font-medium text-ink capitalize">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[13px] font-medium capitalize text-ink">
                             {slug.replace(/-/g, ' ')}
                           </span>
                           <span
-                            className={
-                              pct >= 70
-                                ? 'text-[12px] font-semibold text-emerald-600'
-                                : pct >= 40
-                                  ? 'text-[12px] font-semibold text-amber-600'
-                                  : 'text-[12px] font-semibold text-red-600'
-                            }
+                            className={cn(
+                              'text-[12px] font-semibold',
+                              pct >= 70 ? 'text-brand' : 'text-ink-muted',
+                            )}
                           >
                             {pct}%
                           </span>
                         </div>
-                        {/* Progress bar */}
-                        <div className="h-1.5 rounded-full bg-paper overflow-hidden">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-[hsl(var(--color-hairline)/0.6)]">
                           <div
-                            className={
-                              pct >= 70
-                                ? 'h-full rounded-full bg-emerald-500'
-                                : pct >= 40
-                                  ? 'h-full rounded-full bg-amber-400'
-                                  : 'h-full rounded-full bg-red-400'
-                            }
+                            className="h-full rounded-full bg-brand"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <p className="mt-1.5 text-[11px] text-ink-faint">
+                        <p className="mt-1 text-[11px] text-ink-faint">
                           {stats.correct}/{stats.total} correct
                         </p>
                       </div>
                     )
                   })}
                 </div>
-              </div>
+              </section>
             )}
           </>
         )}

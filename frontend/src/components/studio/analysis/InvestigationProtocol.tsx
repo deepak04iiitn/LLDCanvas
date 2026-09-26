@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, ClipboardList } from 'lucide-react'
+import { CheckCircle, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type ProtocolKey = 'coupling' | 'responsibility' | 'layer' | 'cycle' | 'custom'
@@ -19,7 +19,7 @@ interface Protocol {
 
 const PROTOCOLS: Record<ProtocolKey, Protocol> = {
   coupling: {
-    title: 'Coupling Analysis Protocol',
+    title: 'Coupling Analysis',
     steps: [
       {
         instruction: 'Switch to the Coupling / Dependencies lens',
@@ -38,7 +38,7 @@ const PROTOCOLS: Record<ProtocolKey, Protocol> = {
     ],
   },
   responsibility: {
-    title: 'Responsibility Analysis Protocol',
+    title: 'Responsibility Analysis',
     steps: [
       {
         instruction: 'Switch to the Responsibilities lens',
@@ -58,7 +58,7 @@ const PROTOCOLS: Record<ProtocolKey, Protocol> = {
     ],
   },
   layer: {
-    title: 'Layer Violation Protocol',
+    title: 'Layer Violation Analysis',
     steps: [
       {
         instruction: 'Identify the architectural layers in the diagram',
@@ -79,7 +79,7 @@ const PROTOCOLS: Record<ProtocolKey, Protocol> = {
     ],
   },
   cycle: {
-    title: 'Cycle Detection Protocol',
+    title: 'Cycle Detection',
     steps: [
       {
         instruction: 'Switch to the Dependency Web or Coupling lens',
@@ -99,7 +99,7 @@ const PROTOCOLS: Record<ProtocolKey, Protocol> = {
     ],
   },
   custom: {
-    title: 'Custom Investigation Protocol',
+    title: 'Custom Investigation',
     steps: [
       {
         instruction: 'State your investigation goal',
@@ -213,9 +213,10 @@ export function InvestigationProtocol({
               Append to investigation notes
             </button>
           ) : (
-            <p className="mt-4 text-center text-[12px] text-emerald-600">
-              ✓ Answers appended to your notes.
-            </p>
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-[12px] text-brand">
+              <CheckCircle size={13} strokeWidth={1.75} />
+              Answers appended to your notes.
+            </div>
           )}
         </div>
       )}

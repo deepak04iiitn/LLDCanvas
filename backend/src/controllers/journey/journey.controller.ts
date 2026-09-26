@@ -121,23 +121,28 @@ export async function setup(req: Request, res: Response, next: NextFunction): Pr
     // Deactivate any existing active plan
     await JourneyProfile.updateMany({ userId, isActive: true }, { $set: { isActive: false } })
 
-    // Create a fresh active plan
-    const profile = await JourneyProfile.create({
-      userId,
-      planName:           planName ?? 'My Plannr',
-      isActive:           true,
-      targetRole:         targetRole ?? 'general',
-      preparationDays:    preparationDays ?? 30,
-      currentLevel:       currentLevel ?? 'scratch',
-      skills:             initialSkills,
-      onboardingComplete: true,
-      startDate:          new Date(),
-      lastActiveDate:     new Date(),
-      currentStage:       1,
-      currentFocusSlug:   firstTopic?.slug ?? '',
-      topicsCompleted:    [],
-      topicsInProgress:   [],
-    })
+    // Create a fresh active plan (upsert by userId+planName so re-submitting is safe)
+    const safePlanName = (planName ?? 'My Plannr').trim() || 'My Plannr'
+    const profile = await JourneyProfile.findOneAndUpdate(
+      { userId, planName: safePlanName },
+      {
+        $set: {
+          isActive:           true,
+          targetRole:         targetRole ?? 'general',
+          preparationDays:    preparationDays ?? 30,
+          currentLevel:       currentLevel ?? 'scratch',
+          skills:             initialSkills,
+          onboardingComplete: true,
+          startDate:          new Date(),
+          lastActiveDate:     new Date(),
+          currentStage:       1,
+          currentFocusSlug:   firstTopic?.slug ?? '',
+          topicsCompleted:    [],
+          topicsInProgress:   [],
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    )
 
     res.status(201).json({ profile })
   } catch (err) {
@@ -564,22 +569,28 @@ export async function createPlan(req: Request, res: Response, next: NextFunction
     // Deactivate existing active plan
     await JourneyProfile.updateMany({ userId, isActive: true }, { $set: { isActive: false } })
 
-    const profile = await JourneyProfile.create({
-      userId,
-      planName:           planName || 'New Plannr',
-      isActive:           true,
-      targetRole:         targetRole ?? 'general',
-      preparationDays:    preparationDays ?? 30,
-      currentLevel:       currentLevel ?? 'scratch',
-      skills:             initialSkills,
-      onboardingComplete: true,
-      startDate:          new Date(),
-      lastActiveDate:     new Date(),
-      currentStage:       1,
-      currentFocusSlug:   firstTopic?.slug ?? '',
-      topicsCompleted:    [],
-      topicsInProgress:   [],
-    })
+    // Upsert by userId+planName so duplicate submissions are idempotent
+    const safePlanName = (planName || 'New Plannr').trim() || 'New Plannr'
+    const profile = await JourneyProfile.findOneAndUpdate(
+      { userId, planName: safePlanName },
+      {
+        $set: {
+          isActive:           true,
+          targetRole:         targetRole ?? 'general',
+          preparationDays:    preparationDays ?? 30,
+          currentLevel:       currentLevel ?? 'scratch',
+          skills:             initialSkills,
+          onboardingComplete: true,
+          startDate:          new Date(),
+          lastActiveDate:     new Date(),
+          currentStage:       1,
+          currentFocusSlug:   firstTopic?.slug ?? '',
+          topicsCompleted:    [],
+          topicsInProgress:   [],
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    )
 
     res.status(201).json({ profile })
   } catch (err) {

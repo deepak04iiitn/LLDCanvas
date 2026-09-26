@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { EvolutionJourneyMap } from '@/components/studio/evolution/EvolutionJourneyMap'
+import { CompletionNext } from '@/components/studio/shell/CompletionNext'
 import { BeforeAfterDiff, type DiffEntryLike } from '@/components/studio/refactor/BeforeAfterDiff'
 import {
   DebuggerCanvas,
@@ -39,6 +40,8 @@ export interface EvolutionCompleteProps {
   debt: { open: string[]; resolved: string[]; score: number }
   selectedIndex: number
   onSelectVersion: (i: number) => void
+  /** Slug of the completed pack — used for next-problem recommendation */
+  packSlug?: string
   className?: string
 }
 
@@ -48,6 +51,7 @@ export function EvolutionComplete({
   debt,
   selectedIndex,
   onSelectVersion,
+  packSlug = '',
   className,
 }: EvolutionCompleteProps) {
   const selected = versions[selectedIndex]
@@ -139,7 +143,7 @@ export function EvolutionComplete({
           <p className="mb-2 px-4 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint sm:px-6">
             V{selectedIndex} diagram
           </p>
-          <div className="relative h-[50vh] min-h-[360px] border-y border-hairline">
+          <div className="relative h-[50vh] min-h-90 border-y border-hairline">
             <DebuggerCanvas
               diagram={selected.diagram}
               readOnly
@@ -170,6 +174,16 @@ export function EvolutionComplete({
           </ul>
         </div>
       )}
+
+      <div className="mx-auto max-w-3xl px-4 pb-4 pt-2 sm:px-6">
+        <div className="border-t border-hairline pt-6">
+          <CompletionNext
+            packType="evolution"
+            currentSlug={packSlug}
+            libraryHref="/design-studio/evolution/problems"
+          />
+        </div>
+      </div>
 
       <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
         <Link

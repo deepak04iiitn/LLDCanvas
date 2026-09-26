@@ -1,14 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
-import { CategoryShell } from '@/components/studio/shell/CategoryShell'
+import { CategoryShell, type BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 import {
   DebuggerCanvas,
   type DebuggerDiagram,
 } from '@/components/studio/debugger/DebuggerCanvas'
-import { BudgetMeter } from '@/components/studio/budget/BudgetMeter'
 import {
   InvestmentCatalog,
   type BudgetInvestment,
@@ -23,9 +22,10 @@ import { cn } from '@/lib/utils'
 
 export interface BudgetSessionProps {
   attemptId: string
+  breadcrumb?: BreadcrumbSegment[]
 }
 
-type Gate = 'brief' | 'allocate' | 'why' | 'stageResult' | 'complete' | 'replay'
+type Gate = 'brief' | 'allocate' | 'stageResult' | 'complete' | 'replay'
 
 interface BudgetPayloadView {
   briefing?: string
@@ -126,7 +126,7 @@ function parsePayload(raw: unknown): BudgetPayloadView {
   }
 }
 
-export function BudgetSession({ attemptId }: BudgetSessionProps) {
+export function BudgetSession({ attemptId, breadcrumb }: BudgetSessionProps) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [gate, setGate] = useState<Gate>('brief')
@@ -150,6 +150,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
     { label: string; cost: number; why?: string[]; tags?: string[] }[]
   >([])
   const [whyFocusId, setWhyFocusId] = useState<string | null>(null)
+  const [showWhyDrawer, setShowWhyDrawer] = useState(false)
 
   const payload = useMemo(() => parsePayload(pack?.payload), [pack])
   const stage = payload.stages[stageIndex]
@@ -249,6 +250,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
           }
           next.add(id)
           setWhyFocusId(id)
+          setShowWhyDrawer(true)
         }
         return next
       })
@@ -257,13 +259,12 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
   )
 
   const submitStage = useCallback(async () => {
-    // Validate why for each pick
     for (const id of selected) {
       const why = whyById[id]
       if (!why || why.size === 0) {
         toast.error('Add a why for each selected investment')
         setWhyFocusId(id)
-        setGate('why')
+        setShowWhyDrawer(true)
         return
       }
     }
@@ -296,6 +297,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
       setTargetsById({})
       setPendingCustoms([])
       setDeferred(new Set())
+      setShowWhyDrawer(false)
 
       if (res.complete) {
         const rep = await studioApi.getBudgetReport(attemptId)
@@ -333,7 +335,6 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
 
   const applyInvestmentStub = useCallback(
     (inv: BudgetInvestment) => {
-      // Optional canvas apply: tag touched nodes with stereotype note
       const hints = new Set((inv.appliesToHints ?? []).map(h => h.toLowerCase()))
       if (!hints.size) return
       setDiagram(prev => ({
@@ -345,13 +346,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
           if (![...hints].some(h => name.includes(h.toLowerCase()) || h.includes(name))) {
             return raw
           }
-          return {
-            ...n,
-            data: {
-              ...data,
-              stereotype: inv.id,
-            },
-          }
+          return { ...n, data: { ...data, stereotype: inv.id } }
         }),
       }))
     },
@@ -390,83 +385,136 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
       }
       backHref="/design-studio/budget"
       backLabel="Tracks"
+      breadcrumb={breadcrumb}
+      contentClassName="min-h-0 flex-1 flex flex-col overflow-hidden"
     >
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[1fr_340px]">
-        <div className="min-w-0 space-y-4">
-          {gate === 'brief' && (
-            <section className="space-y-4">
-              <article className="prose prose-sm max-w-none whitespace-pre-wrap text-ink">
-                {payload.briefing ?? payload.scenario}
-              </article>
-              {payload.constraints && (
-                <ul className="flex flex-wrap gap-2 font-mono text-[11px] text-ink-faint">
-                  {payload.constraints.maxNewClasses != null && (
-                    <li className="rounded border border-hairline px-2 py-1">
-                      Max new classes: {payload.constraints.maxNewClasses}
-                    </li>
-                  )}
-                  {payload.constraints.maxNewAbstractions != null && (
-                    <li className="rounded border border-hairline px-2 py-1">
-                      Max abstractions: {payload.constraints.maxNewAbstractions}
-                    </li>
-                  )}
-                  {payload.constraints.maxExternalSystems != null && (
-                    <li className="rounded border border-hairline px-2 py-1">
-                      Max external systems: {payload.constraints.maxExternalSystems}
-                    </li>
-                  )}
-                  {payload.constraints.teamSize != null && (
-                    <li className="rounded border border-hairline px-2 py-1">
-                      Team: {payload.constraints.teamSize}
-                    </li>
-                  )}
-                  {payload.constraints.deadlineDays != null && (
-                    <li className="rounded border border-hairline px-2 py-1">
-                      Deadline: {payload.constraints.deadlineDays}d
-                    </li>
-                  )}
-                </ul>
-              )}
-              <div className="h-[280px] overflow-hidden rounded-lg border border-hairline">
-                <DebuggerCanvas
-                  diagram={diagram}
-                  readOnly
-                  selectedId={null}
-                  onSelect={() => {}}
-                  hideEditChrome
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => setGate('allocate')}
-                className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground"
-              >
-                Open marketplace
-              </button>
-            </section>
-          )}
+      {/* TOP: Budget strip */}
+      {(gate === 'allocate' || gate === 'brief') && (
+        <div className="shrink-0 border-b border-hairline bg-paper-elevated px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+              Budget
+            </span>
+            <span className="font-mono text-sm font-semibold text-ink">
+              {Math.max(0, remainingAfterDraft)}
+            </span>
+            <span className="text-ink-faint">/</span>
+            <span className="font-mono text-sm text-ink-muted">{payload.budget.total}</span>
+            <span className="font-mono text-[11px] text-ink-muted">{unitLabel} remaining</span>
+            {stage && (
+              <span className="ml-auto font-mono text-[10px] text-ink-faint">
+                Stage {stageIndex + 1}/{payload.stages.length} · {stage.dayLabel}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
-          {(gate === 'allocate' || gate === 'why') && (
-            <section className="space-y-4">
-              <div className="rounded-lg border border-hairline bg-paper-elevated px-3 py-2">
-                <p className="font-mono text-[10px] uppercase text-ink-faint">
-                  {stage.dayLabel} · {stage.title}
+      {/* Brief gate */}
+      {gate === 'brief' && (
+        <div className="mx-auto max-w-3xl overflow-y-auto px-4 py-6 sm:px-6">
+          <div className="space-y-4">
+            {(payload.briefing || payload.scenario) && (
+              <div className="rounded-xl border border-hairline bg-paper-elevated p-5">
+                <p className="mb-2 font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Brief
                 </p>
-                <p className="mt-1 text-[13px] text-ink">{stage.narrative}</p>
-                {stage.revealMetrics && (
-                  <p className="mt-1 font-mono text-[11px] text-ink-faint">
-                    {Object.entries(stage.revealMetrics)
-                      .map(([k, v]) => `${k}: ${v}`)
-                      .join(' · ')}
-                  </p>
+                <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-ink">
+                  {payload.briefing ?? payload.scenario}
+                </p>
+              </div>
+            )}
+
+            {payload.constraints && (
+              <div className="flex flex-wrap gap-2 font-mono text-[11px] text-ink-faint">
+                {payload.constraints.maxNewClasses != null && (
+                  <span className="rounded border border-hairline px-2 py-1">
+                    Max new classes: {payload.constraints.maxNewClasses}
+                  </span>
                 )}
-                {typeof stage.budgetDelta === 'number' && stage.budgetDelta !== 0 && (
-                  <p className="mt-1 text-[12px] text-brand">
-                    +{stage.budgetDelta} {unitLabel} this stage
-                  </p>
+                {payload.constraints.maxNewAbstractions != null && (
+                  <span className="rounded border border-hairline px-2 py-1">
+                    Max abstractions: {payload.constraints.maxNewAbstractions}
+                  </span>
+                )}
+                {payload.constraints.maxExternalSystems != null && (
+                  <span className="rounded border border-hairline px-2 py-1">
+                    Max external systems: {payload.constraints.maxExternalSystems}
+                  </span>
+                )}
+                {payload.constraints.teamSize != null && (
+                  <span className="rounded border border-hairline px-2 py-1">
+                    Team: {payload.constraints.teamSize}
+                  </span>
+                )}
+                {payload.constraints.deadlineDays != null && (
+                  <span className="rounded border border-hairline px-2 py-1">
+                    Deadline: {payload.constraints.deadlineDays}d
+                  </span>
                 )}
               </div>
+            )}
 
+            <div className="h-[280px] overflow-hidden rounded-xl border border-hairline">
+              <DebuggerCanvas
+                diagram={diagram}
+                readOnly
+                selectedId={null}
+                onSelect={() => {}}
+                hideEditChrome
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setGate('allocate')}
+              className="rounded-lg bg-brand px-5 py-2.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              Open marketplace
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Allocate gate: two-column layout */}
+      {gate === 'allocate' && (
+        <div className="flex min-h-0 flex-1">
+          {/* LEFT: canvas hero (60%) */}
+          <div className="relative min-w-0 flex-[3] border-r border-hairline">
+            <DebuggerCanvas
+              diagram={diagram}
+              readOnly={false}
+              selectedId={null}
+              onSelect={() => {}}
+              onDiagramChange={setDiagram}
+              hideEditChrome
+              className="absolute inset-0"
+            />
+          </div>
+
+          {/* RIGHT: investment catalog + priority board (320px) */}
+          <div className="w-80 shrink-0 overflow-y-auto">
+            {/* Stage context */}
+            <div className="border-b border-hairline px-3 py-3">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                {stage.dayLabel} · {stage.title}
+              </p>
+              <p className="mt-1 text-[13px] text-ink">{stage.narrative}</p>
+              {stage.revealMetrics && (
+                <p className="mt-1 font-mono text-[11px] text-ink-faint">
+                  {Object.entries(stage.revealMetrics)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(' · ')}
+                </p>
+              )}
+              {typeof stage.budgetDelta === 'number' && stage.budgetDelta !== 0 && (
+                <p className="mt-1 text-[12px] text-brand">
+                  +{stage.budgetDelta} {unitLabel} this stage
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3 p-3">
               <PriorityBoard
                 priorities={priorities}
                 pressures={pressures}
@@ -484,7 +532,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
               <InvestmentCatalog
                 investments={catalog}
                 selectedIds={selected}
-                remaining={Math.max(0, remaining - reserved - spentSelected + 
+                remaining={Math.max(0, remaining - reserved - spentSelected +
                   [...selected].reduce((s, id) => {
                     const inv = payload.investments.find(i => i.id === id)
                     return s + (estCostById[id] ?? inv?.cost ?? 0)
@@ -514,14 +562,14 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
                       className="font-mono text-[11px] text-brand"
                       onClick={() => setReserved(payload.suggestedReserve!)}
                     >
-                      Suggest {payload.suggestedReserve}
+                      Use {payload.suggestedReserve}
                     </button>
                   )}
                 </label>
               )}
 
               {(mode === 'expert' || payload.auctionMode) && (
-                <div className="rounded-lg border border-dashed border-hairline p-3">
+                <div className="rounded-lg border border-hairline p-3">
                   <p className="text-[12px] font-medium text-ink">Propose custom investment</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <input
@@ -540,7 +588,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
                       value={customWhy}
                       onChange={e => setCustomWhy(e.target.value)}
                       placeholder="Why"
-                      className="min-w-[140px] flex-1 rounded border border-hairline px-2 py-1 text-[12px]"
+                      className="min-w-[120px] flex-1 rounded border border-hairline px-2 py-1 text-[12px]"
                     />
                     <button
                       type="button"
@@ -562,7 +610,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
                         setCustomLabel('')
                         setCustomWhy('')
                       }}
-                      className="rounded bg-hairline px-2 py-1 text-[12px]"
+                      className="rounded bg-paper-elevated border border-hairline px-2 py-1 text-[12px] text-ink-muted"
                     >
                       Add
                     </button>
@@ -570,153 +618,162 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
                   {pendingCustoms.length > 0 && (
                     <ul className="mt-2 text-[12px] text-ink-muted">
                       {pendingCustoms.map((c, i) => (
-                        <li key={i}>
-                          {c.label} ({c.cost})
-                        </li>
+                        <li key={i}>{c.label} ({c.cost})</li>
                       ))}
                     </ul>
                   )}
                 </div>
               )}
-
-              {focusInv && (
-                <div className="space-y-2">
-                  <InvestmentWhyPanel
-                    investment={focusInv}
-                    why={whyById[focusInv.id] ?? new Set()}
-                    targets={targetsById[focusInv.id] ?? new Set()}
-                    estimatedCost={estCostById[focusInv.id]}
-                    expertMode={mode === 'expert'}
-                    onToggleWhy={opt =>
-                      setWhyById(prev => {
-                        const cur = new Set(prev[focusInv.id] ?? [])
-                        if (cur.has(opt)) cur.delete(opt)
-                        else cur.add(opt)
-                        return { ...prev, [focusInv.id]: cur }
-                      })
-                    }
-                    onToggleTarget={name =>
-                      setTargetsById(prev => {
-                        const cur = new Set(prev[focusInv.id] ?? [])
-                        if (cur.has(name)) cur.delete(name)
-                        else cur.add(name)
-                        return { ...prev, [focusInv.id]: cur }
-                      })
-                    }
-                    onEstimatedCost={n =>
-                      setEstCostById(prev => ({ ...prev, [focusInv.id]: n }))
-                    }
-                  />
-                  <TradeoffReveal
-                    cost={estCostById[focusInv.id] ?? focusInv.cost}
-                    benefits={focusInv.benefits}
-                    complexities={focusInv.complexities}
-                    risks={focusInv.risks}
-                    mode={mode}
-                  />
-                </div>
-              )}
-
-              <div className="h-[220px] overflow-hidden rounded-lg border border-hairline">
-                <DebuggerCanvas
-                  diagram={diagram}
-                  readOnly={false}
-                  selectedId={null}
-                  onSelect={() => {}}
-                  onDiagramChange={setDiagram}
-                  hideEditChrome
-                />
-              </div>
-
-              <button
-                type="button"
-                disabled={busy || remainingAfterDraft < 0}
-                onClick={() => void submitStage()}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground',
-                  (busy || remainingAfterDraft < 0) && 'opacity-50',
-                )}
-              >
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                Submit allocation
-              </button>
-            </section>
-          )}
-
-          {gate === 'stageResult' && lastGrade && (
-            <section className="space-y-4">
-              <h2 className="font-serif text-xl text-ink">Stage result</h2>
-              <p className="text-[14px] text-ink-muted">{String(lastGrade.narrative)}</p>
-              {Array.isArray(lastGrade.opportunityCost) &&
-                (lastGrade.opportunityCost as string[]).map((t, i) => (
-                  <p key={i} className="text-[13px] text-amber-800">
-                    {t}
-                  </p>
-                ))}
-              <button
-                type="button"
-                onClick={() => {
-                  if (stageIndex >= payload.stages.length) {
-                    void studioApi.getBudgetReport(attemptId).then(r => {
-                      setReport(r.report)
-                      setGate('complete')
-                    })
-                  } else {
-                    setGate('allocate')
-                    setLastGrade(null)
-                  }
-                }}
-                className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground"
-              >
-                {stageIndex >= payload.stages.length ? 'View report' : 'Continue'}
-              </button>
-            </section>
-          )}
-
-          {gate === 'complete' && report && (
-            <BudgetComplete
-              report={report}
-              unitLabel={unitLabel}
-              diagram={diagram}
-              onReplay={() => setGate('replay')}
-            />
-          )}
-
-          {gate === 'replay' && (
-            <section className="space-y-4">
-              <h2 className="font-serif text-xl text-ink">Decision replay</h2>
-              <BudgetReplay entries={decisionLog} />
-              <button
-                type="button"
-                onClick={() => setGate('complete')}
-                className="rounded-lg border border-hairline px-4 py-2 text-[13px]"
-              >
-                Back to report
-              </button>
-            </section>
-          )}
-        </div>
-
-        <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
-          <BudgetMeter
-            total={payload.budget.total}
-            remaining={Math.max(0, remainingAfterDraft)}
-            reserved={reserved}
-            unitLabel={unitLabel}
-          />
-          <div className="rounded-lg border border-hairline px-3 py-2 font-mono text-[11px] text-ink-faint">
-            <p>
-              Stage {stageIndex + 1}/{payload.stages.length}
-            </p>
-            <p className="mt-1">Mode: {mode}</p>
-            {payload.auctionMode && <p className="mt-1 text-brand">Auction framing on</p>}
-            <p className="mt-1">
-              Draft spend {spentSelected}
-              {pendingCustoms.length ? ` +${pendingCustoms.length} custom` : ''}
-            </p>
+            </div>
           </div>
-        </aside>
-      </div>
+        </div>
+      )}
+
+      {/* Why bottom drawer */}
+      {gate === 'allocate' && showWhyDrawer && focusInv && (
+        <div className="shrink-0 border-t border-hairline bg-paper">
+          <div className="flex items-center justify-between px-4 py-2">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+              Why this choice? · {focusInv.label}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowWhyDrawer(false)}
+              className="text-ink-faint hover:text-ink"
+            >
+              <ChevronDown size={14} />
+            </button>
+          </div>
+          <div className="max-h-60 overflow-y-auto px-4 pb-4">
+            <InvestmentWhyPanel
+              investment={focusInv}
+              why={whyById[focusInv.id] ?? new Set()}
+              targets={targetsById[focusInv.id] ?? new Set()}
+              estimatedCost={estCostById[focusInv.id]}
+              expertMode={mode === 'expert'}
+              onToggleWhy={opt =>
+                setWhyById(prev => {
+                  const cur = new Set(prev[focusInv.id] ?? [])
+                  if (cur.has(opt)) cur.delete(opt)
+                  else cur.add(opt)
+                  return { ...prev, [focusInv.id]: cur }
+                })
+              }
+              onToggleTarget={name =>
+                setTargetsById(prev => {
+                  const cur = new Set(prev[focusInv.id] ?? [])
+                  if (cur.has(name)) cur.delete(name)
+                  else cur.add(name)
+                  return { ...prev, [focusInv.id]: cur }
+                })
+              }
+              onEstimatedCost={n =>
+                setEstCostById(prev => ({ ...prev, [focusInv.id]: n }))
+              }
+            />
+            <TradeoffReveal
+              cost={estCostById[focusInv.id] ?? focusInv.cost}
+              benefits={focusInv.benefits}
+              complexities={focusInv.complexities}
+              risks={focusInv.risks}
+              mode={mode}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* BOTTOM BAR for allocate gate */}
+      {gate === 'allocate' && (
+        <div className="shrink-0 border-t border-hairline bg-paper-elevated px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setShowWhyDrawer(v => !v)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors',
+                showWhyDrawer
+                  ? 'bg-brand-tint text-brand'
+                  : 'border border-hairline text-ink-muted hover:text-ink',
+              )}
+            >
+              {showWhyDrawer ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+              Why this choice?
+            </button>
+
+            <button
+              type="button"
+              disabled={busy || remainingAfterDraft < 0}
+              onClick={() => void submitStage()}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white',
+                (busy || remainingAfterDraft < 0) && 'opacity-50',
+              )}
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Submit Stage
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Stage result gate */}
+      {gate === 'stageResult' && lastGrade && (
+        <div className="mx-auto max-w-lg space-y-4 overflow-y-auto px-4 py-8 sm:px-6">
+          <h2 className="font-serif text-xl text-ink">Stage result</h2>
+          <p className="text-[14px] text-ink-muted">{String(lastGrade.narrative)}</p>
+          {Array.isArray(lastGrade.opportunityCost) &&
+            (lastGrade.opportunityCost as string[]).map((t, i) => (
+              <p key={i} className="text-[13px] text-ink-muted">
+                {t}
+              </p>
+            ))}
+          <button
+            type="button"
+            onClick={() => {
+              if (stageIndex >= payload.stages.length) {
+                void studioApi.getBudgetReport(attemptId).then(r => {
+                  setReport(r.report)
+                  setGate('complete')
+                })
+              } else {
+                setGate('allocate')
+                setLastGrade(null)
+              }
+            }}
+            className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-white"
+          >
+            {stageIndex >= payload.stages.length ? 'View report' : 'Continue'}
+          </button>
+        </div>
+      )}
+
+      {/* Complete gate */}
+      {gate === 'complete' && report && (
+        <div className="overflow-y-auto">
+          <BudgetComplete
+            report={report}
+            unitLabel={unitLabel}
+            diagram={diagram}
+            onReplay={() => setGate('replay')}
+            packSlug={pack?.slug ?? ''}
+          />
+        </div>
+      )}
+
+      {/* Replay gate */}
+      {gate === 'replay' && (
+        <div className="mx-auto max-w-lg space-y-4 overflow-y-auto px-4 py-6 sm:px-6">
+          <h2 className="font-serif text-xl text-ink">Decision replay</h2>
+          <BudgetReplay entries={decisionLog} />
+          <button
+            type="button"
+            onClick={() => setGate('complete')}
+            className="rounded-lg border border-hairline px-4 py-2 text-[13px] text-ink-muted"
+          >
+            Back to report
+          </button>
+        </div>
+      )}
     </CategoryShell>
   )
 }

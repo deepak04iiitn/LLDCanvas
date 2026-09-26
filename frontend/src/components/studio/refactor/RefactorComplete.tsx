@@ -3,10 +3,13 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { RefactorScoreCard, type RefactorScoreCardProps } from '@/components/studio/refactor/RefactorScoreCard'
+import { CompletionNext } from '@/components/studio/shell/CompletionNext'
 
 export interface RefactorCompleteProps {
   result: Record<string, unknown>
   elapsedSec?: number
+  /** Slug of the completed pack — used for next-problem recommendation */
+  packSlug?: string
   className?: string
 }
 
@@ -17,7 +20,7 @@ function fmtTime(sec?: number) {
   return `${m}m ${String(s).padStart(2, '0')}s`
 }
 
-export function RefactorComplete({ result, elapsedSec, className }: RefactorCompleteProps) {
+export function RefactorComplete({ result, elapsedSec, packSlug = '', className }: RefactorCompleteProps) {
   const accepted = Boolean(result.accepted)
   const diff = Array.isArray(result.diff) ? result.diff : []
 
@@ -50,7 +53,15 @@ export function RefactorComplete({ result, elapsedSec, className }: RefactorComp
         Changes: {diff.length} · Time: {fmtTime(elapsedSec)}
       </p>
 
-      <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
+      <div className="mt-8 border-t border-hairline pt-6">
+        <CompletionNext
+          packType="refactor"
+          currentSlug={packSlug}
+          libraryHref="/design-studio/refactor/problems"
+        />
+      </div>
+
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
           href="/design-studio/refactor"
           className="rounded-lg bg-brand px-4 py-2.5 text-center text-[13px] font-medium text-white"

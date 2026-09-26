@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, FlaskConical, Lock } from 'lucide-react'
+import { BarChart3, Bug, Lock, Microscope, Network, Search, TrendingUp, Wrench, Zap } from 'lucide-react'
+import { SectionHeader } from '@/components/shared/SectionHeader'
 import {
   getFeaturesByCategory,
   type FeatureDefinition,
@@ -9,80 +10,102 @@ import {
 import { isFeatureEnabled } from '@/lib/features/flags'
 import { cn } from '@/lib/utils'
 
+const FEATURE_ICONS: Record<string, React.ElementType> = {
+  debugger: Bug,
+  refactor: Wrench,
+  'change-one': Zap,
+  evolution: TrendingUp,
+  budget: BarChart3,
+  microscope: Microscope,
+  'dependency-web': Network,
+  analysis: Search,
+}
+
+const PRACTICE_IDS = ['debugger', 'refactor', 'change-one', 'evolution', 'budget']
+const ANALYSIS_IDS = ['microscope', 'dependency-web', 'analysis']
+
 function FeatureCard({ feature }: { feature: FeatureDefinition }) {
   const enabled = isFeatureEnabled(feature.flagKey)
   const locked = !enabled
+  const Icon = (FEATURE_ICONS[feature.id] ?? Bug) as React.ElementType
 
   return (
-    <Link
-      href={locked ? '#' : feature.href}
-      aria-disabled={locked}
-      onClick={e => {
-        if (locked) e.preventDefault()
-      }}
+    <div
       className={cn(
-        'group flex flex-col rounded-xl border border-hairline bg-paper-elevated p-5 transition-all',
-        locked
-          ? 'cursor-not-allowed opacity-60'
-          : 'hover:border-brand/30 hover:shadow-sm',
+        'flex flex-col rounded-xl border border-hairline bg-paper-elevated p-5',
+        locked && 'opacity-60',
       )}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
-        <h3 className="font-serif text-base font-medium text-ink group-hover:text-brand">
-          {feature.label}
-        </h3>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-tint text-brand">
+          <Icon size={18} strokeWidth={1.75} />
+        </div>
         {feature.minPlan && feature.minPlan !== 'free' && (
-          <span className="inline-flex items-center gap-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-amber-600">
+          <span className="inline-flex items-center gap-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-ink-muted">
             <Lock size={10} />
             {feature.minPlan === 'ultimate' ? 'Ult.' : 'Pro'}
           </span>
         )}
       </div>
-      <p className="flex-1 text-[13px] leading-relaxed text-ink-muted">
+      <h3 className="font-serif text-lg font-medium text-ink">{feature.label}</h3>
+      <p className="mt-1 flex-1 text-[13px] leading-relaxed text-ink-muted">
         {feature.description}
       </p>
-      <span className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-brand">
-        {locked ? 'Coming soon' : 'Open'}
-        {!locked && (
-          <ArrowRight
-            size={12}
-            className="transition-transform group-hover:translate-x-0.5"
-          />
-        )}
-      </span>
-    </Link>
+      {locked ? (
+        <div className="mt-4 inline-flex items-center gap-1.5 text-[12px] text-ink-faint">
+          <Lock size={11} />
+          Requires {feature.minPlan === 'ultimate' ? 'Ultimate' : 'Pro'}
+        </div>
+      ) : (
+        <Link
+          href={feature.href}
+          className="mt-4 inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+        >
+          Open
+        </Link>
+      )}
+    </div>
+  )
+}
+
+function FeatureSection({
+  label,
+  features,
+}: {
+  label: string
+  features: FeatureDefinition[]
+}) {
+  if (features.length === 0) return null
+  return (
+    <section className="mb-10">
+      <p className="mb-4 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+        {label}
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {features.map(f => (
+          <FeatureCard key={f.id} feature={f} />
+        ))}
+      </div>
+    </section>
   )
 }
 
 export function StudioHub() {
   const features = getFeaturesByCategory('design-studio')
+  const practiceFeatures = features.filter(f => PRACTICE_IDS.includes(f.id))
+  const analysisFeatures = features.filter(f => ANALYSIS_IDS.includes(f.id))
 
   return (
     <div className="h-full overflow-y-auto bg-paper">
       <div className="mx-auto max-w-5xl px-6 py-10 sm:px-8">
-        <div className="mb-8 flex items-start gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-tint text-brand">
-            <FlaskConical size={20} strokeWidth={1.75} />
-          </div>
-          <div>
-            <p className="mb-1 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-ink-faint">
-              Product
-            </p>
-            <h1 className="font-serif text-3xl font-medium tracking-tight text-ink">
-              Design Studio
-            </h1>
-            <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-ink-muted">
-              Critique, evolve, and inspect architectures — challenge modes and
-              in-editor Analyze tools for your current design.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map(f => (
-            <FeatureCard key={f.id} feature={f} />
-          ))}
-        </div>
+        <SectionHeader
+          eyebrow="Design Studio"
+          title="Practice Challenges"
+          subtitle="Critique, evolve, and inspect architectures — challenge modes and in-editor analysis tools."
+          className="mb-10"
+        />
+        <FeatureSection label="Practice Challenges" features={practiceFeatures} />
+        <FeatureSection label="Architecture Analysis" features={analysisFeatures} />
       </div>
     </div>
   )

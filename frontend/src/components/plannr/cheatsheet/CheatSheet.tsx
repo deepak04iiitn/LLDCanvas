@@ -1,7 +1,5 @@
 ﻿'use client'
 
-import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
-
 const SECTIONS = [
   {
     title: '🔍 Phase 1 — Clarify Requirements (2–3 min)',
@@ -118,9 +116,7 @@ const SECTIONS = [
 
 export function CheatSheet() {
   return (
-    <div className="flex min-h-[calc(100vh-56px)] bg-paper">
-      <JourneySidebar />
-      <main className="flex-1 overflow-y-auto">
+    <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-4xl px-6 py-8 space-y-8">
           {/* Header */}
           <div>
@@ -167,7 +163,6 @@ export function CheatSheet() {
             <p className="text-[13px] text-ink-muted mt-1">Remember: narrate your thinking, clarify before designing, and always discuss trade-offs.</p>
           </div>
         </div>
-      </main>
     </div>
   )
 }

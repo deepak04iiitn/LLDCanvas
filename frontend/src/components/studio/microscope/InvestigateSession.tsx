@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Send, MousePointer2, Hand, Eye } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, MousePointer2, Hand, Eye, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import {
@@ -9,6 +9,7 @@ import {
   type DebuggerDiagram,
 } from '@/components/studio/debugger/DebuggerCanvas'
 import { MicroscopeSession } from '@/components/studio/microscope/MicroscopeSession'
+import { InvestigationProtocol, type ProtocolKey } from '@/components/studio/analysis/InvestigationProtocol'
 import type { MicroscopeLens, MicroscopeOverlay } from '@/lib/graph/microscope'
 import type { DiagramLike } from '@/lib/graph/analyzeDiagram'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
@@ -47,6 +48,13 @@ function componentChips(diagram: DebuggerDiagram) {
   })
 }
 
+function lensToProtocol(lens: string): ProtocolKey {
+  if (lens === 'responsibilities') return 'responsibility'
+  if (lens === 'layers') return 'layer'
+  if (lens === 'cycles' || lens === 'cycle') return 'cycle'
+  return 'coupling'
+}
+
 export function InvestigateSession({ attemptId }: InvestigateSessionProps) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,11 +69,14 @@ export function InvestigateSession({ attemptId }: InvestigateSessionProps) {
     dimIds: [],
   })
   const [lensUsed, setLensUsed] = useState<string[]>([])
+  const [guideOpen, setGuideOpen] = useState(true)
 
   const payload = (pack?.payload ?? {}) as Record<string, unknown>
   const suggestedLens = (typeof payload.suggestedLens === 'string'
     ? payload.suggestedLens
     : 'dependencies') as MicroscopeLens
+
+  const protocolKey = lensToProtocol(suggestedLens)
 
   const overlay = useMemo<MicroscopeOverlay>(
     () => ({
@@ -196,137 +207,174 @@ export function InvestigateSession({ attemptId }: InvestigateSessionProps) {
       className="h-[100dvh]"
       contentClassName="min-h-0 flex-1 overflow-hidden"
     >
-      <div className="flex h-full min-h-0 flex-col lg:flex-row">
-        {/* Left: how-to + canvas + answer */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-hairline">
-          <div className="shrink-0 space-y-2 border-b border-hairline bg-paper-elevated px-4 py-3">
-            <p className="text-[13px] leading-snug text-ink">
-              {String(payload.briefing ?? '')}
-            </p>
-            <ol className="grid gap-1.5 text-[12px] text-ink-muted sm:grid-cols-3">
-              <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
-                <MousePointer2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                <span>
-                  <strong className="text-ink">1. Select</strong> — click{' '}
+      <div className="flex h-full min-h-0">
+        {/* Collapsible Investigation Guide panel */}
+        {guideOpen ? (
+          <aside className="w-60 shrink-0 overflow-y-auto border-r border-hairline bg-paper">
+            <div className="flex items-center justify-between border-b border-hairline px-3 py-2.5">
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                Investigation Guide
+              </p>
+              <button
+                type="button"
+                onClick={() => setGuideOpen(false)}
+                className="rounded p-0.5 text-ink-faint hover:text-ink"
+                title="Close guide"
+              >
+                <ChevronLeft size={14} />
+              </button>
+            </div>
+            <div className="p-3">
+              <InvestigationProtocol
+                protocol={protocolKey}
+                packType="microscope"
+              />
+            </div>
+          </aside>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            className="shrink-0 border-r border-hairline bg-paper-elevated px-1.5 hover:bg-hairline/40"
+            title="Show Investigation Guide"
+          >
+            <ChevronRight size={14} className="text-ink-faint" />
+          </button>
+        )}
+
+        {/* Main content */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col lg:flex-row">
+          {/* Left: canvas + how-to + answer */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col border-r border-hairline">
+            <div className="shrink-0 space-y-2 border-b border-hairline bg-paper-elevated px-4 py-3">
+              <p className="text-[13px] leading-snug text-ink">
+                {String(payload.briefing ?? '')}
+              </p>
+              <ol className="grid gap-1.5 text-[12px] text-ink-muted sm:grid-cols-3">
+                <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
+                  <MousePointer2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                  <span>
+                    <strong className="text-ink">1. Select</strong> — click{' '}
+                    <button
+                      type="button"
+                      className="font-semibold text-brand underline-offset-2 hover:underline"
+                      onClick={() =>
+                        typeof payload.starterFocusId === 'string' &&
+                        focusElement(payload.starterFocusId)
+                      }
+                    >
+                      {starterName}
+                    </button>{' '}
+                    (or any box)
+                  </span>
+                </li>
+                <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
+                  <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                  <span>
+                    <strong className="text-ink">2. Switch lens</strong> — try{' '}
+                    <span className="font-mono text-[11px] text-brand">{suggestedLens}</span> on
+                    the right, then click highlighted neighbors
+                  </span>
+                </li>
+                <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
+                  <Hand className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                  <span>
+                    <strong className="text-ink">3. Navigate</strong> — drag empty canvas to pan,
+                    scroll to zoom, then write your finding below
+                  </span>
+                </li>
+              </ol>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="self-center font-mono text-[10px] uppercase text-ink-faint">
+                  Jump to
+                </span>
+                {chips.map(c => (
                   <button
+                    key={c.rfId}
                     type="button"
-                    className="font-semibold text-brand underline-offset-2 hover:underline"
-                    onClick={() =>
-                      typeof payload.starterFocusId === 'string' &&
-                      focusElement(payload.starterFocusId)
-                    }
+                    onClick={() => focusElement(c.elementId)}
+                    className={cn(
+                      'rounded-md border px-2 py-0.5 text-[11px] transition-colors',
+                      selectedNode?.elementId === c.elementId
+                        ? 'border-brand bg-brand-tint text-brand'
+                        : 'border-hairline text-ink-muted hover:border-brand/40',
+                    )}
                   >
-                    {starterName}
-                  </button>{' '}
-                  (or any box)
-                </span>
-              </li>
-              <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
-                <Eye className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                <span>
-                  <strong className="text-ink">2. Switch lens</strong> — try{' '}
-                  <span className="font-mono text-[11px] text-brand">{suggestedLens}</span> on
-                  the right, then click highlighted neighbors
-                </span>
-              </li>
-              <li className="flex gap-2 rounded-md border border-hairline bg-paper px-2 py-1.5">
-                <Hand className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                <span>
-                  <strong className="text-ink">3. Navigate</strong> — drag empty canvas to pan,
-                  scroll to zoom, then write your finding below
-                </span>
-              </li>
-            </ol>
-            <div className="flex flex-wrap gap-1.5">
-              <span className="self-center font-mono text-[10px] uppercase text-ink-faint">
-                Jump to
-              </span>
-              {chips.map(c => (
-                <button
-                  key={c.rfId}
-                  type="button"
-                  onClick={() => focusElement(c.elementId)}
-                  className={cn(
-                    'rounded-md border px-2 py-0.5 text-[11px] transition-colors',
-                    selectedNode?.elementId === c.elementId
-                      ? 'border-brand bg-brand-tint text-brand'
-                      : 'border-hairline text-ink-muted hover:border-brand/40',
-                  )}
-                >
-                  {c.name}
-                </button>
-              ))}
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative min-h-0 flex-1 bg-paper">
+              <DebuggerCanvas
+                diagram={diagram}
+                readOnly
+                selectedId={selectedId}
+                highlightedIds={highlight.highlightIds}
+                onSelect={(id, kind) => {
+                  if (kind === 'edge') return
+                  focusElement(id)
+                }}
+                hideEditChrome
+                className="h-full"
+              />
+              <p className="pointer-events-none absolute bottom-3 left-3 rounded bg-paper/90 px-2 py-1 font-mono text-[10px] text-ink-faint shadow-sm">
+                Drag to pan · Scroll to zoom · Click a class to inspect
+              </p>
+            </div>
+
+            <div className="shrink-0 space-y-2 border-t border-hairline bg-paper p-3">
+              <p className="font-mono text-[10px] uppercase text-ink-faint">
+                Your answer · inspected {focusElementIds.length} component
+                {focusElementIds.length === 1 ? '' : 's'}
+              </p>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder={`e.g. PaymentService depends on PaymentGateway but also creates StripeGateway — that's the concrete leak.`}
+                rows={2}
+                className="w-full rounded-md border border-hairline bg-paper px-2 py-1.5 text-[13px] outline-none focus:border-brand/40"
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void submit()}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-white',
+                  busy && 'opacity-50',
+                )}
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Submit investigation
+              </button>
+              {grade && (
+                <div className="rounded-md border border-hairline bg-paper-elevated p-2 text-[13px] text-ink-muted">
+                  {String(grade.narrative)}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="relative min-h-0 flex-1 bg-[#F8F8F8]">
-            <DebuggerCanvas
-              diagram={diagram}
-              readOnly
-              selectedId={selectedId}
-              highlightedIds={highlight.highlightIds}
-              onSelect={(id, kind) => {
-                if (kind === 'edge') return
+          {/* Right: microscope instrument */}
+          <div className="flex h-[42vh] min-h-0 w-full shrink-0 flex-col border-t border-hairline lg:h-auto lg:w-[min(400px,38%)] lg:border-t-0">
+            <MicroscopeSession
+              diagram={diagramLike}
+              selectedNode={selectedNode}
+              overlay={overlay}
+              initialLens={suggestedLens}
+              guideHint={`Start on ${starterName}. Open the ${suggestedLens} lens, then click each related box on the canvas (or in the lists below).`}
+              onFocusElement={id => {
                 focusElement(id)
+                setLensUsed(prev =>
+                  prev.includes(suggestedLens) ? prev : [...prev, suggestedLens],
+                )
               }}
-              hideEditChrome
+              onHighlightChange={setHighlight}
+              embedded
               className="h-full"
             />
-            <p className="pointer-events-none absolute bottom-3 left-3 rounded bg-paper/90 px-2 py-1 font-mono text-[10px] text-ink-faint shadow-sm">
-              Drag background to pan · Scroll to zoom · Click a class to inspect
-            </p>
           </div>
-
-          <div className="shrink-0 space-y-2 border-t border-hairline bg-paper p-3">
-            <p className="font-mono text-[10px] uppercase text-ink-faint">
-              Your answer · inspected {focusElementIds.length} component
-              {focusElementIds.length === 1 ? '' : 's'}
-            </p>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder={`e.g. PaymentService depends on PaymentGateway but also creates StripeGateway — that's the concrete leak.`}
-              rows={2}
-              className="w-full rounded-md border border-hairline bg-paper px-2 py-1.5 text-[13px] outline-none focus:border-brand/40"
-            />
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void submit()}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-lg bg-brand px-3 py-2 text-[13px] font-semibold text-brand-foreground',
-                busy && 'opacity-50',
-              )}
-            >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Submit investigation
-            </button>
-            {grade && (
-              <div className="rounded-md border border-hairline bg-paper-elevated p-2 text-[13px] text-ink-muted">
-                {String(grade.narrative)}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right: microscope instrument */}
-        <div className="flex h-[42vh] min-h-0 w-full shrink-0 flex-col border-t border-hairline lg:h-auto lg:w-[min(400px,38%)] lg:border-t-0">
-          <MicroscopeSession
-            diagram={diagramLike}
-            selectedNode={selectedNode}
-            overlay={overlay}
-            initialLens={suggestedLens}
-            guideHint={`Start on ${starterName}. Open the ${suggestedLens} lens, then click each related box on the canvas (or in the lists below).`}
-            onFocusElement={id => {
-              focusElement(id)
-              setLensUsed(prev =>
-                prev.includes(suggestedLens) ? prev : [...prev, suggestedLens],
-              )
-            }}
-            onHighlightChange={setHighlight}
-            embedded
-            className="h-full"
-          />
         </div>
       </div>
     </CategoryShell>

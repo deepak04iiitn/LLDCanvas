@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2, Send } from 'lucide-react'
+import { Info, Loader2, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
@@ -11,16 +11,17 @@ import { ChangeRequestCard } from '@/components/studio/change/ChangeRequestCard'
 import { PredictImpactPanel } from '@/components/studio/change/PredictImpactPanel'
 import { ChangeToolbar } from '@/components/studio/change/ChangeToolbar'
 import { ChangeComplete } from '@/components/studio/change/ChangeComplete'
-import { ConceptPrimerOverlay } from '@/components/studio/change/ConceptPrimerOverlay'
 import { InterviewerPerspectivePanel } from '@/components/studio/change/InterviewerPerspectivePanel'
 import {
   DebuggerCanvas,
   type DebuggerDiagram,
 } from '@/components/studio/debugger/DebuggerCanvas'
 import { studioApi, type StudioPackDetail } from '@/lib/studio-api'
+import type { BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 
 export interface ChangeSessionProps {
   attemptId: string
+  breadcrumb?: BreadcrumbSegment[]
 }
 
 type Stage = 'brief' | 'predict' | 'edit' | 'results'
@@ -52,7 +53,7 @@ function nodeName(n: unknown): string {
   return String(node.data?.name ?? node.id ?? 'Class')
 }
 
-export function ChangeSession({ attemptId }: ChangeSessionProps) {
+export function ChangeSession({ attemptId, breadcrumb }: ChangeSessionProps) {
   const [pack, setPack] = useState<StudioPackDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [stage, setStage] = useState<Stage>('brief')
@@ -66,7 +67,7 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
   const [now, setNow] = useState(Date.now())
   const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set())
   const [selectedRels, setSelectedRels] = useState<Set<string>>(new Set())
-  const [showConceptPrimer, setShowConceptPrimer] = useState(() => {
+  const [showConceptBanner, setShowConceptBanner] = useState(() => {
     if (typeof window === 'undefined') return false
     return !localStorage.getItem('change_concept_seen')
   })
@@ -258,7 +259,7 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
 
   if (!pack) {
     return (
-      <CategoryShell title="Not found" backHref="/design-studio/change" backLabel="Change One">
+      <CategoryShell title="Not found" backHref="/design-studio/change" backLabel="Change One" breadcrumb={breadcrumb}>
         <p className="p-8 text-center text-[13px] text-ink-muted">Attempt or pack missing.</p>
       </CategoryShell>
     )
@@ -274,8 +275,9 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
         subtitle="Change results"
         backHref="/design-studio/change"
         backLabel="Challenges"
+        breadcrumb={breadcrumb}
       >
-        <ChangeComplete result={result} elapsedSec={elapsed} nameById={nameById} />
+        <ChangeComplete result={result} elapsedSec={elapsed} nameById={nameById} packSlug={pack?.slug ?? ''} />
         <div className="mx-auto max-w-lg px-6 pb-6">
           <BeforeAfterDiff
             diff={(result.diff as DiffEntryLike[]) ?? []}
@@ -290,6 +292,43 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
     )
   }
 
+  /** Slim concept banner — shown in place of the blocking overlay */
+  const ConceptBanner = showConceptBanner ? (
+    <div className="flex shrink-0 items-center gap-3 border-b border-hairline bg-brand-tint px-4 py-2.5">
+      <Info size={14} className="shrink-0 text-brand" />
+      <p className="flex-1 text-[13px] leading-snug text-ink">
+        <strong>Blast radius:</strong> skilled designers know exactly which classes a change will touch.
+        You&apos;ll predict it first, then make the minimal change.
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          if (typeof window !== 'undefined') localStorage.setItem('change_concept_seen', '1')
+          setShowConceptBanner(false)
+        }}
+        className="shrink-0 rounded-md bg-brand px-3 py-1 text-[12px] font-medium text-white"
+      >
+        Got it
+      </button>
+    </div>
+  ) : null
+
+  /** Slim sticky change request pill for predict/edit stages */
+  const RequestPill = (
+    <div className="sticky top-0 z-10 shrink-0 border-b border-hairline bg-paper-elevated px-4 py-2.5">
+      <div className="flex min-w-0 items-center gap-2">
+        {cr?.type && (
+          <span className="shrink-0 font-mono text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
+            {cr.type}
+          </span>
+        )}
+        <span className="truncate text-[13px] font-medium text-ink">
+          {cr?.title ?? requestBody?.slice(0, 120)}
+        </span>
+      </div>
+    </div>
+  )
+
   if (stage === 'brief') {
     return (
       <CategoryShell
@@ -297,6 +336,7 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
         subtitle="Understand the current design"
         backHref="/design-studio/change"
         backLabel="Challenges"
+        breadcrumb={breadcrumb}
         actions={
           <button
             type="button"
@@ -307,9 +347,7 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
           </button>
         }
       >
-        {showConceptPrimer && (
-          <ConceptPrimerOverlay onDismiss={() => setShowConceptPrimer(false)} />
-        )}
+        {ConceptBanner}
         <ChangeRequestCard
           title={cr?.title}
           body={requestBody}
@@ -345,14 +383,10 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
         subtitle="Predict impact"
         backHref="/design-studio/change"
         backLabel="Challenges"
+        breadcrumb={breadcrumb}
       >
-        <ChangeRequestCard
-          title={cr?.title}
-          body={requestBody}
-          type={cr?.type}
-          constraints={payload.constraints}
-          briefing={payload.briefing}
-        />
+        {ConceptBanner}
+        {RequestPill}
         <PredictImpactPanel
           classNames={classNames}
           relationshipLabels={relationshipLabels}
@@ -389,6 +423,7 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
       subtitle={cr?.title ?? 'Apply the minimal architectural change'}
       backHref="/design-studio/change"
       backLabel="Challenges"
+      breadcrumb={breadcrumb}
       timer={<span className="tabular-nums">{timerLabel}</span>}
       actions={
         <button
@@ -402,13 +437,8 @@ export function ChangeSession({ attemptId }: ChangeSessionProps) {
         </button>
       }
     >
-      <ChangeRequestCard
-        title={cr?.title}
-        body={requestBody}
-        type={cr?.type}
-        constraints={payload.constraints}
-        briefing={payload.briefing}
-      />
+      {ConceptBanner}
+      {RequestPill}
       <ChangeToolbar
         onUndo={onUndo}
         canUndo={undoStack.length > 0}

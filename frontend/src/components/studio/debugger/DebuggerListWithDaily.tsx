@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Flame, Loader2, Play } from 'lucide-react'
+import { Flame, History, Loader2, Play } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { PackList } from '@/components/studio/challenges/PackList'
@@ -79,37 +80,41 @@ export function DebuggerListWithDaily() {
       subtitle="Find flaws in authored broken designs"
       backHref="/design-studio"
       backLabel="Design Studio"
+      actions={
+        <Link
+          href="/design-studio/debugger/history"
+          className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1.5 text-[12px] text-ink-muted transition-colors hover:border-brand/30 hover:text-ink"
+        >
+          <History size={13} strokeWidth={1.75} />
+          History
+        </Link>
+      }
     >
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         {/* ── Daily Debug ── */}
         {!loading && dailyPack && (
           <section className="mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <Flame size={14} className="text-amber-500" />
+            <div className="mb-3 flex items-center gap-2">
+              <Flame size={14} className="text-brand" />
               <h2 className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-faint">
                 Today's Challenge
               </h2>
+              <span className="ml-auto font-mono text-[10px] text-ink-faint">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              </span>
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-paper p-6 shadow-sm dark:border-amber-900/40 dark:from-amber-950/30 dark:via-orange-950/20 dark:to-paper">
-              {/* Decorative flame */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute right-5 top-4 text-5xl opacity-10 select-none"
-              >
-                🔥
-              </span>
-
+            <div className="relative overflow-hidden rounded-xl border border-hairline bg-paper-elevated p-5">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <div className="flex-1">
-                  <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-                    Daily Debug — {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                  <p className="font-mono text-[9px] font-semibold uppercase tracking-widest text-brand">
+                    Daily Debug
                   </p>
                   <h3 className="mt-1.5 font-serif text-xl font-medium text-ink">
                     {dailyPack.title}
                   </h3>
                   {dailyPack.description && (
-                    <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted max-w-lg">
+                    <p className="mt-1.5 max-w-lg text-[13px] leading-relaxed text-ink-muted">
                       {dailyPack.description}
                     </p>
                   )}
@@ -124,7 +129,7 @@ export function DebuggerListWithDaily() {
                   type="button"
                   disabled={startingId === packIdOf(dailyPack)}
                   onClick={() => onStart(dailyPack)}
-                  className="mt-4 inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-amber-500 px-5 py-2.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 sm:mt-0"
+                  className="mt-4 inline-flex shrink-0 items-center gap-2 self-start rounded-lg bg-brand px-5 py-2.5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60 sm:mt-0"
                 >
                   {startingId === packIdOf(dailyPack) ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
