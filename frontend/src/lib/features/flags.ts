@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Feature flags — `NEXT_PUBLIC_FF_*` env vars.
  * Foundation Analyze tools default ON when unset so hubs/scaffolding work locally.
  */
@@ -22,6 +22,7 @@ const FOUNDATION_DEFAULT_ON = new Set([
   'FF_COMMUNITY_FORKS',
   'FF_COMMUNITY_ALTERNATIVES',
   'FF_COMMUNITY_WATCH',
+  'FF_PLANNR',
 ])
 
 function envKey(flagKey: string): string {

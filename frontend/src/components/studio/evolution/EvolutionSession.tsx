@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Loader2, Send } from 'lucide-react'
@@ -39,7 +39,7 @@ type Gate =
   | 'tradeoffs'
   | 'edit'
   | 'stageResult'
-  | 'journey'
+  | 'plannr'
 
 interface EvoStage {
   id: string
@@ -190,7 +190,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           score: d?.score ?? 0,
         })
         if ((res.attempt as { status?: string })?.status === 'submitted') {
-          setGate('journey')
+          setGate('plannr')
           setJourneyIndex(Math.max(0, vers.length - 1))
         } else if (idx === 0 && vers.length <= 1) {
           setGate('brief')
@@ -339,7 +339,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
       setStageIndex(res.nextStageIndex)
       if (res.complete) {
         toast.success('Track complete')
-        setGate('journey')
+        setGate('plannr')
         setJourneyIndex(Math.max(0, (prog.versions?.length ?? 1) - 1))
       } else if (res.grade?.accepted) {
         toast.success('Stage accepted')
@@ -368,7 +368,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
       return
     }
     if (stageIndex >= stages.length) {
-      setGate('journey')
+      setGate('plannr')
       return
     }
     resetStageForm()
@@ -395,7 +395,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     )
   }
 
-  if (gate === 'journey') {
+  if (gate === 'plannr') {
     return (
       <CategoryShell
         title={pack.title}

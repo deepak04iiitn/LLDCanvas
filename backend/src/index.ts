@@ -31,6 +31,7 @@ import patternRouter       from './routes/pattern.route'
 import artifactRouter      from './routes/artifact.route'
 import studioRouter        from './routes/studio.route'
 import learnRouter         from './routes/learn.route'
+import journeyRouter       from './routes/journey.route'
 import adminStudioRouter   from './routes/admin/studio.route'
 import adminLearnRouter    from './routes/admin/learn.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
@@ -118,6 +119,7 @@ app.use('/blog',            blogRouter)
 app.use('/artifacts',       artifactRouter)
 app.use('/studio',          studioRouter)
 app.use('/learn',           learnRouter)
+app.use('/plannr',         journeyRouter)
 app.use('/admin/studio',    adminStudioRouter)
 app.use('/admin/learn',     adminLearnRouter)
 

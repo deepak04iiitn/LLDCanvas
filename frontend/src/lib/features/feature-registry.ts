@@ -1,4 +1,4 @@
-export type FeatureCategory = 'design-studio' | 'learn'
+﻿export type FeatureCategory = 'design-studio' | 'learn' | 'plannr'
 
 export type FeaturePlan = 'free' | 'pro' | 'ultimate'
 
@@ -147,6 +147,17 @@ export const FEATURES: FeatureDefinition[] = [
     href: '/learn/debugger',
     flagKey: 'FF_LEARN_DEBUGGER',
     analyticsPrefix: 'learn_debugger',
+  },
+
+  // ── Plannr (1) ──────────────────────────────────────────────
+  {
+    id: 'plannr',
+    category: 'plannr',
+    label: 'Plannr',
+    description: 'Personalised roadmap, theory, interview experiences, tips & tricks, skill tracking — everything you need to ace LLD interviews.',
+    href: '/plannr',
+    flagKey: 'FF_PLANNR',
+    analyticsPrefix: 'plannr',
   },
 ]
 

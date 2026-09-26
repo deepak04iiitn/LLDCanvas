@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: 'Features',       href: '/features' },
   { label: 'Design Studio',  href: '/design-studio' },
   { label: 'Learn',          href: '/learn' },
+  { label: 'Plannr',        href: '/plannr' },
   { label: 'Blogs',          href: '/blog' },
   { label: 'Playground',     href: '/playground' },
   { label: 'Pricing',        href: '/pricing' },
