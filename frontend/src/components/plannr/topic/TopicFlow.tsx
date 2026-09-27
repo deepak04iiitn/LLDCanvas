@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import {
   ChevronLeft, ChevronRight, CheckCircle2, BookOpen, Lightbulb,
   Briefcase, Eye, Wrench, HelpCircle, Repeat, ArrowRight,
@@ -529,6 +530,18 @@ export function TopicFlow({ slug }: { slug: string }) {
       {/* ── Hero header ─────────────────────────────────────────────────── */}
       <div className="bg-linear-to-b from-brand-tint/40 to-paper px-6 pt-8 pb-6 border-b border-hairline/60">
         <div className="mx-auto max-w-3xl">
+          {/* Back nav */}
+          <div className="flex items-center gap-4 mb-5">
+            <Link href="/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              Dashboard
+            </Link>
+            <span className="h-3 w-px bg-hairline" />
+            <Link href="/plannr/roadmap" className="text-[12px] text-ink-faint hover:text-ink transition-colors">
+              Roadmap
+            </Link>
+          </div>
+
           {/* Meta row */}
           <div className="flex items-center gap-2.5 mb-3">
             <StageTag stage={topic.stage} short />
