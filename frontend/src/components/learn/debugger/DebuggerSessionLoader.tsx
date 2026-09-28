@@ -2,23 +2,30 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { CategoryShell, type BreadcrumbSegment } from '@/components/studio/shell/CategoryShell'
 import { learnApi, type DebuggerChallenge } from '@/lib/learn-api'
 import { DebuggerSession } from './DebuggerSession'
+import { cn } from '@/lib/utils'
 
 export interface DebuggerSessionLoaderProps {
-  breadcrumb?: BreadcrumbSegment[]
+  breadcrumb?: unknown[] // kept for API compat, unused
 }
 
-export function DebuggerSessionLoader({ breadcrumb }: DebuggerSessionLoaderProps) {
+const DIFF_CHIP: Record<string, string> = {
+  easy:   'bg-brand/10 text-brand',
+  medium: 'bg-amber-50 text-amber-700',
+  hard:   'bg-red-50 text-red-600',
+}
+
+export function DebuggerSessionLoader({ breadcrumb: _breadcrumb }: DebuggerSessionLoaderProps) {
   const params = useParams()
   const id = Array.isArray(params?.id) ? params.id[0] : (params?.id ?? '')
 
   const [challenge, setChallenge] = useState<DebuggerChallenge | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -38,46 +45,48 @@ export function DebuggerSessionLoader({ breadcrumb }: DebuggerSessionLoaderProps
     return () => { cancelled = true }
   }, [id])
 
-  if (loading) {
-    return (
-      <CategoryShell
-        title="Bug Hunt"
-        backHref="/learn/debugger/problems"
-        backLabel="Problems"
-        breadcrumb={breadcrumb}
-      >
-        <div className="flex flex-1 items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-ink-faint" />
-        </div>
-      </CategoryShell>
-    )
-  }
+  // ── Full-screen overlay shell ────────────────────────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-paper">
 
-  if (error || !challenge) {
-    return (
-      <CategoryShell
-        title="Bug Hunt"
-        backHref="/learn/debugger/problems"
-        backLabel="Problems"
-        breadcrumb={breadcrumb}
-      >
-        <div className="flex flex-1 items-center justify-center py-20">
+      {/* Slim top bar */}
+      <header className="flex shrink-0 items-center gap-3 border-b border-hairline bg-paper-elevated px-4 py-2.5 sm:px-6">
+        <Link
+          href="/learn/debugger/problems"
+          className="flex items-center gap-1.5 text-[12px] text-ink-faint transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={13} strokeWidth={2} />
+          Problems
+        </Link>
+
+        {challenge && (
+          <>
+            <div className="mx-1 h-4 w-px bg-hairline" />
+            <h1 className="min-w-0 flex-1 truncate font-serif text-[15px] font-medium text-ink sm:text-[17px]">
+              {challenge.title}
+            </h1>
+            <span className={cn(
+              'shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider',
+              DIFF_CHIP[challenge.difficulty] ?? 'bg-paper-elevated text-ink-faint',
+            )}>
+              {challenge.difficulty}
+            </span>
+          </>
+        )}
+      </header>
+
+      {/* Body */}
+      {loading ? (
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-ink-faint" />
+        </div>
+      ) : error || !challenge ? (
+        <div className="flex flex-1 items-center justify-center">
           <p className="text-[14px] text-ink-muted">{error ?? 'Challenge not found.'}</p>
         </div>
-      </CategoryShell>
-    )
-  }
-
-  return (
-    <CategoryShell
-      title={challenge.title}
-      subtitle="Find and fix the bug — then run to verify"
-      backHref="/learn/debugger/problems"
-      backLabel="Problems"
-      breadcrumb={breadcrumb}
-      contentClassName="flex min-h-0 flex-1"
-    >
-      <DebuggerSession challenge={challenge} />
-    </CategoryShell>
+      ) : (
+        <DebuggerSession challenge={challenge} />
+      )}
+    </div>
   )
 }

@@ -2,29 +2,124 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, BookOpen, Flame, HelpCircle, Target, Zap } from 'lucide-react'
+import { ArrowRight, Flame, CheckCircle2, Circle } from 'lucide-react'
 import { learnApi, type QuizStreak } from '@/lib/learn-api'
+import { cn } from '@/lib/utils'
 
-const HOW_IT_WORKS = [
+// ── Sample question shown in the right-column mockup ─────────────────────────
+const SAMPLE_Q = {
+  text: 'A class fetches data, transforms it, and sends an email — all in one method. Which principle does this violate?',
+  options: [
+    { id: 'A', label: 'Open/Closed Principle'         },
+    { id: 'B', label: 'Single Responsibility Principle', correct: true },
+    { id: 'C', label: 'Liskov Substitution Principle'  },
+    { id: 'D', label: 'Interface Segregation Principle' },
+  ],
+}
+
+const SKILLS = [
+  { label: 'SOLID Principles',      desc: 'Recognize and apply all five' },
+  { label: 'Design Patterns',       desc: 'Factory, Strategy, Observer…' },
+  { label: 'OOP Concepts',          desc: 'Polymorphism, encapsulation' },
+  { label: 'Coupling & Cohesion',   desc: 'Spot tight coupling instantly' },
+  { label: 'Design Judgment',       desc: 'Trade-off thinking under time' },
+  { label: 'Requirement Analysis',  desc: 'Extract entities & constraints' },
+]
+
+const STEPS = [
   {
-    step: 1,
-    title: '5 questions, every day',
-    description: 'Each day brings a fresh set of questions covering patterns, SOLID principles, OOP, and system design judgment.',
+    n: '01',
+    title: '10 questions, every morning',
+    body:  'Each day serves 10 fresh questions covering patterns, SOLID, OOP, and design judgment. No repeats for 30 days.',
   },
   {
-    step: 2,
-    title: 'Immediate feedback',
-    description: 'After each answer you get an explanation — not just right or wrong, but why the correct choice is correct.',
+    n: '02',
+    title: 'Instant, explained feedback',
+    body:  'Not just right or wrong — every option gets a crisp rationale so the concept sticks.',
   },
   {
-    step: 3,
-    title: 'Build a streak',
-    description: 'Consistency compounds. A daily habit of 5 questions builds deep, lasting knowledge faster than cramming.',
+    n: '03',
+    title: 'Consistency beats cramming',
+    body:  'A 5-question daily habit compounds. Reviewers can tell who practised daily versus who crammed.',
   },
 ]
 
-const SKILLS = ['SOLID Principles', 'Design Patterns', 'OOP Concepts', 'Coupling & Cohesion', 'System Design Judgment', 'Requirement Analysis']
+// ── Animated sample question ──────────────────────────────────────────────────
+function SampleCard() {
+  const [chosen, setChosen] = useState<string | null>(null)
+  const revealed = chosen !== null
 
+  return (
+    <div className="rounded-2xl border border-hairline bg-paper shadow-sm overflow-hidden">
+      {/* Card header bar */}
+      <div className="flex items-center justify-between border-b border-hairline px-5 py-3 bg-paper-elevated">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Daily Quiz · Q 3 of 10</span>
+        <div className="flex gap-1">
+          {[0,1,2,3,4,5,6,7,8,9].map(i => (
+            <div key={i} className={cn('h-1.5 w-3 rounded-full', i < 3 ? 'bg-brand' : 'bg-hairline')} />
+          ))}
+        </div>
+      </div>
+
+      {/* Question */}
+      <div className="px-5 py-5">
+        <p className="text-[14px] font-medium leading-relaxed text-ink mb-5">{SAMPLE_Q.text}</p>
+
+        {/* Options */}
+        <div className="flex flex-col gap-2">
+          {SAMPLE_Q.options.map(opt => {
+            const isChosen  = chosen === opt.id
+            const isCorrect = opt.correct
+            const showResult = revealed
+
+            return (
+              <button
+                key={opt.id}
+                onClick={() => !revealed && setChosen(opt.id)}
+                className={cn(
+                  'flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-[13px] transition-all duration-200',
+                  !revealed && 'hover:border-brand/40 hover:bg-brand-tint/20 cursor-pointer border-hairline',
+                  showResult && isCorrect
+                    ? 'border-brand/30 bg-brand-tint/30 text-ink'
+                    : showResult && isChosen && !isCorrect
+                    ? 'border-red-200 bg-red-50/60 text-ink'
+                    : showResult
+                    ? 'border-hairline opacity-50 text-ink-faint'
+                    : 'border-hairline text-ink',
+                )}
+              >
+                <span className={cn(
+                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] font-bold transition-all',
+                  showResult && isCorrect ? 'border-brand bg-brand text-white' :
+                  showResult && isChosen && !isCorrect ? 'border-red-400 bg-red-400 text-white' :
+                  'border-hairline text-ink-faint',
+                )}>
+                  {opt.id}
+                </span>
+                <span className="flex-1 leading-snug">{opt.label}</span>
+                {showResult && isCorrect && <CheckCircle2 size={14} className="shrink-0 text-brand" />}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Reveal hint */}
+        {!revealed && (
+          <p className="mt-4 text-center text-[11px] text-ink-faint">← tap an option to try it</p>
+        )}
+        {revealed && (
+          <div className="mt-4 rounded-xl border border-brand/20 bg-brand-tint/20 px-4 py-3">
+            <p className="text-[12px] text-ink leading-relaxed">
+              <span className="font-semibold text-brand">SRP explained:</span> One class should have only one reason to change. Combining data fetching, transformation, and email delivery creates three separate axes of change.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function LearnQuizPage() {
   const [streak, setStreak] = useState<QuizStreak | null>(null)
 
@@ -32,113 +127,166 @@ export default function LearnQuizPage() {
     learnApi.quiz.streak().then(setStreak).catch(() => {})
   }, [])
 
+  const currentStreak = streak?.currentStreak ?? 0
+  const bestStreak    = streak?.longestStreak ?? 0
+
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-paper">
+    <div className="flex h-full flex-col overflow-y-auto bg-paper relative">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <div className="shrink-0 border-b border-hairline/60 bg-linear-to-b from-brand-tint/35 to-paper px-6 pb-10 pt-10">
-        <div className="mx-auto max-w-4xl">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            {/* Icon */}
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-tint">
-              <HelpCircle size={26} className="text-brand" strokeWidth={1.75} />
-            </div>
+      {/* Dot-grid texture */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.3]"
+        style={{ backgroundImage: 'radial-gradient(circle, #234E3F 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+      />
 
-            {/* Copy */}
-            <div className="min-w-0 flex-1">
-              <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-brand">
-                Learn
-              </p>
-              <h1 className="mb-1.5 font-serif text-3xl font-medium leading-tight text-ink">
-                Daily Quiz
+      <div className="relative z-10">
+
+        {/* ── Hero ──────────────────────────────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-6 pt-12 pb-10">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+
+            {/* Left: editorial copy */}
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-brand mb-6">Daily Quiz</p>
+
+              <h1 className="font-serif font-medium tracking-tight leading-[0.9] mb-8">
+                <span className="block text-[42px] sm:text-[54px] text-ink">Five questions.</span>
+                <span className="block text-[42px] sm:text-[54px] text-brand">Every morning.</span>
               </h1>
-              <p className="max-w-2xl text-[15px] leading-relaxed text-ink-muted">
-                5 fresh LLD questions every day — patterns, SOLID, OOP, and design judgment
+
+              <p className="text-[15px] text-ink-muted leading-relaxed max-w-sm mb-10">
+                Design principles don't stick from reading. They stick from being tested on them,
+                daily, until retrieval becomes reflex.
+              </p>
+
+              {/* Stats — vertical editorial stack */}
+              <div className="flex flex-col gap-0 mb-10 border-l-2 border-brand/20 pl-5">
+                <div className="py-3 border-b border-hairline">
+                  <p className="font-mono text-[28px] font-bold text-ink leading-none">10</p>
+                  <p className="text-[11px] text-ink-faint mt-0.5">questions per day, no repeats for 30 days</p>
+                </div>
+                <div className="py-3 border-b border-hairline">
+                  <p className="font-mono text-[28px] font-bold text-ink leading-none">6+</p>
+                  <p className="text-[11px] text-ink-faint mt-0.5">LLD skill areas covered</p>
+                </div>
+                {currentStreak > 0 ? (
+                  <div className="py-3">
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-mono text-[28px] font-bold text-amber-500 leading-none">{currentStreak}</p>
+                      <Flame size={16} className="text-amber-400 mb-0.5" />
+                    </div>
+                    <p className="text-[11px] text-ink-faint mt-0.5">day streak — keep it going</p>
+                  </div>
+                ) : (
+                  <div className="py-3">
+                    <p className="font-mono text-[28px] font-bold text-ink leading-none">{bestStreak > 0 ? bestStreak : '—'}</p>
+                    <p className="text-[11px] text-ink-faint mt-0.5">{bestStreak > 0 ? 'best streak — beat it today' : 'start your streak today'}</p>
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/learn/quiz/session"
+                className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-6 py-3.5 text-[14px] font-semibold text-white hover:opacity-90 transition-opacity group"
+              >
+                Start Today&apos;s Quiz
+                <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Right: interactive sample question */}
+            <div className="w-full lg:w-105 shrink-0">
+              <div className="mb-3 flex items-center gap-2">
+                <Circle size={7} className="fill-brand text-brand" />
+                <span className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Live preview — try it</span>
+              </div>
+              <SampleCard />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Thin divider ───────────────────────────────────────────────── */}
+        <div className="border-t border-hairline mx-6" />
+
+        {/* ── Skills strip ──────────────────────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-6 py-10">
+          <div className="flex flex-col sm:flex-row gap-8">
+
+            {/* Sidebar label */}
+            <div className="sm:w-40 shrink-0 pt-0.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint leading-tight">
+                Skills<br />you'll train
               </p>
             </div>
 
-            {/* Streak chip */}
-            {streak && streak.currentStreak > 0 && (
-              <div className="flex shrink-0 flex-col items-center gap-0.5 rounded-2xl border border-hairline bg-paper-elevated px-5 py-3">
-                <div className="flex items-center gap-1.5">
-                  <Flame size={14} className="text-amber-500" />
-                  <span className="font-mono text-2xl font-bold text-ink">
-                    {streak.currentStreak}
-                  </span>
+            {/* Skill grid */}
+            <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-5">
+              {SKILLS.map(({ label, desc }) => (
+                <div key={label}>
+                  <p className="text-[13px] font-semibold text-ink leading-tight">{label}</p>
+                  <p className="text-[11px] text-ink-faint mt-0.5">{desc}</p>
                 </div>
-                <span className="text-center text-[10px] leading-tight text-ink-faint">day streak</span>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
+        </section>
 
-          {/* Stats row */}
-          <div className="mt-8 grid grid-cols-3 gap-4">
-            {[
-              { icon: Zap,      label: 'Questions / day', value: '5' },
-              { icon: Target,   label: 'Topics covered',  value: '6+' },
-              { icon: BookOpen, label: 'Best streak',      value: streak ? String(streak.longestStreak) : '—' },
-            ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="rounded-xl border border-hairline bg-paper-elevated px-4 py-3 text-center">
-                <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <Icon size={13} className="text-brand" />
-                  <p className="font-mono text-lg font-bold text-ink">{value}</p>
-                </div>
-                <p className="text-[11px] text-ink-faint">{label}</p>
-              </div>
-            ))}
-          </div>
+        {/* ── Thin divider ───────────────────────────────────────────────── */}
+        <div className="border-t border-hairline mx-6" />
 
-          {/* How it works */}
-          <div className="mt-8">
-            <h2 className="mb-4 font-serif text-xl font-medium text-ink">How it works</h2>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {HOW_IT_WORKS.map(step => (
-                <div key={step.step} className="rounded-2xl border border-hairline bg-paper-elevated p-5">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand font-mono text-[12px] font-bold text-white">
-                      {step.step}
-                    </div>
-                    <h3 className="text-[14px] font-semibold leading-tight text-ink">{step.title}</h3>
+        {/* ── Methodology ───────────────────────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-6 py-10">
+          <div className="flex flex-col sm:flex-row gap-8">
+
+            {/* Sidebar label */}
+            <div className="sm:w-40 shrink-0 pt-0.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint leading-tight">
+                How<br />it works
+              </p>
+            </div>
+
+            {/* Steps */}
+            <div className="flex-1 flex flex-col divide-y divide-hairline">
+              {STEPS.map(step => (
+                <div key={step.n} className="flex gap-5 py-5 first:pt-0 last:pb-0">
+                  <p className="font-serif text-[32px] font-medium text-brand/15 leading-none pt-0.5 w-10 shrink-0 select-none">
+                    {step.n}
+                  </p>
+                  <div>
+                    <p className="text-[14px] font-semibold text-ink mb-1">{step.title}</p>
+                    <p className="text-[13px] text-ink-muted leading-relaxed">{step.body}</p>
                   </div>
-                  <p className="text-[13px] leading-relaxed text-ink-muted">{step.description}</p>
                 </div>
               ))}
             </div>
           </div>
+        </section>
 
-          {/* Skills */}
-          <div className="mt-6">
-            <h2 className="mb-3 font-serif text-xl font-medium text-ink">Skills you'll train</h2>
-            <div className="flex flex-wrap gap-2">
-              {SKILLS.map(s => (
-                <span key={s} className="rounded-full border border-brand/20 bg-brand-tint/30 px-3 py-1 text-[12px] font-medium text-brand">
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
+        {/* ── Thin divider ───────────────────────────────────────────────── */}
+        <div className="border-t border-hairline mx-6" />
 
-          {/* Interview relevance */}
-          <div className="mt-6 rounded-2xl border border-brand/20 bg-brand-tint/20 p-6">
-            <h2 className="mb-2 font-serif text-base font-medium text-ink">Interview relevance</h2>
-            <p className="text-[13px] leading-[1.75] text-ink">
-              Interviews test recall under pressure. The Daily Quiz trains your brain to retrieve
-              design principles instantly — so when an interviewer asks &quot;what's the difference
-              between composition and inheritance?&quot; you answer without hesitation.
-            </p>
+        {/* ── Interview relevance pull-quote ─────────────────────────────── */}
+        <section className="mx-auto max-w-5xl px-6 py-12">
+          <div className="flex flex-col sm:flex-row gap-8 items-start">
+            <div className="sm:w-40 shrink-0" />
+            <blockquote className="flex-1">
+              <p className="font-serif text-[22px] sm:text-[26px] font-medium text-ink leading-snug max-w-2xl">
+                &ldquo;Interviewers can tell who practised daily versus who crammed the night before.&rdquo;
+              </p>
+              <p className="mt-4 text-[12px] text-ink-faint font-mono uppercase tracking-widest">
+                — LLDCanvas methodology
+              </p>
+              <Link
+                href="/learn/quiz/session"
+                className="mt-8 inline-flex items-center gap-2 text-brand text-[14px] font-semibold group"
+              >
+                Start Today&apos;s Quiz
+                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </blockquote>
           </div>
+        </section>
 
-          {/* CTA */}
-          <div className="mt-8">
-            <Link
-              href="/learn/quiz/session"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-[14px] font-semibold text-white hover:opacity-90 transition-opacity group"
-            >
-              Start Today&apos;s Quiz
-              <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   )

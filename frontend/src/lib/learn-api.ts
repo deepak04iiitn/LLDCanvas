@@ -161,6 +161,11 @@ export interface QuizQuestion {
   difficulty: 'easy' | 'medium' | 'hard'
   prompt: string
   choices: string[]
+  // Available on revisit bank questions (populated from QuizQuestion model)
+  correctIndex?: number
+  explanation?: string
+  // The wrong answer the user previously chose (revisit bank only)
+  userChoiceIndex?: number | null
 }
 
 export interface QuizSubmitDetail {
@@ -185,6 +190,7 @@ export interface QuizStreak {
   longestStreak: number
   totalDays: number
   last30Days: string[]
+  last365Days: string[]
 }
 
 export interface LeaderboardEntry {
@@ -289,7 +295,11 @@ export const learnApi = {
   },
 
   quiz: {
-    today: () => request<{ questions: QuizQuestion[] }>('/learn/quiz/today'),
+    today: () => request<{
+      questions: QuizQuestion[]
+      alreadyCompleted?: boolean
+      existingResult?: { correct: number; total: number }
+    }>('/learn/quiz/today'),
     submit: (answers: { questionId: string; choiceIndex: number }[], setId?: string) =>
       request<QuizSubmitResult>(
         '/learn/quiz/submit',
@@ -314,6 +324,9 @@ export const learnApi = {
         attemptId: string
         scenario: DetectiveScenario & {
           diagramSnapshot?: string
+          codeSnippet?: string
+          codeSnippets?: Record<string, string>
+          description?: string
         }
       }>(`/learn/detective/${id}/start`, { method: 'POST' }),
     submit: (

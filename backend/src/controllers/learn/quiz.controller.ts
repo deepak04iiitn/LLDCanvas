@@ -28,64 +28,119 @@ function getWeakestSkills(skills: Record<string, number>): string[] {
 
 // ─── getTodayQuiz ────────────────────────────────────────────────────────────
 
+const QUIZ_SIZE = 10
+
 export async function getTodayQuiz(req: Request, res: Response, next: NextFunction) {
   try {
     const dateKey = todayKey()
+    const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5)
+    const pick    = <T>(arr: T[], n: number): T[] => shuffle(arr).slice(0, n)
+
+    // Ensure a global daily set exists (used as the canonical setId for tracking)
     let set = await DailyQuizSet.findOne({ dateKey, status: 'published' })
     if (!set) {
-      // Fallback: pick 5 published questions and materialise today's set
-      const questions = await QuizQuestion.find({ status: 'published' }).limit(5).lean()
-      if (questions.length === 0) {
-        res.json({ dateKey, questions: [] })
-        return
-      }
+      const all = await QuizQuestion.find({ status: 'published' }).select('_id').lean()
+      if (all.length === 0) { res.json({ dateKey, questions: [] }); return }
       set = await DailyQuizSet.findOneAndUpdate(
         { dateKey },
-        {
-          dateKey,
-          questionIds: questions.map(q => q._id),
-          status: 'published',
-        },
+        { dateKey, questionIds: all.map(q => q._id), status: 'published' },
         { upsert: true, new: true },
       )
     }
 
-    // Base pool
-    let allPublished = await QuizQuestion.find({
-      _id: { $in: set!.questionIds },
-      status: 'published',
-    })
+    // Full published pool
+    let pool = await QuizQuestion.find({ status: 'published' })
       .select('slug topic difficulty prompt choices skillTag')
       .lean()
 
-    let questions = allPublished
+    if (pool.length === 0) { res.json({ dateKey, setId: set!.id, questions: [] }); return }
 
-    // Adaptive selection: if user is authenticated, weight toward weakest skills
+    // For authenticated users: exclude questions seen in the last 30 days
+    if (req.user) {
+      const cutoff = new Date(Date.now() - 30 * 86_400_000)
+      const recentAttempts = await QuizAttempt.find({
+        userId: req.user.id,
+        createdAt: { $gte: cutoff },
+      }).select('answers').lean()
+
+      const seenIds = new Set<string>()
+      for (const attempt of recentAttempts) {
+        for (const a of attempt.answers) seenIds.add(String(a.questionId))
+      }
+
+      const fresh = pool.filter(q => !seenIds.has(String((q as any)._id)))
+      // If enough fresh questions exist, restrict pool to those; otherwise allow repeats
+      if (fresh.length >= QUIZ_SIZE) pool = fresh
+      else if (fresh.length > 0) {
+        // Pad with least-recently-seen questions to reach QUIZ_SIZE
+        const stale = pool.filter(q => seenIds.has(String((q as any)._id)))
+        pool = [...fresh, ...shuffle(stale).slice(0, QUIZ_SIZE - fresh.length)]
+      }
+    }
+
+    let questions = pool
+
+    // Adaptive selection: weight toward weakest skills
     if (req.user) {
       const profile = await JourneyProfile.findOne({ userId: req.user.id, isActive: true })
       if (profile) {
         const skillsRaw = profile.skills as unknown as Record<string, number>
         const [weak1, weak2] = getWeakestSkills(skillsRaw)
 
-        const fromWeak1 = allPublished.filter(q => q.skillTag === weak1)
-        const fromWeak2 = allPublished.filter(q => q.skillTag === weak2)
-        const rest = allPublished.filter(q => q.skillTag !== weak1 && q.skillTag !== weak2)
+        const fromWeak1 = pool.filter(q => q.skillTag === weak1)
+        const fromWeak2 = pool.filter(q => q.skillTag === weak2)
+        const rest      = pool.filter(q => q.skillTag !== weak1 && q.skillTag !== weak2)
 
         if (fromWeak1.length > 0 || fromWeak2.length > 0) {
-          // Shuffle helpers
-          const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5)
-          const pick = <T>(arr: T[], n: number): T[] => shuffle(arr).slice(0, n)
-
-          const slot1 = pick(fromWeak1, 2)                   // 2 from weakest
-          const slot2 = pick(fromWeak2, 1)                   // 1 from 2nd weakest
-          const alreadyPicked = new Set([...slot1, ...slot2].map(q => String((q as any)._id)))
+          const slot1 = pick(fromWeak1, 4)  // 4 from weakest skill
+          const slot2 = pick(fromWeak2, 2)  // 2 from 2nd weakest skill
+          const picked = new Set([...slot1, ...slot2].map(q => String((q as any)._id)))
           const remaining = shuffle([...rest, ...fromWeak1, ...fromWeak2]).filter(
-            q => !alreadyPicked.has(String((q as any)._id)),
+            q => !picked.has(String((q as any)._id)),
           )
-          const slot3 = remaining.slice(0, Math.max(0, 5 - slot1.length - slot2.length))
+          const slot3 = remaining.slice(0, Math.max(0, QUIZ_SIZE - slot1.length - slot2.length))
           const adaptive = [...slot1, ...slot2, ...slot3]
           if (adaptive.length > 0) questions = adaptive
+        } else {
+          questions = pick(pool, QUIZ_SIZE)
         }
+      } else {
+        questions = pick(pool, QUIZ_SIZE)
+      }
+    } else {
+      questions = pick(pool, QUIZ_SIZE)
+    }
+
+    // Final cap to QUIZ_SIZE
+    questions = shuffle(questions).slice(0, QUIZ_SIZE)
+
+    // ── Check if the user already completed today's quiz ──────────────────────
+    if (req.user) {
+      const existing = await QuizAttempt.findOne({ userId: req.user.id, dateKey }).lean()
+      if (existing) {
+        // Enrich the stored answers with explanation + correctIndex from question docs
+        const enriched = []
+        for (const a of existing.answers) {
+          const q = await QuizQuestion.findById(a.questionId)
+            .select('slug topic difficulty prompt choices correctIndex explanation skillTag')
+            .lean()
+          if (q) enriched.push({
+            ...(q as any),
+            // include what the user answered for review
+            userChoiceIndex: a.choiceIndex,
+            userCorrect:     a.correct,
+          })
+        }
+        return res.json({
+          dateKey,
+          setId:            String(set!._id),
+          questions:        enriched,
+          alreadyCompleted: true,
+          existingResult: {
+            correct:  existing.correctCount,
+            total:    existing.total,
+          },
+        })
       }
     }
 
@@ -99,6 +154,14 @@ export async function submitQuiz(req: Request, res: Response, next: NextFunction
   try {
     const dateKey = String(req.body.dateKey ?? todayKey())
     const userId = req.user!.id
+
+    // Prevent re-submission for the same day
+    const alreadyAttempted = await QuizAttempt.findOne({ userId, dateKey }).lean()
+    if (alreadyAttempted) {
+      res.status(409).json({ message: "You've already completed today's quiz. Come back tomorrow!" })
+      return
+    }
+
     const answers = Array.isArray(req.body.answers)
       ? req.body.answers as { questionId: string; choiceIndex: number }[]
       : []
@@ -136,10 +199,13 @@ export async function submitQuiz(req: Request, res: Response, next: NextFunction
     await Promise.all(
       details.map(d => {
         if (!d.correct) {
-          // Wrong answer → add to revisit bank (upsert so no duplicates)
+          // Wrong answer → add to revisit bank; always update userChoiceIndex to the latest wrong pick
           return QuizRevisit.updateOne(
             { userId, questionId: d.questionId, isResolved: false },
-            { $setOnInsert: { userId, questionId: d.questionId, addedAt: new Date() } },
+            {
+              $set:      { userChoiceIndex: d.choiceIndex },
+              $setOnInsert: { userId, questionId: d.questionId, addedAt: new Date() },
+            },
             { upsert: true },
           )
         } else {
@@ -239,7 +305,7 @@ export async function getQuizStreak(req: Request, res: Response, next: NextFunct
       if (runLen > longestStreak) longestStreak = runLen
     }
 
-    // Last 30 days
+    // Last 30 days (kept for backward compat)
     const last30Days: string[] = []
     for (let i = 0; i < 30; i++) {
       const d = new Date(new Date(today).getTime() - i * msPerDay)
@@ -247,11 +313,20 @@ export async function getQuizStreak(req: Request, res: Response, next: NextFunct
       if (dateSet.has(key)) last30Days.push(key)
     }
 
+    // Last 365 days (for contribution heatmap)
+    const last365Days: string[] = []
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(new Date(today).getTime() - i * msPerDay)
+      const key = d.toISOString().slice(0, 10)
+      if (dateSet.has(key)) last365Days.push(key)
+    }
+
     res.json({
       currentStreak,
       longestStreak,
       totalDays: dateSet.size,
       last30Days,
+      last365Days,
     })
   } catch (e) { next(e) }
 }
@@ -319,8 +394,11 @@ export async function getRevisitBank(req: Request, res: Response, next: NextFunc
       .lean()
 
     const questions = revisits
-      .map(r => r.questionId)
-      .filter(Boolean)
+      .filter(r => r.questionId)
+      .map(r => ({
+        ...(r.questionId as any),
+        userChoiceIndex: r.userChoiceIndex ?? null,
+      }))
 
     res.json({ questions, count: questions.length })
   } catch (e) { next(e) }

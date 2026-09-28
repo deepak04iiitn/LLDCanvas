@@ -191,7 +191,7 @@ export function FeatureOverview({
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-tint">
                 <Target size={14} className="text-brand" />
               </div>
-              <h2 className="font-serif text-base font-medium text-ink">Skills you'll build</h2>
+              <h2 className="font-serif text-base font-medium text-ink">Skills you&apos;ll build</h2>
             </div>
             <ul className="space-y-3">
               {skills.map(skill => (
@@ -225,7 +225,7 @@ export function FeatureOverview({
           <section>
             <div className="flex items-center gap-2 mb-4">
               <BookOpen size={16} className="text-ink-faint" />
-              <h2 className="font-serif text-lg font-medium text-ink">What you'll practice</h2>
+              <h2 className="font-serif text-lg font-medium text-ink">What you&apos;ll practice</h2>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               {exampleScenarios.map((s, i) => (

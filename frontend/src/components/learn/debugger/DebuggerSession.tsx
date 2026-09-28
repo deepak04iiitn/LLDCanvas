@@ -257,7 +257,7 @@ export function DebuggerSession({ challenge }: Props) {
 
   return (
     <div
-      className="flex h-full flex-col overflow-hidden"
+      className="flex w-full flex-1 min-h-0 flex-col overflow-hidden"
       style={{ userSelect: hResizingRef.current ? 'none' : undefined }}
     >
       {/* ── Main panels (flex-1) ─────────────────────────────────────── */}
@@ -266,7 +266,7 @@ export function DebuggerSession({ challenge }: Props) {
         {/* ── Left info panel ─────────────────────────────────────────── */}
         <aside
           style={{ width: leftWidth, minWidth: 200, maxWidth: 600 }}
-          className="shrink-0 flex flex-col overflow-y-auto border-r border-hairline bg-paper-elevated"
+          className="no-scrollbar shrink-0 flex flex-col overflow-y-auto border-r border-hairline bg-paper-elevated"
         >
           <div className="flex flex-col gap-4 p-5 flex-1">
             {/* Header badge */}
@@ -390,7 +390,7 @@ export function DebuggerSession({ challenge }: Props) {
                   <ChevronDown className="h-3 w-3 text-ink-faint" />
                 </button>
                 {langOpen && (
-                  <div className="absolute left-0 top-full z-20 mt-1 min-w-[180px] rounded-xl border border-hairline bg-paper shadow-lg">
+                  <div className="absolute left-0 top-full z-20 mt-1 min-w-45 rounded-xl border border-hairline bg-paper shadow-lg">
                     {challenge.variants.map(v => (
                       <button
                         key={v.language}

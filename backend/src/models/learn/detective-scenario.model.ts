@@ -14,6 +14,9 @@ export interface IDetectiveScenario extends Document {
   choices: string[]
   explanation: string
   diagramSnapshot?: Record<string, unknown>
+  codeSnippet?: string
+  codeSnippets?: Map<string, string>
+  description?: string
   status: DetectiveStatus
   order: number
   createdAt: Date
@@ -45,6 +48,9 @@ const detectiveScenarioSchema = new Schema<IDetectiveScenario>(
     choices: { type: [String], default: [] },
     explanation: { type: String, default: '' },
     diagramSnapshot: { type: Schema.Types.Mixed },
+    codeSnippet: { type: String },
+    codeSnippets: { type: Schema.Types.Mixed },
+    description: { type: String },
     status: { type: String, enum: ['draft', 'published', 'archived'], default: 'draft', index: true },
     order: { type: Number, default: 0 },
 

@@ -24,7 +24,7 @@ async function findPublished(idOrSlug: string) {
 export async function listDetective(req: Request, res: Response, next: NextFunction) {
   try {
     const scenarios = await DetectiveScenario.find({ status: 'published' })
-      .select('slug title mode difficulty stem choices diagramSnapshot status order')
+      .select('slug title mode difficulty stem choices diagramSnapshot codeSnippet status order')
       .sort({ order: 1, createdAt: -1 })
       .lean()
     res.json({ scenarios })
@@ -48,6 +48,9 @@ export async function startDetective(req: Request, res: Response, next: NextFunc
         stem: scenario.stem,
         choices: scenario.choices,
         diagramSnapshot: scenario.diagramSnapshot,
+        codeSnippet: scenario.codeSnippet,
+        codeSnippets: scenario.codeSnippets,
+        description: scenario.description,
         // suggest mode
         problemContext: scenario.problemContext,
         // compare mode — expose prompt fields but NOT keyTradeoffs
