@@ -392,16 +392,34 @@ export const learnApi = {
       },
     ) =>
       request<{
+        // Normal stage advance
         run: RunState
-        stageResult: {
+        stageResult?: {
           passed: boolean
           stageTitle: string
           healthBefore: ArchitectureHealth
           healthAfter: ArchitectureHealth
           resourcesAfter: RunResources
+          designEval: {
+            score: number
+            criteria: {
+              id: string; label: string; passed: boolean
+              points: number; maxPoints: number; hint: string
+            }[]
+          } | null
         }
-        currentStage: Stage
-        nextStage: Stage | null
+        currentStage?: Stage
+        nextStage?: Stage | null
+        // Design rejected — stage NOT advanced
+        designRejected?: boolean
+        designEval?: {
+          score: number
+          criteria: {
+            id: string; label: string; passed: boolean
+            points: number; maxPoints: number; hint: string
+          }[]
+        }
+        minScore?: number
       }>(`/learn/roguelike/runs/${runId}/stage`, {
         method: 'POST',
         body: JSON.stringify(body),

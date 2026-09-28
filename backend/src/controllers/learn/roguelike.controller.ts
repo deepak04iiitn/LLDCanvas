@@ -14,6 +14,152 @@ function paramId(id: string | string[]): string {
   return Array.isArray(id) ? id[0] : id
 }
 
+// ── Design evaluator ──────────────────────────────────────────────────────────
+
+const DEFAULT_NAMES = new Set(['ClassName', 'InterfaceName', 'AbstractClass', 'EnumName'])
+
+export interface DesignCriterion {
+  id: string
+  label: string
+  passed: boolean
+  points: number
+  maxPoints: number
+  hint: string
+}
+
+export interface DesignEval {
+  score: number
+  criteria: DesignCriterion[]
+}
+
+type DiagramNode = {
+  id: string
+  type?: string
+  data?: { name?: string; nodeType?: string; attributes?: unknown[]; methods?: unknown[] }
+}
+
+function evaluateDiagram(
+  snapshot: { nodes: unknown[]; edges: unknown[] } | undefined,
+): DesignEval | undefined {
+  if (!snapshot) return undefined
+  const nodes = snapshot.nodes as DiagramNode[]
+  const edges = snapshot.edges as { source: string; target: string; type?: string }[]
+
+  // Zero-node canvas — all criteria fail, score 0
+  if (nodes.length === 0) {
+    return {
+      score: 0,
+      criteria: [
+        { id: 'nodes',       label: 'Components defined',   passed: false, points: 0, maxPoints: 20, hint: 'Add at least 2–3 components to your diagram' },
+        { id: 'connections', label: 'Relationships defined', passed: false, points: 0, maxPoints: 20, hint: 'Draw connections between every component' },
+        { id: 'naming',      label: 'Meaningful names',     passed: false, points: 0, maxPoints: 20, hint: 'Name every node to reflect your actual design (e.g. "HotelService")' },
+        { id: 'diversity',   label: 'Node type variety',    passed: false, points: 0, maxPoints: 20, hint: 'Mix classes with interfaces or abstract classes' },
+        { id: 'structure',   label: 'Attributes & methods', passed: false, points: 0, maxPoints: 20, hint: 'Add attributes and methods to at least half your nodes' },
+      ],
+    }
+  }
+
+  const criteria: DesignCriterion[] = []
+
+  // ── 1. Sufficient nodes (max 20 pts) ─────────────────────────────────────
+  // ≥4 nodes: full credit  |  3: good  |  2: minimal  |  1: almost nothing
+  const nodeCount = nodes.length
+  criteria.push({
+    id: 'nodes',
+    label: 'Components defined',
+    passed: nodeCount >= 3,
+    points: nodeCount >= 4 ? 20 : nodeCount === 3 ? 16 : nodeCount === 2 ? 8 : 2,
+    maxPoints: 20,
+    hint: 'Add at least 3–4 components — a single class is not a design',
+  })
+
+  // ── 2. Connections drawn (max 20 pts) ────────────────────────────────────
+  // Full credit: every node connected AND at least one relationship type is specified.
+  // Partial credit: connected but all plain/untyped edges.
+  // Zero: no edges, or orphan nodes remain.
+  const connectedNodes = new Set<string>()
+  for (const e of edges) { connectedNodes.add(e.source); connectedNodes.add(e.target) }
+  const isolated = nodes.filter(n => !connectedNodes.has(n.id)).length
+  const allConnected = edges.length > 0 && isolated === 0
+  const TYPED_RELS = new Set(['association', 'aggregation', 'composition', 'inheritance', 'realization', 'dependency'])
+  const typedEdgeCount = edges.filter(
+    e => TYPED_RELS.has((e as any).data?.relationshipType ?? ''),
+  ).length
+  const hasTypedRels = typedEdgeCount > 0
+  criteria.push({
+    id: 'connections',
+    label: 'Relationships defined',
+    passed: allConnected && hasTypedRels,
+    points: !allConnected ? 0
+      : hasTypedRels ? (typedEdgeCount >= edges.length * 0.75 ? 20 : 14)
+      : 7,  // connected but all untyped lines
+    maxPoints: 20,
+    hint: 'Connect every node and set each relationship type (inheritance, composition, etc.)',
+  })
+
+  // ── 3. Meaningful names (max 20 pts) ─────────────────────────────────────
+  // Zero tolerance: any bad name → no full credit; ALL bad → 0.
+  const isBadName = (raw: string | undefined) => {
+    const name = (raw ?? '').trim()
+    return name === '' || DEFAULT_NAMES.has(name)
+  }
+  const badCount = nodes.filter(n => isBadName(n.data?.name)).length
+  const allRenamed = badCount === 0
+  criteria.push({
+    id: 'naming',
+    label: 'Meaningful names',
+    passed: allRenamed,
+    // Even one bad name reduces score; all bad → 0
+    points: badCount === 0 ? 20 : badCount === 1 ? 10 : 0,
+    maxPoints: 20,
+    hint: 'Give every component a real domain name (e.g. "OrderService", "PaymentGateway")',
+  })
+
+  // ── 4. Node type variety (max 20 pts) ────────────────────────────────────
+  const types = new Set(nodes.map(n => n.data?.nodeType ?? n.type).filter(Boolean))
+  const hasDiversity = types.size >= 2
+  criteria.push({
+    id: 'diversity',
+    label: 'Node type variety',
+    passed: hasDiversity,
+    points: types.size >= 3 ? 20 : hasDiversity ? 12 : 0,
+    maxPoints: 20,
+    hint: 'Use a mix of classes, interfaces, and abstract classes to model your design properly',
+  })
+
+  // ── 5. Structural detail (max 20 pts) ────────────────────────────────────
+  // Require at least half the nodes to have both attributes AND methods
+  // (just attributes or just methods is partial)
+  const withBoth = nodes.filter(
+    n => (n.data?.attributes?.length ?? 0) > 0 && (n.data?.methods?.length ?? 0) > 0,
+  ).length
+  const withEither = nodes.filter(
+    n => (n.data?.attributes?.length ?? 0) + (n.data?.methods?.length ?? 0) > 0,
+  ).length
+  const halfHaveBoth   = withBoth   >= Math.max(1, Math.ceil(nodes.length / 2))
+  const halfHaveEither = withEither >= Math.max(1, Math.ceil(nodes.length / 2))
+  criteria.push({
+    id: 'structure',
+    label: 'Attributes & methods',
+    passed: halfHaveBoth,
+    points: halfHaveBoth ? 20 : halfHaveEither ? 10 : withEither > 0 ? 4 : 0,
+    maxPoints: 20,
+    hint: 'Add both attributes and methods to at least half your classes — show real responsibility',
+  })
+
+  const score = Math.min(100, criteria.reduce((s, c) => s + c.points, 0))
+  return { score, criteria }
+}
+
+// ── Minimum design score by mode ─────────────────────────────────────────────
+const MIN_DESIGN_SCORE: Record<string, number> = {
+  beginner:  45,   // need nodes + names + at least some connections
+  interview: 60,   // additionally need type variety or structure
+  survival:  65,
+  hardcore:  75,
+  endless:   55,
+}
+
 // ── Health helpers ────────────────────────────────────────────────────────────
 
 const INITIAL_HEALTH: ArchitectureHealth = {
@@ -282,6 +428,56 @@ export async function submitStage(req: Request, res: Response, next: NextFunctio
       complexityBudgetRemaining: resourcesAfter.complexityBudgetRemaining - 1,
     }
 
+    // Evaluate submitted diagram (heuristic scoring)
+    const designEval = evaluateDiagram(diagramSnapshot)
+
+    // Gate: canvas-stage submissions must meet the mode's minimum design score.
+    // Also catches missing/empty diagrams — evaluateDiagram returns score=0 for empty canvas.
+    const isCanvasSubmission = !isSkip && !isRefactor
+    if (isCanvasSubmission) {
+      // If no snapshot was sent at all, treat it as an empty diagram (score 0)
+      const evalTarget = designEval ?? evaluateDiagram({ nodes: [], edges: [] })
+      const minScore = MIN_DESIGN_SCORE[run.mode] ?? 40
+      if (evalTarget && evalTarget.score < minScore) {
+        return res.json({
+          designRejected: true,
+          designEval: evalTarget,
+          minScore,
+          run: {
+            id: run.id,
+            status: run.status,
+            currentStageOrder: run.currentStageOrder, // unchanged
+            health: run.health,
+            resources: run.resources,
+            stagesTotal: run.stagesTotal,
+            totalDecisions: run.totalDecisions,
+            totalRefactors: run.totalRefactors,
+            majorFailures: run.majorFailures,
+          },
+        })
+      }
+    }
+
+    if (designEval) {
+      const s = designEval.score
+      if (s >= 80) {
+        // Excellent design — rewards in cohesion, coupling, and reduced debt
+        healthAfter = applyDelta(healthAfter, { cohesion: 6, coupling: -5, reliability: 4, debt: -3 })
+      } else if (s >= 60) {
+        // Good design — modest reward
+        healthAfter = applyDelta(healthAfter, { cohesion: 3, coupling: -2 })
+      } else if (s >= 40) {
+        // Mediocre — slight debt accumulation
+        healthAfter = applyDelta(healthAfter, { debt: 5 })
+      } else if (s >= 20) {
+        // Poor design — meaningful penalty across multiple axes
+        healthAfter = applyDelta(healthAfter, { complexity: 10, reliability: -8, debt: 12 })
+      } else {
+        // Critically bad (< 20) — heavy penalty; nearly guarantees debt accumulation
+        healthAfter = applyDelta(healthAfter, { complexity: 18, reliability: -12, coupling: 12, debt: 22 })
+      }
+    }
+
     // Determine pass/fail
     const passed = healthAfter.debt < 80 && resourcesAfter.engineeringHoursRemaining >= 0
 
@@ -363,6 +559,7 @@ export async function submitStage(req: Request, res: Response, next: NextFunctio
         healthBefore,
         healthAfter,
         resourcesAfter,
+        designEval: designEval ?? null,
       },
       currentStage: currentStage,
       nextStage: nextStage ?? null,

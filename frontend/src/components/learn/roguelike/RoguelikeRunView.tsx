@@ -6,5 +6,9 @@ import { RunPlayer } from './RunPlayer'
 export function RoguelikeRunView() {
   const params = useParams()
   const runId = String(params.runId ?? '')
-  return <RunPlayer runId={runId} />
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-paper">
+      <RunPlayer runId={runId} />
+    </div>
+  )
 }

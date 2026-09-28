@@ -18,8 +18,15 @@ import { ResourceTracker } from './ResourceTracker'
 import { RunSummary } from './RunSummary'
 import { RoguelikeCanvas } from './RoguelikeCanvas'
 import type { SimpleNode, SimpleEdge } from './RoguelikeCanvas'
+import { CanvasPhaseOverlay } from './CanvasPhaseOverlay'
 
 type Phase = 'loading' | 'event' | 'decision' | 'canvas' | 'result' | 'complete' | 'failed'
+
+export interface DesignCriterion {
+  id: string; label: string; passed: boolean
+  points: number; maxPoints: number; hint: string
+}
+export interface DesignEval { score: number; criteria: DesignCriterion[] }
 
 interface StageResultOverlay {
   passed: boolean
@@ -27,6 +34,7 @@ interface StageResultOverlay {
   healthBefore: ArchitectureHealth
   healthAfter: ArchitectureHealth
   resourcesAfter: RunResources
+  designEval?: DesignEval | null
 }
 
 interface Props {
@@ -45,6 +53,7 @@ export function RunPlayer({ runId }: Props) {
   const [diagramNodes, setDiagramNodes] = useState<SimpleNode[]>([])
   const [diagramEdges, setDiagramEdges] = useState<SimpleEdge[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [designRejection, setDesignRejection] = useState<{ score: number; minScore: number; eval: DesignEval } | null>(null)
   const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load run + scenario
@@ -104,13 +113,19 @@ export function RunPlayer({ runId }: Props) {
         isRefactor: opts.isRefactor,
       })
 
+      // Design gated — don't advance, show rejection overlay
+      if (res.designRejected && res.designEval && res.minScore !== undefined) {
+        setDesignRejection({ score: res.designEval.score, minScore: res.minScore, eval: res.designEval })
+        return
+      }
+
       setRun(res.run as FullRun)
-      setStageResult(res.stageResult)
+      setStageResult(res.stageResult!)
       setPhase('result')
 
       if (resultTimerRef.current) clearTimeout(resultTimerRef.current)
       resultTimerRef.current = setTimeout(() => {
-        advanceFromResult(res.run as FullRun, res.nextStage, res.currentStage)
+        advanceFromResult(res.run as FullRun, res.nextStage ?? null, res.currentStage ?? null)
       }, 3000)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to submit stage')
@@ -119,7 +134,7 @@ export function RunPlayer({ runId }: Props) {
     }
   }, [run, currentStage, submitting, runId, architectureNotes, diagramNodes, diagramEdges])
 
-  function advanceFromResult(updatedRun: FullRun, nextStage: Stage | null, _currentStage: Stage) {
+  function advanceFromResult(updatedRun: FullRun, nextStage: Stage | null, _currentStage: Stage | null) {
     if (resultTimerRef.current) clearTimeout(resultTimerRef.current)
 
     if (updatedRun.status === 'completed') { setPhase('complete'); return }
@@ -159,7 +174,7 @@ export function RunPlayer({ runId }: Props) {
   // Loading
   if (phase === 'loading' || !run || !scenario) {
     return (
-      <div className="flex h-full items-center justify-center bg-paper">
+      <div className="flex flex-1 min-h-0 items-center justify-center bg-paper">
         <Loader2 className="h-6 w-6 animate-spin text-ink-faint" />
       </div>
     )
@@ -178,7 +193,7 @@ export function RunPlayer({ runId }: Props) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-paper">
+    <div className="flex w-full flex-1 min-h-0 flex-col overflow-hidden bg-paper">
       {/* Resource bar */}
       <ResourceTracker
         resources={run.resources}
@@ -204,46 +219,9 @@ export function RunPlayer({ runId }: Props) {
         {/* Center: Main content */}
         <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
           {phase === 'canvas' && currentStage ? (
-            /* Canvas phase */
-            <div className="flex flex-col h-full">
-              <div className="shrink-0 border-b border-hairline bg-paper-elevated px-5 py-3">
-                <h2 className="font-serif text-lg font-medium text-ink">{currentStage.title}</h2>
-                <p className="text-[13px] text-ink-muted mt-0.5">{currentStage.event.description}</p>
-              </div>
-              <div className="flex-1 min-h-0">
-                <RoguelikeCanvas
-                  nodes={diagramNodes}
-                  edges={diagramEdges}
-                  onChange={(n, e) => { setDiagramNodes(n); setDiagramEdges(e) }}
-                />
-              </div>
-              <div className="shrink-0 border-t border-hairline bg-paper-elevated px-5 py-3 space-y-2">
-                <textarea
-                  value={architectureNotes}
-                  onChange={e => setArchitectureNotes(e.target.value)}
-                  placeholder="Architecture notes (explain your design decisions)…"
-                  className="w-full rounded-lg border border-hairline bg-paper px-3 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-1 focus:ring-brand resize-none h-16"
-                />
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setPhase('decision')}
-                    className="text-[12px] text-ink-muted hover:text-ink transition-colors"
-                  >
-                    ← Back to choices
-                  </button>
-                  <button
-                    disabled={submitting}
-                    onClick={() => submitStage({
-                      decisionMade: selectedDecision?.id,
-                      decisionLabel: selectedDecision?.label,
-                      withDiagram: true,
-                    })}
-                    className="rounded-lg bg-brand px-5 py-2 text-[13px] font-medium text-white hover:bg-brand/90 disabled:opacity-50 transition-colors"
-                  >
-                    {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Design →'}
-                  </button>
-                </div>
-              </div>
+            /* Canvas phase — handled by full-screen overlay below */
+            <div className="flex flex-1 items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-ink-faint" />
             </div>
           ) : (
             /* Default: stage summary */
@@ -270,6 +248,39 @@ export function RunPlayer({ runId }: Props) {
         />
       </div>
 
+      {/* Canvas phase — full-screen overlay */}
+      {phase === 'canvas' && currentStage && (
+        <CanvasPhaseOverlay
+          stage={currentStage}
+          run={run}
+          scenario={scenario}
+          selectedDecision={selectedDecision}
+          diagramNodes={diagramNodes}
+          diagramEdges={diagramEdges}
+          architectureNotes={architectureNotes}
+          submitting={submitting}
+          onDiagramChange={(n, e) => { setDiagramNodes(n); setDiagramEdges(e) }}
+          onNotesChange={setArchitectureNotes}
+          onBack={() => { setDesignRejection(null); setPhase('decision') }}
+          onSubmit={() => submitStage({
+            decisionMade: selectedDecision?.id,
+            decisionLabel: selectedDecision?.label,
+            withDiagram: true,
+          })}
+          completedStages={completedStages}
+        />
+      )}
+
+      {/* Design Rejection Overlay */}
+      {designRejection && phase === 'canvas' && (
+        <DesignRejectionOverlay
+          score={designRejection.score}
+          minScore={designRejection.minScore}
+          designEval={designRejection.eval}
+          onImprove={() => setDesignRejection(null)}
+        />
+      )}
+
       {/* Modals */}
       {phase === 'event' && currentStage && (
         <EventCard
@@ -294,13 +305,10 @@ export function RunPlayer({ runId }: Props) {
           stage={currentStage}
           onDecide={(opt) => {
             setSelectedDecision(opt)
-            if (currentStage.event.requiresDesign) {
-              setPhase('canvas')
-            } else {
-              submitStage({ decisionMade: opt.id, decisionLabel: opt.label })
-            }
+            // Always go to canvas — user draws their design based on the chosen approach
+            setPhase('canvas')
           }}
-          onCanvasInstead={currentStage.event.requiresDesign ? () => setPhase('canvas') : null}
+          onCanvasInstead={null}
           onSkip={() => submitStage({ isSkip: true })}
         />
       )}
@@ -336,16 +344,29 @@ function StageResultOverlay({
   onNext: () => void
 }) {
   const healthKeys: (keyof ArchitectureHealth)[] = ['coupling', 'cohesion', 'extensibility', 'complexity', 'reliability']
+  const de = result.designEval
+
+  function scoreColor(s: number) {
+    if (s >= 80) return 'text-emerald-600'
+    if (s >= 50) return 'text-amber-500'
+    return 'text-red-500'
+  }
+  function scoreBg(s: number) {
+    if (s >= 80) return 'bg-emerald-50 border-emerald-200'
+    if (s >= 50) return 'bg-amber-50 border-amber-200'
+    return 'bg-red-50 border-red-200'
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-md rounded-2xl border border-hairline bg-paper shadow-2xl overflow-hidden">
-        {/* Result banner */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-hairline bg-paper shadow-2xl overflow-hidden">
+
+        {/* ── Result banner ─────────────────────────────────────────────── */}
         <div className={cn('px-5 py-4 text-center', result.passed ? 'bg-emerald-50' : 'bg-red-50')}>
           <div className="flex justify-center mb-2">
             {result.passed
-              ? <Check className="h-10 w-10 text-emerald-600" />
-              : <X     className="h-10 w-10 text-red-600" />}
+              ? <Check className="h-9 w-9 text-emerald-600" />
+              : <X     className="h-9 w-9 text-red-600" />}
           </div>
           <h2 className={cn('font-serif text-xl font-semibold', result.passed ? 'text-emerald-700' : 'text-red-700')}>
             {result.passed ? 'Stage Passed' : 'Stage Failed'}
@@ -353,53 +374,107 @@ function StageResultOverlay({
           <p className="mt-1 text-[13px] text-ink-muted">{result.stageTitle}</p>
         </div>
 
-        {/* Health deltas */}
-        <div className="px-5 py-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint mb-3">Health Changes</p>
-          <div className="space-y-1.5">
-            {healthKeys.map(k => {
-              const before  = result.healthBefore[k] as number
-              const after   = result.healthAfter[k] as number
-              const delta   = after - before
-              const isLower = k === 'coupling' || k === 'complexity'
-              const isGood  = delta === 0 ? true : (isLower ? delta < 0 : delta > 0)
-              return (
-                <div key={k} className="flex items-center justify-between">
-                  <span className="text-[12px] text-ink-muted capitalize">{k}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-ink-faint tabular-nums">{before}</span>
-                    <span className="text-ink-faint">→</span>
-                    <span className="font-mono text-[11px] text-ink tabular-nums">{after}</span>
-                    {delta !== 0 && (
-                      <span className={cn('font-mono text-[11px] font-medium', isGood ? 'text-emerald-600' : 'text-red-500')}>
-                        {delta > 0 ? '+' : ''}{delta}
-                      </span>
-                    )}
+        <div className="grid grid-cols-2 divide-x divide-hairline">
+
+          {/* ── Health deltas ──────────────────────────────────────────── */}
+          <div className="px-4 py-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint mb-3">Health Changes</p>
+            <div className="space-y-1.5">
+              {healthKeys.map(k => {
+                const before = result.healthBefore[k] as number
+                const after  = result.healthAfter[k] as number
+                const delta  = after - before
+                const isLower = k === 'coupling' || k === 'complexity'
+                const isGood  = delta === 0 ? true : (isLower ? delta < 0 : delta > 0)
+                return (
+                  <div key={k} className="flex items-center justify-between">
+                    <span className="text-[11px] text-ink-muted capitalize">{k}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-ink-faint tabular-nums">{before}</span>
+                      <span className="text-[9px] text-ink-faint">→</span>
+                      <span className="font-mono text-[10px] text-ink tabular-nums">{after}</span>
+                      {delta !== 0 && (
+                        <span className={cn('font-mono text-[10px] font-medium', isGood ? 'text-emerald-600' : 'text-red-500')}>
+                          {delta > 0 ? '+' : ''}{delta}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                )
+              })}
+              <div className="flex items-center justify-between border-t border-hairline pt-1.5 mt-1">
+                <span className="text-[11px] text-ink-muted">Tech Debt</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-[10px] text-ink-faint tabular-nums">{result.healthBefore.debt}</span>
+                  <span className="text-[9px] text-ink-faint">→</span>
+                  <span className="font-mono text-[10px] text-ink tabular-nums">{result.healthAfter.debt}</span>
+                  {result.healthAfter.debt !== result.healthBefore.debt && (
+                    <span className={cn('font-mono text-[10px] font-medium', result.healthAfter.debt > result.healthBefore.debt ? 'text-red-500' : 'text-emerald-600')}>
+                      {result.healthAfter.debt > result.healthBefore.debt ? '+' : ''}{result.healthAfter.debt - result.healthBefore.debt}
+                    </span>
+                  )}
                 </div>
-              )
-            })}
-            {/* Debt */}
-            <div className="flex items-center justify-between border-t border-hairline pt-1.5 mt-1.5">
-              <span className="text-[12px] text-ink-muted">Tech Debt</span>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[11px] text-ink-faint tabular-nums">{result.healthBefore.debt}</span>
-                <span className="text-ink-faint">→</span>
-                <span className="font-mono text-[11px] text-ink tabular-nums">{result.healthAfter.debt}</span>
-                {result.healthAfter.debt !== result.healthBefore.debt && (
-                  <span className={cn(
-                    'font-mono text-[11px] font-medium',
-                    result.healthAfter.debt > result.healthBefore.debt ? 'text-red-500' : 'text-emerald-600',
-                  )}>
-                    {result.healthAfter.debt > result.healthBefore.debt ? '+' : ''}
-                    {result.healthAfter.debt - result.healthBefore.debt}
-                  </span>
-                )}
               </div>
             </div>
           </div>
+
+          {/* ── Design evaluation ──────────────────────────────────────── */}
+          <div className="px-4 py-4">
+            <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint mb-3">Design Score</p>
+            {de ? (
+              <>
+                {/* Score ring */}
+                <div className={cn('mb-3 flex items-center gap-3 rounded-xl border px-3 py-2', scoreBg(de.score))}>
+                  <span className={cn('font-mono text-[28px] font-bold tabular-nums leading-none', scoreColor(de.score))}>
+                    {de.score}
+                  </span>
+                  <div>
+                    <p className={cn('text-[11px] font-semibold', scoreColor(de.score))}>
+                      {de.score >= 80 ? 'Excellent design' : de.score >= 60 ? 'Good design' : de.score >= 40 ? 'Mediocre design' : de.score >= 20 ? 'Poor design' : 'Critical failure'}
+                    </p>
+                    <p className={cn('font-mono text-[9px] mt-0.5', de.score >= 60 ? 'text-emerald-600' : 'text-red-500')}>
+                      {de.score >= 80 ? '+cohesion +reliability −coupling −debt' :
+                       de.score >= 60 ? '+cohesion −coupling' :
+                       de.score >= 40 ? '+5 debt' :
+                       de.score >= 20 ? '+12 debt +complexity −reliability' :
+                       '+22 debt +coupling +complexity −reliability'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Criteria checklist */}
+                <div className="space-y-1.5">
+                  {de.criteria.map(c => (
+                    <div key={c.id} className="flex items-start gap-2" title={c.passed ? '' : c.hint}>
+                      <span className={cn('mt-px text-[11px]', c.passed ? 'text-emerald-500' : 'text-red-400')}>
+                        {c.passed ? '✓' : '✗'}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className={cn('text-[11px]', c.passed ? 'text-ink-muted' : 'text-ink-muted line-through opacity-60')}>
+                          {c.label}
+                        </span>
+                        {!c.passed && (
+                          <p className="text-[10px] text-ink-faint leading-tight mt-0.5">{c.hint}</p>
+                        )}
+                      </div>
+                      <span className={cn('shrink-0 font-mono text-[10px] tabular-nums', c.passed ? 'text-emerald-500' : 'text-ink-faint')}>
+                        {c.points}/{c.maxPoints}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-[12px] text-ink-faint text-center">
+                  No diagram was submitted for this stage
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* ── Footer ────────────────────────────────────────────────────── */}
         <div className="border-t border-hairline px-5 py-3 flex justify-between items-center bg-paper-elevated">
           <p className="text-[11px] text-ink-faint">Auto-advancing in 3s…</p>
           <button
@@ -408,6 +483,89 @@ function StageResultOverlay({
           >
             Next Stage →
           </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Design Rejection Overlay ──────────────────────────────────────────────────
+function DesignRejectionOverlay({
+  score,
+  minScore,
+  designEval,
+  onImprove,
+}: {
+  score: number
+  minScore: number
+  designEval: DesignEval
+  onImprove: () => void
+}) {
+  const missing = minScore - score
+
+  return (
+    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-paper border border-ink/10 rounded-2xl w-full max-w-md mx-4 shadow-2xl overflow-hidden">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-ink/8">
+          <div className="flex items-start gap-4">
+            {/* Score display */}
+            <div className="shrink-0 flex flex-col items-center justify-center rounded-xl border border-red-400/30 bg-red-400/8 px-4 py-3 min-w-[80px]">
+              <span className="font-mono text-2xl font-bold leading-none text-red-400 tabular-nums">{score}</span>
+              <span className="font-mono text-[10px] text-red-400/60 mt-0.5">/ 100</span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="mb-1">
+                <span className="text-xs font-mono uppercase tracking-widest text-red-400 font-semibold">Design Rejected</span>
+              </div>
+              <p className="text-ink/90 font-medium text-sm leading-snug">
+                Your design scored <span className="font-bold">{score}/100</span>. You need at least{' '}
+                <span className="font-bold text-amber-500">{minScore}</span> to pass this stage.
+              </p>
+              <p className="text-ink/50 text-xs mt-1">
+                {missing} more {missing === 1 ? 'point' : 'points'} needed — improve and resubmit.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Criteria breakdown */}
+        <div className="px-6 py-4 space-y-2">
+          <p className="text-xs font-mono uppercase tracking-widest text-ink/40 mb-3">Scoring Breakdown</p>
+
+          {designEval.criteria.map(c => (
+            <div key={c.id} className="flex items-start gap-3">
+              <span className={`mt-0.5 shrink-0 text-sm ${c.passed ? 'text-emerald-500' : 'text-red-400'}`}>
+                {c.passed ? '✓' : '✗'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-ink/80">{c.label}</span>
+                  <span className={`text-xs font-mono shrink-0 ${c.passed ? 'text-emerald-500' : 'text-red-400/70'}`}>
+                    {c.points}/{c.maxPoints} pts
+                  </span>
+                </div>
+                {!c.passed && c.hint && (
+                  <p className="text-xs text-ink/45 mt-0.5 leading-snug">{c.hint}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Action */}
+        <div className="px-6 pb-6 pt-2">
+          <button
+            onClick={onImprove}
+            className="w-full h-10 rounded-xl bg-ink text-paper text-sm font-semibold hover:bg-ink/85 active:scale-98 transition-all"
+          >
+            Improve Design →
+          </button>
+          <p className="text-center text-xs text-ink/35 mt-2">
+            Your existing nodes are preserved — keep editing and resubmit.
+          </p>
         </div>
       </div>
     </div>

@@ -781,7 +781,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const highlighted = Boolean((data as { highlighted?: boolean }).highlighted)
   const marked = Boolean((data as { marked?: boolean }).marked)
   const locked = Boolean((data as { locked?: boolean }).locked)
-  const showEditChrome = !locked && selected
+  const showEditChrome = !locked && (selected || !!data.alwaysExpanded)
 
   const effectiveStereotype =
     data.stereotype ?? (isInterface ? 'interface' : isEnum ? 'enum' : undefined)
