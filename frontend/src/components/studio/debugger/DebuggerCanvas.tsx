@@ -506,6 +506,11 @@ export interface DebuggerCanvasProps {
   className?: string
   /** Hide built-in Add Class strip (parent provides its own toolbar). */
   hideEditChrome?: boolean
+  /** Override the canvas interaction mode (pan | select | eraser). Defaults to 'pan' when readOnly, 'select' otherwise. */
+  canvasMode?: 'pan' | 'select' | 'eraser'
+  /** Called when eraser removes a node or edge (by RF node/edge id). */
+  onEraseNode?: (nodeId: string) => void
+  onEraseEdge?: (edgeId: string) => void
 }
 
 function DebuggerCanvasInner({
@@ -518,6 +523,9 @@ function DebuggerCanvasInner({
   onDiagramChange,
   className,
   hideEditChrome,
+  canvasMode: canvasModeProp,
+  onEraseNode,
+  onEraseEdge,
 }: DebuggerCanvasProps) {
   const editable = !readOnly
   const hiKey = highlightedIds.join('\0')
@@ -947,7 +955,9 @@ function DebuggerCanvasInner({
           onNodesDelete={onNodesDelete}
           onNodeClickExtra={onNodeClick}
           onEdgeClickExtra={onEdgeClick}
-          canvasMode={readOnly ? 'pan' : 'select'}
+          canvasMode={canvasModeProp ?? (readOnly ? 'pan' : 'select')}
+          onEraseNode={onEraseNode}
+          onEraseEdge={onEraseEdge}
           selectedCount={readOnly ? 0 : selectedCount}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
