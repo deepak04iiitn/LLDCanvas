@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
-  ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Loader2, Trash2, X, Zap,
+  ArrowRight, Flame, History, Loader2, X, Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -30,48 +30,55 @@ const DIFF_META: Record<string, { dot: string; text: string; label: string; badg
   hardcore: { dot: 'bg-red-600',   text: 'text-red-700',   label: 'Hardcore', badge: 'bg-red-100 text-red-800' },
 }
 
-const RUN_STATUS: Record<string, { label: string; cls: string }> = {
-  active:    { label: 'Active',    cls: 'text-brand' },
-  completed: { label: 'Completed', cls: 'text-emerald-600' },
-  failed:    { label: 'Failed',    cls: 'text-red-500' },
-  abandoned: { label: 'Abandoned', cls: 'text-ink-faint' },
-}
 
 type Diff = 'all' | 'easy' | 'medium' | 'hard'
+
+function getDailyScenario(scenarios: ScenarioSummary[]): ScenarioSummary | null {
+  if (!scenarios.length) return null
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86_400_000,
+  )
+  return scenarios[dayOfYear % scenarios.length]
+}
 
 // ── Scenario row ───────────────────────────────────────────────────────────────
 function ScenarioRow({
   scenario,
   index,
   featured,
+  isLast,
   onClick,
 }: {
   scenario: ScenarioSummary
   index: number
   featured: boolean
+  isLast: boolean
   onClick: () => void
 }) {
-  const diff = scenario.difficulty ?? 'medium'
+  const diff = (scenario.difficulty ?? 'medium').toLowerCase()
   const meta = DIFF_META[diff] ?? DIFF_META.medium
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-5 border-b border-hairline px-6 py-4 text-left transition-colors hover:bg-brand-tint/10 last:border-b-0"
+      className={cn(
+        'group flex w-full items-center gap-5 px-6 py-4 text-left transition-colors hover:bg-paper-elevated',
+        !isLast && 'border-b border-hairline',
+      )}
     >
       {/* Ordinal */}
-      <span className="w-6 shrink-0 select-none font-mono text-[11px] text-ink-faint">
+      <span className="w-5 shrink-0 select-none font-mono text-[11px] text-ink-faint text-right">
         {String(index + 1).padStart(2, '0')}
       </span>
 
       {/* Difficulty dot */}
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', meta.dot)} title={meta.label} />
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', meta.dot)} title={meta.label} />
 
-      {/* Title + description */}
+      {/* Title + meta */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-[14px] font-semibold leading-tight text-ink transition-colors group-hover:text-brand">
+          <p className="truncate font-serif text-[14px] font-medium leading-snug text-ink transition-colors group-hover:text-brand">
             {scenario.title}
           </p>
           {featured && (
@@ -80,33 +87,22 @@ function ScenarioRow({
             </span>
           )}
         </div>
-        {scenario.description && (
-          <p className="mt-0.5 line-clamp-1 text-[12px] leading-snug text-ink-faint">
-            {scenario.description}
-          </p>
-        )}
-      </div>
-
-      {/* Meta chips */}
-      <div className="hidden shrink-0 items-center gap-3 text-[11px] text-ink-faint sm:flex">
-        <span className="font-mono">{(scenario as any).stages?.length ?? 5} stages</span>
-        <span className="font-mono">~{scenario.estimatedMinutes}m</span>
-        {scenario.tags?.[0] && (
-          <span className="rounded-md border border-hairline bg-paper px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-ink-faint">
-            {scenario.tags[0]}
-          </span>
-        )}
+        <p className="mt-0.5 font-mono text-[10px] text-ink-faint truncate">
+          {(scenario as any).stages?.length ?? 5} STAGES
+          {scenario.estimatedMinutes ? ` · ~${scenario.estimatedMinutes}m` : ''}
+          {scenario.tags?.[0] ? ` · ${scenario.tags[0].toUpperCase()}` : ''}
+        </p>
       </div>
 
       {/* Difficulty label */}
-      <span className={cn('hidden w-14 shrink-0 text-right font-mono text-[10px] sm:block', meta.text)}>
+      <span className={cn('hidden shrink-0 font-mono text-[11px] capitalize sm:block w-12 text-right', meta.text)}>
         {meta.label}
       </span>
 
       {/* Arrow */}
       <ArrowRight
         size={14}
-        className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-brand"
+        className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-ink"
       />
     </button>
   )
@@ -143,9 +139,6 @@ export function RoguelikeLobby() {
   const [starting,         setStarting]          = useState(false)
   const [startingQuick,    setStartingQuick]     = useState(false)
   const [featuredSlug,     setFeaturedSlug]      = useState<string | null>(null)
-  const [runsCollapsed,    setRunsCollapsed]     = useState(false)
-  const [abandoningId,     setAbandoningId]      = useState<string | null>(null)
-  const [confirmAbandonId, setConfirmAbandonId]  = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -217,35 +210,6 @@ export function RoguelikeLobby() {
     }
   }
 
-  // Dismiss "Confirm?" state if user clicks elsewhere
-  useEffect(() => {
-    if (!confirmAbandonId) return
-    const handler = (e: MouseEvent) => {
-      if (!(e.target as Element)?.closest('[data-abandon-btn]')) {
-        setConfirmAbandonId(null)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [confirmAbandonId])
-
-  async function handleAbandon(runId: string) {
-    if (confirmAbandonId !== runId) {
-      setConfirmAbandonId(runId)
-      return
-    }
-    setAbandoningId(runId)
-    setConfirmAbandonId(null)
-    try {
-      await learnApi.roguelikeV2.endRun(runId)
-      setRecentRuns(prev => prev.filter(r => r.id !== runId))
-      toast.success('Run abandoned')
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Failed to abandon run')
-    } finally {
-      setAbandoningId(null)
-    }
-  }
 
   // Derived counts
   const counts = {
@@ -255,161 +219,158 @@ export function RoguelikeLobby() {
     hard:   scenarios.filter(s => ['hard', 'hardcore'].includes(s.difficulty)).length,
   }
 
+  const daily   = getDailyScenario(scenarios)
+  const dailySlug = daily?.slug ?? null
+
   const filtered = scenarios.filter(s => {
+    if (s.slug === dailySlug) return false // excluded from main list
     if (diff === 'all')    return true
     if (diff === 'hard')   return s.difficulty === 'hard' || s.difficulty === 'hardcore'
     return s.difficulty === diff
   })
 
-  const activeRuns = recentRuns.filter(r => r.status === 'active')
+  const showDaily = !!daily && (
+    diff === 'all' || daily.difficulty === diff ||
+    (diff === 'hard' && ['hard', 'hardcore'].includes(daily.difficulty))
+  )
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-paper">
 
       {/* ── Sticky header ──────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 shrink-0 border-b border-hairline bg-paper/90 px-6 py-3 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <Link
-            href="/learn/roguelike"
-            className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint transition-colors hover:text-ink"
-          >
-            <ArrowLeft size={13} />
-            LLD Roguelike
-          </Link>
-          <button
-            type="button"
-            onClick={handleQuickRun}
-            disabled={startingQuick}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-hairline px-3.5 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:border-brand/40 hover:text-brand disabled:opacity-40"
-          >
-            {startingQuick
-              ? <Loader2 size={12} className="animate-spin" />
-              : <Zap size={12} />}
-            Quick Run
-          </button>
+      <header className="sticky top-0 z-20 shrink-0 border-b border-hairline bg-paper/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-6 pt-3.5 pb-0">
+
+          {/* Breadcrumb + actions */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+              <Link href="/learn/roguelike" className="hover:text-ink transition-colors">
+                LLD Roguelike
+              </Link>
+              <span>/</span>
+              <span className="text-ink-muted">Scenarios</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!loadingScenarios && scenarios.length > 0 && (
+                <div className="flex items-center gap-3 font-mono text-[11px] mr-1">
+                  <span className="text-ink-faint">{counts.all} total</span>
+                  {counts.easy   > 0 && <span className={DIFF_META.easy.text}>{counts.easy} easy</span>}
+                  {counts.medium > 0 && <span className={DIFF_META.medium.text}>{counts.medium} medium</span>}
+                  {counts.hard   > 0 && <span className={DIFF_META.hard.text}>{counts.hard} hard</span>}
+                </div>
+              )}
+              <Link
+                href="/learn/roguelike/history"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-ink/30 hover:text-ink"
+              >
+                <History size={11} />
+                My Runs
+              </Link>
+              <button
+                type="button"
+                onClick={handleQuickRun}
+                disabled={startingQuick}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-ink/30 hover:text-ink disabled:opacity-40"
+              >
+                {startingQuick ? <Loader2 size={11} className="animate-spin" /> : <Zap size={11} />}
+                Quick Run
+              </button>
+            </div>
+          </div>
+
+          {/* Filter tabs */}
+          {!loadingScenarios && scenarios.length > 0 && (
+            <div className="flex items-center gap-0">
+              {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setDiff(d)}
+                  className={cn(
+                    'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
+                    diff === d
+                      ? 'border-ink text-ink'
+                      : 'border-transparent text-ink-faint hover:text-ink-muted',
+                  )}
+                >
+                  {d}
+                  {d !== 'all' && counts[d] > 0 && (
+                    <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
+                      ({counts[d]})
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
       <div className="mx-auto w-full max-w-5xl px-6 py-8">
 
-        {/* ── Page title ─────────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint">
-            Scenarios
-          </p>
-          <h1 className="font-serif text-[30px] font-medium leading-tight tracking-tight text-ink">
-            Scenario Library
-          </h1>
-          {!loadingScenarios && (
-            <div className="mt-3 flex flex-wrap items-center gap-5">
-              <span className="text-[13px] text-ink-muted">{counts.all} scenarios</span>
-              <div className="flex items-center gap-4">
-                {(['easy', 'medium', 'hard'] as const).filter(d => counts[d] > 0).map(d => (
-                  <span key={d} className="flex items-center gap-1.5 text-[12px]">
-                    <span className={cn('h-1.5 w-1.5 rounded-full', DIFF_META[d].dot)} />
-                    <span className={cn('font-mono', DIFF_META[d].text)}>
-                      {counts[d]} {DIFF_META[d].label}
-                    </span>
-                  </span>
-                ))}
-              </div>
+        {/* ── Today's pick ──────────────────────────────────────────────── */}
+        {showDaily && daily && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Flame size={11} className="text-amber-500 shrink-0" />
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
+                Today's pick
+              </span>
+              <span className="ml-auto font-mono text-[10px] text-ink-faint">
+                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
             </div>
-          )}
-        </div>
-
-        {/* ── Active runs strip ─────────────────────────────────────────── */}
-        {activeRuns.length > 0 && (
-          <div className="mb-6 overflow-hidden rounded-2xl border border-brand/20 bg-brand-tint/30">
-            {/* Header row — collapse toggle */}
             <button
               type="button"
-              onClick={() => setRunsCollapsed(v => !v)}
-              className="flex w-full items-center gap-2 border-b border-brand/10 px-5 py-2.5 text-left transition-colors hover:bg-brand/5"
+              onClick={() => handleScenarioClick(daily)}
+              className="group w-full text-left rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
             >
-              {runsCollapsed
-                ? <ChevronRight size={12} className="shrink-0 text-brand" />
-                : <ChevronDown  size={12} className="shrink-0 text-brand" />}
-              <span className="flex-1 font-mono text-[10px] uppercase tracking-[0.15em] text-brand">
-                Runs in progress
-              </span>
-              <span className="font-mono text-[10px] text-brand/60">{activeRuns.length}</span>
-            </button>
-
-            {/* Run rows */}
-            {!runsCollapsed && activeRuns.map(run => (
-              <div
-                key={run.id}
-                className="group flex items-center gap-3 border-b border-brand/10 px-5 py-3 last:border-b-0"
-              >
-                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-brand" />
-
-                {/* Clickable area */}
-                <a
-                  href={`/learn/roguelike/${run.id}`}
-                  className="flex flex-1 min-w-0 items-center gap-3 hover:opacity-80 transition-opacity"
-                >
-                  <span className="flex-1 truncate text-[13px] font-medium text-ink">{run.scenarioTitle}</span>
-                  <span className="font-mono text-[11px] text-ink-faint shrink-0">
-                    Stage {run.currentStageOrder}/{run.stagesTotal}
-                  </span>
-                  <span className="font-mono text-[10px] uppercase tracking-wide text-ink-faint shrink-0">{run.mode}</span>
-                  <ArrowRight size={13} className="shrink-0 text-brand" />
-                </a>
-
-                {/* Abandon button */}
-                <button
-                  type="button"
-                  data-abandon-btn
-                  onClick={() => handleAbandon(run.id)}
-                  disabled={abandoningId === run.id}
-                  title={confirmAbandonId === run.id ? 'Click again to confirm' : 'Abandon run'}
-                  className={cn(
-                    'ml-1 shrink-0 flex items-center gap-1 rounded-lg border px-2 py-1 font-mono text-[10px] transition-all',
-                    confirmAbandonId === run.id
-                      ? 'border-red-300 bg-red-50 text-red-600 hover:bg-red-100'
-                      : 'border-transparent text-ink-faint opacity-0 group-hover:opacity-100 hover:border-red-200 hover:bg-red-50 hover:text-red-500',
-                    abandoningId === run.id && 'opacity-40 pointer-events-none',
+              <div className="flex items-start gap-5">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_META[daily.difficulty]?.dot ?? 'bg-ink/20')} />
+                    <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_META[daily.difficulty]?.text ?? 'text-ink-faint')}>
+                      {daily.difficulty}
+                    </span>
+                    {(daily as any).stages?.length && (
+                      <span className="font-mono text-[10px] text-ink-faint">
+                        {(daily as any).stages.length} stages
+                      </span>
+                    )}
+                    {daily.estimatedMinutes && (
+                      <span className="font-mono text-[10px] text-ink-faint">· ~{daily.estimatedMinutes}m</span>
+                    )}
+                  </div>
+                  <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
+                    {daily.title}
+                  </h3>
+                  {daily.description && (
+                    <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
+                      {daily.description}
+                    </p>
                   )}
-                >
-                  {abandoningId === run.id
-                    ? <Loader2 size={11} className="animate-spin" />
-                    : <Trash2 size={11} />}
-                  {confirmAbandonId === run.id ? 'Confirm?' : ''}
-                </button>
+                  {daily.tags && daily.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {daily.tags.slice(0, 4).map(tag => (
+                        <span key={tag} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5 uppercase tracking-wide">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
+                  <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </div>
-            ))}
+            </button>
           </div>
         )}
 
-        {/* ── Filter tabs ────────────────────────────────────────────────── */}
-        <div className="-mx-6 mb-6 flex items-center gap-1 border-b border-hairline px-6 pb-0">
-          {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => {
-            const label =
-              d === 'all'    ? `All (${counts.all})`       :
-              d === 'easy'   ? `Easy (${counts.easy})`     :
-              d === 'medium' ? `Medium (${counts.medium})` :
-                               `Hard (${counts.hard})`
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDiff(d)}
-                className={cn(
-                  '-mb-px mr-4 border-b-2 pb-3 px-1 text-[13px] font-medium transition-colors',
-                  diff === d
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-ink-faint hover:text-ink',
-                )}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-
         {/* ── Scenario list ──────────────────────────────────────────────── */}
         {loadingScenarios ? (
-          <div className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
+          <div className="rounded-2xl border border-hairline overflow-hidden">
             {[...Array(6)].map((_, i) => <SkeletonRow key={i} />)}
           </div>
         ) : filtered.length === 0 ? (
@@ -418,54 +379,31 @@ export function RoguelikeLobby() {
             <button
               type="button"
               onClick={() => setDiff('all')}
-              className="mt-2 text-[13px] text-brand hover:underline"
+              className="mt-2 text-[13px] text-ink-faint hover:text-ink hover:underline underline-offset-2 transition-colors"
             >
               Show all
             </button>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
-            {filtered.map((sc, i) => (
-              <ScenarioRow
-                key={sc.slug}
-                scenario={sc}
-                index={i}
-                featured={sc.slug === featuredSlug}
-                onClick={() => handleScenarioClick(sc)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* ── Previous runs (non-active) ────────────────────────────────── */}
-        {recentRuns.filter(r => r.status !== 'active').length > 0 && (
-          <div className="mt-8">
-            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.15em] text-ink-faint">
-              Previous runs
-            </p>
-            <div className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
-              {recentRuns.filter(r => r.status !== 'active').map(run => {
-                const st = RUN_STATUS[run.status] ?? { label: run.status, cls: 'text-ink-faint' }
-                return (
-                  <a
-                    key={run.id}
-                    href={`/learn/roguelike/${run.id}`}
-                    className="group flex items-center gap-4 border-b border-hairline px-6 py-3.5 transition-colors hover:bg-paper-elevated last:border-b-0"
-                  >
-                    <span className={cn('shrink-0 font-mono text-[11px] font-medium w-16', st.cls)}>
-                      {st.label}
-                    </span>
-                    <span className="flex-1 text-[13px] text-ink">{run.scenarioTitle}</span>
-                    <span className="font-mono text-[10px] uppercase tracking-wide text-ink-faint">{run.mode}</span>
-                    <span className="font-mono text-[11px] text-ink-faint">
-                      {run.currentStageOrder}/{run.stagesTotal} stages
-                    </span>
-                    <ArrowRight size={13} className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-brand" />
-                  </a>
-                )
-              })}
+          <>
+            {showDaily && filtered.length > 0 && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint mb-3">
+                All scenarios
+              </p>
+            )}
+            <div className="rounded-2xl border border-hairline overflow-hidden">
+              {filtered.map((sc, i) => (
+                <ScenarioRow
+                  key={sc.slug}
+                  scenario={sc}
+                  index={i}
+                  featured={sc.slug === featuredSlug}
+                  isLast={i === filtered.length - 1}
+                  onClick={() => handleScenarioClick(sc)}
+                />
+              ))}
             </div>
-          </div>
+          </>
         )}
       </div>
 

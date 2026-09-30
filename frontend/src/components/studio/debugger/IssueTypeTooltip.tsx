@@ -100,9 +100,10 @@ export interface IssueTypeTooltipProps {
   issueType: string
   children: React.ReactNode
   className?: string
+  placement?: 'left' | 'right'
 }
 
-export function IssueTypeTooltip({ issueType, children, className }: IssueTypeTooltipProps) {
+export function IssueTypeTooltip({ issueType, children, className, placement = 'right' }: IssueTypeTooltipProps) {
   const info = ISSUE_TYPE_INFO[issueType]
   const [visible, setVisible] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -132,8 +133,8 @@ export function IssueTypeTooltip({ issueType, children, className }: IssueTypeTo
         <div
           role="tooltip"
           className={cn(
-            'pointer-events-none absolute left-full top-0 z-50 ml-3 w-64 rounded-xl border border-hairline bg-paper shadow-lg',
-            // on narrow sidebars, flip to the left if needed
+            'pointer-events-none absolute top-0 z-50 w-64 rounded-xl border border-hairline bg-paper shadow-lg',
+            placement === 'right' ? 'left-full ml-3' : 'right-full mr-3',
           )}
           onMouseEnter={show}
           onMouseLeave={hide}
