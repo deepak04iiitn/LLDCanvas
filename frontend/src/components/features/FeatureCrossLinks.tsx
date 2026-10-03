@@ -15,8 +15,6 @@ const LINKS = [
   { href: '/features/design-debugger',          label: 'Design Debugger',          note: 'Spot design flaws'      },
   { href: '/features/design-score',             label: 'Design Score',             note: 'Heuristic feedback'     },
   { href: '/features/daily-lld-quiz',           label: 'Daily LLD Quiz',           note: 'Stay sharp daily'       },
-  { href: '/features/architecture-microscope',  label: 'Architecture Microscope',  note: 'Inspect a class'        },
-  { href: '/features/dependency-web',           label: 'Dependency Web',           note: 'Couplings & cycles'     },
   { href: '/pricing',                           label: 'Pricing',                  note: 'Plans & billing'        },
   { href: '/docs',                              label: 'Docs',                     note: 'Guides & API'           },
 ]

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BarChart3, Bug, Lock, Microscope, Network, Search, TrendingUp, Wrench, Zap } from 'lucide-react'
+import { BarChart3, Bug, Lock, TrendingUp, Wrench, Zap } from 'lucide-react'
 import { SectionHeader } from '@/components/shared/SectionHeader'
 import {
   getFeaturesByCategory,
@@ -16,13 +16,9 @@ const FEATURE_ICONS: Record<string, React.ElementType> = {
   'change-one': Zap,
   evolution: TrendingUp,
   budget: BarChart3,
-  microscope: Microscope,
-  'dependency-web': Network,
-  analysis: Search,
 }
 
 const PRACTICE_IDS = ['debugger', 'refactor', 'change-one', 'evolution', 'budget']
-const ANALYSIS_IDS = ['microscope', 'dependency-web', 'analysis']
 
 function FeatureCard({ feature }: { feature: FeatureDefinition }) {
   const enabled = isFeatureEnabled(feature.flagKey)
@@ -93,7 +89,6 @@ function FeatureSection({
 export function StudioHub() {
   const features = getFeaturesByCategory('design-studio')
   const practiceFeatures = features.filter(f => PRACTICE_IDS.includes(f.id))
-  const analysisFeatures = features.filter(f => ANALYSIS_IDS.includes(f.id))
 
   return (
     <div className="h-full overflow-y-auto bg-paper">
@@ -105,7 +100,6 @@ export function StudioHub() {
           className="mb-10"
         />
         <FeatureSection label="Practice Challenges" features={practiceFeatures} />
-        <FeatureSection label="Architecture Analysis" features={analysisFeatures} />
       </div>
     </div>
   )

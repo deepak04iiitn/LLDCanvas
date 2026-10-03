@@ -7,8 +7,6 @@ import { EvolvePanel } from './EvolvePanel'
 import { HistoryPanel } from './HistoryPanel'
 import { SharePanel } from './SharePanel'
 import type { AnalyzeEdge } from '@/lib/graph/analyzeDiagram'
-import type { MicroscopeHighlightState } from '@/components/studio/microscope/MicroscopeSession'
-import type { MicroscopeOverlay } from '@/lib/graph/microscope'
 
 export type WorkspaceTabId = 'canvas' | 'analyze' | 'evolve' | 'history' | 'share'
 
@@ -27,9 +25,7 @@ export interface WorkspaceTabsProps {
   diagram?: { nodes: unknown[]; edges: unknown[] } | null
   diagramId?: string | null
   diagramTitle?: string
-  microscopeOverlay?: MicroscopeOverlay
   onFocusElement?: (elementId: string) => void
-  onHighlightChange?: (state: MicroscopeHighlightState) => void
   className?: string
   defaultTab?: WorkspaceTabId
 }
@@ -44,9 +40,7 @@ export function WorkspaceTabs({
   diagram = null,
   diagramId = null,
   diagramTitle = '',
-  microscopeOverlay,
   onFocusElement,
-  onHighlightChange,
   className,
   defaultTab = 'canvas',
 }: WorkspaceTabsProps) {
@@ -103,9 +97,7 @@ export function WorkspaceTabs({
               selectedNode={selectedNode}
               selectedEdge={selectedEdge}
               diagram={diagram}
-              overlay={microscopeOverlay}
               onFocusElement={onFocusElement}
-              onHighlightChange={onHighlightChange}
             />
           </div>
         )}

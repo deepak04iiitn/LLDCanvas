@@ -157,12 +157,6 @@ const NAV_GROUPS: NavGroup[] = [
         Icon: DollarSign,
         isActive: p => p.startsWith('/design-studio/budget'),
       },
-      {
-        label: 'Architecture Analysis',
-        href: '/design-studio/analysis',
-        Icon: ScanSearch,
-        isActive: p => p.startsWith('/design-studio/analysis') || p.startsWith('/design-studio/microscope') || p.startsWith('/design-studio/depweb'),
-      },
     ],
   },
   {

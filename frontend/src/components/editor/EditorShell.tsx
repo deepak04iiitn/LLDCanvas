@@ -330,50 +330,8 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       },
     }
   }, [edges])
-  const [microHighlight, setMicroHighlight] = useState<{
-    highlightIds: string[]
-    dimIds: string[]
-  }>({ highlightIds: [], dimIds: [] })
-
-  const displayNodes = useMemo(() => {
-    if (!microHighlight.dimIds.length && !microHighlight.highlightIds.length) return nodes
-    const dim = new Set(microHighlight.dimIds)
-    const hi = new Set(microHighlight.highlightIds)
-    return nodes.map(n => {
-      const data = n.data as UMLNodeData & { elementId?: string }
-      const eid = data?.elementId ?? n.id
-      const isHi = hi.has(eid) || hi.has(n.id)
-      const isDim = !isHi && (dim.has(eid) || dim.has(n.id))
-      return {
-        ...n,
-        style: {
-          ...(n.style ?? {}),
-          opacity: isDim ? 0.2 : 1,
-          transition: 'opacity 160ms ease',
-        },
-      }
-    })
-  }, [nodes, microHighlight])
-
-  const displayEdges = useMemo(() => {
-    if (!microHighlight.dimIds.length && !microHighlight.highlightIds.length) return edges
-    const hi = new Set(microHighlight.highlightIds)
-    const byId = new Map(nodes.map(n => [n.id, n]))
-    return edges.map(e => {
-      const s = byId.get(e.source)
-      const t = byId.get(e.target)
-      const se = (s?.data as { elementId?: string } | undefined)?.elementId ?? e.source
-      const te = (t?.data as { elementId?: string } | undefined)?.elementId ?? e.target
-      const keep = hi.has(se) || hi.has(te) || hi.has(e.source) || hi.has(e.target)
-      return {
-        ...e,
-        style: {
-          ...(e.style ?? {}),
-          opacity: keep || !microHighlight.highlightIds.length ? 1 : 0.15,
-        },
-      }
-    })
-  }, [edges, nodes, microHighlight])
+  const displayNodes = nodes
+  const displayEdges = edges
 
   const handleFocusElement = useCallback(
     (elementId: string) => {
@@ -1001,7 +959,6 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             selectedNode={selectedNode}
             selectedEdge={selectedEdge}
             onFocusElement={handleFocusElement}
-            onHighlightChange={setMicroHighlight}
             canvas={
               <>
                 <CanvasView

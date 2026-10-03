@@ -73,39 +73,6 @@ export const FEATURES: FeatureDefinition[] = [
     flagKey: 'FF_STUDIO_BUDGET',
     analyticsPrefix: 'studio_budget',
   },
-  {
-    id: 'microscope',
-    category: 'design-studio',
-    label: 'Architecture Microscope',
-    description:
-      'Explore architecture internals — lenses, traces, blast radius, and investigate challenges.',
-    href: '/design-studio/microscope',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_MICROSCOPE',
-    analyticsPrefix: 'studio_microscope',
-  },
-  {
-    id: 'dependency-web',
-    category: 'design-studio',
-    label: 'Dependency Web',
-    description:
-      'Understand how architecture is connected — and how changes propagate through it.',
-    href: '/design-studio/depweb',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_DEPWEB',
-    analyticsPrefix: 'studio_depweb',
-  },
-  {
-    id: 'analysis',
-    category: 'design-studio',
-    label: 'Architecture Analysis',
-    description:
-      'Investigate designs with guided protocols — coupling, dependency cycles, and responsibility analysis.',
-    href: '/design-studio/analysis',
-    adminHref: '/admin/studio/tools',
-    flagKey: 'FF_STUDIO_ANALYSIS',
-    analyticsPrefix: 'studio_analysis',
-  },
 
   // ── Learn & Practice (5) ───────────────────────────────────────────────────
   {
