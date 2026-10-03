@@ -87,7 +87,7 @@ export function DailyPracticeWidget() {
           Set up your Plannr to unlock a personalised daily practice routine.
         </p>
         <Link
-          href="/plannr/setup"
+          href="/dashboard/plannr/setup"
           className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-[12px] font-semibold text-white hover:opacity-90 transition-opacity"
         >
           Set up Plannr <ArrowRight size={12} />
@@ -129,7 +129,7 @@ export function DailyPracticeWidget() {
                 )}
               </div>
               <Link
-                href="/learn/quiz"
+                href="/dashboard/learn/quiz"
                 className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-90 transition-opacity"
               >
                 Start <ArrowRight size={10} />
@@ -155,7 +155,7 @@ export function DailyPracticeWidget() {
                 </div>
               </div>
               <Link
-                href={`/design-studio/${studioChallenge.mode}/${studioChallenge.slug}`}
+                href={`/dashboard/design-studio/${studioChallenge.mode}/${studioChallenge.slug}`}
                 className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-90 transition-opacity"
               >
                 Start <ArrowRight size={10} />

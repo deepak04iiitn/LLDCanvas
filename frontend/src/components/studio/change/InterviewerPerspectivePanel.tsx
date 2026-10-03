@@ -90,7 +90,7 @@ export function InterviewerPerspectivePanel({
             Changes don&rsquo;t happen in isolation — see how they compound over time.
           </p>
           <Link
-            href="/design-studio/evolution"
+            href="/dashboard/design-studio/evolution"
             className="inline-flex items-center gap-1 text-[13px] font-medium text-brand hover:underline"
           >
             See how changes compound in Architecture Evolution →

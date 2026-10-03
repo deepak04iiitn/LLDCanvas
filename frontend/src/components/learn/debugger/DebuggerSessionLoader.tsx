@@ -52,7 +52,7 @@ export function DebuggerSessionLoader({ breadcrumb: _breadcrumb }: DebuggerSessi
       {/* Slim top bar */}
       <header className="flex shrink-0 items-center gap-3 border-b border-hairline bg-paper-elevated px-4 py-2.5 sm:px-6">
         <Link
-          href="/learn/debugger/problems"
+          href="/dashboard/learn/debugger/problems"
           className="flex items-center gap-1.5 text-[12px] text-ink-faint transition-colors hover:text-ink"
         >
           <ArrowLeft size={13} strokeWidth={2} />

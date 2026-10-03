@@ -57,13 +57,13 @@ export function RefactorComplete({ result, elapsedSec, packSlug = '', className 
         <CompletionNext
           packType="refactor"
           currentSlug={packSlug}
-          libraryHref="/design-studio/refactor/problems"
+          libraryHref="/dashboard/design-studio/refactor/problems"
         />
       </div>
 
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
-          href="/design-studio/refactor"
+          href="/dashboard/design-studio/refactor"
           className="rounded-lg bg-brand px-4 py-2.5 text-center text-[13px] font-medium text-white"
         >
           Next refactoring

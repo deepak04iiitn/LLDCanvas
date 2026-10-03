@@ -1,4 +1,4 @@
-﻿export type FeatureCategory = 'design-studio' | 'learn' | 'plannr'
+export type FeatureCategory = 'design-studio' | 'learn' | 'plannr'
 
 export type FeaturePlan = 'free' | 'pro' | 'ultimate'
 
@@ -14,15 +14,15 @@ export interface FeatureDefinition {
   analyticsPrefix: string
 }
 
-/** All Interactive LLD features — hubs and plan gates read from this list. */
+/** All Interactive LLD features � hubs and plan gates read from this list. */
 export const FEATURES: FeatureDefinition[] = [
-  // ── Design Studio (8) ─────────────────────────────────────────────────────
+  // -- Design Studio (8) -----------------------------------------------------
   {
     id: 'debugger',
     category: 'design-studio',
     label: 'Design Debugger',
-    description: 'Find flaws in authored broken designs — mark issues, submit, reveal.',
-    href: '/design-studio/debugger',
+    description: 'Find flaws in authored broken designs � mark issues, submit, reveal.',
+    href: '/dashboard/design-studio/debugger',
     adminHref: '/admin/studio/debugger',
     minPlan: 'pro',
     flagKey: 'FF_STUDIO_DEBUGGER',
@@ -33,7 +33,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'design-studio',
     label: 'Refactoring Mode',
     description: 'Fix a locked broken design and see explained before/after deltas.',
-    href: '/design-studio/refactor',
+    href: '/dashboard/design-studio/refactor',
     adminHref: '/admin/studio/refactor',
     minPlan: 'pro',
     flagKey: 'FF_STUDIO_REFACTOR',
@@ -44,7 +44,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'design-studio',
     label: 'Change One Thing',
     description: 'Meet a new requirement with the smallest semantic change.',
-    href: '/design-studio/change',
+    href: '/dashboard/design-studio/change',
     adminHref: '/admin/studio/change-one',
     minPlan: 'pro',
     flagKey: 'FF_STUDIO_CHANGE_ONE',
@@ -55,7 +55,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'design-studio',
     label: 'Architecture Evolution',
     description: 'Grow a design across staged requirements and version checkpoints.',
-    href: '/design-studio/evolution',
+    href: '/dashboard/design-studio/evolution',
     adminHref: '/admin/studio/evolution',
     minPlan: 'pro',
     flagKey: 'FF_STUDIO_EVOLUTION',
@@ -66,21 +66,21 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'design-studio',
     label: 'Architecture Budget',
     description:
-      'Marketplace prioritization under scarce budgets — invest, reserve, and face opportunity cost.',
-    href: '/design-studio/budget',
+      'Marketplace prioritization under scarce budgets � invest, reserve, and face opportunity cost.',
+    href: '/dashboard/design-studio/budget',
     adminHref: '/admin/studio/budget',
     minPlan: 'pro',
     flagKey: 'FF_STUDIO_BUDGET',
     analyticsPrefix: 'studio_budget',
   },
 
-  // ── Learn & Practice (5) ───────────────────────────────────────────────────
+  // -- Learn & Practice (5) ---------------------------------------------------
   {
     id: 'score',
     category: 'learn',
     label: 'Design Score',
     description: 'Track your UML design quality and score history over time.',
-    href: '/learn/score',
+    href: '/dashboard/learn/score',
     adminHref: '/admin/learn/score',
     flagKey: 'FF_LEARN_SCORE',
     analyticsPrefix: 'learn_score',
@@ -90,7 +90,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'learn',
     label: 'Daily LLD Quiz',
     description: 'Short daily questions with a leaderboard to stay sharp.',
-    href: '/learn/quiz',
+    href: '/dashboard/learn/quiz',
     adminHref: '/admin/learn/quiz',
     flagKey: 'FF_LEARN_QUIZ',
     analyticsPrefix: 'learn_quiz',
@@ -100,7 +100,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'learn',
     label: 'Pattern Detective',
     description: 'Identify, detect, and explain patterns in UML scenarios.',
-    href: '/learn/detective',
+    href: '/dashboard/learn/detective',
     adminHref: '/admin/learn/detective',
     minPlan: 'pro',
     flagKey: 'FF_LEARN_DETECTIVE',
@@ -111,7 +111,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'learn',
     label: 'LLD Roguelike',
     description: 'Run-based LLD practice with modifiers and escalating levels.',
-    href: '/learn/roguelike',
+    href: '/dashboard/learn/roguelike',
     adminHref: '/admin/learn/roguelike',
     minPlan: 'ultimate',
     flagKey: 'FF_LEARN_ROGUELIKE',
@@ -121,19 +121,19 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'code-debugger',
     category: 'learn',
     label: 'Debug Lab',
-    description: 'Code bugs & Design bugs — fix buggy code or hunt structural flaws in UML diagrams and sharpen your design instincts.',
-    href: '/learn/debugger',
+    description: 'Code bugs & Design bugs � fix buggy code or hunt structural flaws in UML diagrams and sharpen your design instincts.',
+    href: '/dashboard/learn/debugger',
     flagKey: 'FF_LEARN_DEBUGGER',
     analyticsPrefix: 'learn_debugger',
   },
 
-  // ── Plannr (1) ──────────────────────────────────────────────
+  // -- Plannr (1) ----------------------------------------------
   {
     id: 'plannr',
     category: 'plannr',
     label: 'Plannr',
-    description: 'Personalised roadmap, theory, interview experiences, tips & tricks, skill tracking — everything you need to ace LLD interviews.',
-    href: '/plannr',
+    description: 'Personalised roadmap, theory, interview experiences, tips & tricks, skill tracking � everything you need to ace LLD interviews.',
+    href: '/dashboard/plannr',
     flagKey: 'FF_PLANNR',
     analyticsPrefix: 'plannr',
   },

@@ -236,7 +236,7 @@ export function DetectiveSession({ breadcrumb: _breadcrumb }: DetectiveSessionPr
       {/* ─── Sticky minimal header ─────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-hairline bg-paper/90 px-4 py-3 backdrop-blur-sm sm:px-6">
         <Link
-          href="/learn/detective/problems"
+          href="/dashboard/learn/detective/problems"
           className="flex items-center gap-1.5 text-[12px] text-ink-faint transition-colors hover:text-ink"
         >
           <ArrowLeft size={13} strokeWidth={2} />
@@ -556,7 +556,7 @@ export function DetectiveSession({ breadcrumb: _breadcrumb }: DetectiveSessionPr
                   {/* CTAs */}
                   <div className="flex gap-3 pt-1">
                     <Link
-                      href="/learn/detective"
+                      href="/dashboard/learn/detective"
                       className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-brand py-4 text-[14px] font-medium text-white transition-opacity hover:opacity-90"
                     >
                       Next Challenge

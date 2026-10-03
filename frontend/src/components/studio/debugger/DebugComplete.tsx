@@ -116,7 +116,7 @@ export function DebugComplete({
             {practiceLinks.map(({ label, plannrTopic }) => (
               <li key={plannrTopic}>
                 <Link
-                  href="/plannr/roadmap"
+                  href="/dashboard/plannr/roadmap"
                   className="flex items-center justify-between rounded-xl border border-hairline bg-paper-elevated px-4 py-3 text-[13px] transition-colors hover:border-brand/40 hover:bg-brand-tint/30"
                 >
                   <span>
@@ -137,13 +137,13 @@ export function DebugComplete({
         <CompletionNext
           packType="debugger"
           currentSlug={packSlug}
-          libraryHref="/design-studio/debugger/problems"
+          libraryHref="/dashboard/design-studio/debugger/problems"
         />
       </div>
 
       <div className="mt-6 flex w-full flex-col gap-2">
         <Link
-          href="/design-studio/debugger"
+          href="/dashboard/design-studio/debugger"
           className="rounded-md bg-brand px-4 py-2.5 text-[13px] font-medium text-brand-foreground hover:bg-brand-hover"
         >
           Try another challenge

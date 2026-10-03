@@ -186,8 +186,8 @@ export function RunPlayer({ runId }: Props) {
       <RunSummary
         run={run}
         scenario={scenario}
-        onPlayAgain={() => router.push('/learn/roguelike')}
-        onBrowse={() => router.push('/learn/roguelike')}
+        onPlayAgain={() => router.push('/dashboard/learn/roguelike')}
+        onBrowse={() => router.push('/dashboard/learn/roguelike')}
       />
     )
   }

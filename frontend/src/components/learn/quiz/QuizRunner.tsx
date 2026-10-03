@@ -175,7 +175,7 @@ export function QuizRunner() {
       <header className="sticky top-0.5 z-30 shrink-0 border-b border-hairline bg-paper/90 backdrop-blur-sm px-6 py-3">
         <div className="mx-auto max-w-2xl flex items-center justify-between gap-4">
           <Link
-            href="/learn/quiz"
+            href="/dashboard/learn/quiz"
             className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors"
           >
             <ArrowLeft size={13} />

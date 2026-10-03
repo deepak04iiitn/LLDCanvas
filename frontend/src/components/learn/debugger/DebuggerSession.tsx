@@ -657,14 +657,14 @@ export function DebuggerSession({ challenge }: Props) {
             {/* Actions */}
             <div className="border-t border-hairline px-6 py-4 flex items-center gap-3 bg-paper-elevated">
               <Link
-                href="/learn/debugger"
+                href="/dashboard/learn/debugger"
                 className="flex-1 rounded-xl border border-hairline py-2.5 text-center text-[13px] font-medium text-ink-muted transition hover:border-brand/30 hover:text-brand"
               >
                 <ArrowLeft size={13} className="inline mr-1" />
                 Back to List
               </Link>
               <Link
-                href="/learn/debugger"
+                href="/dashboard/learn/debugger"
                 className="flex-1 rounded-xl bg-brand py-2.5 text-center text-[13px] font-semibold text-white transition hover:bg-brand/90"
               >
                 Next Challenge

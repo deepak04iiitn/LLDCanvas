@@ -33,7 +33,7 @@ export default function DesignDebuggerFeaturePage() {
         </>
       }
       body="Load an authored broken design, mark issues with categories and explanations, then reveal the expected critique. Train the skill of reading architecture — not just drawing it."
-      ctaHref="/design-studio/debugger"
+      ctaHref="/dashboard/design-studio/debugger"
       ctaLabel="Open Design Debugger"
       keywords={[]}
     />

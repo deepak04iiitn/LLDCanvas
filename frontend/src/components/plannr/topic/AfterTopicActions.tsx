@@ -42,7 +42,7 @@ export function AfterTopicActions({
               </div>
             </div>
             <Link
-              href={`/design-studio/${studioMode}/${linkedStudioPack}`}
+              href={`/dashboard/design-studio/${studioMode}/${linkedStudioPack}`}
               className="flex items-center justify-center gap-1.5 w-full px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity"
             >
               Open Challenge <ArrowRight size={13} />
@@ -65,7 +65,7 @@ export function AfterTopicActions({
               </div>
             </div>
             <Link
-              href={`/learn/detective/${linkedLearnExercise}`}
+              href={`/dashboard/learn/detective/${linkedLearnExercise}`}
               className="flex items-center justify-center gap-1.5 w-full px-4 py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity"
             >
               Try Exercise <ArrowRight size={13} />
@@ -85,7 +85,7 @@ export function AfterTopicActions({
             </div>
           </div>
           <Link
-            href="/plannr/roadmap"
+            href="/dashboard/plannr/roadmap"
             className="shrink-0 flex items-center gap-1 px-4 py-2 rounded-xl border border-hairline bg-paper-elevated text-ink text-[12px] font-medium hover:bg-paper transition-colors"
           >
             Back to Roadmap <ArrowRight size={12} />

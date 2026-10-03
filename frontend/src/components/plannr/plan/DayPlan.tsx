@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,7 @@ const ROLE_LABELS: Record<string, string> = {
   fullstack: 'Full Stack Engineer', general: 'General LLD',
 }
 
-// ── Plan Switcher ─────────────────────────────────────────────────────────────
+// -- Plan Switcher -------------------------------------------------------------
 function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
   const router = useRouter()
   const [plans, setPlans]       = useState<PlannrSummary[]>([])
@@ -63,7 +63,7 @@ function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
                     p.isActive ? 'bg-brand-tint/30 cursor-default' : 'hover:bg-paper-elevated')}>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-ink truncate">{p.planName}</p>
-                    <p className="text-[10px] text-ink-faint">{ROLE_LABELS[p.targetRole]} · {p.progressPercent}% done</p>
+                    <p className="text-[10px] text-ink-faint">{ROLE_LABELS[p.targetRole]} � {p.progressPercent}% done</p>
                   </div>
                   {p.isActive
                     ? <Check size={12} className="text-brand shrink-0" />
@@ -79,7 +79,7 @@ function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
             </div>
             <div className="border-t border-hairline">
               <button
-                onClick={() => { setOpen(false); router.push('/plannr/setup') }}
+                onClick={() => { setOpen(false); router.push('/dashboard/plannr/setup') }}
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] text-brand font-medium hover:bg-brand-tint/20 transition-colors"
               >
                 <Plus size={12} /> New Plannr
@@ -92,7 +92,7 @@ function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// -- Main Component ------------------------------------------------------------
 export function DayPlan() {
   const router = useRouter()
   const [plan, setPlan]   = useState<DayPlanEntry[]>([])
@@ -133,9 +133,9 @@ export function DayPlan() {
     <div className="h-full overflow-y-auto bg-paper">
       <div className="mx-auto max-w-4xl px-6 py-8">
 
-        {/* ── Header ── */}
+        {/* -- Header -- */}
         <div className="mb-6">
-          <Link href="/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors mb-5">
+          <Link href="/dashboard/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors mb-5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             Back to Dashboard
           </Link>
@@ -155,7 +155,7 @@ export function DayPlan() {
           <PlanSwitcherButton onSwitch={() => router.refresh()} />
         </div>
 
-        {/* ── Progress strip ── */}
+        {/* -- Progress strip -- */}
         {!loading && total > 0 && (
           <div className="rounded-2xl border border-hairline bg-paper-elevated p-5 mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -195,7 +195,7 @@ export function DayPlan() {
           </div>
         )}
 
-        {/* ── Loading / Empty / Content ── */}
+        {/* -- Loading / Empty / Content -- */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
@@ -203,7 +203,7 @@ export function DayPlan() {
         ) : total === 0 ? (
           <div className="text-center py-20">
             <p className="text-ink-muted mb-4">No plan yet. Complete onboarding to generate your plan.</p>
-            <Link href="/plannr/setup" className="inline-flex items-center gap-1.5 text-brand text-[13px] font-semibold">
+            <Link href="/dashboard/plannr/setup" className="inline-flex items-center gap-1.5 text-brand text-[13px] font-semibold">
               Set up your journey <ArrowRight size={13} />
             </Link>
           </div>
@@ -235,7 +235,7 @@ export function DayPlan() {
                     {hasToday && <span className="text-[11px] font-medium text-brand">Current week</span>}
                     <div className="flex-1 h-px bg-hairline" />
                     <span className="font-mono text-[10px] text-ink-faint">
-                      {weekDone}/{week.length} · {weekTotalMin}m total
+                      {weekDone}/{week.length} � {weekTotalMin}m total
                     </span>
                   </div>
 
@@ -283,7 +283,7 @@ export function DayPlan() {
                                 'text-[13px]',
                                 isDone ? 'text-ink-faint' : 'text-ink-muted',
                               )}>
-                                · {entry.focus}
+                                � {entry.focus}
                               </span>
                               {isToday && (
                                 <span className="rounded-full bg-brand px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-widest">

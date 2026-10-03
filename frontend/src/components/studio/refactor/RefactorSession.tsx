@@ -271,7 +271,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         <div className="sticky top-0 z-10 border-b border-hairline bg-paper/95 backdrop-blur-sm px-6 py-3">
           <div className="flex items-center gap-3">
             <Link
-              href="/design-studio/refactor/problems"
+              href="/dashboard/design-studio/refactor/problems"
               className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-faint hover:text-ink transition-colors"
             >
               <ArrowLeft size={13} /> Challenges
@@ -304,7 +304,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
               skillDeltas={skillDeltas}
               interviewReadiness={interviewReadiness}
               passed={accepted}
-              nextAction={{ label: 'Next refactoring', href: '/design-studio/refactor', description: 'Pick another broken design to fix' }}
+              nextAction={{ label: 'Next refactoring', href: '/dashboard/design-studio/refactor', description: 'Pick another broken design to fix' }}
               onDismiss={() => setShowDebrief(false)}
             />
           </div>
@@ -331,7 +331,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         {/* Left — back + title */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
-            href="/design-studio/refactor/problems"
+            href="/dashboard/design-studio/refactor/problems"
             className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-ink transition-colors shrink-0"
           >
             <ArrowLeft size={13} /> Challenges

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -296,31 +296,31 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
   const elapsed    = Math.floor((now - startedAt) / 1000)
   const timerLabel = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`
 
-  // ── Loading ──────────────────────────────────────────────────────────────
+  // -- Loading --------------------------------------------------------------
 
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center gap-2 text-ink-muted">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-[13px]">Loading session…</span>
+        <span className="text-[13px]">Loading session�</span>
       </div>
     )
   }
 
-  // ── Complete ─────────────────────────────────────────────────────────────
+  // -- Complete -------------------------------------------------------------
 
   if (gate === 'complete') {
     return (
       <div className="h-full overflow-y-auto bg-paper">
         {showGuidedOverlay && (
           <GuidedModeOverlay
-            onDismiss={() => { setShowGuidedOverlay(false); router.push('/design-studio/evolution') }}
-            onTryFullMode={() => { setShowGuidedOverlay(false); router.push('/design-studio/evolution') }}
+            onDismiss={() => { setShowGuidedOverlay(false); router.push('/dashboard/design-studio/evolution') }}
+            onTryFullMode={() => { setShowGuidedOverlay(false); router.push('/dashboard/design-studio/evolution') }}
           />
         )}
         <div className="sticky top-0 z-10 border-b border-hairline bg-paper/95 backdrop-blur-sm px-6 py-3">
           <div className="flex items-center gap-3">
-            <Link href="/design-studio/evolution/problems" className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-faint hover:text-ink transition-colors">
+            <Link href="/dashboard/design-studio/evolution/problems" className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-faint hover:text-ink transition-colors">
               <ArrowLeft size={13} /> Tracks
             </Link>
             <span className="h-4 w-px bg-hairline-strong" />
@@ -342,12 +342,12 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     )
   }
 
-  // ── Shared header ────────────────────────────────────────────────────────
+  // -- Shared header --------------------------------------------------------
 
   const Header = (
     <header className="shrink-0 flex items-center h-12 border-b border-hairline bg-paper px-4 gap-0">
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <Link href="/design-studio/evolution/problems"
+        <Link href="/dashboard/design-studio/evolution/problems"
           className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-ink transition-colors shrink-0">
           <ArrowLeft size={13} /> Tracks
         </Link>
@@ -364,7 +364,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           const isCurrent = i === stageIndex
           return (
             <div key={s.id} className="flex items-center shrink-0">
-              {i > 0 && <span className="text-hairline-strong text-[10px] mx-1">→</span>}
+              {i > 0 && <span className="text-hairline-strong text-[10px] mx-1">?</span>}
               <span className={cn(
                 'px-2 py-1 rounded-md font-mono text-[10px] font-semibold uppercase tracking-wide transition-all whitespace-nowrap',
                 isCurrent && 'bg-ink text-paper',
@@ -386,7 +386,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     </header>
   )
 
-  // ── CONTEXT gate ─────────────────────────────────────────────────────────
+  // -- CONTEXT gate ---------------------------------------------------------
 
   if (gate === 'context' && stage) {
     return (
@@ -399,7 +399,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 pointer-events-none">
               <span className="h-1.5 w-1.5 rounded-full bg-teal-400 shrink-0" />
               <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-teal-700">
-                {stageIndex === 0 ? 'Starting design · v1' : `Version ${stageIndex} · current state`}
+                {stageIndex === 0 ? 'Starting design � v1' : `Version ${stageIndex} � current state`}
               </span>
             </div>
             <DebuggerCanvas diagram={baseline} readOnly selectedId={null} onSelect={() => {}} className="h-full" hideEditChrome />
@@ -408,13 +408,13 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           {/* Right: Context panel */}
           <div className="w-96 shrink-0 flex flex-col border-l border-hairline bg-paper">
             <div className="shrink-0 px-5 py-4 border-b border-hairline">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint mb-1">{stage.dayLabel}{stage.category ? ` · ${stage.category}` : ''}</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint mb-1">{stage.dayLabel}{stage.category ? ` � ${stage.category}` : ''}</p>
               <h2 className="font-serif text-[18px] font-medium text-ink leading-snug">{stage.title}</h2>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
 
-              {/* Track brief — only stage 0 */}
+              {/* Track brief � only stage 0 */}
               {stageIndex === 0 && payload.briefing && (
                 <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-4">
                   <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-teal-600 mb-2">Track brief</p>
@@ -490,7 +490,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     )
   }
 
-  // ── DECIDE gate ──────────────────────────────────────────────────────────
+  // -- DECIDE gate ----------------------------------------------------------
 
   if (gate === 'decide' && stage) {
     return (
@@ -503,7 +503,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 pointer-events-none">
               <span className="h-1.5 w-1.5 rounded-full bg-teal-400 shrink-0" />
               <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-teal-700">
-                Current state · for reference
+                Current state � for reference
               </span>
             </div>
             <DebuggerCanvas diagram={baseline} readOnly selectedId={null} onSelect={() => {}} className="h-full" hideEditChrome />
@@ -512,7 +512,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           {/* Right: Decide panel */}
           <div className="w-[440px] shrink-0 flex flex-col border-l border-hairline bg-paper">
             <div className="shrink-0 px-5 py-4 border-b border-hairline">
-              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint mb-1">{stage.dayLabel} · Pressure analysis</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint mb-1">{stage.dayLabel} � Pressure analysis</p>
               <h2 className="font-serif text-[18px] font-medium text-ink leading-snug">{stage.title}</h2>
             </div>
 
@@ -536,7 +536,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
 
             <div className="shrink-0 px-5 py-4 border-t border-hairline bg-paper-elevated flex items-center gap-3">
               <button type="button" onClick={() => setGate('context')} className="text-[12px] text-ink-faint hover:text-ink transition-colors">
-                ← Back
+                ? Back
               </button>
               {decision === 'noop' && (
                 <button type="button" disabled={busy || pressures.length === 0} onClick={() => void submitStage('noop')}
@@ -558,7 +558,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     )
   }
 
-  // ── EDIT gate ────────────────────────────────────────────────────────────
+  // -- EDIT gate ------------------------------------------------------------
 
   if (gate === 'edit' && stage) {
     return (
@@ -589,7 +589,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           <span className="h-4 w-px bg-hairline-strong mx-1" />
           <button type="button" onClick={deleteSelected} disabled={!selectedId || canvasMode === 'eraser'} className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] text-ink-muted hover:bg-paper hover:text-red-600 transition-colors disabled:opacity-30"><Trash2 size={12} /> Delete</button>
           <div className="flex-1" />
-          <p className="hidden xl:block font-mono text-[10px] text-ink-faint pr-2">Minimal sufficient change · don&apos;t over-engineer</p>
+          <p className="hidden xl:block font-mono text-[10px] text-ink-faint pr-2">Minimal sufficient change � don&apos;t over-engineer</p>
         </div>
 
         {/* Split canvas */}
@@ -601,7 +601,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 pointer-events-none">
                 <span className="h-1.5 w-1.5 rounded-full bg-teal-400 shrink-0" />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-teal-700">
-                  {stageIndex === 0 ? 'v1 · original' : `v${stageIndex} · previous`}
+                  {stageIndex === 0 ? 'v1 � original' : `v${stageIndex} � previous`}
                 </span>
               </div>
               <button type="button" title="Hide baseline" onClick={() => setBaselineCollapsed(true)}
@@ -626,7 +626,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
             <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 pointer-events-none">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
               <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-700">
-                v{stageIndex + 1} · your evolved design
+                v{stageIndex + 1} � your evolved design
               </span>
             </div>
             <DebuggerCanvas
@@ -657,7 +657,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
                 {/* Panel header */}
                 <div className="shrink-0 flex items-center justify-between border-b border-hairline px-5 py-3 bg-paper-elevated">
                   <div>
-                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint">{stage.dayLabel}{stage.category ? ` · ${stage.category}` : ''}</p>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-faint">{stage.dayLabel}{stage.category ? ` � ${stage.category}` : ''}</p>
                     <p className="font-serif text-[15px] font-medium text-ink leading-snug mt-0.5">{stage.title}</p>
                   </div>
                   <button type="button" onClick={() => setBriefPanelOpen(false)} className="shrink-0 rounded-lg p-1.5 text-ink-faint hover:bg-hairline hover:text-ink transition-colors ml-3"><X size={14} /></button>
@@ -666,7 +666,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
                 {/* Scrollable content */}
                 <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
 
-                  {/* Track brief — stage 0 only */}
+                  {/* Track brief � stage 0 only */}
                   {stageIndex === 0 && payload.briefing && (
                     <div className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-3.5">
                       <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-teal-600 mb-2">Track brief</p>
@@ -734,7 +734,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
                       {decision === 'change'
                         ? <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[10px] text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Evolve the architecture</span>
                         : decision === 'noop'
-                        ? <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-mono text-[10px] text-amber-700"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" />Hold — survive as-is</span>
+                        ? <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 font-mono text-[10px] text-amber-700"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" />Hold � survive as-is</span>
                         : <p className="text-[12px] text-ink-faint italic">Not decided yet</p>
                       }
                     </div>
@@ -772,7 +772,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
           </button>
           <div className="flex-1 flex items-center justify-center">
             <p className="font-mono text-[11px] text-ink-faint hidden sm:block">
-              {stageIndex === 0 ? 'v1 = left' : `v${stageIndex} = left`} &nbsp;·&nbsp; v{stageIndex + 1} = right &nbsp;·&nbsp; prefer smallest sufficient change
+              {stageIndex === 0 ? 'v1 = left' : `v${stageIndex} = left`} &nbsp;�&nbsp; v{stageIndex + 1} = right &nbsp;�&nbsp; prefer smallest sufficient change
             </p>
           </div>
           <button type="button" disabled={busy} onClick={() => void submitStage('change')}
@@ -785,7 +785,7 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
     )
   }
 
-  // ── RESULT gate ──────────────────────────────────────────────────────────
+  // -- RESULT gate ----------------------------------------------------------
 
   if (gate === 'result' && lastGrade) {
     const accepted = Boolean(lastGrade.accepted)
@@ -835,8 +835,8 @@ export function EvolutionSession({ attemptId }: EvolutionSessionProps) {
               <button type="button" onClick={continueAfterStage}
                 className="inline-flex items-center gap-2 rounded-xl bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.1em] text-paper hover:bg-ink/80 transition-all">
                 {accepted
-                  ? stageIndex >= stages.length ? 'View journey' : `Next stage →`
-                  : 'Retry stage →'}
+                  ? stageIndex >= stages.length ? 'View journey' : `Next stage ?`
+                  : 'Retry stage ?'}
               </button>
             </div>
           </div>

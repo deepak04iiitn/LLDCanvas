@@ -12,7 +12,6 @@ import { ChevronRight, Menu, X } from 'lucide-react'
 
 const NAV_LINKS = [
   { label: 'Features',       href: '/features' },
-  { label: 'Plannr',        href: '/plannr' },
   { label: 'Blogs',          href: '/blog' },
   { label: 'Playground',     href: '/playground' },
   { label: 'Pricing',        href: '/pricing' },

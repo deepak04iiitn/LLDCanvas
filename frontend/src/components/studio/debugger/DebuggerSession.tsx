@@ -245,7 +245,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         <div className="sticky top-0 z-10 border-b border-hairline bg-paper/95 backdrop-blur-sm px-6 py-3">
           <div className="flex items-center gap-3">
             <Link
-              href="/design-studio/debugger/problems"
+              href="/dashboard/design-studio/debugger/problems"
               className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-faint hover:text-ink transition-colors"
             >
               <ArrowLeft size={13} /> Challenges
@@ -287,7 +287,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
         {/* Left — back + title */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <Link
-            href="/design-studio/debugger/problems"
+            href="/dashboard/design-studio/debugger/problems"
             className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-ink transition-colors shrink-0"
           >
             <ArrowLeft size={13} />

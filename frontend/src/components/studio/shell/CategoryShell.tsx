@@ -16,7 +16,7 @@ export interface CategoryShellProps {
   backLabel?: string
   /**
    * Optional breadcrumb trail shown above the title.
-   * e.g. [{ label: 'Design Studio', href: '/design-studio' }, { label: 'Debugger', href: '/design-studio/debugger' }, { label: 'Problems', href: '/design-studio/debugger/problems' }]
+   * e.g. [{ label: 'Design Studio', href: '/design-studio' }, { label: 'Debugger', href: '/dashboard/design-studio/debugger' }, { label: 'Problems', href: '/dashboard/design-studio/debugger/problems' }]
    */
   breadcrumb?: BreadcrumbSegment[]
   /** Optional timer / HUD slot (e.g. interview-style countdown). */

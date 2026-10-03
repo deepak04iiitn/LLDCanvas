@@ -53,7 +53,7 @@ export function DebuggerList() {
     <CategoryShell
       title="Debug Lab"
       subtitle="Fix code bugs or hunt structural design violations in UML"
-      backHref="/learn"
+      backHref="/dashboard/learn"
       backLabel="Learn"
     >
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
@@ -75,7 +75,7 @@ export function DebuggerList() {
               Code Bugs
             </button>
             <Link
-              href="/learn/debugger/design"
+              href="/dashboard/learn/debugger/design"
               onClick={() => setMode('design')}
               className={cn(
                 'flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-semibold transition border-b-2 -mb-px',
@@ -89,7 +89,7 @@ export function DebuggerList() {
             </Link>
           </div>
           <Link
-            href="/learn/debugger/history"
+            href="/dashboard/learn/debugger/history"
             className="mb-2 flex items-center gap-1.5 text-[12px] text-ink-muted hover:text-brand transition-colors"
           >
             <History size={13} />
@@ -143,7 +143,7 @@ export function DebuggerList() {
               return (
                 <li key={id}>
                   <Link
-                    href={`/learn/debugger/${id}`}
+                    href={`/dashboard/learn/debugger/${id}`}
                     className="group flex items-start justify-between gap-4 rounded-xl border border-hairline bg-paper-elevated p-5 transition-all hover:border-brand/30 hover:shadow-sm"
                   >
                     <div className="min-w-0 flex-1">

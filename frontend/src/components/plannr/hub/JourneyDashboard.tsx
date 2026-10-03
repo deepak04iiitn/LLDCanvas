@@ -78,7 +78,7 @@ function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
                 ))}
               </div>
               <div className="border-t border-hairline">
-                <button onClick={() => { setOpen(false); router.push('/plannr/setup') }}
+                <button onClick={() => { setOpen(false); router.push('/dashboard/plannr/setup') }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] text-brand font-medium hover:bg-brand-tint/20 transition-colors">
                   <Plus size={12} /> New Plannr
                 </button>
@@ -206,7 +206,7 @@ function PlannrIntroPage() {
 
               <div className="flex items-center gap-4 mb-10">
                 <Link
-                  href="/plannr/setup"
+                  href="/dashboard/plannr/setup"
                   className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-6 py-3 text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
                 >
                   Build your plan <ArrowRight size={14} />
@@ -356,7 +356,7 @@ function PlannrIntroPage() {
               </span>
             </p>
             <Link
-              href="/plannr/setup"
+              href="/dashboard/plannr/setup"
               className="shrink-0 inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand hover:text-brand-hover transition-colors"
             >
               Fix that now <ArrowRight size={13} />
@@ -483,7 +483,7 @@ function PlannrIntroPage() {
             </div>
             <div className="shrink-0 flex flex-col items-start lg:items-end gap-3 lg:pb-2">
               <Link
-                href="/plannr/setup"
+                href="/dashboard/plannr/setup"
                 className="inline-flex items-center gap-2.5 rounded-xl bg-brand px-7 py-3.5 text-[14px] font-semibold text-white hover:bg-brand-hover transition-colors"
               >
                 Create Your Plan <ArrowRight size={15} />
@@ -577,10 +577,10 @@ export function JourneyDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/plannr/plan" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
+            <Link href="/dashboard/plannr/plan" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
               Full Plan
             </Link>
-            <Link href="/plannr/roadmap" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
+            <Link href="/dashboard/plannr/roadmap" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
               Roadmap
             </Link>
             <PlanSwitcherButton onSwitch={() => router.refresh()} />
@@ -623,7 +623,7 @@ export function JourneyDashboard() {
                 </p>
               )}
               <Link
-                href="/plannr/roadmap"
+                href="/dashboard/plannr/roadmap"
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
               >
                 <Play size={14} /> Start Today&apos;s Plan
@@ -637,7 +637,7 @@ export function JourneyDashboard() {
               <div className="rounded-xl border border-hairline bg-paper-elevated p-5 text-center">
                 <CheckCircle2 size={20} className="text-brand mx-auto mb-2" />
                 <p className="font-medium text-[14px] text-ink">All topics completed — interview ready!</p>
-                <Link href="/plannr/experiences" className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-brand">
+                <Link href="/dashboard/plannr/experiences" className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-brand">
                   Try interview experiences <ArrowRight size={12} />
                 </Link>
               </div>

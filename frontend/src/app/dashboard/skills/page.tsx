@@ -9,19 +9,19 @@ import { cn } from '@/lib/utils'
 // ─── Skill-to-practice link mapping ──────────────────────────────────────────
 const SKILL_PRACTICE: Record<string, { label: string; href: string }> = {
   oop:                  { label: 'Study OOP in Plannr',           href: '/plannr/roadmap' },
-  solid:                { label: 'Practice in Debug Lab',          href: '/learn/debugger' },
-  patterns:             { label: 'Train Pattern Recognition',      href: '/learn/detective' },
-  designThinking:       { label: 'Try Change One Thing',           href: '/design-studio/change' },
+  solid:                { label: 'Practice in Debug Lab',          href: '/dashboard/learn/debugger' },
+  patterns:             { label: 'Train Pattern Recognition',      href: '/dashboard/learn/detective' },
+  designThinking:       { label: 'Try Change One Thing',           href: '/dashboard/design-studio/change' },
   requirementAnalysis:  { label: 'Continue Plannr Roadmap',        href: '/plannr/roadmap' },
   entityIdentification: { label: 'Continue Plannr Roadmap',        href: '/plannr/roadmap' },
-  responsibilities:     { label: 'Try Refactoring Mode',           href: '/design-studio/refactor' },
+  responsibilities:     { label: 'Try Refactoring Mode',           href: '/dashboard/design-studio/refactor' },
   relationships:        { label: 'Study in Plannr',                href: '/plannr/roadmap' },
-  extensibility:        { label: 'Try Change One Thing',           href: '/design-studio/change' },
-  coupling:             { label: 'Practice in Design Debugger',    href: '/design-studio/debugger' },
-  cohesion:             { label: 'Try Refactoring Mode',           href: '/design-studio/refactor' },
+  extensibility:        { label: 'Try Change One Thing',           href: '/dashboard/design-studio/change' },
+  coupling:             { label: 'Practice in Design Debugger',    href: '/dashboard/design-studio/debugger' },
+  cohesion:             { label: 'Try Refactoring Mode',           href: '/dashboard/design-studio/refactor' },
   communication:        { label: 'Practice Experiences in Plannr', href: '/plannr/experiences' },
-  tradeoffReasoning:    { label: 'Run LLD Roguelike',              href: '/learn/roguelike' },
-  followupHandling:     { label: 'Pattern Detective Mode',         href: '/learn/detective' },
+  tradeoffReasoning:    { label: 'Run LLD Roguelike',              href: '/dashboard/learn/roguelike' },
+  followupHandling:     { label: 'Pattern Detective Mode',         href: '/dashboard/learn/detective' },
   designSpeed:          { label: 'Try Timed Challenges',           href: '/design-studio' },
 }
 

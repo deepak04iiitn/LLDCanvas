@@ -27,12 +27,12 @@ export default function DailyLldQuizFeaturePage() {
       eyebrow="¶ Learn & Practice"
       headline={
         <>
-          Five questions a day.{' '}
+          Ten questions a day.{' '}
           <span className="text-brand">Stay interview-ready.</span>
         </>
       }
       body="A short daily set covering patterns, SOLID, and LLD judgment calls — with a leaderboard so practice sticks."
-      ctaHref="/learn/quiz"
+      ctaHref="/dashboard/learn/quiz"
       ctaLabel="Take today's quiz"
       keywords={[]}
     />

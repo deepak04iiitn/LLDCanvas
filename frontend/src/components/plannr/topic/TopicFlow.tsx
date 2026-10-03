@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -25,8 +25,8 @@ const STEPS: { id: StepId; shortLabel: string; icon: React.ElementType }[] = [
   { id: 'followUp',           shortLabel: 'Follow-up',   icon: Repeat },
 ]
 
-// ─── Smart content renderer ───────────────────────────────────────────────────
-// Converts plain text with •, →, 1. 2. 3., \n into rich formatted markup.
+// --- Smart content renderer ---------------------------------------------------
+// Converts plain text with �, ?, 1. 2. 3., \n into rich formatted markup.
 
 /** Returns true if the text looks like source code (class/func defs, braces, semicolons). */
 function looksLikeCode(text: string): boolean {
@@ -113,19 +113,19 @@ function parseContentBlock(raw: string): React.ReactNode[] {
       continue
     }
 
-    // Bullet: starts with •, ·, or -
-    if (/^[•·\-]\s*/.test(line)) {
+    // Bullet: starts with �, �, or -
+    if (/^[��\-]\s*/.test(line)) {
       flushNumbered()
       flushArrows()
-      bulletGroup.push(line.replace(/^[•·\-]\s*/, ''))
+      bulletGroup.push(line.replace(/^[��\-]\s*/, ''))
       continue
     }
 
-    // Arrow: starts with → or ->
-    if (/^[-→>]+\s/.test(line)) {
+    // Arrow: starts with ? or ->
+    if (/^[-?>]+\s/.test(line)) {
       flushBullets()
       flushNumbered()
-      arrowGroup.push(line.replace(/^[-→>]+\s*/, ''))
+      arrowGroup.push(line.replace(/^[-?>]+\s*/, ''))
       continue
     }
 
@@ -146,7 +146,7 @@ function parseContentBlock(raw: string): React.ReactNode[] {
   return output
 }
 
-// ─── Step card wrapper ────────────────────────────────────────────────────────
+// --- Step card wrapper --------------------------------------------------------
 
 interface CardProps {
   icon: React.ElementType
@@ -172,7 +172,7 @@ function StepCard({ icon: Icon, eyebrow, accent = 'bg-brand-tint', children }: C
   )
 }
 
-// ─── Step: Learn ─────────────────────────────────────────────────────────────
+// --- Step: Learn -------------------------------------------------------------
 
 function LearnStep({ content }: { content: string }) {
   return (
@@ -182,7 +182,7 @@ function LearnStep({ content }: { content: string }) {
   )
 }
 
-// ─── Step: Why It Matters ─────────────────────────────────────────────────────
+// --- Step: Why It Matters -----------------------------------------------------
 
 function WhyMattersStep({ content }: { content: string }) {
   return (
@@ -192,7 +192,7 @@ function WhyMattersStep({ content }: { content: string }) {
   )
 }
 
-// ─── Step: Interview Context ──────────────────────────────────────────────────
+// --- Step: Interview Context --------------------------------------------------
 
 function InterviewContextStep({ content }: { content: string }) {
   return (
@@ -209,13 +209,13 @@ function InterviewContextStep({ content }: { content: string }) {
   )
 }
 
-// ─── Step: Spot It ────────────────────────────────────────────────────────────
+// --- Step: Spot It ------------------------------------------------------------
 
 function SpotItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
 
   return (
-    <StepCard icon={Eye} eyebrow="Spot It — Find the Problem" accent="bg-violet-50">
+    <StepCard icon={Eye} eyebrow="Spot It � Find the Problem" accent="bg-violet-50">
       {topic.content.spotItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
           {topic.content.spotItPrompt}
@@ -255,13 +255,13 @@ function SpotItStep({ topic }: { topic: JourneyTopic }) {
   )
 }
 
-// ─── Step: Fix It ─────────────────────────────────────────────────────────────
+// --- Step: Fix It -------------------------------------------------------------
 
 function FixItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
 
   return (
-    <StepCard icon={Wrench} eyebrow="Fix It — Apply the Solution" accent="bg-orange-50">
+    <StepCard icon={Wrench} eyebrow="Fix It � Apply the Solution" accent="bg-orange-50">
       {topic.content.fixItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
           {topic.content.fixItPrompt}
@@ -293,7 +293,7 @@ function FixItStep({ topic }: { topic: JourneyTopic }) {
   )
 }
 
-// ─── Step: Follow-up ──────────────────────────────────────────────────────────
+// --- Step: Follow-up ----------------------------------------------------------
 
 function FollowUpStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
@@ -352,7 +352,7 @@ function FollowUpStep({ topic }: { topic: JourneyTopic }) {
   )
 }
 
-// ─── Completed Banner ─────────────────────────────────────────────────────────
+// --- Completed Banner ---------------------------------------------------------
 
 function CompletedBanner() {
   return (
@@ -368,7 +368,7 @@ function CompletedBanner() {
   )
 }
 
-// ─── Step progress bar ────────────────────────────────────────────────────────
+// --- Step progress bar --------------------------------------------------------
 
 function StepBar({ steps, current, pastSet, onClickPast }: {
   steps: typeof STEPS
@@ -433,7 +433,7 @@ function StepBar({ steps, current, pastSet, onClickPast }: {
                 </div>
               </button>
 
-              {/* Connector line — flex-1 stretch between nodes */}
+              {/* Connector line � flex-1 stretch between nodes */}
               {!isLast && (
                 <div className="flex-1 flex items-start pt-4 min-w-3">
                   <div className={cn(
@@ -450,7 +450,7 @@ function StepBar({ steps, current, pastSet, onClickPast }: {
   )
 }
 
-// ─── Main TopicFlow ───────────────────────────────────────────────────────────
+// --- Main TopicFlow -----------------------------------------------------------
 
 export function TopicFlow({ slug }: { slug: string }) {
   const [topic, setTopic] = useState<JourneyTopic | null>(null)
@@ -486,12 +486,12 @@ export function TopicFlow({ slug }: { slug: string }) {
     setIsCompleted(true)
   }
 
-  // ── Loading ─────────────────────────────────────────────────────────────────
+  // -- Loading -----------------------------------------------------------------
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-        <p className="text-[13px] text-ink-faint">Loading topic…</p>
+        <p className="text-[13px] text-ink-faint">Loading topic�</p>
       </div>
     )
   }
@@ -500,7 +500,7 @@ export function TopicFlow({ slug }: { slug: string }) {
     return <div className="text-center py-20 text-ink-muted">Topic not found.</div>
   }
 
-  // ── Render step content ──────────────────────────────────────────────────────
+  // -- Render step content ------------------------------------------------------
   function renderStep() {
     if (!topic) return null
     switch (currentStep.id) {
@@ -523,21 +523,21 @@ export function TopicFlow({ slug }: { slug: string }) {
     }
   }
 
-  // ── Layout ──────────────────────────────────────────────────────────────────
+  // -- Layout ------------------------------------------------------------------
   return (
     <div className="h-full overflow-y-auto bg-paper">
 
-      {/* ── Hero header ─────────────────────────────────────────────────── */}
+      {/* -- Hero header --------------------------------------------------- */}
       <div className="bg-linear-to-b from-brand-tint/40 to-paper px-6 pt-8 pb-6 border-b border-hairline/60">
         <div className="mx-auto max-w-3xl">
           {/* Back nav */}
           <div className="flex items-center gap-4 mb-5">
-            <Link href="/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors">
+            <Link href="/dashboard/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
               Dashboard
             </Link>
             <span className="h-3 w-px bg-hairline" />
-            <Link href="/plannr/roadmap" className="text-[12px] text-ink-faint hover:text-ink transition-colors">
+            <Link href="/dashboard/plannr/roadmap" className="text-[12px] text-ink-faint hover:text-ink transition-colors">
               Roadmap
             </Link>
           </div>
@@ -586,7 +586,7 @@ export function TopicFlow({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* ── Body ────────────────────────────────────────────────────────── */}
+      {/* -- Body ---------------------------------------------------------- */}
       <div className="mx-auto max-w-3xl px-6 py-6 pb-32">
 
         {isCompleted ? (
@@ -624,7 +624,7 @@ export function TopicFlow({ slug }: { slug: string }) {
         )}
       </div>
 
-      {/* ── Sticky bottom nav ───────────────────────────────────────────── */}
+      {/* -- Sticky bottom nav --------------------------------------------- */}
       {!isCompleted && (
         <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-hairline bg-paper/90 backdrop-blur-sm px-6 py-3">
           <div className="mx-auto max-w-3xl flex items-center gap-3">
@@ -651,7 +651,7 @@ export function TopicFlow({ slug }: { slug: string }) {
               </span>
             </div>
 
-            {/* Continue / Complete — hidden on Check step (exercise drives nav) */}
+            {/* Continue / Complete � hidden on Check step (exercise drives nav) */}
             {currentStep.id !== 'checkUnderstanding' && (
               isLast ? (
                 <button

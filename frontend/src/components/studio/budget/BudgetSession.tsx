@@ -368,7 +368,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
 
         {/* Header */}
         <header className="shrink-0 flex items-center h-12 border-b border-hairline bg-paper px-4 gap-3">
-          <Link href="/design-studio/budget/problems"
+          <Link href="/dashboard/design-studio/budget/problems"
             className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-ink transition-colors">
             <ArrowLeft size={13} /> Tracks
           </Link>
@@ -595,7 +595,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
                     {rptComboBlurb && <p className="text-[12px] text-teal-800 mb-2">{rptComboBlurb}</p>}
                     {rptHandoff?.blurb && <p className="text-[12px] text-teal-800 mb-2">{rptHandoff.blurb}</p>}
                     {rptHandoff?.slug && (
-                      <Link href={`/design-studio/evolution/${rptHandoff.slug}`}
+                      <Link href={`/dashboard/design-studio/evolution/${rptHandoff.slug}`}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-teal-700 px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-white hover:bg-teal-800 transition-colors">
                         Open Evolution track <ArrowRight size={12} />
                       </Link>
@@ -605,16 +605,16 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
 
                 {/* Next problem */}
                 <div className="border-t border-hairline pt-5">
-                  <CompletionNext packType="budget" currentSlug={pack?.slug ?? ''} libraryHref="/design-studio/budget/problems" />
+                  <CompletionNext packType="budget" currentSlug={pack?.slug ?? ''} libraryHref="/dashboard/design-studio/budget/problems" />
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3 pb-4">
-                  <Link href="/design-studio/budget/problems"
+                  <Link href="/dashboard/design-studio/budget/problems"
                     className="inline-flex items-center gap-2 rounded-xl border border-hairline bg-paper-elevated px-4 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-ink-muted hover:text-ink hover:bg-hairline transition-colors">
                     <ArrowLeft size={12} /> All problems
                   </Link>
-                  <Link href="/design-studio/budget"
+                  <Link href="/dashboard/design-studio/budget"
                     className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.1em] text-paper hover:bg-ink/80 transition-colors">
                     Back to Budget <ArrowRight size={12} />
                   </Link>
@@ -632,7 +632,7 @@ export function BudgetSession({ attemptId }: BudgetSessionProps) {
   const Header = (
     <header className="shrink-0 flex items-center h-12 border-b border-hairline bg-paper px-4 gap-0">
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <Link href="/design-studio/budget/problems"
+        <Link href="/dashboard/design-studio/budget/problems"
           className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-faint hover:text-ink transition-colors shrink-0">
           <ArrowLeft size={13} /> Tracks
         </Link>

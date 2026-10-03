@@ -161,7 +161,7 @@ export function RunSummary({ run, scenario, onPlayAgain, onBrowse }: Props) {
             Try Different Scenario
           </button>
           <Link
-            href="/plannr/roadmap"
+            href="/dashboard/plannr/roadmap"
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-xl border border-hairline bg-paper-elevated px-6 py-2.5 text-[14px] font-medium text-ink-muted hover:border-brand/30 hover:text-brand transition-colors"
           >
             <Map size={14} />

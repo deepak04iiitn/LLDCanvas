@@ -63,7 +63,7 @@ export function DebuggerListWithDaily() {
       const slug = pack.slug || packIdOf(pack)
       setStartingId(packIdOf(pack))
       try {
-        router.push(`/design-studio/debugger/${encodeURIComponent(slug)}`)
+        router.push(`/dashboard/design-studio/debugger/${encodeURIComponent(slug)}`)
       } catch (err) {
         toast.error((err as Error).message ?? 'Failed to open challenge')
         setStartingId(null)
@@ -78,11 +78,11 @@ export function DebuggerListWithDaily() {
     <CategoryShell
       title="Design Debugger"
       subtitle="Find flaws in authored broken designs"
-      backHref="/design-studio"
+      backHref="/dashboard/design-studio"
       backLabel="Design Studio"
       actions={
         <Link
-          href="/design-studio/debugger/history"
+          href="/dashboard/design-studio/debugger/history"
           className="inline-flex items-center gap-1.5 rounded-md border border-hairline px-2.5 py-1.5 text-[12px] text-ink-muted transition-colors hover:border-brand/30 hover:text-ink"
         >
           <History size={13} strokeWidth={1.75} />

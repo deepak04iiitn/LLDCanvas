@@ -230,7 +230,7 @@ export function BudgetComplete({
           )}
           {handoff?.slug && (
             <Link
-              href={`/design-studio/evolution/${handoff.slug}`}
+              href={`/dashboard/design-studio/evolution/${handoff.slug}`}
               className="mt-3 inline-block rounded-lg bg-brand px-3 py-1.5 text-[12px] font-semibold text-brand-foreground"
             >
               Open Evolution track
@@ -304,7 +304,7 @@ export function BudgetComplete({
         <CompletionNext
           packType="budget"
           currentSlug={packSlug}
-          libraryHref="/design-studio/budget/problems"
+          libraryHref="/dashboard/design-studio/budget/problems"
         />
       </div>
 
@@ -319,7 +319,7 @@ export function BudgetComplete({
           </button>
         )}
         <Link
-          href="/design-studio/budget"
+          href="/dashboard/design-studio/budget"
           className="rounded-lg bg-brand px-4 py-2 text-[13px] font-semibold text-brand-foreground hover:opacity-90"
         >
           Back to challenges

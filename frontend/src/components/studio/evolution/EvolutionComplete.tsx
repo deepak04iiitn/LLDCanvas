@@ -180,14 +180,14 @@ export function EvolutionComplete({
           <CompletionNext
             packType="evolution"
             currentSlug={packSlug}
-            libraryHref="/design-studio/evolution/problems"
+            libraryHref="/dashboard/design-studio/evolution/problems"
           />
         </div>
       </div>
 
       <div className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
         <Link
-          href="/design-studio/evolution"
+          href="/dashboard/design-studio/evolution"
           className="inline-flex rounded-lg bg-brand px-4 py-2 text-[13px] font-medium text-white"
         >
           Back to tracks

@@ -84,7 +84,7 @@ export function EvolvePanel({ diagram = null, className }: EvolvePanelProps) {
         </p>
         <div className="mt-3 flex flex-col gap-2">
           <Link
-            href="/design-studio/change"
+            href="/dashboard/design-studio/change"
             className="rounded-md border border-hairline px-3 py-2.5 text-[13px] text-ink transition-colors hover:border-brand/40 hover:bg-brand-tint/40"
           >
             <span className="font-medium text-brand">Change One Thing</span>
@@ -93,7 +93,7 @@ export function EvolvePanel({ diagram = null, className }: EvolvePanelProps) {
             </span>
           </Link>
           <Link
-            href="/design-studio/evolution"
+            href="/dashboard/design-studio/evolution"
             className="rounded-md border border-hairline px-3 py-2.5 text-[13px] text-ink transition-colors hover:border-brand/40 hover:bg-brand-tint/40"
           >
             <span className="font-medium text-brand">Evolution</span>
@@ -102,7 +102,7 @@ export function EvolvePanel({ diagram = null, className }: EvolvePanelProps) {
             </span>
           </Link>
           <Link
-            href="/design-studio/budget"
+            href="/dashboard/design-studio/budget"
             className="rounded-md border border-hairline px-3 py-2.5 text-[13px] text-ink transition-colors hover:border-brand/40 hover:bg-brand-tint/40"
           >
             <span className="font-medium text-brand">Architecture Budget</span>

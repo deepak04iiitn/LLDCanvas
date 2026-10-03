@@ -103,7 +103,7 @@ export function DebuggerProblemList() {
           {/* Breadcrumb + stats */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-              <Link href="/learn/debugger" className="hover:text-ink transition-colors">
+              <Link href="/dashboard/learn/debugger" className="hover:text-ink transition-colors">
                 Code Bug Lab
               </Link>
               <span>/</span>
@@ -196,7 +196,7 @@ export function DebuggerProblemList() {
                     </div>
 
                     <Link
-                      href={`/learn/debugger/${id}`}
+                      href={`/dashboard/learn/debugger/${id}`}
                       className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
                     >
                       <div className="flex items-start gap-5">
@@ -257,7 +257,7 @@ export function DebuggerProblemList() {
                       return (
                         <Link
                           key={id}
-                          href={`/learn/debugger/${id}`}
+                          href={`/dashboard/learn/debugger/${id}`}
                           className={cn(
                             'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
                             !last && 'border-b border-hairline',

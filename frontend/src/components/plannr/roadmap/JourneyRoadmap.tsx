@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -15,7 +15,7 @@ function getStageStatus(stage: StageData): StageStatus {
   return 'locked'
 }
 
-// ── Topic Card ────────────────────────────────────────────────────────────────
+// -- Topic Card ----------------------------------------------------------------
 function TopicCard({ topic }: { topic: JourneyTopic }) {
   const status = (topic.userStatus ?? 'locked') as TopicUserStatus
   const isClickable = status !== 'locked'
@@ -66,7 +66,7 @@ function TopicCard({ topic }: { topic: JourneyTopic }) {
   return <Link href={`/plannr/topic/${topic.slug}`} className="block h-full">{card}</Link>
 }
 
-// ── Stage Section ─────────────────────────────────────────────────────────────
+// -- Stage Section -------------------------------------------------------------
 function StageSection({ stage, index }: { stage: StageData; index: number }) {
   const status = getStageStatus(stage)
   const completedCount = stage.topics.filter(t => t.userStatus === 'completed').length
@@ -140,7 +140,7 @@ function StageSection({ stage, index }: { stage: StageData; index: number }) {
   )
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// -- Main ----------------------------------------------------------------------
 export function JourneyRoadmap() {
   const [stages, setStages] = useState<StageData[]>([])
   const [loading, setLoading] = useState(true)
@@ -161,7 +161,7 @@ export function JourneyRoadmap() {
 
         {/* Back nav */}
         <div className="mb-6">
-          <Link href="/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors">
+          <Link href="/dashboard/plannr" className="inline-flex items-center gap-1.5 text-[12px] text-ink-faint hover:text-ink transition-colors">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             Back to Dashboard
           </Link>
@@ -224,7 +224,7 @@ export function JourneyRoadmap() {
         ) : stages.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-ink-muted mb-4">No topics yet.</p>
-            <Link href="/plannr/setup" className="inline-flex items-center gap-1.5 text-brand text-[13px] font-semibold">
+            <Link href="/dashboard/plannr/setup" className="inline-flex items-center gap-1.5 text-brand text-[13px] font-semibold">
               Set up your journey <ArrowRight size={13} />
             </Link>
           </div>

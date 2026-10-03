@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,7 +10,7 @@ import {
 import { journeyApi } from '@/lib/plannr-api'
 import { cn } from '@/lib/utils'
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// -- Data ----------------------------------------------------------------------
 const ROLES = [
   { value: 'sde1',      label: 'SDE-1',       Icon: Sprout    },
   { value: 'sde2',      label: 'SDE-2',       Icon: Leaf      },
@@ -42,13 +42,13 @@ const LEVEL_LABELS: Record<string, string> = {
   'basic-lld': 'Know basic LLD', solving: 'Already solving',
 }
 
-// ── Shared background texture ─────────────────────────────────────────────────
+// -- Shared background texture -------------------------------------------------
 const DOT_GRID = {
   backgroundImage: 'radial-gradient(circle, var(--hairline-strong) 1px, transparent 1px)',
   backgroundSize: '28px 28px',
 }
 
-// ── Generation / loading screen ───────────────────────────────────────────────
+// -- Generation / loading screen -----------------------------------------------
 function GeneratingScreen({
   role, timeline, level, genStep, done,
 }: {
@@ -68,7 +68,7 @@ function GeneratingScreen({
 
       <div className="relative w-full max-w-sm">
 
-        {/* ── Animated icon ── */}
+        {/* -- Animated icon -- */}
         <div className="flex justify-center mb-8">
           <div className="relative h-16 w-16">
             {done ? (
@@ -83,12 +83,12 @@ function GeneratingScreen({
           </div>
         </div>
 
-        {/* ── Headline ── */}
+        {/* -- Headline -- */}
         <div className="text-center mb-8">
           {done ? (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
               <h2 className="font-serif text-[30px] font-medium text-ink tracking-tight">Your plan is ready.</h2>
-              <p className="text-[13px] text-ink-muted mt-1.5">Taking you there now…</p>
+              <p className="text-[13px] text-ink-muted mt-1.5">Taking you there now�</p>
             </div>
           ) : (
             <>
@@ -98,7 +98,7 @@ function GeneratingScreen({
           )}
         </div>
 
-        {/* ── Steps (stream in one by one) ── */}
+        {/* -- Steps (stream in one by one) -- */}
         {!done && (
           <div className="rounded-2xl border border-hairline bg-paper-elevated px-5 py-4 space-y-3 mb-6">
             {steps.map((step, i) => {
@@ -139,7 +139,7 @@ function GeneratingScreen({
           </div>
         )}
 
-        {/* ── Plan metadata chips ── */}
+        {/* -- Plan metadata chips -- */}
         {!done && (
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {[ROLE_LABELS[role], `${timeline} days`, LEVEL_LABELS[level]].map((chip, i) => (
@@ -155,7 +155,7 @@ function GeneratingScreen({
   )
 }
 
-// ── Main wizard ───────────────────────────────────────────────────────────────
+// -- Main wizard ---------------------------------------------------------------
 export function OnboardingWizard() {
   const router = useRouter()
   const [planName,   setPlanName]  = useState('')
@@ -196,7 +196,7 @@ export function OnboardingWizard() {
       await Promise.all([animPromise, apiPromise])
       setGenDone(true)
       await new Promise(r => setTimeout(r, 1000))
-      router.push('/plannr')
+      router.push('/dashboard/plannr')
     } catch {
       setGenerating(false)
       setGenStep(-1)
@@ -217,7 +217,7 @@ export function OnboardingWizard() {
     )
   }
 
-  // ── Setup form ────────────────────────────────────────────────────────────
+  // -- Setup form ------------------------------------------------------------
   return (
     <div className="min-h-[calc(100vh-64px)] bg-paper flex items-center justify-center px-6 py-6">
 
@@ -228,7 +228,7 @@ export function OnboardingWizard() {
         {/* Header */}
         <div className="mb-7">
           <p className="font-mono text-[10px] tracking-[0.24em] uppercase text-ink-faint mb-3">
-            plannr · setup
+            plannr � setup
           </p>
           <h1 className="font-serif text-[34px] font-medium text-ink leading-[0.92] tracking-tight">
             Build your plan.

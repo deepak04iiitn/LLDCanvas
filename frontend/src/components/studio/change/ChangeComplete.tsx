@@ -120,13 +120,13 @@ export function ChangeComplete({ result, elapsedSec, nameById, packSlug = '', cl
         <CompletionNext
           packType="change_one"
           currentSlug={packSlug}
-          libraryHref="/design-studio/change/problems"
+          libraryHref="/dashboard/design-studio/change/problems"
         />
       </div>
 
       <div className="mt-6 flex justify-center">
         <Link
-          href="/design-studio/change"
+          href="/dashboard/design-studio/change"
           className="rounded-lg bg-brand px-4 py-2.5 text-center text-[13px] font-medium text-white"
         >
           Next change request

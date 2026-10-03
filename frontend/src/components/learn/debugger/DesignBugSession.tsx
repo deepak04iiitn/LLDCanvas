@@ -317,7 +317,7 @@ export function DesignBugSession({ bug }: Props) {
               Try Again
             </button>
             <Link
-              href="/learn/debugger"
+              href="/dashboard/learn/debugger"
               className="flex-1 rounded-xl bg-brand py-2.5 text-center text-[13px] font-semibold text-white transition hover:bg-brand/90"
             >
               Back to List

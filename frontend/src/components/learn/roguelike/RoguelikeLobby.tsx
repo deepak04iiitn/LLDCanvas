@@ -192,7 +192,7 @@ export function RoguelikeLobby() {
     setStarting(true)
     try {
       const { runId } = await learnApi.roguelikeV2.startRun(selectedScenario.slug, selectedMode)
-      router.push(`/learn/roguelike/${runId}`)
+      router.push(`/dashboard/learn/roguelike/${runId}`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to start run')
       setStarting(false)
@@ -203,7 +203,7 @@ export function RoguelikeLobby() {
     setStartingQuick(true)
     try {
       const { runId } = await learnApi.roguelikeV2.startQuickRun()
-      router.push(`/learn/roguelike/${runId}`)
+      router.push(`/dashboard/learn/roguelike/${runId}`)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Failed to start Quick Run')
       setStartingQuick(false)
@@ -244,7 +244,7 @@ export function RoguelikeLobby() {
           {/* Breadcrumb + actions */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-              <Link href="/learn/roguelike" className="hover:text-ink transition-colors">
+              <Link href="/dashboard/learn/roguelike" className="hover:text-ink transition-colors">
                 LLD Roguelike
               </Link>
               <span>/</span>
@@ -261,7 +261,7 @@ export function RoguelikeLobby() {
                 </div>
               )}
               <Link
-                href="/learn/roguelike/history"
+                href="/dashboard/learn/roguelike/history"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-ink/30 hover:text-ink"
               >
                 <History size={11} />
