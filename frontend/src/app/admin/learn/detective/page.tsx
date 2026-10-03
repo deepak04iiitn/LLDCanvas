@@ -1,12 +1,9 @@
 'use client'
 
-import { AdminComingSoon } from '@/components/admin/interactive/AdminComingSoon'
+import { redirect } from 'next/navigation'
 
+// Detective is now fully managed via the Features hub.
+// Redirect to keep any bookmarked links working.
 export default function AdminLearnDetectivePage() {
-  return (
-    <AdminComingSoon
-      title="Bug Detective"
-      description="Scenario packs CMS is not online yet. Managed content will land in a later phase."
-    />
-  )
+  redirect('/admin/features/detective')
 }

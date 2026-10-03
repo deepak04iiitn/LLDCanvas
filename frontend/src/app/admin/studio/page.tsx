@@ -25,6 +25,7 @@ const TYPE_TABS: { key: ChallengePackType | ''; label: string }[] = [
   { key: 'refactor', label: 'Refactor' },
   { key: 'change_one', label: 'Change One' },
   { key: 'evolution', label: 'Evolution' },
+  { key: 'budget', label: 'Budget' },
 ]
 
 const DIFFICULTY_COLORS = {
@@ -199,6 +200,7 @@ function PackPanel({
                 <option value="refactor">Refactor</option>
                 <option value="change_one">Change One</option>
                 <option value="evolution">Evolution</option>
+                <option value="budget">Budget</option>
               </select>
             </Field>
             <Field label="Difficulty">

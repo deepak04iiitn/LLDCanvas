@@ -95,9 +95,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (sessionLoading) return
     if (!session) { router.replace('/'); return }
+    // Admins are redirected to /admin unless they explicitly chose to view
+    // the user dashboard (e.g. via the "User Dashboard" link in the admin sidebar).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((session.user as any).isAdmin) { router.replace('/admin'); return }
-  }, [session, sessionLoading, router])
+    const viewAsUser = searchParams.get('view') === 'user'
+    if ((session.user as any).isAdmin && !viewAsUser) { router.replace('/admin'); return }
+  }, [session, sessionLoading, router, searchParams])
 
   useEffect(() => {
     if (!session || !hasMigratePending()) return

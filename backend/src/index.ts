@@ -35,6 +35,7 @@ import journeyRouter       from './routes/journey.route'
 import skillsRouter        from './routes/skills.route'
 import adminStudioRouter   from './routes/admin/studio.route'
 import adminLearnRouter    from './routes/admin/learn.route'
+import adminJourneyRouter  from './routes/admin/journey.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
 import { startSpacedRepetitionJob } from './jobs/spaced-repetition'
 
@@ -125,6 +126,7 @@ app.use('/plannr',         journeyRouter)
 app.use('/skills',         skillsRouter)
 app.use('/admin/studio',    adminStudioRouter)
 app.use('/admin/learn',     adminLearnRouter)
+app.use('/admin/plannr',    adminJourneyRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
