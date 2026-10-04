@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { Suspense, useEffect, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -41,23 +41,24 @@ function CanvasBackdrop() {
 const HERO_EDGES: DiagramEdge[] = [
   { id: 'e1', from: { node: 'pl', side: 'bottom' }, to: { node: 'lvl', side: 'top' }, marker: 'diamond-filled', markerSide: 'start' },
   { id: 'e2', from: { node: 'pl', side: 'right' }, to: { node: 'fee', side: 'left' }, variant: 'dashed', marker: 'arrow' },
-  { id: 'e3', from: { node: 'lvl', side: 'bottom' }, to: { node: 'veh', side: 'top' } },
+  { id: 'e3', from: { node: 'lvl', side: 'right' }, to: { node: 'veh', side: 'left' } },
 ]
 
 function HeroDiagram() {
   return (
     <div className="relative">
-      <DiagramStage edges={HERO_EDGES} className="h-[420px] w-full">
-        <DiagramNode id="pl" className="w-48" style={{ left: '0%', top: '4%' }}>
+      {/* 2×2 grid: ParkingLot top-left · FeeStrategy top-right · Level bottom-left · Vehicle bottom-right */}
+      <DiagramStage edges={HERO_EDGES} className="h-[310px] w-full">
+        <DiagramNode id="pl" className="w-44" style={{ left: '2%', top: '3%' }}>
           <DiagramBox name="ParkingLot" fields={['- levels: List<Level>']} methods={['+ getAvailableSpot(): Spot']} />
         </DiagramNode>
-        <DiagramNode id="fee" className="w-52" style={{ right: '0%', top: '0%' }}>
+        <DiagramNode id="fee" className="w-44" style={{ right: '2%', top: '3%' }}>
           <DiagramBox stereotype="interface" dashed name="FeeStrategy" methods={['+ calculate(t: Ticket): float']} />
         </DiagramNode>
-        <DiagramNode id="lvl" className="w-44" style={{ left: '38%', top: '40%' }}>
+        <DiagramNode id="lvl" className="w-40" style={{ left: '2%', bottom: '3%' }}>
           <DiagramBox name="Level" fields={['- spots: List<Spot>']} methods={['+ getFreeSpot(): Spot']} />
         </DiagramNode>
-        <DiagramNode id="veh" className="w-48" style={{ left: '0%', bottom: '2%' }}>
+        <DiagramNode id="veh" className="w-44" style={{ right: '2%', bottom: '3%' }}>
           <DiagramBox name="Vehicle" fields={['- licensePlate: String', '- type: VehicleType']} />
         </DiagramNode>
       </DiagramStage>
@@ -65,289 +66,7 @@ function HeroDiagram() {
   )
 }
 
-// ─── Platform spine rail - the "not just a UML drawer" section ────────────────
-// A feature-grid of icon cards is the obvious move (and a UML box diagram is
-// the obvious move for THIS brand specifically). Instead: seven vertical
-// "spines" - like books on a shelf, or files in a drawer - collapsed to a
-// rotated mono label by default. Click one and it expands to take most of the
-// rail's width while the rest compress, revealing its content. Nothing else
-// on the page moves this way; it reads as an actual shelf you're browsing,
-// not a row of cards you're scanning.
-interface PillarSpine {
-  index: string
-  title: string
-  detail: string
-  points: string[]
-  chips: string[]
-  href: string
-  cta: string
-}
-
-const PILLAR_SPINES: PillarSpine[] = [
-  {
-    index: '01', title: 'Visual Editor',
-    detail: '5 node types, 7 relationship types, 3 canvas themes - keyboard-first, drag-to-connect.',
-    points: [
-      'Every relationship carries real UML semantics - a filled diamond always means composition, not just a line.',
-      'Undo/redo, alignment guides, and PNG, SVG, PlantUML, and Mermaid export, all reachable from the keyboard.',
-    ],
-    chips: ['Class', 'Interface', 'Enum', 'Abstract Class', 'Note', 'Inheritance', 'Composition', 'Aggregation'],
-    href: '/editor/local', cta: 'Open the editor',
-  },
-  {
-    index: '02', title: 'Design Patterns',
-    detail: '23 Gang-of-Four patterns and 13 class-role stereotypes, pre-wired and correctly connected.',
-    points: [
-      'Every pattern ships with the correct handle sides pre-computed - no arrows crossing through boxes.',
-      'Insert any of the 23 with a single Ctrl+K search instead of digging through a sidebar.',
-    ],
-    chips: ['Singleton', 'Factory Method', 'Observer', 'Strategy', 'Decorator', 'Adapter', '+17 more'],
-    href: '/editor/local', cta: 'Browse patterns',
-  },
-  {
-    index: '03', title: 'Draft Notation',
-    detail: 'Plain-English sentences in, a live UML diagram out - instantly, as you type.',
-    points: [
-      'Round-trips both ways - export any diagram back to Draft Notation text and re-import it later.',
-      'The same parser powers the standalone Playground and the one-shot importer inside the editor.',
-    ],
-    chips: ['knows', 'can', 'has many', 'owns', 'is a', 'acts as', 'uses'],
-    href: '/playground', cta: 'Open the Playground',
-  },
-  {
-    index: '04', title: 'Interview Mode',
-    detail: 'Timed LLD interview practice against a real countdown. Every session becomes a streak, a heatmap, a graph.',
-    points: [
-      'Pick 30, 45, 60, 90 minutes, or go unlimited - pause and resume without losing the clock.',
-      'Every session auto-saves a snapshot, so an unfinished attempt is never actually lost.',
-    ],
-    chips: ['30 min', '45 min', '60 min', 'No limit', 'Pause & resume', 'Session notes'],
-    href: '/editor/local', cta: 'Start a session',
-  },
-  {
-    index: '05', title: 'Problems + Community',
-    detail: '110+ LLD & system design interview questions, curated by company and difficulty, with staged hints and real discussion threads.',
-    points: [
-      'Three hints unlock one at a time, so you\'re never spoiled all at once.',
-      'See how other engineers structured the same design before you settle on your own.',
-    ],
-    chips: ['Amazon', 'Uber', 'Stripe', 'Meta', 'Easy', 'Medium', 'Hard'],
-    href: '/features/interview-questions', cta: 'Browse problems',
-  },
-  {
-    index: '06', title: 'Revision Notes',
-    detail: 'Bite-sized theory - bookmarked, tracked, ready for a five-minute refresher.',
-    points: [
-      'Each note tracks its own bookmarked and revised state per user, so your list stays accurate.',
-      'Organized by category and difficulty - basic, intermediate, advanced - so revision is never random.',
-    ],
-    chips: ['SOLID Principles', 'Composition vs. Inheritance', 'CAP Theorem', 'Idempotency', 'Thread-Safety'],
-    href: '/features/revision-notes', cta: 'Read notes',
-  },
-  {
-    index: '07', title: 'Code Execution',
-    detail: 'Turn the class you just drew into real, runnable code - 11 languages, no separate IDE.',
-    points: [
-      'The exact same sandbox that powers the standalone Playground\'s Run button.',
-      'Rate-limited and abuse-protected server-side, so it stays fast and free for everyone.',
-    ],
-    chips: ['Python', 'Java', 'C++', 'Go', 'Rust', 'TypeScript', '+5 more'],
-    href: '/playground', cta: 'Run some code',
-  },
-  {
-    index: '08', title: 'Live Collaboration',
-    detail: 'Invite teammates into the same diagram in real time, and leave threaded comments right on the canvas.',
-    points: [
-      'See collaborators\' cursors and edits live - no refresh, no manual merging.',
-      'Comments stay pinned to the exact node they\'re about, tagged with @mentions, not lost in a separate doc.',
-    ],
-    chips: ['Real-time cursors', 'Threaded comments', '@mentions', 'Invite by email'],
-    href: '/features/collaboration', cta: 'View collaborations',
-  },
-]
-
-function PillarSpineRail() {
-  const [active, setActive] = useState(0)
-
-  return (
-    <>
-      {/* Desktop / tablet - horizontal expanding spines */}
-      <div className="hidden h-[440px] gap-px overflow-hidden rounded-md border border-hairline bg-hairline sm:flex">
-        {PILLAR_SPINES.map((p, i) => {
-          const isActive = i === active
-          return (
-            <div
-              key={p.title}
-              role="button"
-              tabIndex={0}
-              onClick={() => setActive(i)}
-              onMouseEnter={() => setActive(i)}
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActive(i) } }}
-              style={{ flexBasis: 0 }}
-              className={cn(
-                'group relative cursor-pointer overflow-hidden transition-[flex-grow] duration-500 ease-out',
-                isActive ? 'flex-[7] bg-brand-tint/50' : 'flex-1 bg-paper-elevated hover:bg-hairline/40',
-              )}
-            >
-              {/* Collapsed spine label */}
-              <div className={cn(
-                'absolute inset-0 flex items-center justify-center transition-opacity duration-200',
-                isActive ? 'pointer-events-none opacity-0' : 'opacity-100',
-              )}>
-                <span className="flex items-center gap-2 whitespace-nowrap font-mono text-[11px] font-medium tracking-widest text-ink-muted [writing-mode:vertical-rl] rotate-180">
-                  <span className="text-gold">{p.index}</span>
-                  {p.title}
-                </span>
-              </div>
-
-              {/* Expanded content */}
-              <div className={cn(
-                'absolute inset-0 flex flex-col justify-between p-6 transition-opacity duration-300',
-                isActive ? 'opacity-100 delay-150' : 'pointer-events-none opacity-0',
-              )}>
-                <div>
-                  <p className="mb-2 font-mono text-[10px] font-medium tracking-widest text-gold">{p.index}</p>
-                  <h3 className="mb-3 font-serif text-xl font-medium whitespace-nowrap text-ink">{p.title}</h3>
-                  <p className="mb-4 max-w-sm text-sm leading-relaxed text-ink-muted">{p.detail}</p>
-                  <div className="mb-5 max-w-sm space-y-2">
-                    {p.points.map(pt => (
-                      <div key={pt} className="flex items-start gap-2">
-                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                        <p className="text-[13px] leading-relaxed text-ink-muted">{pt}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex max-w-md flex-wrap gap-1.5">
-                    {p.chips.map(c => (
-                      <span key={c} className="rounded-full border border-hairline-strong bg-paper px-2.5 py-1 font-mono text-[11px] text-ink-muted">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <Link href={p.href} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand">
-                  {p.cta} <ArrowUpRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Mobile - vertical accordion */}
-      <div className="space-y-2 sm:hidden">
-        {PILLAR_SPINES.map((p, i) => {
-          const isActive = i === active
-          return (
-            <div key={p.title} className="overflow-hidden rounded-md border border-hairline">
-              <button
-                onClick={() => setActive(isActive ? -1 : i)}
-                className="flex w-full items-center justify-between p-4 text-left"
-              >
-                <span className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-gold">{p.index}</span>
-                  <span className="font-medium text-ink">{p.title}</span>
-                </span>
-                <ChevronDown className={cn('h-4 w-4 shrink-0 text-ink-faint transition-transform duration-200', isActive && 'rotate-180')} />
-              </button>
-              <motion.div
-                initial={false}
-                animate={{ height: isActive ? 'auto' : 0, opacity: isActive ? 1 : 0 }}
-                transition={{ duration: 0.22, ease: 'easeInOut' }}
-                className="overflow-hidden"
-              >
-                <div className="px-4 pb-4">
-                  <p className="mb-3 text-sm leading-relaxed text-ink-muted">{p.detail}</p>
-                  <div className="mb-4 space-y-2">
-                    {p.points.map(pt => (
-                      <div key={pt} className="flex items-start gap-2">
-                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
-                        <p className="text-[13px] leading-relaxed text-ink-muted">{pt}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mb-4 flex flex-wrap gap-1.5">
-                    {p.chips.map(c => (
-                      <span key={c} className="rounded-full border border-hairline-strong bg-paper px-2.5 py-1 font-mono text-[11px] text-ink-muted">
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                  <Link href={p.href} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand">
-                    {p.cta} <ArrowUpRight className="h-3.5 w-3.5" />
-                  </Link>
-                </div>
-              </motion.div>
-            </div>
-          )
-        })}
-      </div>
-    </>
-  )
-}
-
-// ─── Feature chain ────────────────────────────────────────────────────────────
-interface FeatureNode { id: string; stereotype: string; name: string; method: string }
-const FEATURES: FeatureNode[] = [
-  { id: 'f1', stereotype: 'keystroke', name: 'QuickInsert',    method: '+ addClass(): Instantly' },
-  { id: 'f2', stereotype: 'drag',      name: 'SmartConnect',   method: '+ connect(a, b): Relationship' },
-  { id: 'f3', stereotype: 'Ctrl+K',    name: 'PatternLibrary', method: '+ insert(pattern): Skeleton' },
-  { id: 'f5', stereotype: 'toolbar',   name: 'Export',         method: '+ export(): PNG | SVG | PlantUML | Mermaid' },
-  { id: 'f6', stereotype: 'click',     name: 'Canvas',         method: '+ theme(mode): Light | Dark | Whiteboard' },
-]
-const FEATURE_EDGES: DiagramEdge[] = FEATURES.slice(0, -1).map((f, i) => ({
-  id: `fe-${i}`, from: { node: f.id, side: 'right' }, to: { node: FEATURES[i + 1].id, side: 'left' }, variant: 'dashed', marker: 'arrow',
-}))
-
-function FeatureChain() {
-  return (
-    <div className="no-scrollbar -mx-5 overflow-x-auto px-5 py-4 sm:mx-0 sm:px-0">
-      <DiagramStage edges={FEATURE_EDGES} className="inline-flex items-center gap-14 py-6 pr-6">
-        {FEATURES.map((f, i) => (
-          <DiagramNode
-            key={f.id}
-            id={f.id}
-            mode="flow"
-            className={cn('shrink-0', i % 2 === 1 ? 'translate-y-5' : '-translate-y-5')}
-          >
-            <motion.div {...inViewProps(i * 0.05)}>
-              <DiagramBox stereotype={f.stereotype} dashed name={f.name} methods={[f.method]} className="w-56" />
-            </motion.div>
-          </DiagramNode>
-        ))}
-      </DiagramStage>
-    </div>
-  )
-}
-
-// ─── Spec strip ───────────────────────────────────────────────────────────────
-const SPECS = [
-  { n: '110+', label: 'Practice problems' },
-  { n: '23',  label: 'Design patterns' },
-  { n: '13',  label: 'Class roles' },
-  { n: '7',   label: 'Relationship types' },
-  { n: '11',  label: 'Runnable languages' },
-  { n: '5',   label: 'Export formats' },
-]
-function SpecStrip() {
-  return (
-    <div className="grid grid-cols-2 gap-x-8 gap-y-6 rounded-md border border-hairline p-6 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-hairline sm:p-0 lg:grid-cols-6">
-      {SPECS.map((s, i) => (
-        <motion.div key={s.label} {...inViewProps(i * 0.05)} className="sm:px-5 sm:py-6">
-          <p className="font-mono text-3xl font-medium text-brand">{s.n}</p>
-          <p className="mt-1 text-xs text-ink-faint">{s.label}</p>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Who it's for - conference ID badges on a lanyard ─────────────────────────
-// Three cards in a row is the single most reused shape on the internet. Since
-// this section is literally about identity ("who are you"), it's shown as
-// what identity actually looks like at a professional event - a badge on a
-// lanyard clip, tilted like it's hanging, straightening up on hover like it's
-// being picked up and read. Nothing else on the page uses this motif.
+// ─── Who it's for — conference ID badges on a lanyard ─────────────────────────
 const PERSONAS = [
   {
     n: '01',
@@ -381,38 +100,22 @@ function PersonaBadge({ p, delay }: { p: typeof PERSONAS[number]; delay: number 
         p.tilt,
       )}
     >
-      {/* Lanyard clip */}
       <div className="h-4 w-5 rounded-t-md border border-b-0 border-hairline-strong bg-paper-elevated" />
       <div className="-mt-px h-3 w-px bg-hairline-strong" />
-
-      {/* The badge itself */}
       <div className="relative w-72 overflow-hidden rounded-lg border border-hairline-strong bg-paper-elevated shadow-md transition-shadow duration-300 group-hover:shadow-xl">
-        {/* Punch hole */}
         <div className="absolute top-3 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rounded-full border border-hairline-strong bg-paper" />
-
         <div className="border-b border-dashed border-hairline px-5 pt-8 pb-4 text-center">
-          <p className="mb-3 font-mono text-[9px] font-semibold tracking-[0.2em] text-ink-faint uppercase">
-            LLDCanvas &middot; Attendee
-          </p>
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-brand-tint font-mono text-lg font-bold text-brand">
-            {p.n}
-          </div>
+          <p className="mb-3 font-mono text-[9px] font-semibold tracking-[0.2em] text-ink-faint uppercase">LLDCanvas &middot; Attendee</p>
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-brand-tint font-mono text-lg font-bold text-brand">{p.n}</div>
           <p className="mb-1 font-mono text-[10px] tracking-widest text-gold uppercase">{p.kicker}</p>
           <h3 className="font-serif text-lg font-medium text-ink">{p.title}</h3>
         </div>
-
         <div className="px-5 py-4">
           <p className="text-xs leading-relaxed text-ink-muted">{p.desc}</p>
         </div>
-
-        {/* Barcode flourish */}
         <div className="flex items-end justify-center gap-[2px] border-t border-hairline bg-paper px-5 py-3">
           {Array.from({ length: 26 }).map((_, bi) => (
-            <div
-              key={bi}
-              className="bg-ink-faint/35"
-              style={{ width: bi % 3 === 0 ? 2 : 1, height: 8 + ((bi * 7) % 4) * 3 }}
-            />
+            <div key={bi} className="bg-ink-faint/35" style={{ width: bi % 3 === 0 ? 2 : 1, height: 8 + ((bi * 7) % 4) * 3 }} />
           ))}
         </div>
       </div>
@@ -423,14 +126,12 @@ function PersonaBadge({ p, delay }: { p: typeof PERSONAS[number]; delay: number 
 function WhoIsItFor() {
   return (
     <div className="flex flex-wrap items-start justify-center gap-8 sm:gap-10">
-      {PERSONAS.map((p, i) => (
-        <PersonaBadge key={p.n} p={p} delay={i * 0.08} />
-      ))}
+      {PERSONAS.map((p, i) => <PersonaBadge key={p.n} p={p} delay={i * 0.08} />)}
     </div>
   )
 }
 
-// ─── Draft Notation - code ↔ diagram ──────────────────────────────────────────
+// ─── Draft Notation ────────────────────────────────────────────────────────────
 const DRAFT_SNIPPET = `User
 User knows id, name: String, email: String
 User can login(), getProfile(): Profile
@@ -440,13 +141,6 @@ Post knows id, content: String
 
 User has many Post`
 
-// A copy-left/visual-right split is the same composition Interview Mode, Code
-// Execution, and Collaboration all already use. Draft Notation is fundamentally
-// a transformation - text becoming a diagram - and transformations read as a
-// SEQUENCE, not a side-by-side comparison. So this is one tall vertical
-// artifact, styled like a perforated ticket stub: code typed in at the top,
-// torn along a dashed seam, diagram output at the bottom. The copy sits
-// centered above it, not boxed into a column beside it.
 function TypewriterDraftBlock() {
   const [shown, setShown] = useState('')
   const [done, setDone] = useState(false)
@@ -459,21 +153,12 @@ function TypewriterDraftBlock() {
     const id = setInterval(() => {
       i += 2
       setShown(DRAFT_SNIPPET.slice(0, i))
-      if (i >= DRAFT_SNIPPET.length) {
-        clearInterval(id)
-        setDone(true)
-      }
+      if (i >= DRAFT_SNIPPET.length) { clearInterval(id); setDone(true) }
     }, 20)
   }
 
   return (
-    <motion.div
-      {...inViewProps(0.1)}
-      onViewportEnter={start}
-      viewport={{ once: true, margin: '-80px' }}
-      className="w-full"
-    >
-      {/* Code half */}
+    <motion.div {...inViewProps(0.1)} onViewportEnter={start} viewport={{ once: true, margin: '-80px' }} className="w-full">
       <div className="overflow-hidden rounded-t-xl border border-b-0 border-hairline shadow-lg">
         <div className="flex items-center gap-2 border-b border-white/[0.06] bg-[#14130f] px-4 py-2.5">
           <div className="flex h-5 w-5 items-center justify-center rounded bg-brand/20">
@@ -486,23 +171,13 @@ function TypewriterDraftBlock() {
           {!done && <span className="animate-pulse text-emerald-400">▍</span>}
         </pre>
       </div>
-
-      {/* Perforated tear-seam */}
       <div className="relative border-t-2 border-dashed border-hairline-strong">
         <div className="absolute top-1/2 -left-3 h-6 w-6 -translate-y-1/2 rounded-full bg-paper" />
         <div className="absolute top-1/2 -right-3 h-6 w-6 -translate-y-1/2 rounded-full bg-paper" />
-        <span
-          className={cn(
-            'absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap',
-            'rounded-full border border-hairline-strong bg-paper px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-widest text-brand',
-            'transition-opacity duration-300', done ? 'opacity-100' : 'opacity-0',
-          )}
-        >
+        <span className={cn('absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 whitespace-nowrap', 'rounded-full border border-hairline-strong bg-paper px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-widest text-brand', 'transition-opacity duration-300', done ? 'opacity-100' : 'opacity-0')}>
           <Zap className="h-3 w-3" /> renders instantly
         </span>
       </div>
-
-      {/* Diagram half */}
       <motion.div
         animate={{ opacity: done ? 1 : 0, y: done ? 0 : 8 }}
         transition={{ duration: 0.4 }}
@@ -517,8 +192,8 @@ function TypewriterDraftBlock() {
 
 const DRAFT_POINTS = [
   'Round-trips both ways - export any diagram back to Draft Notation text whenever you need words instead of boxes.',
-  'The exact same parser powers the standalone Playground and the one-shot Draft importer inside the editor.',
-  'Describe a design out loud in an interview the way you\'d actually say it, then watch it become the artifact you submit.',
+  'The same parser powers the standalone Playground and the one-shot Draft importer inside the editor.',
+  'Describe a design in an interview the way you\'d actually say it, then watch it become the artifact.',
 ]
 
 function DraftNotationSection() {
@@ -526,12 +201,10 @@ function DraftNotationSection() {
     <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
       <div>
         <motion.p {...inViewProps(0)} className="mb-5 max-w-md text-base leading-relaxed text-ink-muted">
-          No angle brackets, no drag-and-drop required. Describe a Low-Level Design in a sentence like{' '}
+          No angle brackets, no drag-and-drop required. Describe a design in a sentence like{' '}
           <code className="rounded bg-hairline px-1 py-0.5 font-mono text-[13px] text-brand">User has many Post</code>{' '}
-          and the relationship, the arrow, and the multiplicity all render themselves - instantly, live,
-          as you type.
+          and the relationship, the arrow, and the multiplicity all render themselves instantly.
         </motion.p>
-
         <motion.div {...inViewProps(0.05)} className="mb-6 max-w-md space-y-2.5">
           {DRAFT_POINTS.map(pt => (
             <div key={pt} className="flex items-start gap-2.5">
@@ -540,87 +213,27 @@ function DraftNotationSection() {
             </div>
           ))}
         </motion.div>
-
         <motion.div {...inViewProps(0.1)} className="flex flex-wrap gap-3">
-          <Link
-            href="/playground"
-            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
-          >
+          <Link href="/playground" className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
             Open the Playground <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link
-            href="/docs"
-            className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-5 py-2.5 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]"
-          >
+          <Link href="/docs" className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-5 py-2.5 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
             Read the syntax guide
           </Link>
         </motion.div>
       </div>
-
       <TypewriterDraftBlock />
-    </div>
-  )
-}
-
-// ─── Differentiators - a real comparison table, not icon cards ──────────────
-const COMPARISON_ROWS = [
-  'UML relationship semantics - enforced, not hand-drawn',
-  'Real class, interface, and enum node types',
-  '23 Gang-of-Four design pattern skeletons, pre-wired',
-  'Plain-English code ↔ diagram (Draft Notation)',
-  'Timed LLD interview practice with streaks & activity analytics',
-  '110+ curated LLD & system design interview questions, hints & community discussion',
-  'Run real code in 11 languages, in the same canvas',
-  'Real-time collaboration with live cursors & @mention comments',
-]
-
-function ComparisonTable() {
-  return (
-    <div className="no-scrollbar overflow-x-auto rounded-md border border-hairline">
-      <table className="w-full min-w-[560px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-hairline">
-            <th scope="col" className="px-5 py-4 text-left align-bottom">
-              <p className="font-mono text-[10px] font-medium tracking-widest text-ink-faint uppercase">Capability</p>
-            </th>
-            <th scope="col" className="px-5 py-4 text-left align-bottom">
-              <p className="font-mono text-[10px] font-medium tracking-widest text-ink-faint uppercase">Generic tools</p>
-              <p className="mt-1 text-xs font-normal text-ink-faint">draw.io, Lucidchart, Excalidraw…</p>
-            </th>
-            <th scope="col" className="bg-brand-tint px-5 py-4 text-left align-bottom">
-              <p className="font-mono text-[10px] font-medium tracking-widest text-brand uppercase">LLDCanvas</p>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {COMPARISON_ROWS.map((feature, i) => (
-            <motion.tr
-              key={feature}
-              {...inViewProps(i * 0.04)}
-              className="border-b border-hairline transition-colors last:border-0 hover:bg-paper/60"
-            >
-              <td className="px-5 py-4 text-ink">{feature}</td>
-              <td className="px-5 py-4">
-                <X size={16} className="text-ink-faint/70" />
-              </td>
-              <td className="bg-brand-tint/50 px-5 py-4">
-                <Check size={16} className="text-brand" />
-              </td>
-            </motion.tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }
 
 // ─── Interview Mode ───────────────────────────────────────────────────────────
 const PRACTICE_CHIPS = [
-  { icon: Flame,      label: 'Daily streaks' },
+  { icon: Flame,        label: 'Daily streaks' },
   { icon: CalendarDays, label: 'Activity heatmap' },
-  { icon: BarChart2,  label: 'Progress analytics' },
-  { icon: Clock,      label: 'Flexible timers' },
-  { icon: StickyNote, label: 'Session notes' },
+  { icon: BarChart2,    label: 'Progress analytics' },
+  { icon: Clock,        label: 'Flexible timers' },
+  { icon: StickyNote,   label: 'Session notes' },
 ]
 
 const WHY_IT_WORKS = [
@@ -635,27 +248,17 @@ const HEATMAP_LEVELS = Array.from({ length: 98 }, (_, i) => {
   if (cycle === 0 || cycle === 4) return 0
   return 1 + (i % 3)
 })
-const HEATMAP_LEVEL_CLASSES = [
-  'bg-hairline',
-  'bg-brand/20',
-  'bg-brand/45',
-  'bg-brand/70',
-  'bg-brand',
-]
+const HEATMAP_LEVEL_CLASSES = ['bg-hairline', 'bg-brand/20', 'bg-brand/45', 'bg-brand/70', 'bg-brand']
 
 function StreakHeatmap() {
   return (
     <div>
       <div className="grid grid-flow-col grid-rows-7 gap-[3px]">
-        {HEATMAP_LEVELS.map((level, i) => (
-          <div key={i} className={cn('h-2.5 w-2.5 rounded-[2px]', HEATMAP_LEVEL_CLASSES[level])} />
-        ))}
+        {HEATMAP_LEVELS.map((level, i) => <div key={i} className={cn('h-2.5 w-2.5 rounded-[2px]', HEATMAP_LEVEL_CLASSES[level])} />)}
       </div>
       <div className="mt-2 flex items-center justify-end gap-1.5">
         <span className="font-mono text-[9px] text-ink-faint">Less</span>
-        {HEATMAP_LEVEL_CLASSES.map((c, i) => (
-          <div key={i} className={cn('h-2 w-2 rounded-[2px]', c)} />
-        ))}
+        {HEATMAP_LEVEL_CLASSES.map((c, i) => <div key={i} className={cn('h-2 w-2 rounded-[2px]', c)} />)}
         <span className="font-mono text-[9px] text-ink-faint">More</span>
       </div>
     </div>
@@ -663,20 +266,14 @@ function StreakHeatmap() {
 }
 
 const WEEKLY_MINUTES = [20, 35, 15, 50, 40, 65, 55, 85]
-
 function StreakGraph() {
   const max = Math.max(...WEEKLY_MINUTES)
   return (
     <div className="flex h-20 items-end gap-2">
       {WEEKLY_MINUTES.map((m, i) => (
-        <motion.div
-          key={i}
-          className="flex-1 rounded-t-sm bg-brand/70 first:bg-brand/40 last:bg-brand"
-          initial={{ height: 0 }}
-          whileInView={{ height: `${(m / max) * 100}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: i * 0.05, ease: EASE }}
-        />
+        <motion.div key={i} className="flex-1 rounded-t-sm bg-brand/70 first:bg-brand/40 last:bg-brand"
+          initial={{ height: 0 }} whileInView={{ height: `${(m / max) * 100}%` }}
+          viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.05, ease: EASE }} />
       ))}
     </div>
   )
@@ -687,13 +284,7 @@ const DASHBOARD_STATS = [
   { n: '18h 20m', label: 'Time practiced' },
   { n: '12 days', label: 'Current streak' },
 ]
-
-const DEMO_QUESTIONS = [
-  'Design a Parking Lot',
-  'Design a Rate Limiter',
-  'Design an Elevator System',
-  'Design a Notification Service',
-]
+const DEMO_QUESTIONS = ['Design a Parking Lot', 'Design a Rate Limiter', 'Design an Elevator System', 'Design a Notification Service']
 const DEMO_DURATION = 40
 
 function LiveSessionRow() {
@@ -703,10 +294,7 @@ function LiveSessionRow() {
   useEffect(() => {
     const id = setInterval(() => {
       setSecondsLeft(s => {
-        if (s <= 1) {
-          setQIndex(q => (q + 1) % DEMO_QUESTIONS.length)
-          return DEMO_DURATION
-        }
+        if (s <= 1) { setQIndex(q => (q + 1) % DEMO_QUESTIONS.length); return DEMO_DURATION }
         return s - 1
       })
     }, 1000)
@@ -738,34 +326,26 @@ function LiveSessionRow() {
 function PracticeDashboardPreview() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: EASE }}
+      initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE }}
       className="overflow-hidden rounded-2xl border border-hairline-strong bg-paper-elevated shadow-lg"
     >
       <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
-        <p className="font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-          Your practice activity
-        </p>
+        <p className="font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">Your practice activity</p>
         <div className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold-tint px-2.5 py-1">
           <Flame className="h-3 w-3 text-gold" />
           <span className="font-mono text-[11px] font-semibold text-gold">12-day streak</span>
         </div>
       </div>
-
       <LiveSessionRow />
-
       <div className="px-6 py-5">
         <p className="mb-2.5 font-mono text-[10px] tracking-widest text-ink-faint uppercase">Last 14 weeks</p>
         <StreakHeatmap />
       </div>
-
       <div className="border-t border-hairline px-6 py-5">
         <p className="mb-2.5 font-mono text-[10px] tracking-widest text-ink-faint uppercase">Minutes per week</p>
         <StreakGraph />
       </div>
-
       <div className="grid grid-cols-3 divide-x divide-hairline border-t border-hairline">
         {DASHBOARD_STATS.map(s => (
           <div key={s.label} className="px-4 py-4 text-center">
@@ -779,92 +359,49 @@ function PracticeDashboardPreview() {
 }
 
 // ─── Problems + Community ──────────────────────────────────────────────────────
-// The obvious move is a "problem card" next to a "discussion card". Instead:
-// a physical deck of problem tickets, fanned like real cards on a desk (the
-// library is deep, not a single example), with the community's response
-// pinned to the front one like a sticky note - because that's the actual
-// ─── Problems Section - Bento Grid Redesign ──────────────────────────────────
-// Four distinct panels arranged in an asymmetric 3-column bento grid, each
-// telling a different part of the story: problem list, difficulty breakdown,
-// staged hints, and community discussion. No stacked cards, no left/right split.
-
 const BENTO_PROBLEMS = [
   { title: 'Design a Rate Limiter',    diff: 'Hard',   companies: ['Stripe', 'Cloudflare'], attempts: 234, active: false },
   { title: 'Design a Parking Lot',     diff: 'Medium', companies: ['Amazon', 'Uber'],        attempts: 189, active: true  },
   { title: 'Design Notification Hub',  diff: 'Easy',   companies: ['Meta'],                  attempts: 312, active: false },
 ]
-
 const DIFF_BADGE: Record<string, string> = {
-  Easy:   'bg-brand-tint text-brand',
-  Medium: 'bg-gold-tint text-gold',
-  Hard:   'bg-red-50 text-red-600',
+  Easy: 'bg-brand-tint text-brand', Medium: 'bg-gold-tint text-gold', Hard: 'bg-red-50 text-red-600',
 }
 
 function ProblemsCommunitySection() {
   return (
     <div className="space-y-3">
-      {/* ── Bento grid ── */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-
-        {/* Cell 1 - Problem list (large, col-span-2) */}
-        <motion.div
-          {...inViewProps(0)}
-          className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5"
-        >
+        <motion.div {...inViewProps(0)} className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Problem Library</p>
             <span className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[9px] text-ink-faint">110+ problems</span>
           </div>
           <div className="space-y-1.5">
             {BENTO_PROBLEMS.map((p, i) => (
-              <motion.div
-                key={p.title}
-                {...inViewProps(0.06 + i * 0.06)}
-                className={cn(
-                  'flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-all',
-                  p.active
-                    ? 'border border-brand/20 bg-brand-tint'
-                    : 'border border-transparent hover:bg-hairline/50',
-                )}
-              >
+              <motion.div key={p.title} {...inViewProps(0.06 + i * 0.06)}
+                className={cn('flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 transition-all', p.active ? 'border border-brand/20 bg-brand-tint' : 'border border-transparent hover:bg-hairline/50')}>
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <span className={cn('shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-semibold', DIFF_BADGE[p.diff])}>
-                    {p.diff}
-                  </span>
-                  <h3 className={cn('m-0 truncate text-sm font-medium', p.active ? 'text-brand' : 'text-ink')}>
-                    {p.title}
-                  </h3>
+                  <span className={cn('shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-semibold', DIFF_BADGE[p.diff])}>{p.diff}</span>
+                  <h3 className={cn('m-0 truncate text-sm font-medium', p.active ? 'text-brand' : 'text-ink')}>{p.title}</h3>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {p.companies.slice(0, 2).map(c => (
-                    <span key={c} className="hidden rounded-md border border-hairline px-1.5 py-0.5 font-mono text-[8px] text-ink-faint sm:inline">
-                      {c}
-                    </span>
+                    <span key={c} className="hidden rounded-md border border-hairline px-1.5 py-0.5 font-mono text-[8px] text-ink-faint sm:inline">{c}</span>
                   ))}
                   <span className="font-mono text-[10px] text-ink-faint">{p.attempts}</span>
                 </div>
               </motion.div>
             ))}
           </div>
-
-          {/* Active problem detail strip */}
-          <motion.div
-            {...inViewProps(0.18)}
-            className="mt-3 rounded-xl border border-brand/15 bg-paper px-4 py-3"
-          >
+          <motion.div {...inViewProps(0.18)} className="mt-3 rounded-xl border border-brand/15 bg-paper px-4 py-3">
             <p className="mb-1 font-mono text-[9px] text-brand">Currently solving</p>
             <p className="text-sm font-medium text-ink">Design a Parking Lot</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">
-              Model the lot, levels, spots, and a fee strategy that varies by vehicle type and duration.
-            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">Model the lot, levels, spots, and a fee strategy that varies by vehicle type and duration.</p>
           </motion.div>
         </motion.div>
 
-        {/* Cell 2 - Difficulty distribution (small, col-span-1) */}
-        <motion.div
-          {...inViewProps(0.08)}
-          className="rounded-2xl border border-hairline bg-paper-elevated p-5"
-        >
+        <motion.div {...inViewProps(0.08)} className="rounded-2xl border border-hairline bg-paper-elevated p-5">
           <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">By difficulty</p>
           <div className="space-y-3">
             {([['Easy', 40, 'bg-brand'], ['Medium', 35, 'bg-gold'], ['Hard', 25, 'bg-red-500']] as [string, number, string][]).map(([d, pct, bg]) => (
@@ -874,57 +411,34 @@ function ProblemsCommunitySection() {
                   <span className="font-mono text-[10px] text-ink-faint">{pct}%</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-hairline">
-                  <motion.div
-                    className={cn('h-full rounded-full', bg)}
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${pct}%` }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.3, duration: 0.9, ease: 'easeOut' }}
-                  />
+                  <motion.div className={cn('h-full rounded-full', bg)} initial={{ width: 0 }}
+                    whileInView={{ width: `${pct}%` }} viewport={{ once: true }} transition={{ delay: 0.3, duration: 0.9, ease: 'easeOut' }} />
                 </div>
               </div>
             ))}
           </div>
-
           <div className="mt-4 border-t border-hairline pt-4">
             <p className="mb-2 font-mono text-[10px] text-ink-faint">Asked by</p>
             <div className="flex flex-wrap gap-1">
               {['Google', 'Amazon', 'Meta', 'Stripe', 'Uber'].map(c => (
-                <span key={c}
-                  className="rounded-md border border-hairline bg-paper px-1.5 py-0.5 font-mono text-[8px] text-ink-muted">
-                  {c}
-                </span>
+                <span key={c} className="rounded-md border border-hairline bg-paper px-1.5 py-0.5 font-mono text-[8px] text-ink-muted">{c}</span>
               ))}
             </div>
           </div>
         </motion.div>
 
-        {/* Cell 3 - Staged hints (small, col-span-1) */}
-        <motion.div
-          {...inViewProps(0.1)}
-          className="rounded-2xl border border-hairline bg-paper-elevated p-5"
-        >
+        <motion.div {...inViewProps(0.1)} className="rounded-2xl border border-hairline bg-paper-elevated p-5">
           <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Staged Hints</p>
           <div className="space-y-2">
-            {/* Hint 1 - locked */}
             <div className="flex items-center gap-2 rounded-lg bg-hairline/50 px-3 py-2 opacity-50">
               <Lock className="h-3 w-3 shrink-0 text-ink-faint" />
               <span className="font-mono text-[10px] text-ink-faint">Hint 1 of 3</span>
             </div>
-            {/* Hint 2 - revealed */}
-            <motion.div
-              initial={{ opacity: 0, y: 4 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="rounded-lg border border-brand/20 bg-brand-tint px-3 py-2.5"
-            >
+            <motion.div initial={{ opacity: 0, y: 4 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }}
+              className="rounded-lg border border-brand/20 bg-brand-tint px-3 py-2.5">
               <p className="mb-1 font-mono text-[9px] font-semibold text-brand">Hint 2 of 3 ↓</p>
-              <p className="text-[11px] leading-relaxed text-ink">
-                Think about counting requests over a sliding window - not fixed intervals.
-              </p>
+              <p className="text-[11px] leading-relaxed text-ink">Think about counting requests over a sliding window - not fixed intervals.</p>
             </motion.div>
-            {/* Hint 3 - locked */}
             <div className="flex items-center gap-2 rounded-lg bg-hairline/50 px-3 py-2 opacity-50">
               <Lock className="h-3 w-3 shrink-0 text-ink-faint" />
               <span className="font-mono text-[10px] text-ink-faint">Hint 3 of 3</span>
@@ -932,56 +446,37 @@ function ProblemsCommunitySection() {
           </div>
         </motion.div>
 
-        {/* Cell 4 - Community discussion (large, col-span-2) */}
-        <motion.div
-          {...inViewProps(0.12)}
-          className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5"
-        >
+        <motion.div {...inViewProps(0.12)} className="sm:col-span-2 lg:col-span-2 rounded-2xl border border-hairline bg-paper-elevated p-5">
           <div className="mb-3 flex items-center justify-between">
             <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">Community Discussion</p>
             <span className="font-mono text-[10px] text-ink-faint">127 posts</span>
           </div>
           <div className="space-y-2.5">
-            {/* Post 1 */}
             <div className="rounded-xl border border-hairline bg-paper p-3">
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-500 font-mono text-[8px] font-bold text-white">P</div>
                 <span className="text-xs font-semibold text-ink">Priya M.</span>
                 <span className="text-[10px] text-ink-faint">· 2h ago</span>
-                <div className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint">
-                  <ThumbsUp className="h-2.5 w-2.5" /> 24
-                </div>
+                <div className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint"><ThumbsUp className="h-2.5 w-2.5" /> 24</div>
               </div>
-              <p className="text-[11px] leading-relaxed text-ink-muted">
-                Used token bucket over leaky bucket - way simpler to handle burst allowance.
-                Shared my full canvas diagram in the thread ↗
-              </p>
+              <p className="text-[11px] leading-relaxed text-ink-muted">Used token bucket over leaky bucket - way simpler to handle burst allowance. Shared my full canvas diagram in the thread ↗</p>
             </div>
-            {/* Post 2 */}
             <div className="rounded-xl border border-hairline bg-paper p-3">
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 font-mono text-[8px] font-bold text-white">A</div>
                 <span className="text-xs font-semibold text-ink">Alex R.</span>
                 <span className="text-[10px] text-ink-faint">· 5h ago</span>
-                <div className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint">
-                  <ThumbsUp className="h-2.5 w-2.5" /> 18
-                </div>
+                <div className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint"><ThumbsUp className="h-2.5 w-2.5" /> 18</div>
               </div>
               <p className="text-[11px] leading-relaxed text-ink-muted">
-                <span className="font-medium text-brand">@Priya</span>{' '}
-                How did you handle distributed counting across nodes? Redis sorted sets?
+                <span className="font-medium text-brand">@Priya</span>{' '}How did you handle distributed counting across nodes? Redis sorted sets?
               </p>
             </div>
           </div>
         </motion.div>
       </div>
-
-      {/* CTA */}
       <motion.div {...inViewProps(0.2)} className="pt-2">
-        <Link
-          href="/features/interview-questions"
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
-        >
+        <Link href="/features/interview-questions" className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
           Browse the library <ArrowRight className="h-4 w-4" />
         </Link>
       </motion.div>
@@ -989,24 +484,20 @@ function ProblemsCommunitySection() {
   )
 }
 
-// ─── Revision Notes ────────────────────────────────────────────────────────────
-// Revision notes ARE flashcards, conceptually - so show them as real ones.
-// A grid of "difficulty + title" cards says nothing you couldn't already
-// guess; a card that physically flips to reveal the actual insight on the
-// back demonstrates the bite-sized-theory pitch instead of describing it.
+// ─── Revision Notes — flip cards ─────────────────────────────────────────────
 const DIFF_CARD_STYLE: Record<string, { badge: string; border: string; bg: string; icon: string; backBg: string; backBorder: string }> = {
-  Basic:        { badge: 'bg-brand-tint text-brand', border: 'border-brand/20', bg: 'bg-brand-tint/40', icon: 'text-brand/10', backBg: 'bg-brand-tint', backBorder: 'border-brand/25' },
-  Intermediate: { badge: 'bg-gold-tint text-gold',   border: 'border-gold/25',  bg: 'bg-gold-tint/40',  icon: 'text-gold/10',  backBg: 'bg-gold-tint',  backBorder: 'border-gold/30'  },
-  Advanced:     { badge: 'bg-red-50 text-red-500',   border: 'border-red-200',  bg: 'bg-red-50/50',     icon: 'text-red-400/10', backBg: 'bg-red-50',   backBorder: 'border-red-200'  },
+  Basic:        { badge: 'bg-brand-tint text-brand', border: 'border-brand/20', bg: 'bg-brand-tint/40',  icon: 'text-brand/10',   backBg: 'bg-brand-tint', backBorder: 'border-brand/25' },
+  Intermediate: { badge: 'bg-gold-tint text-gold',   border: 'border-gold/25',  bg: 'bg-gold-tint/40',   icon: 'text-gold/10',    backBg: 'bg-gold-tint',  backBorder: 'border-gold/30'  },
+  Advanced:     { badge: 'bg-red-50 text-red-500',   border: 'border-red-200',  bg: 'bg-red-50/50',      icon: 'text-red-400/10', backBg: 'bg-red-50',     backBorder: 'border-red-200'  },
 }
 
 const REVISION_TOPICS: { title: string; difficulty: string; revised: boolean; insight: string; Icon: LucideIcon }[] = [
-  { title: 'SOLID Principles',        difficulty: 'Basic',        revised: true,  Icon: Layers,          insight: 'Five rules for classes that survive contact with new requirements - start with Single Responsibility, the other four follow from it.' },
-  { title: 'Composition vs. Inheritance', difficulty: 'Basic',   revised: true,  Icon: GitBranch,       insight: 'Favor "has-a" over "is-a" when behavior needs to change at runtime - inheritance locks in a shape at compile time.' },
-  { title: 'Singleton Thread-Safety', difficulty: 'Intermediate', revised: false, Icon: Lock,            insight: 'Double-checked locking exists because synchronizing the whole getInstance() call is correct but needlessly slow after the first call.' },
-  { title: 'REST vs. RPC',            difficulty: 'Intermediate', revised: false, Icon: ArrowLeftRight,  insight: 'REST models resources and state transitions; RPC models actions. Pick RPC when the operation isn\'t naturally a noun.' },
-  { title: 'CAP Theorem',             difficulty: 'Advanced',     revised: false, Icon: BarChart2,       insight: 'Under a network partition you choose Consistency or Availability - you never get to skip that choice, only which side you land on.' },
-  { title: 'Idempotency in APIs',     difficulty: 'Advanced',     revised: false, Icon: Key,             insight: 'An idempotency key lets a client safely retry a POST after a timeout without risking a duplicate charge or write.' },
+  { title: 'SOLID Principles',            difficulty: 'Basic',        revised: true,  Icon: Layers,         insight: 'Five rules for classes that survive contact with new requirements - start with Single Responsibility, the other four follow from it.' },
+  { title: 'Composition vs. Inheritance', difficulty: 'Basic',        revised: true,  Icon: GitBranch,      insight: 'Favor "has-a" over "is-a" when behavior needs to change at runtime - inheritance locks in a shape at compile time.' },
+  { title: 'Singleton Thread-Safety',     difficulty: 'Intermediate', revised: false, Icon: Lock,           insight: 'Double-checked locking exists because synchronizing the whole getInstance() call is correct but needlessly slow after the first call.' },
+  { title: 'REST vs. RPC',                difficulty: 'Intermediate', revised: false, Icon: ArrowLeftRight, insight: 'REST models resources and state transitions; RPC models actions. Pick RPC when the operation isn\'t naturally a noun.' },
+  { title: 'CAP Theorem',                 difficulty: 'Advanced',     revised: false, Icon: BarChart2,      insight: 'Under a network partition you choose Consistency or Availability - you never get to skip that choice, only which side you land on.' },
+  { title: 'Idempotency in APIs',         difficulty: 'Advanced',     revised: false, Icon: Key,            insight: 'An idempotency key lets a client safely retry a POST after a timeout without risking a duplicate charge or write.' },
 ]
 
 function FlipCard({ topic, delay }: { topic: typeof REVISION_TOPICS[number]; delay: number }) {
@@ -1014,39 +505,19 @@ function FlipCard({ topic, delay }: { topic: typeof REVISION_TOPICS[number]; del
   return (
     <motion.div {...inViewProps(delay)} className="group h-48 [perspective:1200px]">
       <div className="relative h-full w-full transition-transform duration-500 [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)]">
-        {/* Front */}
-        <div className={cn(
-          'absolute inset-0 flex flex-col justify-between overflow-hidden rounded-xl border p-4 [backface-visibility:hidden]',
-          s.bg, s.border,
-        )}>
-          {/* Decorative large icon - fills the blank space */}
+        <div className={cn('absolute inset-0 flex flex-col justify-between overflow-hidden rounded-xl border p-4 [backface-visibility:hidden]', s.bg, s.border)}>
           <topic.Icon className={cn('absolute right-4 top-1/2 -translate-y-1/2 h-20 w-20', s.icon)} aria-hidden />
-
           <div className="flex items-start justify-between">
-            <span className={cn('rounded-full px-2 py-0.5 font-mono text-[9px] font-semibold', s.badge)}>
-              {topic.difficulty}
-            </span>
-            {topic.revised ? (
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand" />
-            ) : (
-              <Bookmark className="h-4 w-4 shrink-0 text-ink-faint" />
-            )}
+            <span className={cn('rounded-full px-2 py-0.5 font-mono text-[9px] font-semibold', s.badge)}>{topic.difficulty}</span>
+            {topic.revised ? <CheckCircle2 className="h-4 w-4 shrink-0 text-brand" /> : <Bookmark className="h-4 w-4 shrink-0 text-ink-faint" />}
           </div>
-
           <div className="relative z-10">
             <h3 className="mb-1 text-sm font-semibold text-ink">{topic.title}</h3>
             <p className="font-mono text-[10px] text-ink-faint">hover to revise →</p>
           </div>
         </div>
-
-        {/* Back */}
-        <div className={cn(
-          'absolute inset-0 flex flex-col justify-between rounded-xl border p-4 [backface-visibility:hidden] [transform:rotateY(180deg)]',
-          s.backBg, s.backBorder,
-        )}>
-          <p className={cn('font-mono text-[9px] font-semibold uppercase tracking-widest', s.badge.split(' ')[1])}>
-            {topic.difficulty}
-          </p>
+        <div className={cn('absolute inset-0 flex flex-col justify-between rounded-xl border p-4 [backface-visibility:hidden] [transform:rotateY(180deg)]', s.backBg, s.backBorder)}>
+          <p className={cn('font-mono text-[9px] font-semibold uppercase tracking-widest', s.badge.split(' ')[1])}>{topic.difficulty}</p>
           <p className="text-[12px] leading-relaxed text-ink">{topic.insight}</p>
           <p className="font-mono text-[9px] text-ink-faint">{topic.title}</p>
         </div>
@@ -1059,93 +530,20 @@ function RevisionNotesSection() {
   return (
     <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {REVISION_TOPICS.map((t, i) => (
-          <FlipCard key={t.title} topic={t} delay={i * 0.04} />
-        ))}
+        {REVISION_TOPICS.map((t, i) => <FlipCard key={t.title} topic={t} delay={i * 0.04} />)}
       </div>
     </div>
   )
 }
 
-// ─── Code Execution - Studio Window Redesign ────────────────────────────────
-// One cohesive dark "studio" window showing the full pipeline:
-//   UML class diagram (design pane) → generated code (editor pane) → run output (terminal bar)
-// All in one surface, nothing described that isn't shown.
-
+// ─── Code Execution ───────────────────────────────────────────────────────────
 const LANG_SAMPLES = [
-  {
-    lang: 'Python', ext: 'py', prompt: '>>>',
-    code: `class FeeStrategy:
-    def calculate(self, ticket):
-        hours = ticket.duration_hours()
-        return max(hours, 1) * 2.5
-
-    def get_rate(self) -> float:
-        return self._rate`,
-    output: '7.5',
-  },
-  {
-    lang: 'TypeScript', ext: 'ts', prompt: '$',
-    code: `class FeeStrategy {
-  calculate(ticket: Ticket): number {
-    const hours = ticket.durationHours()
-    return Math.max(hours, 1) * 2.5
-  }
-
-  getRate(): number { return this.rate }
-}`,
-    output: '7.5',
-  },
-  {
-    lang: 'Java', ext: 'java', prompt: '$',
-    code: `class FeeStrategy {
-  double calculate(Ticket t) {
-    int hours = t.durationHours();
-    return Math.max(hours, 1) * 2.5;
-  }
-
-  double getRate() { return this.rate; }
-}`,
-    output: '7.5',
-  },
-  {
-    lang: 'Go', ext: 'go', prompt: '$',
-    code: `func (f *FeeStrategy) Calculate(
-    t Ticket,
-) float64 {
-    h := t.DurationHours()
-    return math.Max(float64(h), 1) * 2.5
-}
-
-func (f *FeeStrategy) GetRate() float64 {
-    return f.rate
-}`,
-    output: '7.5',
-  },
-  {
-    lang: 'Rust', ext: 'rs', prompt: '$',
-    code: `impl FeeStrategy {
-    pub fn calculate(&self, t: &Ticket) -> f64 {
-        let hours = t.duration_hours();
-        hours.max(1.0) * 2.5
-    }
-
-    pub fn get_rate(&self) -> f64 { self.rate }
-}`,
-    output: '7.5',
-  },
-  {
-    lang: 'C#', ext: 'cs', prompt: '$',
-    code: `class FeeStrategy {
-  public double Calculate(Ticket t) {
-    int hours = t.DurationHours();
-    return Math.Max(hours, 1) * 2.5;
-  }
-
-  public double GetRate() => this.Rate;
-}`,
-    output: '7.5',
-  },
+  { lang: 'Python', ext: 'py', prompt: '>>>', code: `class FeeStrategy:\n    def calculate(self, ticket):\n        hours = ticket.duration_hours()\n        return max(hours, 1) * 2.5\n\n    def get_rate(self) -> float:\n        return self._rate`, output: '7.5' },
+  { lang: 'TypeScript', ext: 'ts', prompt: '$', code: `class FeeStrategy {\n  calculate(ticket: Ticket): number {\n    const hours = ticket.durationHours()\n    return Math.max(hours, 1) * 2.5\n  }\n\n  getRate(): number { return this.rate }\n}`, output: '7.5' },
+  { lang: 'Java', ext: 'java', prompt: '$', code: `class FeeStrategy {\n  double calculate(Ticket t) {\n    int hours = t.durationHours();\n    return Math.max(hours, 1) * 2.5;\n  }\n\n  double getRate() { return this.rate; }\n}`, output: '7.5' },
+  { lang: 'Go', ext: 'go', prompt: '$', code: `func (f *FeeStrategy) Calculate(\n    t Ticket,\n) float64 {\n    h := t.DurationHours()\n    return math.Max(float64(h), 1) * 2.5\n}\n\nfunc (f *FeeStrategy) GetRate() float64 {\n    return f.rate\n}`, output: '7.5' },
+  { lang: 'Rust', ext: 'rs', prompt: '$', code: `impl FeeStrategy {\n    pub fn calculate(&self, t: &Ticket) -> f64 {\n        let hours = t.duration_hours();\n        hours.max(1.0) * 2.5\n    }\n\n    pub fn get_rate(&self) -> f64 { self.rate }\n}`, output: '7.5' },
+  { lang: 'C#', ext: 'cs', prompt: '$', code: `class FeeStrategy {\n  public double Calculate(Ticket t) {\n    int hours = t.DurationHours();\n    return Math.Max(hours, 1) * 2.5;\n  }\n\n  public double GetRate() => this.Rate;\n}`, output: '7.5' },
 ]
 const EXTRA_LANGS = ['Ruby', 'PHP', 'Haskell', 'C++', 'Swift', 'Kotlin', 'F#', 'Scala']
 
@@ -1153,16 +551,10 @@ function CodeExecutionSection() {
   const [active, setActive] = useState(0)
   const [ran, setRan] = useState(false)
   const sample = LANG_SAMPLES[active]
-
-  function pickLang(i: number) {
-    setActive(i)
-    setRan(false)
-  }
+  function pickLang(i: number) { setActive(i); setRan(false) }
 
   return (
     <motion.div {...inViewProps(0)} className="overflow-hidden rounded-2xl border border-hairline shadow-xl">
-
-      {/* ── Window chrome / top bar ───────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 border-b border-white/6 bg-[#0e0d0a] px-4 py-[10px]">
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
@@ -1172,27 +564,16 @@ function CodeExecutionSection() {
         <span className="font-mono text-[10px] text-white/25 select-none">FeeStrategy - LLDCanvas Studio</span>
         <div className="ml-auto flex flex-wrap items-center gap-1">
           {LANG_SAMPLES.map((s, i) => (
-            <button
-              key={s.lang}
-              onClick={() => pickLang(i)}
-              className={cn(
-                'rounded-md px-2.5 py-1 font-mono text-[10px] transition-all',
-                i === active ? 'bg-white/12 text-white/85' : 'text-white/30 hover:text-white/60',
-              )}
-            >
+            <button key={s.lang} onClick={() => pickLang(i)}
+              className={cn('rounded-md px-2.5 py-1 font-mono text-[10px] transition-all', i === active ? 'bg-white/12 text-white/85' : 'text-white/30 hover:text-white/60')}>
               {s.lang}
             </button>
           ))}
         </div>
       </div>
-
-      {/* ── Split: design pane + code pane ───────────────────────────────── */}
       <div className="flex min-h-[220px] divide-x divide-white/6 bg-[#0e0d0a]">
-
-        {/* Design pane - hidden on mobile, shown lg+ */}
         <div className="hidden w-44 shrink-0 flex-col items-center justify-center gap-3 bg-[#0a0908]/60 p-5 lg:flex">
           <p className="self-start font-mono text-[9px] uppercase tracking-widest text-white/20">Design</p>
-          {/* UML class box */}
           <div className="w-full overflow-hidden rounded-lg border border-white/10">
             <div className="border-b border-white/10 bg-white/5 px-3 py-1.5 text-center">
               <span className="font-mono text-[10px] font-semibold text-white/65">FeeStrategy</span>
@@ -1206,27 +587,15 @@ function CodeExecutionSection() {
               <p className="font-mono text-[9px] text-emerald-400/55">+ getRate()</p>
             </div>
           </div>
-          {/* Animated arrow pointing right */}
-          <motion.div
-            animate={{ x: [0, 5, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-            className="flex items-center gap-1 self-end font-mono text-[8px] text-white/20"
-          >
+          <motion.div animate={{ x: [0, 5, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex items-center gap-1 self-end font-mono text-[8px] text-white/20">
             generates <ArrowRight className="h-2.5 w-2.5" />
           </motion.div>
         </div>
-
-        {/* Code pane */}
         <div className="flex-1 overflow-hidden bg-[#14130f]">
           <AnimatePresence mode="wait">
-            <motion.pre
-              key={active}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-              className="overflow-x-auto p-5 font-mono text-[12px] leading-[1.75] text-white/75"
-            >
+            <motion.pre key={active} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}
+              className="overflow-x-auto p-5 font-mono text-[12px] leading-[1.75] text-white/75">
               {sample.code.split('\n').map((line, i) => (
                 <div key={i} className="flex gap-4">
                   <span className="w-4 shrink-0 select-none text-right text-white/18">{i + 1}</span>
@@ -1237,87 +606,49 @@ function CodeExecutionSection() {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* ── Terminal bar ─────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 border-t border-white/6 bg-[#0a0908] px-5 py-3">
-        <span className="font-mono text-[10px] text-white/20 select-none">
-          {sample.prompt} run FeeStrategy.{sample.ext}
-        </span>
+        <span className="font-mono text-[10px] text-white/20 select-none">{sample.prompt} run FeeStrategy.{sample.ext}</span>
         <AnimatePresence>
           {ran && (
-            <motion.span
-              initial={{ opacity: 0, x: 8 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              className="font-mono text-[11px] text-emerald-400"
-            >
+            <motion.span initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="font-mono text-[11px] text-emerald-400">
               → {sample.output}
             </motion.span>
           )}
         </AnimatePresence>
         <div className="flex-1" />
-        <button
-          onClick={() => setRan(true)}
-          className={cn(
-            'flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[10px] font-semibold text-white transition-all duration-200',
-            ran ? 'bg-emerald-700/60 cursor-default' : 'bg-emerald-600/80 hover:bg-emerald-600 active:scale-95',
-          )}
-        >
-          <PlayCircle className="h-3 w-3" />
-          {ran ? 'Ran ✓' : 'Run'}
+        <button onClick={() => setRan(true)}
+          className={cn('flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[10px] font-semibold text-white transition-all duration-200', ran ? 'bg-emerald-700/60 cursor-default' : 'bg-emerald-600/80 hover:bg-emerald-600 active:scale-95')}>
+          <PlayCircle className="h-3 w-3" />{ran ? 'Ran ✓' : 'Run'}
         </button>
       </div>
-
-      {/* ── Extra languages footer ────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-2 border-t border-white/6 bg-[#0e0d0a] px-5 py-2.5">
         <span className="font-mono text-[8px] uppercase tracking-widest text-white/18 mr-1">Also</span>
         {EXTRA_LANGS.map(l => (
-          <span key={l} className="rounded-md border border-white/8 px-2 py-0.5 font-mono text-[9px] text-white/28">
-            {l}
-          </span>
+          <span key={l} className="rounded-md border border-white/8 px-2 py-0.5 font-mono text-[9px] text-white/28">{l}</span>
         ))}
       </div>
     </motion.div>
   )
 }
 
-// ─── Live Collaboration - Redesigned ─────────────────────────────────────────
-// Concept: instead of a left/right split, the section is centred around a
-// full-width "canvas window" mockup - a realistic rendering of the actual editor
-// with live cursors and a pinned comment - so the feature speaks for itself.
-// Feature chips sit below the window; no separate "right-side" graphic needed.
-
-function LiveCursorTag({
-  name, color, bgColor, borderColor, left, top, delay,
-}: {
-  name: string; color: string; bgColor: string; borderColor: string
-  left: string; top: string; delay: number
+// ─── Live Collaboration ───────────────────────────────────────────────────────
+function LiveCursorTag({ name, color, bgColor, borderColor, left, top, delay }: {
+  name: string; color: string; bgColor: string; borderColor: string; left: string; top: string; delay: number
 }) {
   return (
-    <motion.div
-      className="pointer-events-none absolute z-20 select-none"
-      style={{ left, top }}
-      animate={{ x: [0, 7, -4, 3, 0], y: [0, -5, 3, -2, 0] }}
-      transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay }}
-    >
-      {/* Mouse cursor shape */}
+    <motion.div className="pointer-events-none absolute z-20 select-none" style={{ left, top }}
+      animate={{ x: [0, 7, -4, 3, 0], y: [0, -5, 3, -2, 0] }} transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay }}>
       <svg width="13" height="15" viewBox="0 0 13 15" aria-hidden className="drop-shadow-sm">
         <path d="M1 1L1 11L4 8L6.5 14L8 13.3L5.5 7.5L10.5 7.5L1 1Z" fill={color} />
       </svg>
-      <div
-        className="mt-[2px] whitespace-nowrap rounded-full px-1.5 py-[1px] font-mono text-[9px] font-semibold leading-none shadow-sm"
-        style={{ backgroundColor: bgColor, color, border: `1px solid ${borderColor}` }}
-      >
+      <div className="mt-[2px] whitespace-nowrap rounded-full px-1.5 py-[1px] font-mono text-[9px] font-semibold leading-none shadow-sm"
+        style={{ backgroundColor: bgColor, color, border: `1px solid ${borderColor}` }}>
         {name}
       </div>
     </motion.div>
   )
 }
 
-// UML diagram rendered inside the canvas window.
-// Row 1 bottom = y:107, Row 2 top = y:220 → 113 px gap for the comment.
-// Comment is positioned as a foreignObject inside the SVG so it always
-// aligns with the SVG coordinate space regardless of container width.
 function CollabDiagram() {
   const nodes = [
     { label: 'API Gateway',  sub: '«entry»',   x: 40,  y: 55,  w: 148, h: 52, glow: '#0284c7' as string | null },
@@ -1334,10 +665,7 @@ function CollabDiagram() {
     { x1: cx(au),       y1: au.y + au.h, x2: cx(db),  y2: db.y  },
     { x1: or_.x + or_.w, y1: cy(or_), x2: db.x,     y2: cy(db) },
   ]
-
   return (
-    // Height fixed to match SVG viewBox aspect - comment sits safely in the
-    // 113 px gap between rows (y:107 → y:220) so it never touches a node.
     <div className="relative h-[318px] w-full select-none overflow-hidden">
       <svg viewBox="0 0 560 318" className="h-full w-full">
         <defs>
@@ -1349,67 +677,25 @@ function CollabDiagram() {
           </marker>
         </defs>
         <rect width="560" height="318" fill="url(#cg)" />
-
-        {/* Edges */}
         {edges.map((e, i) => (
-          <motion.line key={i}
-            x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+          <motion.line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
             stroke="#D1D5DB" strokeWidth={1.5} markerEnd="url(#arr)"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-          />
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }} />
         ))}
-
-        {/* Nodes */}
         {nodes.map((n, i) => (
-          <motion.g key={n.label}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 + i * 0.12, duration: 0.35 }}
-          >
-            {n.glow && (
-              <rect x={n.x - 5} y={n.y - 5} width={n.w + 10} height={n.h + 10}
-                rx={12} fill={n.glow} opacity={0.09} />
-            )}
-            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={8}
-              fill="white" stroke={n.glow ?? '#E5E7EB'} strokeWidth={n.glow ? 1.5 : 1} />
-            <text x={n.x + n.w / 2} y={n.y + 21} textAnchor="middle"
-              fontFamily="system-ui, sans-serif" fontSize={11} fontWeight={600} fill="#1C1917">
-              {n.label}
-            </text>
-            <text x={n.x + n.w / 2} y={n.y + 36} textAnchor="middle"
-              fontFamily="ui-monospace, monospace" fontSize={8.5} fill="#A8A29E">
-              {n.sub}
-            </text>
+          <motion.g key={n.label} initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 + i * 0.12, duration: 0.35 }}>
+            {n.glow && <rect x={n.x - 5} y={n.y - 5} width={n.w + 10} height={n.h + 10} rx={12} fill={n.glow} opacity={0.09} />}
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx={8} fill="white" stroke={n.glow ?? '#E5E7EB'} strokeWidth={n.glow ? 1.5 : 1} />
+            <text x={n.x + n.w / 2} y={n.y + 21} textAnchor="middle" fontFamily="system-ui, sans-serif" fontSize={11} fontWeight={600} fill="#1C1917">{n.label}</text>
+            <text x={n.x + n.w / 2} y={n.y + 36} textAnchor="middle" fontFamily="ui-monospace, monospace" fontSize={8.5} fill="#A8A29E">{n.sub}</text>
           </motion.g>
         ))}
-
-        {/* Pinned comment - inside SVG coordinate space so it NEVER
-            overlaps nodes regardless of container width.
-            x:362 = right half gap  |  y:113 = just below row-1 (y:107)
-            width:190  height:85    |  bottom = y:198 < row-2 top y:220  */}
-        <motion.g
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.9, duration: 0.35 }}
-        >
+        <motion.g initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.9, duration: 0.35 }}>
           <foreignObject x="362" y="113" width="190" height="90">
             <div
               // @ts-expect-error xmlns required for SVG foreignObject
               xmlns="http://www.w3.org/1999/xhtml"
-              style={{
-                background: 'white',
-                border: '1px solid #ddd6fe',
-                borderRadius: '12px',
-                padding: '10px',
-                boxShadow: '0 4px 20px rgba(124,58,237,0.13)',
-                fontFamily: 'system-ui, sans-serif',
-              }}
-            >
+              style={{ background: 'white', border: '1px solid #ddd6fe', borderRadius: '12px', padding: '10px', boxShadow: '0 4px 20px rgba(124,58,237,0.13)', fontFamily: 'system-ui, sans-serif' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <span style={{ color: 'white', fontSize: 8, fontWeight: 700, fontFamily: 'monospace' }}>A</span>
@@ -1417,9 +703,7 @@ function CollabDiagram() {
                 <span style={{ fontSize: 10, fontWeight: 600, color: '#1c1917' }}>Alex</span>
                 <span style={{ fontSize: 9, color: '#a8a29e', marginLeft: 'auto' }}>just now</span>
               </div>
-              <p style={{ fontSize: 11, lineHeight: 1.5, color: '#78716c', margin: 0, marginBottom: 6 }}>
-                Add a Redis cache layer here? ⚡
-              </p>
+              <p style={{ fontSize: 11, lineHeight: 1.5, color: '#78716c', margin: 0, marginBottom: 6 }}>Add a Redis cache layer here? ⚡</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 9, fontWeight: 600, color: '#7c3aed', cursor: 'pointer' }}>Reply</span>
                 <span style={{ fontSize: 9, color: '#d6d3d1' }}>·</span>
@@ -1429,92 +713,50 @@ function CollabDiagram() {
           </foreignObject>
         </motion.g>
       </svg>
-
-      {/* Cursors - free-floating overlays, approximate node positions are fine */}
-      {/* Priya: editing API Gateway (top-left node) */}
-      <LiveCursorTag name="Priya" color="#0284c7" bgColor="#e0f2fe" borderColor="#7dd3fc"
-        left="8%" top="17%" delay={0} />
-      {/* Alex: near AuthService (top-right) - left the comment on Database below */}
-      <LiveCursorTag name="Alex" color="#7c3aed" bgColor="#ede9fe" borderColor="#c4b5fd"
-        left="62%" top="13%" delay={1.3} />
+      <LiveCursorTag name="Priya" color="#0284c7" bgColor="#e0f2fe" borderColor="#7dd3fc" left="8%" top="17%" delay={0} />
+      <LiveCursorTag name="Alex"  color="#7c3aed" bgColor="#ede9fe" borderColor="#c4b5fd" left="62%" top="13%" delay={1.3} />
     </div>
   )
 }
 
 const COLLAB_FEATURES = [
-  {
-    Icon: MousePointer2,
-    title: 'Live cursors & presence',
-    desc: 'See every teammate\'s cursor in real time - no refresh, no manual sync.',
-  },
-  {
-    Icon: MessageCircle,
-    title: 'Pinned @mention comments',
-    desc: 'Threads stay anchored to the exact node they\'re about, not buried in chat.',
-  },
-  {
-    Icon: UserPlus,
-    title: 'Invite by email or link',
-    desc: 'Collaborators get viewer or editor roles the moment they accept.',
-  },
+  { Icon: MousePointer2, title: 'Live cursors & presence', desc: 'See every teammate\'s cursor in real time - no refresh, no manual sync.' },
+  { Icon: MessageCircle, title: 'Pinned @mention comments', desc: 'Threads stay anchored to the exact node they\'re about, not buried in chat.' },
+  { Icon: UserPlus,      title: 'Invite by email or link', desc: 'Collaborators get viewer or editor roles the moment they accept.' },
 ]
 
 function CollaborationSection() {
   return (
     <div className="space-y-8">
-      {/* Feature list - inline text rows above the canvas */}
       <ul className="space-y-3">
         {COLLAB_FEATURES.map(({ Icon, title, desc }, i) => (
-          <motion.li
-            key={title}
-            {...inViewProps(i * 0.07)}
-            className="flex items-start gap-3"
-          >
+          <motion.li key={title} {...inViewProps(i * 0.07)} className="flex items-start gap-3">
             <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-brand-tint">
               <Icon className="h-3 w-3 text-brand" />
             </div>
             <p className="text-sm leading-relaxed text-ink-muted">
-              <span className="font-semibold text-ink">{title} - </span>
-              {desc}
+              <span className="font-semibold text-ink">{title} - </span>{desc}
             </p>
           </motion.li>
         ))}
       </ul>
-
-      {/* CTA */}
       <motion.div {...inViewProps(0.15)} className="flex">
-        <Link
-          href="/features/collaboration"
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]"
-        >
+        <Link href="/features/collaboration" className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
           Start collaborating <ArrowRight className="h-4 w-4" />
         </Link>
       </motion.div>
-
-      {/* Full-width canvas window mockup */}
-      <motion.div
-        {...inViewProps(0.05)}
-        className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_8px_48px_rgba(0,0,0,0.07)]"
-      >
-        {/* Window chrome bar */}
+      <motion.div {...inViewProps(0.05)} className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated shadow-[0_8px_48px_rgba(0,0,0,0.07)]">
         <div className="flex items-center gap-3 border-b border-hairline bg-paper px-4 py-3">
           <div className="flex items-center gap-1.5 shrink-0">
             <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
             <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
           </div>
-          <span className="mx-auto font-mono text-[11px] text-ink-faint">
-            PaymentSystem.lld
-          </span>
-          {/* Presence stack + live badge */}
+          <span className="mx-auto font-mono text-[11px] text-ink-faint">PaymentSystem.lld</span>
           <div className="flex shrink-0 items-center gap-2">
             <div className="flex -space-x-1.5">
               {([['P','#0284c7'],['A','#7c3aed'],['D','#3D6A52']] as [string,string][]).map(([init, c]) => (
-                <div key={init}
-                  className="flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-white font-mono text-[8px] font-bold text-white shadow-sm"
-                  style={{ backgroundColor: c }}>
-                  {init}
-                </div>
+                <div key={init} className="flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-white font-mono text-[8px] font-bold text-white shadow-sm" style={{ backgroundColor: c }}>{init}</div>
               ))}
             </div>
             <div className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5">
@@ -1523,58 +765,25 @@ function CollaborationSection() {
             </div>
           </div>
         </div>
-
-        {/* Canvas */}
         <CollabDiagram />
       </motion.div>
     </div>
   )
 }
 
-// ─── FAQ (accordion) ──────────────────────────────────────────────────────────
-// FAQ copy itself lives in faq-data.ts, shared with the FAQPage JSON-LD in
-// app/page.tsx so the structured data always matches what's rendered here
-// verbatim. This file only adds the internal-link overlay below - links are
-// wrapped around substrings of that same text at render time, so the visible
-// words users read (and what Google indexes as the FAQ answer) never diverge
-// from the JSON-LD.
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
 const FAQ_LINKS: Record<string, [phrase: string, href: string][]> = {
-  'What is LLDCanvas?': [
-    ['Draft Notation', '/features/draft-notation'],
-    ['code execution sandbox', '/features/code-execution'],
-  ],
-  'What is Low-Level Design (LLD)?': [
-    ['SOLID principles', '/features/revision-notes'],
-  ],
-  'What is the difference between Low-Level Design (LLD) and System Design (HLD) interviews?': [
-    ['revision notes library', '/features/revision-notes'],
-  ],
-  'How is LLDCanvas different from draw.io or Lucidchart?': [
-    ['LLD interview-question library', '/features/interview-questions'],
-  ],
-  'What is Draft Notation?': [
-    ['standalone Playground', '/playground'],
-    ['Docs', '/docs'],
-  ],
-  'Does LLDCanvas have a library of LLD and system design interview questions?': [
-    ['110+ Low-Level Design problems and interview questions', '/features/interview-questions'],
-  ],
-  'Are SOLID principles covered?': [
-    ['revision notes', '/features/revision-notes'],
-  ],
-  'Can I run code, not just draw diagrams?': [
-    ['Playground', '/playground'],
-  ],
-  'Is LLDCanvas a free LLD course, or just a diagramming tool?': [
-    ['the full problems library', '/features/interview-questions'],
-  ],
-  'Do I need a CS degree or prior experience to learn Low-Level Design here?': [
-    ['Basic-tier revision notes', '/features/revision-notes'],
-    ['Easy problems in the library', '/features/interview-questions'],
-    ['Draft Notation', '/features/draft-notation'],
-  ],
+  'What is LLDCanvas?': [['Draft Notation', '/features/draft-notation'], ['code execution sandbox', '/features/code-execution']],
+  'What is Low-Level Design (LLD)?': [['SOLID principles', '/features/revision-notes']],
+  'What is the difference between Low-Level Design (LLD) and System Design (HLD) interviews?': [['revision notes library', '/features/revision-notes']],
+  'How is LLDCanvas different from draw.io or Lucidchart?': [['LLD interview-question library', '/features/interview-questions']],
+  'What is Draft Notation?': [['standalone Playground', '/playground'], ['Docs', '/docs']],
+  'Does LLDCanvas have a library of LLD and system design interview questions?': [['110+ Low-Level Design problems and interview questions', '/features/interview-questions']],
+  'Are SOLID principles covered?': [['revision notes', '/features/revision-notes']],
+  'Can I run code, not just draw diagrams?': [['Playground', '/playground']],
+  'Is LLDCanvas a free LLD course, or just a diagramming tool?': [['the full problems library', '/features/interview-questions']],
+  'Do I need a CS degree or prior experience to learn Low-Level Design here?': [['Basic-tier revision notes', '/features/revision-notes'], ['Easy problems in the library', '/features/interview-questions'], ['Draft Notation', '/features/draft-notation']],
 }
-
 const faqLinkClass = 'text-brand underline decoration-hairline-strong underline-offset-2 transition-colors hover:decoration-brand'
 
 function linkifyFaqAnswer(text: string, pairs: [phrase: string, href: string][]): React.ReactNode {
@@ -1588,34 +797,19 @@ function linkifyFaqAnswer(text: string, pairs: [phrase: string, href: string][])
   const before = text.slice(0, earliest.idx)
   const after = text.slice(earliest.idx + earliest.phrase.length)
   const remaining = pairs.filter(([phrase]) => phrase !== earliest!.phrase)
-  return (
-    <>
-      {before}
-      <Link href={earliest.href} className={faqLinkClass}>{earliest.phrase}</Link>
-      {linkifyFaqAnswer(after, remaining)}
-    </>
-  )
+  return (<>{before}<Link href={earliest.href} className={faqLinkClass}>{earliest.phrase}</Link>{linkifyFaqAnswer(after, remaining)}</>)
 }
 
 function FaqItem({ q, a, index }: { q: string; a: React.ReactNode; index: number }) {
   const [open, setOpen] = useState(false)
   return (
     <motion.div {...inViewProps(index * 0.03)} className="border-b border-hairline last:border-0">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center justify-between gap-6 py-5 text-left"
-      >
+      <button onClick={() => setOpen(v => !v)} className="flex w-full items-center justify-between gap-6 py-5 text-left">
         <span className="font-medium text-ink">{q}</span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-        />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-ink-faint transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
-      <motion.div
-        initial={false}
-        animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.22, ease: 'easeInOut' }}
-        className="overflow-hidden"
-      >
+      <motion.div initial={false} animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.22, ease: 'easeInOut' }} className="overflow-hidden">
         <p className="pb-5 text-sm leading-relaxed text-ink-muted">{a}</p>
       </motion.div>
     </motion.div>
@@ -1625,9 +819,583 @@ function FaqItem({ q, a, index }: { q: string; a: React.ReactNode; index: number
 function Faq() {
   return (
     <div className="border-t border-hairline">
-      {FAQS.map((f, i) => (
-        <FaqItem key={f.q} q={f.q} a={linkifyFaqAnswer(f.a, FAQ_LINKS[f.q] ?? [])} index={i} />
-      ))}
+      {FAQS.map((f, i) => <FaqItem key={f.q} q={f.q} a={linkifyFaqAnswer(f.a, FAQ_LINKS[f.q] ?? [])} index={i} />)}
+    </div>
+  )
+}
+
+// ─── Challenge Labs ───────────────────────────────────────────────────────────
+const DAILY_LABS = [
+  { n: '09', title: 'Plannr', brief: 'A structured roadmap from zero to interview-ready.', hook: 'Follow it in order or jump straight to the gaps your last mock exposed.', chips: ['Topic sequence', 'Milestone tracking', 'Gap analysis'], href: '/features/plannr' },
+  { n: '10', title: 'Daily Quiz', brief: '10 questions a day keeps the patterns sharp.', hook: 'Design patterns and SOLID principles, refreshed every day with full explanations after you answer.', chips: ['10 questions / day', 'Pattern + SOLID', 'Streak tracking'], href: '/features/daily-quiz' },
+]
+
+const ACTIVE_LABS = [
+  { n: '11', title: 'Pattern Detective', brief: 'Read real production-style code. Name the pattern. Explain why the other three options do not fit.', chips: ['Real code', '23 patterns'], href: '/features/pattern-detective' },
+  { n: '12', title: 'Debug Lab',         brief: 'Annotate violations in authored UML diagrams — God Class, SRP breach, tight coupling — before the breakdown reveals.', chips: ['Real violations', 'Annotation mode'], href: '/features/debug-lab' },
+  { n: '13', title: 'Debug & Fix',       brief: 'Don\'t just spot the flaw. Restructure the design, apply the pattern, and validate against the clean expected output.', chips: ['Active fixing', 'Pattern application'], href: '/features/debug-and-fix' },
+  { n: '14', title: 'Roguelike',         brief: 'Procedurally generated LLD scenarios with permanent decisions and live resource drain. No undo. No two runs the same.', chips: ['No undo', 'Branching outcomes'], href: '/features/roguelike' },
+  { n: '15', title: 'Refactor',          brief: 'Take a working but bloated monolith apart. Identify the smells, restructure to clean boundaries, keep it functionally equivalent.', chips: ['Monolith → clean', 'SOLID'], href: '/features/refactor' },
+  { n: '16', title: 'Change One Thing',  brief: 'A new requirement arrives mid-design. Absorb it with the minimal blast radius — OCP validation scores your answer.', chips: ['OCP practice', 'Blast radius'], href: '/features/change-one-thing' },
+  { n: '17', title: 'Evolution',         brief: 'Grow a design through multiple stages of scale and watch how early trade-offs compound into technical debt.', chips: ['Multi-stage', 'Trade-off tracking'], href: '/features/evolution' },
+  { n: '18', title: 'Budget Pressure',   brief: 'Design within a fixed budget, sprint timeline, or headcount limit. Justify every trade-off against the benchmark.', chips: ['Real constraints', 'Budget tracking'], href: '/features/budget-pressure' },
+]
+
+function ChallengeLabs() {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {DAILY_LABS.map((lab, i) => (
+          <motion.div key={lab.n} {...inViewProps(i * 0.08)}>
+            <Link href={lab.href} className="group flex h-full flex-col rounded-xl border border-brand/25 bg-brand-tint p-6 transition-colors hover:border-brand/50">
+              <p className="mb-3 font-mono text-[9px] font-bold tracking-[0.2em] text-brand/60 uppercase">Daily Practice &middot; {lab.n}</p>
+              <p className="font-serif text-xl font-semibold text-ink">{lab.title}</p>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">{lab.brief}</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-ink-muted">{lab.hook}</p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {lab.chips.map(c => <span key={c} className="rounded-full border border-brand/20 bg-paper-elevated px-2.5 py-0.5 font-mono text-[10px] text-ink-muted">{c}</span>)}
+              </div>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand">Explore {lab.title} <ArrowRight className="h-3.5 w-3.5" /></span>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {ACTIVE_LABS.map((lab, i) => (
+          <motion.div key={lab.n} {...inViewProps(0.06 + i * 0.04)}>
+            <Link href={lab.href} className="group flex h-full flex-col rounded-xl border border-hairline bg-paper-elevated p-5 transition-colors hover:border-brand/40">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand font-mono text-[10px] font-bold text-brand-foreground">{String(i + 1).padStart(2, '0')}</span>
+                <div className="h-px flex-1 bg-hairline" />
+              </div>
+              <p className="font-serif text-[15px] font-semibold leading-snug text-ink">{lab.title}</p>
+              <p className="mt-1.5 flex-1 text-[12.5px] leading-relaxed text-ink-muted">{lab.brief}</p>
+              <div className="mt-3 flex flex-wrap gap-1">
+                {lab.chips.map(c => <span key={c} className="rounded-full border border-hairline bg-paper px-2 py-0.5 font-mono text-[9px] text-ink-muted">{c}</span>)}
+              </div>
+              <span className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-brand">Explore <ArrowRight className="h-3 w-3" /></span>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+      <motion.div {...inViewProps(0.24)} className="flex gap-3 pt-2">
+        <Link href="/features" className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
+          See all 17 features <ArrowRight className="h-4 w-4" />
+        </Link>
+      </motion.div>
+    </div>
+  )
+}
+
+// ─── Design Studio — tabbed feature showcase ─────────────────────────────────
+type StudioTab = 'canvas' | 'draft' | 'code' | 'collab'
+
+const STUDIO_TAB_META: {
+  id: StudioTab; n: string; label: string; Icon: LucideIcon
+  headline: string; body: string; chips: string[]
+  cta: string; ctaHref: string; link: string; linkHref: string
+}[] = [
+  {
+    id: 'canvas', n: '01', label: 'Canvas & Editor', Icon: Layers,
+    headline: 'A real UML canvas, built for LLD interviews.',
+    body: 'Full UML vocabulary — composition diamonds, inheritance arrows, dashed interfaces, stereotypes — all keyboard-driven. Open and start drawing in under 30 seconds.',
+    chips: ['Class diagrams', 'Interface nodes', 'All relationship types', 'PNG · SVG · Mermaid export'],
+    cta: 'Open the editor', ctaHref: '/editor/local', link: 'Editor docs', linkHref: '/features/editor',
+  },
+  {
+    id: 'draft', n: '02', label: 'Draft Notation', Icon: Zap,
+    headline: 'Say it in English. See it as UML.',
+    body: 'Type "User has many Post" and the relationship, arrow, and multiplicity render themselves. Describe the design the way you think — not the way UML expects.',
+    chips: ['Natural language → UML', 'Bidirectional sync', 'Standalone Playground'],
+    cta: 'Try the Playground', ctaHref: '/playground', link: 'Syntax guide', linkHref: '/docs',
+  },
+  {
+    id: 'code', n: '03', label: 'Code Execution', Icon: PlayCircle,
+    headline: "Don't just design it. Run it.",
+    body: 'Generate runnable scaffolding from your class diagram and execute in-browser across 12 languages. Design and code in the same window — no context switching.',
+    chips: ['12 languages', 'In-browser execution', 'Scaffold from diagram'],
+    cta: 'Open the editor', ctaHref: '/editor/local', link: 'Code Execution', linkHref: '/features/code-execution',
+  },
+  {
+    id: 'collab', n: '04', label: 'Collaboration', Icon: UserPlus,
+    headline: "You don't design in isolation. Why practice like it?",
+    body: 'Live cursors, @mention comments anchored to the exact node, viewer and editor roles. Built for mock interview sessions and real-time pair design.',
+    chips: ['Live cursors & presence', 'Pinned @mention threads', 'Viewer / editor roles'],
+    cta: 'Start collaborating', ctaHref: '/features/collaboration', link: 'Collaboration', linkHref: '/features/collaboration',
+  },
+]
+
+function DesignStudioSection() {
+  const [activeId, setActiveId] = useState<StudioTab>('canvas')
+  const tab = STUDIO_TAB_META.find(t => t.id === activeId)!
+
+  return (
+    <div>
+      {/* 4-tab picker */}
+      <div className="mb-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {STUDIO_TAB_META.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveId(t.id)}
+            className={cn(
+              'group rounded-xl border p-4 text-left transition-all duration-200',
+              activeId === t.id
+                ? 'border-brand/40 bg-brand-tint shadow-sm'
+                : 'border-hairline bg-paper-elevated hover:border-brand/20',
+            )}
+          >
+            <div className="mb-2.5 flex items-center gap-2">
+              <t.Icon className={cn('h-3.5 w-3.5 transition-colors', activeId === t.id ? 'text-brand' : 'text-ink-faint')} />
+              <span className={cn('font-mono text-[9px] font-bold tracking-wider', activeId === t.id ? 'text-brand' : 'text-ink-faint')}>{t.n}</span>
+            </div>
+            <p className={cn('font-serif text-sm font-semibold leading-snug', activeId === t.id ? 'text-ink' : 'text-ink-muted')}>{t.label}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Content: left text / right live demo */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeId}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.22 }}
+          className="grid grid-cols-1 items-start gap-12 lg:grid-cols-[320px_1fr] lg:gap-16 xl:grid-cols-[360px_1fr]"
+        >
+          {/* Left — text block */}
+          <div>
+            <h3 className="mb-4 font-serif text-2xl font-medium leading-snug text-ink sm:text-3xl">{tab.headline}</h3>
+            <p className="mb-6 text-[15px] leading-relaxed text-ink-muted">{tab.body}</p>
+            <div className="mb-7 flex flex-wrap gap-1.5">
+              {tab.chips.map(c => (
+                <span key={c} className="rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] text-ink-muted">{c}</span>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href={tab.ctaHref}
+                className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground transition-all hover:bg-brand-hover active:scale-[0.97]">
+                {tab.cta} <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href={tab.linkHref} className="text-sm font-medium text-ink-muted transition-colors hover:text-brand">
+                {tab.link} →
+              </Link>
+            </div>
+          </div>
+
+          {/* Right — live demo */}
+          <div>
+            {activeId === 'canvas' && (
+              <div className="overflow-hidden rounded-2xl border border-hairline-strong bg-paper-elevated shadow-xl">
+                <div className="flex items-center gap-3 border-b border-hairline bg-paper px-4 py-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+                  </div>
+                  <span className="mx-auto font-mono text-[10px] text-ink-faint">ParkingLot.lld — LLDCanvas Editor</span>
+                </div>
+                <div className="p-6"><HeroDiagram /></div>
+              </div>
+            )}
+            {activeId === 'draft' && <TypewriterDraftBlock />}
+            {activeId === 'code' && <CodeExecutionSection />}
+            {activeId === 'collab' && (
+              <div className="overflow-hidden rounded-2xl border border-hairline-strong bg-paper-elevated shadow-xl">
+                <div className="flex items-center gap-3 border-b border-hairline bg-paper px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
+                    <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+                  </div>
+                  <span className="mx-auto font-mono text-[11px] text-ink-faint">PaymentSystem.lld</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex -space-x-1.5">
+                      {([['P','#0284c7'],['A','#7c3aed'],['D','#3D6A52']] as [string,string][]).map(([init, c]) => (
+                        <div key={init} className="flex h-5 w-5 items-center justify-center rounded-full border-[1.5px] border-white font-mono text-[8px] font-bold text-white shadow-sm" style={{ backgroundColor: c }}>{init}</div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                      <span className="font-mono text-[9px] font-semibold text-emerald-700">3 live</span>
+                    </div>
+                  </div>
+                </div>
+                <CollabDiagram />
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Practice Engine — bento dashboard ───────────────────────────────────────
+const COMPACT_PROBLEMS = [
+  { title: 'Design a Rate Limiter',     diff: 'Hard',   companies: ['Stripe', 'Cloudflare'], attempts: 234 },
+  { title: 'Design a Parking Lot',      diff: 'Medium', companies: ['Amazon', 'Uber'],       attempts: 189 },
+  { title: 'Design Notification Hub',   diff: 'Easy',   companies: ['Meta'],                 attempts: 312 },
+  { title: 'Design an Elevator System', diff: 'Medium', companies: ['Google'],               attempts: 156 },
+  { title: 'Design a URL Shortener',    diff: 'Hard',   companies: ['Google', 'Amazon'],     attempts: 278 },
+]
+
+function PracticeEngineSection() {
+  return (
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+
+      {/* Interview Mode — spans 2 of 3 columns */}
+      <motion.div {...inViewProps(0)} className="lg:col-span-2">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand-tint px-2.5 py-0.5">
+              <Mic className="h-3 w-3 text-brand" />
+              <span className="font-mono text-[10px] font-semibold tracking-widest text-brand uppercase">Interview Mode</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold-tint px-2.5 py-0.5">
+              <Flame className="h-3 w-3 text-gold" />
+              <span className="font-mono text-[10px] font-semibold text-gold">Most-used feature</span>
+            </span>
+          </div>
+          <Link href="/features/interview-mode" className="flex items-center gap-1 text-sm font-semibold text-brand">
+            Explore <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <PracticeDashboardPreview />
+      </motion.div>
+
+      {/* Revision Notes — 1 column */}
+      <motion.div {...inViewProps(0.1)} className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
+        <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
+          <div>
+            <p className="font-mono text-[9px] font-bold tracking-wider text-ink-faint uppercase">Revision Notes</p>
+            <h3 className="mt-0.5 font-serif text-[17px] font-medium text-ink">Theory behind every decision.</h3>
+          </div>
+          <Link href="/features/revision-notes"
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-hairline text-ink-faint transition-colors hover:border-brand/30 hover:text-brand">
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 gap-2.5 p-4">
+          {REVISION_TOPICS.slice(0, 3).map((t, i) => <FlipCard key={t.title} topic={t} delay={i * 0.06} />)}
+        </div>
+        <div className="border-t border-hairline px-5 py-3">
+          <p className="font-mono text-[10px] text-ink-faint">
+            Hover any card to see the insight ·{' '}
+            <Link href="/features/revision-notes" className="text-brand underline-offset-2 hover:underline">All 23 patterns + SOLID →</Link>
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Practice Problems — 2 of 3 columns */}
+      <motion.div {...inViewProps(0.06)} className="lg:col-span-2 overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
+        <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
+          <div>
+            <p className="font-mono text-[9px] font-bold tracking-wider text-ink-faint uppercase">Practice Problems</p>
+            <h3 className="mt-0.5 font-serif text-xl font-medium text-ink">Problems from real companies. Solved by a real community.</h3>
+          </div>
+          <Link href="/features/interview-questions" className="flex shrink-0 items-center gap-1 text-sm font-semibold text-brand">
+            Browse library <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="divide-y divide-hairline/60">
+          {COMPACT_PROBLEMS.map((p, i) => (
+            <motion.div key={p.title} {...inViewProps(0.04 + i * 0.04)}
+              className={cn('flex items-center justify-between gap-3 px-6 py-3 transition-colors', i === 1 ? 'bg-brand-tint/60' : 'hover:bg-hairline/40')}>
+              <div className="flex min-w-0 items-center gap-3">
+                <span className={cn('shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[9px] font-semibold', DIFF_BADGE[p.diff])}>{p.diff}</span>
+                <span className={cn('truncate text-sm font-medium', i === 1 ? 'text-brand' : 'text-ink')}>{p.title}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                {p.companies.map(c => (
+                  <span key={c} className="hidden rounded border border-hairline px-1.5 py-0.5 font-mono text-[8px] text-ink-faint sm:inline">{c}</span>
+                ))}
+                <span className="font-mono text-[10px] text-ink-faint">{p.attempts}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline px-6 py-3">
+          <p className="text-[12px] text-ink-faint">110+ problems · Easy · Medium · Hard</p>
+          <div className="flex flex-wrap gap-1">
+            {['Google', 'Amazon', 'Meta', 'Stripe', 'Uber'].map(c => (
+              <span key={c} className="rounded border border-hairline bg-paper px-1.5 py-0.5 font-mono text-[8px] text-ink-muted">{c}</span>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Plannr + Daily Quiz — 1 column */}
+      <motion.div {...inViewProps(0.12)} className="flex flex-col gap-4">
+        {DAILY_LABS.map(lab => (
+          <Link key={lab.n} href={lab.href}
+            className="group flex flex-1 flex-col rounded-xl border border-brand/25 bg-brand-tint p-5 transition-all hover:border-brand/50 hover:shadow-sm">
+            <p className="mb-1.5 font-mono text-[9px] font-bold tracking-[0.2em] text-brand/60 uppercase">Daily Practice · {lab.n}</p>
+            <p className="font-serif text-lg font-semibold text-ink">{lab.title}</p>
+            <p className="mt-1.5 flex-1 text-[12.5px] leading-relaxed text-ink-muted">{lab.brief}</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {lab.chips.map(c => (
+                <span key={c} className="rounded-full border border-brand/20 bg-paper-elevated px-2 py-0.5 font-mono text-[9px] text-ink-muted">{c}</span>
+              ))}
+            </div>
+            <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand">
+              Explore {lab.title} <ArrowRight className="h-3.5 w-3.5" />
+            </span>
+          </Link>
+        ))}
+      </motion.div>
+
+    </div>
+  )
+}
+
+// ─── Comparison Table ─────────────────────────────────────────────────────────
+type CompRow = { section?: string; feature: string; lld: string | true; others: string | false }
+const COMPARISON_ROWS: CompRow[] = [
+  // ── Core canvas
+  { section: 'Canvas & Editor',
+    feature: 'UML class diagram canvas',                  lld: true,           others: 'Generic / no LLD focus' },
+  { feature: 'Draft Notation — plain English → UML',      lld: true,           others: false },
+  { feature: 'Code execution from your class diagram',    lld: true,           others: false },
+  { feature: 'Real-time collaboration & live cursors',    lld: true,           others: 'Paid plans only' },
+  // ── Practice Engine
+  { section: 'Practice Engine',
+    feature: 'Timed Interview Mode with countdown',       lld: true,           others: false },
+  { feature: 'Streak tracking & activity heatmap',        lld: true,           others: false },
+  { feature: '110+ curated LLD problem library',          lld: true,           others: false },
+  { feature: 'Staged hints (reveal one at a time)',       lld: true,           others: false },
+  { feature: 'Community discussion per problem',          lld: true,           others: false },
+  { feature: 'Revision Notes — SOLID + 23 patterns',      lld: true,           others: false },
+  { feature: 'Daily Quiz — 10 pattern questions / day',   lld: true,           others: false },
+  { feature: 'Plannr — structured interview roadmap',     lld: true,           others: false },
+  // ── Challenge Labs
+  { section: 'Challenge Labs',
+    feature: 'Pattern Detective — name the pattern in real code', lld: true,   others: false },
+  { feature: 'Debug Lab — annotate design violations',    lld: true,           others: false },
+  { feature: 'Debug & Fix — restructure broken designs',  lld: true,           others: false },
+  { feature: 'LLD Roguelike — no-undo branching scenarios', lld: true,         others: false },
+  { feature: 'Refactor — clean a working monolith',       lld: true,           others: false },
+  { feature: 'Change One Thing — OCP under pressure',     lld: true,           others: false },
+  { feature: 'Evolution — multi-stage trade-off tracking', lld: true,          others: false },
+  { feature: 'Budget Pressure — design under constraints', lld: true,          others: false },
+  // ── Pricing
+  { section: 'Pricing',
+    feature: 'Free to start — no account needed',         lld: true,           others: 'Freemium / paid' },
+]
+
+function ComparisonTable() {
+  return (
+    <div>
+      {/* Overflow wrapper for mobile scroll */}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] border-separate border-spacing-0">
+          <thead>
+            <tr>
+              {/* Feature column header */}
+              <th className="w-1/2 rounded-tl-xl border border-r-0 border-hairline bg-paper px-5 py-4 text-left">
+                <span className="font-mono text-[10px] font-bold tracking-widest text-ink-faint uppercase">Feature</span>
+              </th>
+              {/* LLDCanvas column — highlighted */}
+              <th className="w-[25%] border border-r-0 border-brand/30 bg-brand-tint px-5 py-4 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-serif text-[15px] font-semibold text-ink">LLDCanvas</span>
+                  <span className="rounded-full bg-brand px-2.5 py-0.5 font-mono text-[9px] font-bold text-brand-foreground">LLD-first</span>
+                </div>
+              </th>
+              {/* Others column */}
+              <th className="w-[25%] rounded-tr-xl border border-hairline bg-paper px-5 py-4 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="font-serif text-[15px] font-semibold text-ink-muted">draw.io · Lucidchart</span>
+                  <span className="rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[9px] text-ink-faint">General diagramming</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARISON_ROWS.map((row, i) => {
+              const isLast = i === COMPARISON_ROWS.length - 1
+              return (
+                <React.Fragment key={row.feature}>
+                  {/* Section divider row */}
+                  {row.section && (
+                    <tr>
+                      <td colSpan={3} className="border border-r-0 border-t-0 border-hairline bg-paper px-5 py-2">
+                        <span className="font-mono text-[9px] font-bold tracking-[0.2em] text-ink-faint uppercase">{row.section}</span>
+                      </td>
+                      <td className="border border-t-0 border-hairline bg-paper" />
+                    </tr>
+                  )}
+                  {/* Feature row */}
+                  <tr>
+                    <td className={cn(
+                      'border border-r-0 border-t-0 border-hairline bg-paper px-5 py-3 text-sm text-ink',
+                      isLast && 'rounded-bl-xl',
+                    )}>
+                      {row.feature}
+                    </td>
+                    <td className="border border-r-0 border-t-0 border-brand/30 bg-brand-tint px-5 py-3 text-center">
+                      {row.lld === true ? (
+                        <span className="inline-flex items-center justify-center">
+                          <svg className="h-5 w-5 text-brand" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="text-[12px] font-medium text-brand">{row.lld}</span>
+                      )}
+                    </td>
+                    <td className={cn(
+                      'border border-t-0 border-hairline bg-paper px-5 py-3 text-center',
+                      isLast && 'rounded-br-xl',
+                    )}>
+                      {row.others === false ? (
+                        <span className="inline-flex items-center justify-center">
+                          <svg className="h-4 w-4 text-ink-faint/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-ink-faint">{row.others}</span>
+                      )}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer note */}
+      <motion.p {...inViewProps(0.1)} className="mt-5 text-[12px] leading-relaxed text-ink-faint">
+        draw.io and Lucidchart are excellent general-purpose diagramming tools — they&apos;re just not
+        built for the specific pressure of an LLD interview round. LLDCanvas is.
+      </motion.p>
+    </div>
+  )
+}
+
+// ─── The Problem ──────────────────────────────────────────────────────────────
+// An editorial section that names the LLD preparation gap instead of jumping
+// straight into feature descriptions. Pull quote on the left, three-row
+// diagnostic panel on the right. No cards, no icons.
+function TheProblemSection() {
+  return (
+    <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
+      <div className="flex flex-col justify-center">
+        <motion.p {...inViewProps(0)} className="mb-5 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+          <span className="text-gold">¶01</span>&nbsp;&nbsp;·&nbsp;&nbsp;What makes LLD interviews hard
+        </motion.p>
+        <motion.blockquote {...inViewProps(0.04)} className="font-serif text-[clamp(1.6rem,3.5vw,2.3rem)] font-medium leading-[1.18] tracking-tight text-ink">
+          &ldquo;You have 45 minutes, a blank canvas, and a parking lot to design.&rdquo;
+        </motion.blockquote>
+        <motion.p {...inViewProps(0.08)} className="mt-6 text-[15.5px] leading-relaxed text-ink-muted">
+          The LLD interview tests whether you can model a real system under real pressure —
+          classes, relationships, design patterns, and SOLID principles — in one timed session,
+          in front of someone grading every decision you make.
+        </motion.p>
+        <motion.p {...inViewProps(0.1)} className="mt-4 text-[15.5px] leading-relaxed text-ink-muted">
+          Most engineers prepare extensively for DSA and system design, then walk into this
+          round underprepared. LLDCanvas is purpose-built for the round they skip.
+        </motion.p>
+      </div>
+      <motion.div {...inViewProps(0.06)} className="overflow-hidden rounded-xl border border-hairline">
+        {[
+          { color: 'text-red-500/80', label: 'The gap',                  text: 'Most engineers practice DSA intensively — then walk into the LLD round with no timed design practice at all.' },
+          { color: 'text-gold',       label: 'What they miss',            text: 'Design pattern fluency under pressure, the habit of thinking in classes, and UML notation interviewers actually grade on.' },
+          { color: 'text-brand',      label: 'What LLDCanvas provides',   text: 'A purpose-built platform — canvas, timed drills, 110+ problems, and applied challenge labs — for exactly this round.' },
+        ].map((item, i) => (
+          <div key={item.label} className={`px-6 py-5 ${i > 0 ? 'border-t border-hairline' : ''}`}>
+            <p className={`font-mono text-[10px] font-bold tracking-wider uppercase ${item.color}`}>{item.label}</p>
+            <p className="mt-2 font-serif text-[16px] font-medium leading-snug text-ink">{item.text}</p>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  )
+}
+
+// ─── Platform Index ───────────────────────────────────────────────────────────
+// All 17 features as an editorial three-column index: no cards, no icons.
+// Structured like a professional design document's capability list.
+const INDEX_CATEGORIES = [
+  {
+    label: 'Design Studio',
+    desc: 'Draw, express, execute',
+    features: [
+      { n: '01', name: 'The Editor',      href: '/features/editor',          note: 'UML class diagram canvas' },
+      { n: '02', name: 'Draft Notation',  href: '/features/draft-notation',  note: 'Plain English → UML' },
+      { n: '03', name: 'Code Execution',  href: '/features/code-execution',  note: '12 languages, live' },
+      { n: '04', name: 'Collaboration',   href: '/features/collaboration',   note: 'Live cursors + comments' },
+    ],
+  },
+  {
+    label: 'Practice Engine',
+    desc: 'Drill, track, revise',
+    features: [
+      { n: '05', name: 'Interview Mode',    href: '/features/interview-mode',      note: 'Timed sessions + streaks' },
+      { n: '06', name: 'Practice Problems', href: '/features/interview-questions', note: '110+ curated questions' },
+      { n: '07', name: 'Revision Notes',    href: '/features/revision-notes',      note: '23 patterns + SOLID' },
+      { n: '08', name: 'Plannr',            href: '/features/plannr',              note: 'Structured roadmap' },
+      { n: '09', name: 'Daily Quiz',        href: '/features/daily-quiz',          note: '10 questions / day' },
+    ],
+  },
+  {
+    label: 'Challenge Labs',
+    desc: 'Identify, fix, pressure-test',
+    features: [
+      { n: '10', name: 'Pattern Detective', href: '/features/pattern-detective', note: 'Name the pattern in real code' },
+      { n: '11', name: 'Debug Lab',         href: '/features/debug-lab',         note: 'Annotate design violations' },
+      { n: '12', name: 'Debug & Fix',       href: '/features/debug-and-fix',     note: 'Restructure broken designs' },
+      { n: '13', name: 'Roguelike',         href: '/features/roguelike',         note: 'No undo, real pressure' },
+      { n: '14', name: 'Refactor',          href: '/features/refactor',          note: 'Clean the monolith' },
+      { n: '15', name: 'Change One Thing',  href: '/features/change-one-thing',  note: 'OCP under pressure' },
+      { n: '16', name: 'Evolution',         href: '/features/evolution',         note: 'Multi-stage growth' },
+      { n: '17', name: 'Budget Pressure',   href: '/features/budget-pressure',   note: 'Design under constraints' },
+    ],
+  },
+]
+
+function PlatformIndex() {
+  return (
+    <div>
+      <div className="mb-8 flex items-end justify-between border-b border-hairline pb-6">
+        <div>
+          <p className="mb-2 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶02</span>&nbsp;&nbsp;·&nbsp;&nbsp;Platform Index
+          </p>
+          <h2 className="font-serif text-3xl font-medium text-ink sm:text-4xl">The complete toolkit.</h2>
+        </div>
+        <span className="hidden font-serif text-[5rem] font-bold leading-none text-ink-faint/15 sm:block" aria-hidden>17</span>
+      </div>
+
+      <div className="grid grid-cols-1 divide-y divide-hairline sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        {INDEX_CATEGORIES.map((cat, ci) => (
+          <motion.div key={cat.label} {...inViewProps(ci * 0.08)} className="py-8 sm:px-8 sm:py-0 first:sm:pl-0 last:sm:pr-0">
+            <div className="mb-5 border-b border-hairline pb-4">
+              <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-brand uppercase">{cat.label}</p>
+              <p className="mt-1 font-mono text-[11px] text-ink-muted">{cat.desc}</p>
+            </div>
+            <div>
+              {cat.features.map(f => (
+                <Link key={f.n} href={f.href}
+                  className="group flex items-baseline justify-between border-b border-hairline/40 py-2.5 transition-all last:border-0 hover:pl-1">
+                  <div className="flex items-baseline gap-2.5">
+                    <span className="font-mono text-[9px] text-ink-faint/50">{f.n}</span>
+                    <span className="font-serif text-[14.5px] font-medium text-ink transition-colors group-hover:text-brand">{f.name}</span>
+                  </div>
+                  <ArrowUpRight className="h-3 w-3 flex-shrink-0 text-ink-faint opacity-0 transition-opacity group-hover:opacity-100" />
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.div {...inViewProps(0.2)} className="mt-8 flex items-center justify-between border-t border-hairline pt-6">
+        <p className="text-sm text-ink-muted">Every feature links to a dedicated page with full context and examples.</p>
+        <Link href="/features" className="inline-flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-brand">
+          Feature hub <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </motion.div>
     </div>
   )
 }
@@ -1638,320 +1406,282 @@ export function LandingPageClient() {
 
   return (
     <div className="min-h-screen text-ink">
-
       <CanvasBackdrop />
-
       <SiteNavbar />
 
-      {/* ─── Hero ───────────────────────────────────────────────────────────── */}
-      <section className="px-5 pt-2 pb-24 sm:px-8 lg:pt-4">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2">
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* HERO — split layout: headline + stat bar + CTAs / product snapshot */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="relative border-b border-hairline bg-paper">
+        <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-6 pt-5 pb-14 sm:px-10 lg:grid-cols-[1fr_420px] lg:pt-8 lg:pb-16 xl:grid-cols-[1fr_460px]">
+
+          {/* Left — headline, stats, CTAs */}
           <div>
-            <motion.div {...fadeUpProps(0)}>
-              <Eyebrow index="01">free lld &amp; system design interview prep</Eyebrow>
-            </motion.div>
-
-            <motion.h1
-              className="mb-6 font-serif text-[2.75rem] leading-[1.08] font-medium tracking-tight text-ink sm:text-6xl"
-              {...fadeUpProps(0.08)}
-            >
-              Everything for your
-              <br />
-              next LLD interview.
+            <motion.p {...fadeUpProps(0)} className="mb-6 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+              <span className="text-gold">★</span>&nbsp;&nbsp;LLD Interview Preparation Platform &nbsp;·&nbsp; Free
+            </motion.p>
+            <motion.h1 {...fadeUpProps(0.06)}
+              className="mb-7 font-serif text-[clamp(2.5rem,5.5vw,4.8rem)] font-medium leading-[1.04] tracking-tight text-ink">
+              Low-Level Design<br />
+              practice that matches<br />
+              <span className="text-brand">real interviews.</span>
             </motion.h1>
-
-            <motion.p className="mb-9 max-w-md text-lg leading-relaxed text-ink-muted" {...fadeUpProps(0.16)}>
-              The complete Low-Level Design (LLD) interview preparation platform: a UML editor
-              that understands OOP, 23 pre-wired design patterns, SOLID principles notes, timed
-              practice with real analytics, 110+ curated LLD and system design interview questions
-              with community discussion, and runnable code - all in one canvas, not seven
-              different tools.
+            <motion.p {...fadeUpProps(0.12)} className="mb-10 max-w-md text-[17px] leading-relaxed text-ink-muted">
+              A complete Low-Level Design interview prep platform — UML class diagram canvas,
+              timed Interview Mode, 110+ curated LLD problems, design pattern training,
+              and applied challenge labs built around the exact conditions of the LLD round.
             </motion.p>
 
-            <motion.div className={cn('flex flex-wrap items-center gap-3', !session?.user && 'mb-7')} {...fadeUpProps(0.24)}>
-              <Link href="/editor/local" className="inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 font-semibold text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
+            {/* Inline stat bar */}
+            <motion.div {...fadeUpProps(0.16)}
+              className="mb-10 grid grid-cols-4 divide-x divide-hairline overflow-hidden rounded-lg border border-hairline bg-paper-elevated">
+              {[
+                { n: '17',   label: 'Features' },
+                { n: '110+', label: 'Problems' },
+                { n: '23',   label: 'Patterns' },
+                { n: '10',   label: 'Quiz / day' },
+              ].map(s => (
+                <div key={s.label} className="px-4 py-3 text-center">
+                  <p className="font-serif text-2xl font-medium text-ink">{s.n}</p>
+                  <p className="font-mono text-[9px] text-ink-muted">{s.label}</p>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* CTAs */}
+            <motion.div {...fadeUpProps(0.2)} className="flex flex-wrap items-center gap-3">
+              <Link href="/editor/local"
+                className="inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 font-semibold text-brand-foreground shadow-sm transition-all duration-150 hover:bg-brand-hover active:scale-[0.97]">
                 Start for free
               </Link>
               {!session?.user && (
-                <div className="relative">
-                  <Link
-                    href="/sign-in"
-                    className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]"
-                  >
-                    Sign in
-                  </Link>
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute left-1/2 top-full z-10 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm"
-                  >
-                    Sign in to unlock all features
-                    <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-ink" aria-hidden />
-                  </span>
-                </div>
+                <Link href="/sign-in"
+                  className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
+                  Sign in
+                </Link>
               )}
+              <Link href="/features"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-brand">
+                See all 17 features <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </motion.div>
-
-            <motion.p className="mt-4 font-mono text-xs text-ink-faint" {...fadeUpProps(0.3)}>
+            <motion.p {...fadeUpProps(0.24)} className="mt-4 font-mono text-xs text-ink-faint">
               no account needed to try it
             </motion.p>
           </div>
 
-          <motion.div className="hidden lg:block" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }}>
-            <HeroDiagram />
-          </motion.div>
-
-          <motion.div className="flex justify-center lg:hidden" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}>
-            <DiagramBox name="ParkingLot" fields={['- levels: List<Level>']} methods={['+ getAvailableSpot(): Spot']} className="w-56" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ─── Spec strip ─────────────────────────────────────────────────────── */}
-      <section className="px-5 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <SpecStrip />
-        </div>
-      </section>
-
-      {/* ─── Platform pillars ───────────────────────────────────────────────── */}
-      <section id="platform" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="02">the complete lld &amp; system design toolkit</Eyebrow>
-          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            One platform for LLD interview prep. Zero context switching.
-          </h2>
-          <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Most candidates cobble together a UML diagramming tool, a system design questions
-            site, a timer app, and a notes doc - solo. Here&apos;s the platform that replaces all of
-            them for Low-Level Design and system design interview practice, teammates included -
-            eight surfaces on one shelf. Pick one to open it.
-          </p>
-          <PillarSpineRail />
-        </div>
-      </section>
-
-      {/* ─── Feature chain ──────────────────────────────────────────────────── */}
-      <section id="features" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="03">the uml class diagram editor</Eyebrow>
-          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Five interfaces. One canvas.
-          </h2>
-          <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
-            A UML diagram editor built for Low-Level Design interviews specifically - instant class
-            insertion, drag-to-connect relationships, a searchable design-pattern library, and
-            export to the formats your design docs actually use.
-          </p>
-          <FeatureChain />
-        </div>
-      </section>
-
-      {/* ─── Draft Notation ─────────────────────────────────────────────────── */}
-      <section id="draft-notation" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="04">draft notation - code ↔ diagram</Eyebrow>
-          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Say it in English. See it as UML.
-          </h2>
-          <DraftNotationSection />
-        </div>
-      </section>
-
-      {/* ─── Differentiators ────────────────────────────────────────────────── */}
-      <section className="px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="05">lldcanvas vs. generic diagramming tools</Eyebrow>
-          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            See the difference, not just hear about it.
-          </h2>
-          <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Generic tools draw shapes. LLDCanvas is purpose-built for Low-Level Design and system
-            design interview preparation - here&apos;s exactly what that gets you.
-          </p>
-          <ComparisonTable />
-        </div>
-      </section>
-
-      {/* ─── Interview Mode ─────────────────────────────────────────────────── */}
-      <section id="interview-mode" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <motion.div {...inViewProps()} className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand-tint px-3 py-1">
-                  <Mic className="h-3 w-3 text-brand" />
-                  <span className="font-mono text-[10px] font-semibold tracking-widest text-brand uppercase">
-                    Interview Mode
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold-tint px-3 py-1">
-                  <Flame className="h-3 w-3 text-gold" />
-                  <span className="font-mono text-[10px] font-semibold tracking-widest text-gold uppercase">
-                    Our most-loved feature
-                  </span>
-                </span>
-              </motion.div>
-
-              <motion.p {...inViewProps(0.04)} className="mb-3 font-mono text-[11px] font-medium tracking-widest text-ink-faint uppercase">
-                <span className="text-gold">¶06</span> - timed lld interview practice
-              </motion.p>
-
-              <motion.h2 {...inViewProps(0.08)} className="mb-5 max-w-md font-serif text-3xl leading-[1.15] font-medium text-ink sm:text-4xl">
-                Practice under real pressure. Watch it add up.
-              </motion.h2>
-
-              <motion.p {...inViewProps(0.12)} className="mb-6 max-w-md text-base leading-relaxed text-ink-muted">
-                Set a timer and design against a real countdown - the exact pressure you&apos;ll
-                feel in an actual LLD or system design interview, so the first time you work under
-                a clock isn&apos;t the day it counts. Every session is then logged automatically:
-                watch a daily streak build, an activity heatmap fill in week by week, and a
-                practice-time graph trend upward.
-              </motion.p>
-
-              <motion.div {...inViewProps(0.14)} className="mb-8 max-w-md space-y-3">
-                {WHY_IT_WORKS.map(reason => (
-                  <div key={reason} className="flex items-start gap-2.5">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
-                    <p className="text-sm leading-relaxed text-ink-muted">{reason}</p>
+          {/* Right — product snapshot (desktop only) */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25, duration: 0.55 }}
+            className="hidden lg:block"
+          >
+            <div className="overflow-hidden rounded-2xl border border-hairline-strong bg-paper-elevated shadow-2xl">
+              {/* Window chrome */}
+              <div className="flex items-center gap-3 border-b border-hairline bg-paper px-4 py-2.5">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
+                </div>
+                <span className="mx-auto font-mono text-[10px] text-ink-faint">LLDCanvas · Interview Mode</span>
+              </div>
+              {/* Live countdown session */}
+              <LiveSessionRow />
+              {/* UML diagram */}
+              <div className="p-5">
+                <HeroDiagram />
+              </div>
+              {/* Session stats footer */}
+              <div className="grid grid-cols-3 divide-x divide-hairline border-t border-hairline">
+                {[['42', 'Sessions'], ['12d', 'Streak'], ['18h', 'Practiced']].map(([n, l]) => (
+                  <div key={l} className="py-3 text-center">
+                    <p className="font-mono text-sm font-semibold text-brand">{n}</p>
+                    <p className="font-mono text-[9px] text-ink-faint">{l}</p>
                   </div>
                 ))}
-              </motion.div>
-
-              <motion.div {...inViewProps(0.16)} className="mb-8 flex flex-wrap gap-2">
-                {PRACTICE_CHIPS.map(f => (
-                  <span
-                    key={f.label}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-hairline-strong bg-paper-elevated px-3.5 py-1.5 text-xs text-ink-muted shadow-sm transition-all duration-150 hover:border-brand/30 hover:text-ink"
-                  >
-                    <f.icon className="h-3 w-3 text-brand" />
-                    {f.label}
-                  </span>
-                ))}
-              </motion.div>
-
-              <motion.div {...inViewProps(0.2)}>
-                <Link
-                  href="/editor/local"
-                  className="group inline-flex items-center gap-2 rounded-md bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground shadow-md shadow-brand/20 transition-all duration-150 hover:bg-brand-hover hover:shadow-lg hover:shadow-brand/25 active:scale-[0.97]"
-                >
-                  Start your streak
-                  <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
-              </motion.div>
+              </div>
             </div>
-
-            <PracticeDashboardPreview />
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ─── Problems + Community ───────────────────────────────────────────── */}
-      <section id="problems" className="scroll-mt-20 px-5 py-16 sm:px-8">
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* THE PROBLEM — editorial pull quote + diagnostic panel             */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
+        <div className="mx-auto max-w-5xl">
+          <TheProblemSection />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* PLATFORM INDEX — all 17 features as an editorial table            */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-hairline bg-paper px-6 py-20 sm:px-10 sm:py-24">
+        <div className="mx-auto max-w-5xl">
+          <PlatformIndex />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* DESIGN STUDIO — tabbed: Canvas · Draft Notation · Code · Collab  */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section id="design-studio" className="scroll-mt-20 border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
+        <div className="mx-auto max-w-7xl">
+          <motion.p {...inViewProps(0)} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶03</span>&nbsp;&nbsp;·&nbsp;&nbsp;Design Studio&nbsp;&nbsp;·&nbsp;&nbsp;
+            <Link href="/features/editor" className="underline underline-offset-2 transition-colors hover:text-brand">Editor</Link>
+            {' · '}
+            <Link href="/features/draft-notation" className="underline underline-offset-2 transition-colors hover:text-brand">Draft Notation</Link>
+            {' · '}
+            <Link href="/features/code-execution" className="underline underline-offset-2 transition-colors hover:text-brand">Code Execution</Link>
+            {' · '}
+            <Link href="/features/collaboration" className="underline underline-offset-2 transition-colors hover:text-brand">Collaboration</Link>
+          </motion.p>
+          <motion.h2 {...inViewProps(0.04)} className="mb-12 font-serif text-3xl font-medium text-ink sm:text-4xl">
+            Draw, describe, run, and collaborate.
+          </motion.h2>
+          <DesignStudioSection />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* PRACTICE ENGINE — bento: Interview Mode · Problems · Notes · More */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section id="practice-engine" className="scroll-mt-20 border-b border-hairline bg-paper px-6 py-20 sm:px-10 sm:py-24">
+        <div className="mx-auto max-w-7xl">
+          <motion.p {...inViewProps(0)} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶04</span>&nbsp;&nbsp;·&nbsp;&nbsp;Practice Engine&nbsp;&nbsp;·&nbsp;&nbsp;
+            <Link href="/features/interview-mode" className="underline underline-offset-2 transition-colors hover:text-brand">Interview Mode</Link>
+            {' · '}
+            <Link href="/features/interview-questions" className="underline underline-offset-2 transition-colors hover:text-brand">Practice Problems</Link>
+            {' · '}
+            <Link href="/features/revision-notes" className="underline underline-offset-2 transition-colors hover:text-brand">Revision Notes</Link>
+            {' · '}
+            <Link href="/features/plannr" className="underline underline-offset-2 transition-colors hover:text-brand">Plannr</Link>
+            {' · '}
+            <Link href="/features/daily-quiz" className="underline underline-offset-2 transition-colors hover:text-brand">Daily Quiz</Link>
+          </motion.p>
+          <motion.h2 {...inViewProps(0.04)} className="mb-3 font-serif text-3xl font-medium text-ink sm:text-4xl">
+            The drills, the problems, the knowledge — in one system.
+          </motion.h2>
+          <motion.p {...inViewProps(0.06)} className="mb-12 max-w-xl text-[15px] leading-relaxed text-ink-muted">
+            Five features built around one goal: walk into an LLD interview having practiced every
+            dimension of it — under pressure, against real problems, with the patterns committed to memory.
+          </motion.p>
+          <PracticeEngineSection />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* CHALLENGE LABS — 10 applied modes                                */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section id="challenge-labs" className="scroll-mt-20 border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="07">lld &amp; system design interview questions</Eyebrow>
+          <motion.p {...inViewProps()} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶05</span>&nbsp;&nbsp;·&nbsp;&nbsp;Challenge Labs
+          </motion.p>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Problems asked by real companies. Solved by a real community.
+            Ten challenge modes. Each one exposing a different gap.
           </h2>
-          <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
-            110+ Low-Level Design and system design interview questions and problems, each tagged
-            by difficulty and the companies known to ask it. Staged hints reveal one at a time -
-            never all at once. Compare your approach against the community thread when you&apos;re done.
+          <p className="mb-8 max-w-xl text-sm leading-relaxed text-ink-muted">
+            Beyond the canvas and the problem library: ten applied modes built around the kinds
+            of pressure you face in real LLD interviews. No blank canvas. No hand-holding.
           </p>
-          <ProblemsCommunitySection />
+          <ChallengeLabs />
         </div>
       </section>
 
-      {/* ─── Revision Notes ─────────────────────────────────────────────────── */}
-      <section id="revision" className="scroll-mt-20 px-5 py-16 sm:px-8">
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* COMPARISON — LLDCanvas vs. general diagramming tools            */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
+        <div className="mx-auto max-w-4xl">
+          <motion.p {...inViewProps(0)} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶06</span>&nbsp;&nbsp;·&nbsp;&nbsp;Why LLDCanvas
+          </motion.p>
+          <motion.h2 {...inViewProps(0.04)} className="mb-3 font-serif text-3xl font-medium text-ink sm:text-4xl">
+            Built for LLD interviews, not generic diagramming.
+          </motion.h2>
+          <motion.p {...inViewProps(0.06)} className="mb-10 max-w-xl text-[15px] leading-relaxed text-ink-muted">
+            draw.io and Lucidchart let you draw boxes and arrows. LLDCanvas is a complete
+            preparation platform built around the exact conditions of the LLD round.
+          </motion.p>
+          <motion.div {...inViewProps(0.08)}>
+            <ComparisonTable />
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* WHO IS IT FOR — conference lanyard badges                        */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-hairline bg-paper px-6 py-20 sm:px-10 sm:py-24">
         <div className="mx-auto max-w-6xl">
-          <Eyebrow index="08">solid principles &amp; system design fundamentals</Eyebrow>
+          <motion.p {...inViewProps()} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶07</span>&nbsp;&nbsp;·&nbsp;&nbsp;Who is LLDCanvas for
+          </motion.p>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Revision notes for exactly what you keep forgetting.
+            From first-time learner to senior engineer.
           </h2>
-          <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Bite-sized theory on SOLID principles, composition vs. inheritance, thread-safety, the
-            CAP theorem, and more - bookmark what to revisit, and track what&apos;s actually sunk in.
+          <p className="mb-12 max-w-xl text-sm leading-relaxed text-ink-muted">
+            Every feature is designed around a real need — whether you are preparing for your
+            first LLD interview or rehearsing before a senior round.
           </p>
-          <RevisionNotesSection />
+          <WhoIsItFor />
         </div>
       </section>
 
-      {/* ─── Code Execution ─────────────────────────────────────────────────── */}
-      <section id="code-execution" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="09">from diagram to running code</Eyebrow>
-          <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
-            Don&apos;t just design it. Run it.
-          </h2>
-          <p className="mb-6 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Sketch the class in the canvas, then execute it in 11 languages without leaving the tab.
-            No copy-paste into a separate IDE - design and code live side by side.
-          </p>
-          <CodeExecutionSection />
-        </div>
-      </section>
-
-      {/* ─── Live Collaboration ─────────────────────────────────────────────── */}
-      <section id="collaboration" className="scroll-mt-20 px-5 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Eyebrow index="10">work with others</Eyebrow>
-          <h2 className="mb-2 max-w-xl font-serif text-2xl font-medium text-ink sm:text-3xl">
-            You don&apos;t design in isolation. Why practice like it?
-          </h2>
-          <p className="mb-8 max-w-xl text-base leading-relaxed text-ink-muted">
-            Invite a teammate into your diagram and work side by side - live cursors, pinned
-            comments, and real-time edits, no refresh needed.
-          </p>
-          <CollaborationSection />
-        </div>
-      </section>
-
-      {/* ─── Testimonials ────────────────────────────────────────────────────── */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* TESTIMONIALS — must remain exactly as-is                        */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
       <TestimonialsSection />
 
-      {/* ─── FAQ ────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="scroll-mt-20 px-5 py-16 sm:px-8">
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* FAQ                                                               */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section id="faq" className="scroll-mt-20 border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
         <div className="mx-auto max-w-4xl">
-          <Eyebrow index="11">lld &amp; system design interview faqs</Eyebrow>
+          <motion.p {...inViewProps()} className="mb-3 font-mono text-[10px] font-bold tracking-[0.25em] text-ink-faint uppercase">
+            <span className="text-gold">¶08</span>&nbsp;&nbsp;·&nbsp;&nbsp;FAQ
+          </motion.p>
           <h2 className="mb-3 max-w-lg font-serif text-2xl font-medium text-ink sm:text-3xl">
             Everything worth knowing before you start.
           </h2>
           <p className="mb-10 max-w-xl text-sm leading-relaxed text-ink-muted">
-            Common questions about Low-Level Design, system design interviews, and how LLDCanvas&apos;s
-            free interview-prep platform works.
+            Common questions about Low-Level Design interviews, design patterns, and how LLDCanvas works.
           </p>
           <Faq />
         </div>
       </section>
 
-      {/* ─── CTA ────────────────────────────────────────────────────────────── */}
-      <section className="px-5 py-24 sm:px-8">
-        <motion.div className="mx-auto max-w-md" {...inViewProps()}>
-          <div className="overflow-hidden rounded-md border border-hairline-strong bg-paper-elevated shadow-sm">
-            <div className="border-b border-hairline px-5 py-3">
-              <p className="font-mono text-sm font-semibold text-ink">YourNextInterview</p>
-            </div>
-            <div className="space-y-1 px-2 py-3">
-              <Link href="/editor/local" className="group flex items-center justify-between rounded-md px-3 py-2.5 transition-colors hover:bg-brand-tint">
-                <span className="font-mono text-[13px]">
-                  <span className="text-brand">+ practice()</span>
-                  <span className="text-ink-faint">: </span>
-                  <span className="text-ink">OpenCanvas</span>
-                </span>
-                <ArrowRight className="h-3.5 w-3.5 text-brand opacity-0 transition-opacity group-hover:opacity-100" />
-              </Link>
-              <Link href="/sign-up" className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors hover:bg-hairline/40">
-                <span className="font-mono text-[13px]">
-                  <span className="text-ink-muted">+ signUp()</span>
-                  <span className="text-ink-faint">: </span>
-                  <span className="text-ink">SaveToCloud</span>
-                </span>
-              </Link>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-sm text-ink-faint">
-            Create your first diagram in under 30 seconds.
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      {/* CTA — full-width brand green, strong contrast                    */}
+      {/* ══════════════════════════════════════════════════════════════════ */}
+      <section className="bg-brand px-6 py-24 sm:px-10 sm:py-28">
+        <motion.div {...inViewProps()} className="mx-auto max-w-2xl text-center">
+          <p className="mb-4 font-mono text-[10px] font-bold tracking-[0.25em] text-brand-foreground/50 uppercase">Begin</p>
+          <h2 className="mb-5 font-serif text-4xl font-medium leading-tight text-brand-foreground sm:text-5xl">
+            Start practicing LLD today.
+          </h2>
+          <p className="mb-10 text-[17px] text-brand-foreground/70">
+            No account needed. Open the editor and start in under 30 seconds.
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link href="/editor/local"
+              className="rounded-full bg-brand-foreground px-8 py-3.5 font-semibold text-brand shadow-sm transition-transform hover:-translate-y-0.5">
+              Open the editor
+            </Link>
+            <Link href="/sign-up"
+              className="rounded-full border border-brand-foreground/25 px-8 py-3.5 font-semibold text-brand-foreground transition-colors hover:bg-brand-foreground/10">
+              Create free account
+            </Link>
+            <Link href="/features"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-foreground/60 transition-colors hover:text-brand-foreground">
+              See all 17 features <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </motion.div>
       </section>
 
