@@ -5,8 +5,9 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Rss,
-  Briefcase, FlaskConical, GraduationCap, Globe2,
+  CreditCard, Layers, Mail, Rss, Briefcase,
+  CalendarDays, Search, Bug, Wrench, RefreshCw,
+  TrendingUp, DollarSign, Gamepad2, SlidersHorizontal, Flame,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
@@ -16,14 +17,24 @@ import { useSession } from '@/lib/auth'
 const FEATURE_LINKS = [
   { label: 'UML Diagram Editor',        href: '/features/editor',              Icon: LayoutTemplate },
   { label: 'Draft Notation',            href: '/features/draft-notation',      Icon: PenLine        },
-  { label: 'Design Studio',             href: '/design-studio',                Icon: FlaskConical   },
-  { label: 'Learn & Practice',          href: '/learn',                        Icon: GraduationCap  },
-  { label: 'Community Gallery',         href: '/community',                    Icon: Globe2         },
-  { label: 'LLD Interview Questions',   href: '/features/interview-questions',  Icon: ListChecks     },
-  { label: 'LLD Interview Mode',        href: '/features/interview-mode',       Icon: Timer          },
-  { label: 'Real-Time Collaboration',   href: '/features/collaboration',        Icon: Users          },
-  { label: 'Code Execution Sandbox',    href: '/features/code-execution',       Icon: Terminal       },
-  { label: 'SOLID & System Design Notes', href: '/features/revision-notes',     Icon: BookOpen       },
+  { label: 'Code Execution',            href: '/features/code-execution',      Icon: Terminal       },
+  { label: 'Real-Time Collaboration',   href: '/features/collaboration',       Icon: Users          },
+  { label: 'Interview Mode',            href: '/features/interview-mode',      Icon: Timer          },
+  { label: 'LLD Interview Questions',   href: '/features/interview-questions', Icon: ListChecks     },
+  { label: 'Revision Notes',            href: '/features/revision-notes',      Icon: BookOpen       },
+  { label: 'Daily Quiz',               href: '/features/daily-quiz',          Icon: Flame          },
+  { label: 'Plannr',                    href: '/features/plannr',              Icon: CalendarDays   },
+]
+
+const CHALLENGE_LINKS = [
+  { label: 'Pattern Detective',         href: '/features/pattern-detective',   Icon: Search         },
+  { label: 'Debug Lab',                 href: '/features/debug-lab',           Icon: Bug            },
+  { label: 'Debug & Fix',              href: '/features/debug-and-fix',       Icon: Wrench         },
+  { label: 'LLD Roguelike',            href: '/features/roguelike',           Icon: Gamepad2       },
+  { label: 'Refactor',                 href: '/features/refactor',            Icon: RefreshCw      },
+  { label: 'Change One Thing',         href: '/features/change-one-thing',    Icon: SlidersHorizontal },
+  { label: 'Evolution',                href: '/features/evolution',           Icon: TrendingUp     },
+  { label: 'Budget Pressure',          href: '/features/budget-pressure',     Icon: DollarSign     },
 ]
 
 // ─── Nav link helper ──────────────────────────────────────────────────────────
@@ -83,9 +94,10 @@ export function SiteFooter() {
                 <Wordmark height={36} />
               </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                The complete free platform for Low-Level Design and system design interview
-                preparation - practice LLD interview questions, design with UML and 23 design
-                patterns, run code, and collaborate in real time.
+                The free Low-Level Design interview prep platform — UML canvas, Draft Notation,
+                110+ LLD problems, Interview Mode, design pattern training, code execution,
+                real-time collaboration, and 8 applied Challenge Labs including Roguelike,
+                Debug Lab, Refactor, and Budget Pressure.
               </p>
             </div>
 
@@ -99,6 +111,18 @@ export function SiteFooter() {
                 </p>
                 <ul className="space-y-3">
                   {FEATURE_LINKS.map(({ label, href, Icon }) => (
+                    <NavLink key={label} href={href} Icon={Icon}>{label}</NavLink>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Challenge Labs */}
+              <div>
+                <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
+                  Challenge Labs
+                </p>
+                <ul className="space-y-3">
+                  {CHALLENGE_LINKS.map(({ label, href, Icon }) => (
                     <NavLink key={label} href={href} Icon={Icon}>{label}</NavLink>
                   ))}
                 </ul>
