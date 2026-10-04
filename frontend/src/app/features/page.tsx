@@ -155,34 +155,6 @@ export default async function FeaturesHubPage() {
       chips: ['Live cursors', 'Inline comments', 'Real-time sync'],
       href: '/features/collaboration',
     },
-    {
-      n: '08', title: 'Design Debugger',
-      teaser: 'Find the flaws in a broken design before an interviewer does.',
-      body: 'Mark concrete dependencies, SRP violations, and tight couplings on authored challenge diagrams, then reveal the expected issues with explanations - critique practice, not blank-canvas inventing.',
-      chips: ['Challenge packs', 'Issue marking', 'Reveal & score'],
-      href: '/features/design-debugger',
-    },
-    {
-      n: '09', title: 'Design Score',
-      teaser: 'Heuristic feedback across dimensions - not an absolute grade.',
-      body: 'Score a design on coupling, abstraction, and structure so you get directional feedback while you work. Available from Learn & Practice and inside the editor Analyze tab.',
-      chips: ['Coupling', 'Abstraction', 'Live Analyze'],
-      href: '/features/design-score',
-    },
-    {
-      n: '10', title: 'Daily LLD Quiz',
-      teaser: 'Short questions that keep patterns and SOLID sharp.',
-      body: 'A quick daily set with explanations after you submit - built to stay warm between full mock interviews, not replace them.',
-      chips: ['Daily set', 'Explanations', 'Learn hub'],
-      href: '/features/daily-lld-quiz',
-    },
-    {
-      n: '11', title: 'Design Gallery',
-      teaser: 'Browse published community designs and fork what you learn from.',
-      body: 'Study how others approached the same problem, fork a published design into your workspace, and optionally watch a step-by-step replay when the author enabled it.',
-      chips: ['Browse', 'Fork', 'Watch replay'],
-      href: '/features/design-gallery',
-    },
   ]
 
   return (

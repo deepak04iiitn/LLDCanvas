@@ -12,9 +12,6 @@ const LINKS = [
   { href: '/features/revision-notes',           label: 'Revision Notes',           note: 'Concept refreshers'     },
   { href: '/features/code-execution',           label: 'Code Execution',           note: '12 languages'           },
   { href: '/features/collaboration',            label: 'Collaboration',            note: 'Real-time sync'         },
-  { href: '/features/design-debugger',          label: 'Design Debugger',          note: 'Spot design flaws'      },
-  { href: '/features/design-score',             label: 'Design Score',             note: 'Heuristic feedback'     },
-  { href: '/features/daily-lld-quiz',           label: 'Daily LLD Quiz',           note: 'Stay sharp daily'       },
   { href: '/pricing',                           label: 'Pricing',                  note: 'Plans & billing'        },
   { href: '/docs',                              label: 'Docs',                     note: 'Guides & API'           },
 ]
