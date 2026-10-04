@@ -51,6 +51,7 @@ const NAV_OTHERS = [
   { label: 'Playground', href: '/playground' },
   { label: 'Pricing',    href: '/pricing' },
   { label: 'Docs',       href: '/docs' },
+  { label: 'About',      href: '/about' },
 ]
 
 // ─── Shared feature row ───────────────────────────────────────────────────────

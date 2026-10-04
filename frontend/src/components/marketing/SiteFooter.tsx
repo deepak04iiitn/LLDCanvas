@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Rss, Briefcase,
+  CreditCard, Layers, Mail, Rss, Briefcase, Info,
   CalendarDays, Search, Bug, Wrench, RefreshCw,
   TrendingUp, DollarSign, Gamepad2, SlidersHorizontal, Flame,
 } from 'lucide-react'
@@ -139,6 +139,7 @@ export function SiteFooter() {
                   <NavLink href="/features"     Icon={Layers}>All Features</NavLink>
                   <NavLink href="/pricing"      Icon={CreditCard}>Pricing</NavLink>
                   <NavLink href="/blog"         Icon={Rss}>Blog</NavLink>
+                  <NavLink href="/about"        Icon={Info}>About</NavLink>
                   {mounted && session && (
                     <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
                   )}
@@ -220,6 +221,10 @@ export function SiteFooter() {
               <span className="text-ink-faint/30">·</span>
               <Link href="/features" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
                 Features
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/about" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                About
               </Link>
               <span className="text-ink-faint/30">·</span>
               <p className="font-mono text-[11px] text-ink-faint">India</p>
