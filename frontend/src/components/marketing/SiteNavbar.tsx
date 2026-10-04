@@ -368,7 +368,13 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
                 megaOpen ? 'text-ink' : 'text-ink-muted hover:text-ink',
               )}
             >
-              Features
+              <span className="relative">
+                Features
+                {/* Superscript "New" badge */}
+                <span className="badge-shine absolute -left-7 -top-3.5 overflow-hidden rounded-full bg-brand px-1.5 py-[3px] font-mono text-[7.5px] font-extrabold tracking-widest text-brand-foreground uppercase leading-none shadow-[0_0_8px_2px_rgba(35,78,63,0.45)]">
+                  NEW
+                </span>
+              </span>
               <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-200', megaOpen && 'rotate-180')} />
             </button>
           </div>

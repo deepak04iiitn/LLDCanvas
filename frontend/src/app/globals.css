@@ -204,6 +204,22 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* "New" badge shine sweep */
+@keyframes badge-shine {
+  0%   { transform: translateX(-120%) skewX(-15deg); }
+  60%  { transform: translateX(220%)  skewX(-15deg); }
+  100% { transform: translateX(220%)  skewX(-15deg); }
+}
+.badge-shine::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: badge-shine 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* React Flow overrides — soften the defaults */
 @layer components {
   .react-flow__selection {
