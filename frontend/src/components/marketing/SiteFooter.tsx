@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Rss, Briefcase, Info,
+  CreditCard, Layers, Mail, Rss, Briefcase, Info, Scale, Cookie,
   CalendarDays, Search, Bug, Wrench, RefreshCw,
   TrendingUp, DollarSign, Gamepad2, SlidersHorizontal, Flame,
 } from 'lucide-react'
@@ -134,12 +134,14 @@ export function SiteFooter() {
                   Platform
                 </p>
                 <ul className="space-y-3">
-                  <NavLink href="/editor/local" Icon={Pencil}>Open Editor</NavLink>
-                  <NavLink href="/playground"   Icon={ArrowUpRight}>Playground</NavLink>
-                  <NavLink href="/features"     Icon={Layers}>All Features</NavLink>
-                  <NavLink href="/pricing"      Icon={CreditCard}>Pricing</NavLink>
-                  <NavLink href="/blog"         Icon={Rss}>Blog</NavLink>
-                  <NavLink href="/about"        Icon={Info}>About</NavLink>
+                  <NavLink href="/editor/local"    Icon={Pencil}>Open Editor</NavLink>
+                  <NavLink href="/playground"    Icon={ArrowUpRight}>Playground</NavLink>
+                  <NavLink href="/features"      Icon={Layers}>All Features</NavLink>
+                  <NavLink href="/pricing"       Icon={CreditCard}>Pricing</NavLink>
+                  <NavLink href="/blog"          Icon={Rss}>Blog</NavLink>
+                  <NavLink href="/about"         Icon={Info}>About</NavLink>
+                  <NavLink href="/terms"         Icon={Scale}>Terms &amp; Conditions</NavLink>
+                  <NavLink href="/cookie-policy" Icon={Cookie}>Cookie Policy</NavLink>
                   {mounted && session && (
                     <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
                   )}
@@ -225,6 +227,14 @@ export function SiteFooter() {
               <span className="text-ink-faint/30">·</span>
               <Link href="/about" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
                 About
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/terms" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Terms
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/cookie-policy" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Cookies
               </Link>
               <span className="text-ink-faint/30">·</span>
               <p className="font-mono text-[11px] text-ink-faint">India</p>
