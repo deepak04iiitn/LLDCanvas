@@ -11,7 +11,6 @@ import {
   MousePointer2, Zap, UserPlus, Lock,
   Layers, GitBranch, ArrowLeftRight, Key, type LucideIcon,
 } from 'lucide-react'
-import { AuthModal } from '@/components/auth/AuthModal'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { TestimonialsSection } from '@/components/marketing/TestimonialsSection'
@@ -1633,30 +1632,12 @@ function Faq() {
   )
 }
 
-// ─── Auto-open sign-in modal when redirected from a share link (?auth=1) ───────
-function AuthRedirectListener({ onAuthRedirect }: { onAuthRedirect: () => void }) {
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    if (searchParams.get('auth') === '1') onAuthRedirect()
-  }, [searchParams, onAuthRedirect])
-
-  return null
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export function LandingPageClient() {
-  const [authOpen, setAuthOpen] = useState(false)
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
-  function openSignin() { setAuthMode('signin'); setAuthOpen(true) }
-  function openSignup() { setAuthMode('signup'); setAuthOpen(true) }
   const { data: session } = useSession()
 
   return (
     <div className="min-h-screen text-ink">
-      <Suspense fallback={null}>
-        <AuthRedirectListener onAuthRedirect={openSignin} />
-      </Suspense>
 
       <CanvasBackdrop />
 
@@ -1693,12 +1674,12 @@ export function LandingPageClient() {
               </Link>
               {!session?.user && (
                 <div className="relative">
-                  <button
-                    onClick={openSignin}
+                  <Link
+                    href="/sign-in"
                     className="inline-flex items-center gap-2 rounded-md border border-hairline-strong px-6 py-3 font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]"
                   >
                     Sign in
-                  </button>
+                  </Link>
                   <span
                     role="tooltip"
                     className="pointer-events-none absolute left-1/2 top-full z-10 mt-2.5 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm"
@@ -1959,13 +1940,13 @@ export function LandingPageClient() {
                 </span>
                 <ArrowRight className="h-3.5 w-3.5 text-brand opacity-0 transition-opacity group-hover:opacity-100" />
               </Link>
-              <button onClick={openSignup} className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors hover:bg-hairline/40">
+              <Link href="/sign-up" className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left transition-colors hover:bg-hairline/40">
                 <span className="font-mono text-[13px]">
                   <span className="text-ink-muted">+ signUp()</span>
                   <span className="text-ink-faint">: </span>
                   <span className="text-ink">SaveToCloud</span>
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
           <p className="mt-4 text-center text-sm text-ink-faint">
@@ -1975,8 +1956,6 @@ export function LandingPageClient() {
       </section>
 
       <SiteFooter />
-
-      <AuthModal open={authOpen} onOpenChange={setAuthOpen} defaultMode={authMode} />
     </div>
   )
 }

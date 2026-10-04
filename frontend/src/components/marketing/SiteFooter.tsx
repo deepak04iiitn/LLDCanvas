@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
-import { useAuthModal } from '@/lib/auth-modal-store'
 
 // ─── Feature links ────────────────────────────────────────────────────────────
 
@@ -48,12 +47,7 @@ function NavLink({ href, Icon, children }: { href: string; Icon: React.ElementTy
 export function SiteFooter() {
   const [mounted, setMounted] = useState(false)
   const { data: session } = useSession()
-  const { openAuthModal } = useAuthModal()
-
   useEffect(() => { setMounted(true) }, [])
-
-  function openSignin() { openAuthModal(undefined, 'signin') }
-  function openSignup() { openAuthModal(undefined, 'signup') }
 
   return (
     <>
@@ -164,22 +158,22 @@ export function SiteFooter() {
                   </p>
                   <ul className="space-y-3">
                     <li>
-                      <button
-                        onClick={openSignin}
+                      <Link
+                        href="/sign-in"
                         className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                       >
                         <LogIn size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
                         Sign in
-                      </button>
+                      </Link>
                     </li>
                     <li>
-                      <button
-                        onClick={openSignup}
+                      <Link
+                        href="/sign-up"
                         className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                       >
                         <UserPlus size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
                         Create account
-                      </button>
+                      </Link>
                     </li>
                   </ul>
                 </div>

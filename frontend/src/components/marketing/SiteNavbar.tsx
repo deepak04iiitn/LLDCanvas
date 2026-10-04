@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
-import { useAuthModal } from '@/lib/auth-modal-store'
 import { useScrolled } from '@/hooks/useScrolled'
 import { cn } from '@/lib/utils'
 import { ChevronRight, Menu, X } from 'lucide-react'
@@ -18,15 +17,12 @@ const NAV_LINKS = [
   { label: 'Docs',           href: '/docs' },
 ]
 
-
 // ─── Mobile drawer ───────────────────────────────────────────────────────────
 function MobileMenu({
-  open, onClose, onSignin, onSignup, session,
+  open, onClose, session,
 }: {
   open: boolean
   onClose: () => void
-  onSignin: () => void
-  onSignup: () => void
   session: boolean
 }) {
   return (
@@ -92,22 +88,24 @@ function MobileMenu({
               ) : (
                 <>
                   <div className="space-y-1.5">
-                    <button
-                      onClick={() => { onClose(); onSignin() }}
+                    <Link
+                      href="/sign-in"
+                      onClick={onClose}
                       className="flex w-full items-center justify-center rounded-md border border-hairline-strong py-2.5 text-sm font-medium text-ink transition-colors hover:bg-hairline/40"
                     >
                       Sign in
-                    </button>
+                    </Link>
                     <p className="text-center text-[11px] leading-snug text-ink-muted">
                       Sign in to unlock all features
                     </p>
                   </div>
-                  <button
-                    onClick={() => { onClose(); onSignup() }}
+                  <Link
+                    href="/sign-up"
+                    onClick={onClose}
                     className="flex w-full items-center justify-center rounded-md bg-brand py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-hover"
                   >
                     Get started free
-                  </button>
+                  </Link>
                 </>
               )}
             </div>
@@ -122,12 +120,8 @@ function MobileMenu({
 export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: session } = useSession()
-  const { openAuthModal } = useAuthModal()
   const scrolledPast = useScrolled()
   const scrolled = alwaysSolid || scrolledPast
-
-  function openSignin() { openAuthModal(undefined, 'signin') }
-  function openSignup() { openAuthModal(undefined, 'signup') }
 
   return (
     <>
@@ -160,24 +154,27 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
             </Link>
           ) : (
             <>
-              <div className="relative">
-                <button
-                  onClick={openSignin}
+              <div className="relative group">
+                <Link
+                  href="/sign-in"
                   className="px-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                 >
                   Sign in
-                </button>
+                </Link>
                 <span
                   role="tooltip"
-                  className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm"
+                  className="pointer-events-none absolute left-1/2 top-full z-50 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2.5 py-1 text-[11px] text-paper shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   Sign in to unlock all features
                   <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 bg-ink" aria-hidden />
                 </span>
               </div>
-              <button onClick={openSignup} className="rounded-md border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]">
+              <Link
+                href="/sign-up"
+                className="rounded-md border border-hairline-strong px-4 py-2 text-sm font-medium text-ink transition-all duration-150 hover:bg-hairline/40 active:scale-[0.97]"
+              >
                 Get started
-              </button>
+              </Link>
             </>
           )}
         </div>
@@ -189,9 +186,9 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
               Dashboard
             </Link>
           ) : (
-            <button onClick={openSignup} className="rounded-md border border-hairline-strong px-3 py-1.5 text-sm font-medium text-ink">
+            <Link href="/sign-up" className="rounded-md border border-hairline-strong px-3 py-1.5 text-sm font-medium text-ink">
               Get started
-            </button>
+            </Link>
           )}
           <button
             onClick={() => setMobileOpen(true)}
@@ -206,8 +203,6 @@ export function SiteNavbar({ alwaysSolid = false }: { alwaysSolid?: boolean }) {
       <MobileMenu
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        onSignin={openSignin}
-        onSignup={openSignup}
         session={!!session}
       />
     </>

@@ -13,8 +13,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (isPending || session) return
-    sessionStorage.setItem('postLoginRedirect', pathname)
-    router.replace('/?auth=1')
+    // Redirect to the dedicated sign-in page with a ?next= param so the
+    // user lands back here after successful authentication.
+    router.replace(`/sign-in?next=${encodeURIComponent(pathname)}`)
   }, [isPending, session, pathname, router])
 
   if (isPending || !session) {

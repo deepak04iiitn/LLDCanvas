@@ -376,7 +376,7 @@ export default async function FeaturesHubPage() {
           </blockquote>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/?auth=1"
+              href="/sign-up"
               className="rounded-full bg-brand px-7 py-3 text-sm font-semibold text-brand-foreground shadow-sm transition-transform hover:-translate-y-0.5"
             >
               Start for free

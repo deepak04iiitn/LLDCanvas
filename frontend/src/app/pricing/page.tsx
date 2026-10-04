@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check, X, Rocket, Crown, Zap, ArrowRight,
@@ -11,10 +12,12 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { usePlan } from '@/hooks/usePlan'
+import { useSession } from '@/lib/auth'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { fadeUpProps, inViewProps } from '@/lib/motion'
+import { toast } from 'sonner'
 
 declare global {
   interface Window {
@@ -249,6 +252,8 @@ export default function PricingPage() {
   const [geoReady, setGeoReady] = useState(false)
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
+  const { data: session } = useSession()
+  const router = useRouter()
 
   const isIntlGateway = gateway === 'dodo'
 
@@ -281,6 +286,11 @@ export default function PricingPage() {
   }, [gateway])
 
   async function handleUpgrade(tier: 'pro' | 'ultimate', isYearly: boolean) {
+    // Not signed in → send to sign-in page, come back here after auth
+    if (!session) {
+      router.push('/sign-in?next=/pricing')
+      return
+    }
     setLoadingTier(tier)
     try {
       // Re-fetch gateway at click time so we never race the initial geo default
@@ -323,7 +333,7 @@ export default function PricingPage() {
             await refresh()
             window.location.href = '/dashboard?upgraded=1'
           } catch {
-            alert('Payment verification failed. Contact support.')
+            toast.error('Payment verification failed. Please contact support.')
           }
         },
         modal: {
@@ -334,7 +344,7 @@ export default function PricingPage() {
       const rzp = new window.Razorpay(options)
       rzp.open()
     } catch (err) {
-      alert((err as Error).message ?? 'Something went wrong')
+      toast.error((err as Error).message ?? 'Something went wrong')
       setLoadingTier(null)
     }
   }
