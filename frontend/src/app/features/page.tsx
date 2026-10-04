@@ -155,6 +155,16 @@ export default async function FeaturesHubPage() {
       chips: ['Live cursors', 'Inline comments', 'Real-time sync'],
       href: '/features/collaboration',
     },
+    { n: '08', title: 'Plannr', teaser: 'A structured roadmap from zero to interview-ready.', body: 'Plannr gives you a sequenced path through LLD topics, problem sets, and milestones — so your prep has direction, not just volume. Follow it in order or jump to the gaps your last mock exposed.', chips: ['Topic sequence', 'Milestone tracking', 'Gap analysis'], href: '/features/plannr' },
+    { n: '09', title: 'Daily Quiz', teaser: 'Five questions a day keeps the patterns sharp.', body: 'A short daily set on design patterns and SOLID principles, refreshed each day with explanations after you answer. Built for the days between full mock sessions, not to replace them.', chips: ['Daily refresh', 'Pattern + SOLID', 'Streak tracking'], href: '/features/daily-quiz' },
+    { n: '10', title: 'Pattern Detective', teaser: 'Read code. Name the pattern. Explain why.', body: 'Real production-style code, no labels, one correct pattern to identify. The explanations cover why the other three options don\'t fit — which is exactly what interviewers ask you to articulate.', chips: ['Real code', '23 patterns', 'Wrong-answer explanations'], href: '/features/pattern-detective' },
+    { n: '11', title: 'Debug Lab', teaser: 'Annotate what\'s broken before the interviewer does.', body: 'Authored diagrams with real violations — God Class, SRP breach, wrong inheritance, tight coupling. Annotate what you see, then reveal the expected breakdown. Critique practice, not blank-canvas inventing.', chips: ['Real violations', 'Annotation mode', 'Reveal & compare'], href: '/features/debug-lab' },
+    { n: '12', title: 'Roguelike', teaser: 'Procedurally generated runs. No undo. Real pressure.', body: 'Each run is a new scenario with permanent decisions and live resource drain. No two runs play the same. It\'s not a quiz — it\'s a pressure test designed to expose the gap between knowing and doing.', chips: ['No undo', 'Live pressure', 'Branching outcomes'], href: '/features/roguelike' },
+    { n: '13', title: 'Debug & Fix', teaser: 'Don\'t just spot the flaw — fix it.', body: 'Where Debug Lab asks you to annotate, Debug & Fix asks you to restructure. Same violation-heavy designs, but now you apply the pattern, extract the class, and validate against the expected clean design.', chips: ['Active fixing', 'Pattern application', 'Validation'], href: '/features/debug-and-fix' },
+    { n: '14', title: 'Refactor', teaser: 'Take a monolith apart without breaking it.', body: 'A working but bloated design lands in front of you. Your job: identify the smells, restructure to clean boundaries, apply separation of concerns — while keeping the system functionally equivalent.', chips: ['Monolith → clean', 'Smell identification', 'SOLID application'], href: '/features/refactor' },
+    { n: '15', title: 'Change One Thing', teaser: 'A new requirement arrives mid-design. Absorb it.', body: 'The moment every interviewer loves: "now what if we need to support X?" Change One Thing gives you that moment with a blast-radius score, OCP validation, and a comparison to the minimal-impact fix.', chips: ['OCP practice', 'Blast radius', 'Extensibility score'], href: '/features/change-one-thing' },
+    { n: '16', title: 'Evolution', teaser: 'Grow a design through multiple stages of scale.', body: 'Start with a small clean system, then evolve it through growth stages — new requirements, tech debt, scaling decisions. See how your trade-offs compound and where the long-lived system starts to hurt.', chips: ['Multi-stage', 'Trade-off tracking', 'Tech debt visibility'], href: '/features/evolution' },
+    { n: '17', title: 'Budget Pressure', teaser: 'The best design you can afford, not the best design you can imagine.', body: 'Real constraint types — fixed budget, sprint timeline, headcount limit. Design explicitly within them, justify every trade-off you make, and compare your allocation to the benchmark. Senior-role prep, done properly.', chips: ['Real constraints', 'Trade-off justification', 'Budget tracking'], href: '/features/budget-pressure' },
   ]
 
   return (
@@ -207,7 +217,7 @@ export default async function FeaturesHubPage() {
             <span className="block text-brand">with real, hands-on LLD practice.</span>
           </h1>
           <p className="mx-auto mt-7 max-w-xl text-[17px] leading-relaxed text-ink-muted">
-            Seven features. We didn&rsquo;t write another icon grid to describe them -
+            Seventeen features. We didn&rsquo;t write another icon grid to describe them -
             we diagrammed them, the same way you&rsquo;ll diagram your next LLD interview.
           </p>
         </Reveal>
@@ -319,7 +329,7 @@ export default async function FeaturesHubPage() {
               <span className="text-gold">¶02</span> &nbsp;·&nbsp; The Full Manifest
             </p>
             <h2 className="font-serif text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-              Seven entries. Read any one.
+              Seventeen features. Start with any one.
             </h2>
             <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-ink-muted">
               Click a row to expand it in place. Every entry links through to its
