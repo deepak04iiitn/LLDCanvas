@@ -1,5 +1,5 @@
-﻿import { CheatSheet } from '@/components/plannr/cheatsheet/CheatSheet'
+﻿import { redirect } from 'next/navigation'
 
 export default function JourneyCheatSheetPage() {
-  return <CheatSheet />
+  redirect('/dashboard/plannr/revise')
 }

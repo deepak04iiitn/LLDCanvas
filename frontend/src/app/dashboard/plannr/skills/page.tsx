@@ -1,5 +1,7 @@
-﻿import { redirect } from 'next/navigation'
+﻿'use client'
+
+import { SkillDashboard } from '@/components/plannr/skills/SkillDashboard'
 
 export default function PlannrSkillsPage() {
-  redirect('/dashboard/skills')
+  return <SkillDashboard />
 }

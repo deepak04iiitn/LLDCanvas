@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   ArrowRight, BookOpen, Target, BarChart2, Flame, Clock, Play, CheckCircle2,
-  ChevronDown, Plus, Check, Trash2, Loader2, Trophy, Layers,
+  Map, ClipboardList, Briefcase, Lightbulb, CalendarDays, TrendingUp,
 } from 'lucide-react'
-import { journeyApi, type JourneyProfile, type JourneyRecommendation, type JourneyActivity, type PlannrSummary, type DayPlanEntry } from '@/lib/plannr-api'
+import {
+  journeyApi,
+  type JourneyProfile,
+  type JourneyRecommendation,
+  type JourneyActivity,
+  type DayPlanEntry,
+  type SkillsResponse,
+} from '@/lib/plannr-api'
 import { SpacedRepetitionWidget } from '@/components/plannr/hub/SpacedRepetitionWidget'
 import { cn } from '@/lib/utils'
 
@@ -16,103 +22,41 @@ const ROLE_LABELS: Record<string, string> = {
   fullstack: 'Full Stack Engineer', general: 'General LLD',
 }
 
-
-
-// ─── Plan Switcher Button (inline, for page headers) ──────────────────────────
-function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
-  const router = useRouter()
-  const [plans, setPlans] = useState<PlannrSummary[]>([])
-  const [open, setOpen] = useState(false)
-  const [switching, setSwitching] = useState<string | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
-
-  function load() { journeyApi.listPlans().then(d => setPlans(d.plans)).catch(() => {}) }
-  useEffect(() => { load() }, [])
-
-  const activePlan = plans.find(p => p.isActive)
-
-  async function handleSwitch(id: string) {
-    if (switching) return
-    setSwitching(id)
-    try { await journeyApi.switchPlan(id); await load(); onSwitch(); setOpen(false) }
-    finally { setSwitching(null) }
-  }
-
-  async function handleDelete(id: string, e: React.MouseEvent) {
-    e.stopPropagation()
-    if (deleting || plans.length <= 1) return
-    if (!confirm('Delete this Plannr? This cannot be undone.')) return
-    setDeleting(id)
-    try { await journeyApi.deletePlan(id); await load(); onSwitch() }
-    finally { setDeleting(null) }
-  }
-
-  return (
-    <>
-      <div className="relative">
-        <button onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
-          <span className="max-w-32 truncate">{activePlan?.planName ?? 'My Plan'}</span>
-          <ChevronDown size={12} className={cn('shrink-0 text-ink-faint transition-transform', open && 'rotate-180')} />
-        </button>
-
-        {open && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute right-0 top-full mt-1 z-20 w-60 bg-paper rounded-xl border border-hairline shadow-lg overflow-hidden">
-              <div className="max-h-52 overflow-y-auto">
-                {plans.map(p => (
-                  <div key={p._id} onClick={() => !p.isActive && handleSwitch(p._id)}
-                    className={cn('flex items-center gap-2 px-3 py-2.5 transition-colors group', p.isActive ? 'bg-brand-tint/30 cursor-default' : 'hover:bg-paper-elevated cursor-pointer')}>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-medium text-ink truncate">{p.planName}</p>
-                      <p className="text-[10px] text-ink-faint">{ROLE_LABELS[p.targetRole]} · {p.progressPercent}% done</p>
-                    </div>
-                    {p.isActive ? <Check size={12} className="text-brand shrink-0" />
-                      : switching === p._id ? <Loader2 size={12} className="animate-spin text-ink-faint shrink-0" />
-                      : <button onClick={e => handleDelete(p._id, e)} disabled={plans.length <= 1}
-                          className="opacity-0 group-hover:opacity-100 text-ink-faint hover:text-red-500 disabled:hidden transition-opacity">
-                          {deleting === p._id ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />}
-                        </button>}
-                  </div>
-                ))}
-              </div>
-              <div className="border-t border-hairline">
-                <button onClick={() => { setOpen(false); router.push('/dashboard/plannr/setup') }}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-[12px] text-brand font-medium hover:bg-brand-tint/20 transition-colors">
-                  <Plus size={12} /> New Plannr
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-    </>
-  )
+const STAGE_LABELS: Record<number, string> = {
+  1: 'Speak OOP',
+  2: 'Responsibilities',
+  3: 'Design for Change',
+  4: 'Interview Thinking',
+  5: 'Pressure Test',
 }
 
+const QUICK_LINKS = [
+  { href: '/dashboard/plannr/roadmap',     icon: Map,           label: 'Roadmap',   blurb: 'Stage path & mastery' },
+  { href: '/dashboard/plannr/practice',    icon: Target,        label: 'Practice',  blurb: 'Easy → Hard drills' },
+  { href: '/dashboard/plannr/revise',      icon: ClipboardList, label: 'Revise',    blurb: 'Sheets & spaced review' },
+  { href: '/dashboard/plannr/experiences', icon: Briefcase,     label: 'Mocks',     blurb: 'Full interview problems' },
+  { href: '/dashboard/plannr/skills',      icon: BarChart2,     label: 'Skills',    blurb: 'Evidence on your track' },
+  { href: '/dashboard/plannr/tips',        icon: Lightbulb,     label: 'Tips',      blurb: 'Interview playbook' },
+]
 
-function RecommendationCard({ rec }: { rec: JourneyRecommendation }) {
+function ProgressRing({ percent, size = 72 }: { percent: number; size?: number }) {
+  const stroke = 6
+  const r = (size - stroke) / 2
+  const c = 2 * Math.PI * r
+  const offset = c - (Math.min(100, Math.max(0, percent)) / 100) * c
   return (
-    <div className="rounded-xl border border-hairline bg-paper-elevated p-5">
-      <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-ink-faint mb-2">
-        Next Topic
-      </p>
-      <h3 className="font-serif text-base font-medium text-ink">{rec.topicTitle}</h3>
-      <p className="mt-1 text-[12px] leading-relaxed text-ink-muted line-clamp-2">{rec.reason}</p>
-      <div className="mt-3 flex items-center gap-3">
-        <span className="flex items-center gap-1 text-[11px] text-ink-faint">
-          <Clock size={11} />
-          ~{rec.estimatedMinutes} min
-        </span>
-        <Link
-          href={`/plannr/topic/${rec.topicSlug}`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
-        >
-          Start Topic <ArrowRight size={12} />
-        </Link>
-      </div>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--hairline)" strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--brand)" strokeWidth={stroke}
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+          className="transition-[stroke-dashoffset] duration-700 ease-out"
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center font-mono text-[13px] font-semibold text-ink">
+        {percent}%
+      </span>
     </div>
   )
 }
@@ -427,7 +371,7 @@ function PlannrIntroPage() {
 
             <div className="lg:w-44 shrink-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint">
-                15 skills<br />tracked
+                Track skills<br />from evidence
               </p>
             </div>
 
@@ -514,7 +458,6 @@ function computeStreak(activities: JourneyActivity[]): number {
 }
 
 export function JourneyDashboard() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<{
     profile: JourneyProfile | null
@@ -526,20 +469,20 @@ export function JourneyDashboard() {
     onboarded: boolean
   } | null>(null)
   const [todayPlan, setTodayPlan] = useState<DayPlanEntry | null>(null)
+  const [skills, setSkills] = useState<SkillsResponse | null>(null)
   const [streak, setStreak] = useState(0)
 
   useEffect(() => {
     Promise.all([
       journeyApi.getDashboard(),
       journeyApi.getPlan().catch(() => null),
+      journeyApi.getSkills().catch(() => null),
     ])
-      .then(([dashboard, plan]) => {
+      .then(([dashboard, plan, skillsData]) => {
         setData(dashboard)
-        if (plan) {
-          setTodayPlan(plan.plan.find(d => d.status === 'today') ?? null)
-        }
-        const s = computeStreak(dashboard.recentActivity ?? [])
-        setStreak(s)
+        if (plan) setTodayPlan(plan.plan.find(d => d.status === 'today') ?? null)
+        if (skillsData?.skills) setSkills(skillsData)
+        setStreak(computeStreak(dashboard.recentActivity ?? []))
       })
       .catch(() => setData(null))
       .finally(() => setLoading(false))
@@ -557,105 +500,234 @@ export function JourneyDashboard() {
     return <PlannrIntroPage />
   }
 
-  const { profile, recommendation, completedCount, totalTopics, progressPercent } = data
+  const { profile, recommendation, recentActivity, completedCount, totalTopics, progressPercent } = data
   const daysPassed = Math.floor(
     (Date.now() - new Date(profile.startDate).getTime()) / (1000 * 60 * 60 * 24),
   )
   const daysLeft = Math.max(0, profile.preparationDays - daysPassed)
   const currentDay = daysPassed + 1
+  const continueHref = recommendation
+    ? `/dashboard/plannr/topic/${recommendation.topicSlug}`
+    : todayPlan?.topics[0]
+      ? `/dashboard/plannr/topic/${todayPlan.topics[0].slug}`
+      : '/dashboard/plannr/roadmap'
+  const stageLabel = STAGE_LABELS[profile.currentStage] ?? `Stage ${profile.currentStage}`
+  const weak = skills?.weakestSkill
+  const strong = skills?.strongestSkill
+  const focusAreas = profile.focusAreas ?? []
 
   return (
-    <div className="h-full overflow-y-auto bg-paper">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        {/* Page header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-faint mb-2">Plannr</p>
-            <h1 className="font-serif text-[28px] font-medium text-ink leading-tight">Your Preparation Plan</h1>
-            <p className="font-mono text-[12px] text-ink-muted mt-1">
-              Day {currentDay} &middot; {ROLE_LABELS[profile.targetRole] ?? profile.targetRole} &middot; {daysLeft > 0 ? `${daysLeft} days left` : 'Journey complete'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/dashboard/plannr/plan" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
-              Full Plan
-            </Link>
-            <Link href="/dashboard/plannr/roadmap" className="rounded-xl border border-hairline bg-paper-elevated px-3 py-1.5 text-[12px] font-medium text-ink hover:border-brand/30 transition-colors">
-              Roadmap
-            </Link>
-            <PlanSwitcherButton onSwitch={() => router.refresh()} />
-          </div>
-        </div>
+    <div className="relative min-h-full w-full bg-paper overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, var(--hairline-strong) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full opacity-40 blur-3xl"
+        style={{ background: 'color-mix(in srgb, var(--brand) 18%, transparent)' }}
+      />
 
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* LEFT column — main content */}
-          <div className="flex-1 space-y-5 min-w-0">
-            {/* TODAY'S PLAN */}
-            <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-4">
-                Today
+      <div className="relative w-full px-6 py-8 lg:px-10 space-y-8">
+        {/* Hero */}
+        <section className="rounded-3xl border border-hairline bg-paper-elevated/90 backdrop-blur-sm p-6 lg:p-8 shadow-[0_1px_0_rgba(255,255,255,0.6)_inset]">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-6 lg:gap-10">
+            <ProgressRing percent={progressPercent} size={88} />
+            <div className="flex-1 min-w-0">
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint mb-2">Plannr · Home</p>
+              <h1 className="font-serif text-[30px] lg:text-[34px] font-medium text-ink leading-[1.05] tracking-tight">
+                Keep going — Day {currentDay}.
+              </h1>
+              <p className="mt-2 text-[14px] text-ink-muted max-w-xl">
+                {ROLE_LABELS[profile.targetRole] ?? profile.targetRole}
+                {' · '}
+                {stageLabel}
+                {' · '}
+                {daysLeft > 0 ? `${daysLeft} days left` : 'Timeline complete'}
+                {focusAreas.length > 0 ? ` · Focus: ${focusAreas.slice(0, 3).join(', ')}` : ''}
               </p>
-              {todayPlan && todayPlan.topics.length > 0 ? (
+              <div className="mt-5 flex flex-wrap items-center gap-2.5">
+                <Link
+                  href={continueHref}
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-[13px] font-semibold text-white hover:opacity-90 transition-opacity"
+                >
+                  <Play size={14} /> Continue learning
+                </Link>
+                <Link
+                  href="/dashboard/plannr/plan"
+                  className="inline-flex items-center gap-2 rounded-xl border border-hairline bg-paper px-4 py-2.5 text-[13px] font-medium text-ink hover:border-brand/30 transition-colors"
+                >
+                  <CalendarDays size={14} /> Full plan
+                </Link>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 lg:w-56 shrink-0">
+              {[
+                { label: 'Topics', value: `${completedCount}/${totalTopics}` },
+                { label: 'Stage', value: String(profile.currentStage) },
+                { label: 'Streak', value: streak > 0 ? `${streak}d` : '—' },
+                { label: 'Left', value: daysLeft > 0 ? `${daysLeft}d` : 'Done' },
+              ].map(stat => (
+                <div key={stat.label} className="rounded-2xl border border-hairline bg-paper px-3 py-2.5">
+                  <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-ink-faint">{stat.label}</p>
+                  <p className="font-serif text-[20px] font-medium text-ink leading-tight mt-0.5">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Quick links */}
+        <section>
+          <div className="flex items-end justify-between mb-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">Jump in</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {QUICK_LINKS.map(({ href, icon: Icon, label, blurb }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group rounded-2xl border border-hairline bg-paper-elevated p-3.5 hover:border-brand/30 hover:shadow-sm transition-all"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/8 text-brand mb-2.5 group-hover:bg-brand group-hover:text-white transition-colors">
+                  <Icon size={15} />
+                </span>
+                <p className="text-[13px] font-medium text-ink">{label}</p>
+                <p className="text-[11px] text-ink-faint mt-0.5 leading-snug">{blurb}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          {/* Main column */}
+          <div className="space-y-5 min-w-0">
+            {/* Continue focus */}
+            <div className="rounded-3xl border border-brand/20 bg-gradient-to-br from-brand/[0.07] to-paper-elevated p-6">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-brand mb-3">Up next</p>
+              {recommendation ? (
                 <>
-                  <div className="space-y-3 mb-5">
-                    {todayPlan.topics.map((act, i) => (
-                      <div key={act.slug} className="flex items-center gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-white text-[11px] font-bold">
-                          {i + 1}
-                        </span>
-                        <span className="flex-1 text-[13px] text-ink">{act.title}</span>
-                        <span className="flex items-center gap-1 font-mono text-[11px] text-ink-faint">
-                          <Clock size={10} /> {act.estimatedMinutes} min
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-hairline mb-4">
-                    <span className="text-[12px] text-ink-muted">Total today</span>
-                    <span className="font-mono text-[13px] font-semibold text-ink">
-                      {todayPlan.totalMinutes} min
+                  <h2 className="font-serif text-[24px] font-medium text-ink leading-tight">
+                    {recommendation.topicTitle}
+                  </h2>
+                  <p className="mt-2 text-[13px] text-ink-muted leading-relaxed max-w-lg">
+                    {recommendation.reason}
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper px-3 py-1 text-[11px] text-ink-muted">
+                      <Clock size={11} /> ~{recommendation.estimatedMinutes} min
                     </span>
+                    <Link
+                      href={`/dashboard/plannr/topic/${recommendation.topicSlug}`}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand px-4 py-2 text-[13px] font-semibold text-white hover:opacity-90"
+                    >
+                      Start topic <ArrowRight size={13} />
+                    </Link>
                   </div>
                 </>
               ) : (
-                <p className="text-[13px] text-ink-muted mb-5">
-                  {todayPlan === null ? 'Loading your plan…' : 'No topics scheduled for today.'}
-                </p>
+                <div>
+                  <h2 className="font-serif text-[22px] font-medium text-ink">Curriculum complete</h2>
+                  <p className="mt-1 text-[13px] text-ink-muted">You finished the path — lock it in with mocks.</p>
+                  <Link
+                    href="/dashboard/plannr/experiences"
+                    className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand"
+                  >
+                    Open interview mocks <ArrowRight size={13} />
+                  </Link>
+                </div>
               )}
-              <Link
-                href="/dashboard/plannr/roadmap"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
-              >
-                <Play size={14} /> Start Today&apos;s Plan
-              </Link>
             </div>
 
-            {/* NEXT TOPIC */}
-            {recommendation ? (
-              <RecommendationCard rec={recommendation} />
-            ) : (
-              <div className="rounded-xl border border-hairline bg-paper-elevated p-5 text-center">
-                <CheckCircle2 size={20} className="text-brand mx-auto mb-2" />
-                <p className="font-medium text-[14px] text-ink">All topics completed — interview ready!</p>
-                <Link href="/dashboard/plannr/experiences" className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-brand">
-                  Try interview experiences <ArrowRight size={12} />
-                </Link>
+            {/* Today */}
+            <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                  Today&apos;s focus
+                </p>
+                {todayPlan && todayPlan.topics.length > 0 && (
+                  <span className="font-mono text-[11px] text-ink-faint">{todayPlan.totalMinutes} min total</span>
+                )}
+              </div>
+              {todayPlan && todayPlan.topics.length > 0 ? (
+                <ul className="space-y-2.5">
+                  {todayPlan.topics.map((act, i) => (
+                    <li key={act.slug}>
+                      <Link
+                        href={`/dashboard/plannr/topic/${act.slug}`}
+                        className="flex items-center gap-3 rounded-xl border border-hairline bg-paper px-3 py-2.5 hover:border-brand/30 transition-colors"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-white text-[11px] font-bold">
+                          {i + 1}
+                        </span>
+                        <span className="flex-1 text-[13px] font-medium text-ink">{act.title}</span>
+                        <span className="flex items-center gap-1 font-mono text-[11px] text-ink-faint">
+                          <Clock size={10} /> {act.estimatedMinutes}m
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-xl border border-dashed border-hairline bg-paper px-4 py-6 text-center">
+                  <p className="text-[13px] text-ink-muted">
+                    {todayPlan === null ? 'Loading your plan…' : 'Nothing packed for today — pick up your recommended topic.'}
+                  </p>
+                  <Link href={continueHref} className="mt-3 inline-flex items-center gap-1 text-[12px] font-semibold text-brand">
+                    Continue anyway <ArrowRight size={12} />
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Recent activity */}
+            {recentActivity.length > 0 && (
+              <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-3">
+                  Recent activity
+                </p>
+                <ul className="space-y-2">
+                  {recentActivity.slice(0, 5).map(a => (
+                    <li key={a._id} className="flex items-center gap-3 text-[12px]">
+                      <CheckCircle2 size={13} className="text-brand shrink-0" />
+                      <span className="flex-1 text-ink truncate capitalize">
+                        {a.activityType.replace(/_/g, ' ')}
+                        {a.topicSlug ? ` · ${a.topicSlug}` : ''}
+                      </span>
+                      <span className="font-mono text-[10px] text-ink-faint shrink-0">
+                        {new Date(a.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
 
-          {/* RIGHT column — 320 px */}
-          <div className="lg:w-80 lg:shrink-0 space-y-4">
-            {/* Progress */}
-            <div className="rounded-xl border border-hairline bg-paper-elevated p-5">
-              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-3">
-                Progress
-              </p>
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[13px] text-ink">{completedCount}/{totalTopics} topics completed</span>
-                <span className="font-mono text-[13px] font-bold text-ink">{progressPercent}%</span>
+          {/* Side column */}
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+                  Progress
+                </p>
+                <TrendingUp size={14} className="text-brand" />
               </div>
-              <div className="h-2 rounded-full bg-hairline overflow-hidden">
+              <div className="flex items-center gap-4">
+                <ProgressRing percent={progressPercent} size={64} />
+                <div>
+                  <p className="font-serif text-[22px] font-medium text-ink leading-none">
+                    {completedCount}
+                    <span className="text-ink-faint text-[14px]"> / {totalTopics}</span>
+                  </p>
+                  <p className="text-[12px] text-ink-muted mt-1">topics completed</p>
+                  <p className="text-[11px] text-ink-faint mt-1">Stage {profile.currentStage} · {stageLabel}</p>
+                </div>
+              </div>
+              <div className="mt-4 h-1.5 rounded-full bg-hairline overflow-hidden">
                 <div
                   className="h-full rounded-full bg-brand transition-all duration-700"
                   style={{ width: `${progressPercent}%` }}
@@ -663,22 +735,68 @@ export function JourneyDashboard() {
               </div>
             </div>
 
-            {/* Due for Review */}
-            <SpacedRepetitionWidget />
-
-            {/* Streak */}
-            {streak > 0 && (
-              <div className="rounded-xl border border-hairline bg-paper-elevated p-5">
-                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint mb-3">
-                  Streak
-                </p>
-                <div className="flex items-center gap-2">
-                  <Flame size={20} className="text-brand" />
-                  <span className="font-serif text-xl font-medium text-ink">{streak}-day streak</span>
-                </div>
-                <p className="text-[11px] text-ink-faint mt-1">Keep it going!</p>
+            {(streak > 0 || weak || strong || skills?.howToImprove) && (
+              <div className="rounded-2xl border border-hairline bg-paper-elevated p-5 space-y-4">
+                {streak > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700">
+                      <Flame size={18} />
+                    </span>
+                    <div>
+                      <p className="font-serif text-[18px] font-medium text-ink leading-none">{streak}-day streak</p>
+                      <p className="text-[11px] text-ink-faint mt-1">Keep the chain going today</p>
+                    </div>
+                  </div>
+                )}
+                {skills?.overallScore === null && skills?.howToImprove && (
+                  <div className="rounded-xl border border-hairline bg-paper px-3 py-2.5">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-ink-faint mb-1">Skills</p>
+                    <p className="text-[13px] font-medium text-ink">{skills.howToImprove}</p>
+                    <p className="mt-1 text-[11px] text-ink-faint">Scores start at 0 — earn them with practice.</p>
+                    <Link href="/dashboard/plannr/skills" className="mt-1.5 inline-block text-[11px] font-medium text-brand">
+                      View skills →
+                    </Link>
+                  </div>
+                )}
+                {weak?.assessed && (
+                  <div className="rounded-xl border border-hairline bg-paper px-3 py-2.5">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-ink-faint mb-1">Focus next</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[13px] font-medium text-ink">{weak.label}</p>
+                      <span className="font-mono text-[12px] text-amber-700">{weak.score}</span>
+                    </div>
+                    <Link href="/dashboard/plannr/skills" className="mt-1.5 inline-block text-[11px] font-medium text-brand">
+                      View skills →
+                    </Link>
+                  </div>
+                )}
+                {strong?.assessed && (
+                  <div className="rounded-xl border border-hairline bg-paper px-3 py-2.5">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-ink-faint mb-1">Strongest skill</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[13px] font-medium text-ink">{strong.label}</p>
+                      <span className="font-mono text-[12px] text-emerald-700">{strong.score}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
+            <SpacedRepetitionWidget />
+
+            <Link
+              href="/dashboard/plannr/revise"
+              className="flex items-center gap-3 rounded-2xl border border-hairline bg-paper-elevated p-4 hover:border-brand/30 transition-colors"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/8 text-brand">
+                <BookOpen size={16} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-medium text-ink">Cheat sheets & revise</p>
+                <p className="text-[11px] text-ink-faint">Pull packs from completed topics</p>
+              </div>
+              <ArrowRight size={14} className="text-ink-faint shrink-0" />
+            </Link>
           </div>
         </div>
       </div>

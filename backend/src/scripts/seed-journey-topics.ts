@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { connectDB } from '../config/db'
 import { JourneyTopic } from '../models/journey/journey-topic.model'
 
-const topics = [
+export const legacyJourneyTopics = [
 
   // ═══════════════════════════════════════════════════════════════════════════
   // STAGE 1 — SPEAK OOP
@@ -3312,9 +3312,12 @@ Anticipate extension. Don't wait for the follow-up to realize you need it.`,
 async function main() {
   await connectDB()
   await JourneyTopic.deleteMany({})
-  await JourneyTopic.insertMany(topics)
-  console.log(`Seeded ${topics.length} journey topics`)
+  await JourneyTopic.insertMany(legacyJourneyTopics)
+  console.log(`Seeded ${legacyJourneyTopics.length} journey topics`)
   process.exit(0)
 }
 
-main().catch(err => { console.error(err); process.exit(1) })
+const invokedDirectly = process.argv[1]?.replace(/\\/g, '/').includes('seed-journey-topics')
+if (invokedDirectly) {
+  main().catch(err => { console.error(err); process.exit(1) })
+}

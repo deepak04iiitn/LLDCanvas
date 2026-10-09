@@ -44,23 +44,48 @@ export interface JourneySkills {
   designSpeed: number
 }
 
+export interface ModuleTopicProgress {
+  completedBlockIds: string[]
+  practiceSolvedIds: string[]
+  checkScores: Record<string, number>
+  masteryScore: number
+  lastVisitedAt?: string
+  completedAt?: string
+}
+
+export interface DiagnosticResult {
+  score: number
+  suggestedLevel: 'scratch' | 'oop' | 'basic-lld' | 'solving'
+  suggestedStage: number
+  answers: { id: string; correct: boolean }[]
+  completedAt?: string
+}
+
 export interface JourneyProfile {
   _id: string
   userId: string
+  planName?: string
   onboardingComplete: boolean
   targetRole: 'sde1' | 'sde2' | 'backend' | 'fullstack' | 'general'
   preparationDays: 7 | 14 | 30 | 60
   currentLevel: 'scratch' | 'oop' | 'basic-lld' | 'solving'
+  focusAreas?: string[]
+  interviewDate?: string
+  dailyMinutes?: number
+  weakSkillsOverride?: string[]
+  moduleProgress?: Record<string, ModuleTopicProgress>
+  diagnostic?: DiagnosticResult
   skills: JourneySkills
   topicsCompleted: string[]
   topicsInProgress: string[]
+  revisionBookmarks?: string[]
   currentFocusSlug: string
   currentStage: number
   startDate: string
   lastActiveDate: string
 }
 
-export type TopicUserStatus = 'completed' | 'in_progress' | 'recommended' | 'locked'
+export type TopicUserStatus = 'completed' | 'in_progress' | 'recommended' | 'available' | 'locked'
 
 export interface TopicContent {
   learn: string
@@ -78,6 +103,96 @@ export interface TopicContent {
   followUpAnswer?: string
 }
 
+export interface DiagramSnapshot {
+  version?: number
+  meta?: { theme?: string; zoom?: number; panX?: number; panY?: number }
+  nodes: unknown[]
+  edges: unknown[]
+}
+
+export interface KnowledgeOption {
+  id: string
+  label: string
+  correct?: boolean
+}
+
+export interface KnowledgeCheck {
+  id: string
+  prompt: string
+  type: 'mcq' | 'multi' | 'short'
+  options?: KnowledgeOption[]
+  explanation?: string
+  modelAnswer?: string
+}
+
+export type ModuleBlockKind =
+  | 'concept'
+  | 'example'
+  | 'real_world'
+  | 'diagram'
+  | 'knowledge_check'
+  | 'tips'
+  | 'mistakes'
+  | 'summary'
+  | 'explain'
+
+export interface ModuleBlock {
+  id: string
+  kind: ModuleBlockKind
+  title: string
+  durationMin?: number
+  body?: string
+  bullets?: string[]
+  steps?: { title: string; body: string }[]
+  diagramSnapshot?: DiagramSnapshot
+  diagramCaption?: string
+  checks?: KnowledgeCheck[]
+}
+
+export interface PracticeSolution {
+  explanation: string
+  diagramSnapshot?: DiagramSnapshot
+  codeSnippet?: string
+  codeLanguage?: string
+}
+
+export interface PracticeCheck {
+  type: 'mcq' | 'multi' | 'short' | 'diagram_mark'
+  options?: KnowledgeOption[]
+  expectedElementIds?: string[]
+  modelAnswer?: string
+  explanation?: string
+}
+
+export interface PracticeItem {
+  id: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  prompt: string
+  hints: string[]
+  solution: PracticeSolution
+  commonMistakes: string[]
+  checks?: PracticeCheck
+  buildsSkills?: string[]
+}
+
+export interface CheatSheetCard {
+  title: string
+  bullets: string[]
+  diagramSnapshot?: DiagramSnapshot
+}
+
+export interface InterviewQA {
+  question: string
+  answer: string
+  tags?: string[]
+}
+
+export interface ExternalPractice {
+  blurb?: string
+  studioPacks?: string[]
+  learnSlugs?: string[]
+}
+
 export interface JourneyTopic {
   _id: string
   slug: string
@@ -89,7 +204,17 @@ export interface JourneyTopic {
   description: string
   estimatedMinutes: number
   icon: string
-  content: TopicContent
+  content?: TopicContent
+  modules?: ModuleBlock[]
+  practiceSet?: PracticeItem[]
+  cheatSheet?: CheatSheetCard[]
+  interviewBank?: InterviewQA[]
+  takeaways?: string[]
+  externalPractice?: ExternalPractice
+  recommendedRoles?: string[]
+  minLevel?: string
+  gatePracticeUntilChecksPass?: boolean
+  masteryThreshold?: number
   difficultyDimensions: {
     oop: 'easy' | 'medium' | 'hard'
     solid: 'easy' | 'medium' | 'hard'
@@ -108,6 +233,9 @@ export interface JourneyTopic {
   linkedStudioPack?: string
   linkedLearnExercise?: string
   userStatus?: TopicUserStatus
+  masteryScore?: number
+  /** primary = on your track; optional = deprioritized for current role */
+  trackPriority?: 'primary' | 'optional'
 }
 
 export interface StageData {
@@ -173,6 +301,9 @@ export interface SkillGroupEntry {
   key: string
   label: string
   score: number
+  assessed?: boolean
+  weight?: number
+  recentReasons?: string[]
 }
 
 export interface SkillGroup {
@@ -183,11 +314,14 @@ export interface SkillGroup {
 export interface SkillsResponse {
   skills: JourneySkills
   skillLabels: Record<string, string>
+  track?: { role: string; label: string }
+  skillItems?: SkillGroupEntry[]
   grouped: Record<string, SkillGroup>
-  overallScore: number
-  weakestSkill: { key: string; label: string; score: number }
-  strongestSkill: { key: string; label: string; score: number }
-  readinessLevel: 'beginner' | 'intermediate' | 'advanced' | 'interview-ready'
+  overallScore: number | null
+  weakestSkill: { key: string; label: string; score: number; assessed?: boolean }
+  strongestSkill: { key: string; label: string; score: number; assessed?: boolean }
+  readinessLevel: 'not-started' | 'beginner' | 'intermediate' | 'advanced' | 'interview-ready'
+  howToImprove?: string | null
 }
 
 export interface DayPlanEntry {
@@ -249,6 +383,88 @@ export interface SkillsPageResponse {
   }
 }
 
+export interface TopicDetailResponse {
+  topic: JourneyTopic
+  progress: ModuleTopicProgress
+  practiceDifficultyDefault: 'easy' | 'medium' | 'hard'
+  bookmarked?: boolean
+}
+
+export interface PracticeSubmitResult {
+  correct: boolean
+  score: number
+  feedback: string
+  solution: PracticeSolution
+  commonMistakes: string[]
+  hints: string[]
+}
+
+export interface CheckSubmitResult {
+  correct: boolean
+  score: number
+  explanation?: string
+  modelAnswer?: string
+}
+
+export interface RevisePackResponse {
+  sheets: {
+    slug: string
+    title: string
+    stage: number
+    cheatSheet: CheatSheetCard[]
+    takeaways: string[]
+    interviewBank: InterviewQA[]
+    completed: boolean
+    buildsSkills?: string[]
+    trackPriority?: 'primary' | 'optional'
+  }[]
+  track?: { role: string; label: string }
+  howToImprove?: string | null
+  focusSkills?: Array<{
+    key: string
+    label: string
+    score: number
+    assessed: boolean
+    recentReasons?: string[]
+  }>
+  bookmarkedTopics?: Array<{
+    slug: string
+    title: string
+    stage: number
+    estimatedMinutes: number
+    completed: boolean
+    hasCheatSheet: boolean
+  }>
+  weakSkill: {
+    key: string
+    label: string
+    value: number
+    assessed?: boolean
+  } | null
+  weakTopics: {
+    slug: string
+    title: string
+    stage: number
+    estimatedMinutes: number
+    kind?: 'learn' | 'revise'
+  }[]
+  stageMeta: Record<number, { label: string; description: string }>
+}
+
+export interface PracticeHubItem extends PracticeItem {
+  topicSlug: string
+  topicTitle: string
+  stage: number
+  topicCompleted: boolean
+  solved?: boolean
+}
+
+export interface DiagnosticQuestion {
+  id: string
+  prompt: string
+  options: { id: string; label: string; correct?: boolean }[]
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const journeyApi = {
@@ -257,6 +473,10 @@ export const journeyApi = {
     targetRole: string
     preparationDays: number
     currentLevel: string
+    focusAreas?: string[]
+    dailyMinutes?: number
+    interviewDate?: string
+    diagnostic?: DiagnosticResult
   }) =>
     request<{ profile: JourneyProfile }>('/plannr/setup', {
       method: 'POST',
@@ -265,6 +485,21 @@ export const journeyApi = {
 
   getProfile: () =>
     request<{ profile: JourneyProfile | null }>('/plannr/profile'),
+
+  /** Change track / focus / pace — keeps skill history; readiness recomputes. */
+  updateProfile: (body: {
+    targetRole?: string
+    focusAreas?: string[]
+    preparationDays?: number
+    dailyMinutes?: number
+    interviewDate?: string | null
+    planName?: string
+    currentLevel?: string
+  }) =>
+    request<{ profile: JourneyProfile }>('/plannr/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   getDashboard: () =>
     request<{
@@ -281,13 +516,67 @@ export const journeyApi = {
     request<{ stages: StageData[] }>('/plannr/roadmap'),
 
   getTopic: (slug: string) =>
-    request<{ topic: JourneyTopic }>(`/plannr/topics/${slug}`),
+    request<TopicDetailResponse>(`/plannr/topics/${slug}`),
+
+  toggleRevisionBookmark: (slug: string) =>
+    request<{ bookmarked: boolean; slug: string }>(`/plannr/topics/${slug}/bookmark`, {
+      method: 'POST',
+    }),
 
   completeTopic: (slug: string, payload: { performance?: 'excellent' | 'good' | 'fair' | 'poor'; exerciseScore?: number; exerciseType?: string }) =>
     request<{ profile: JourneyProfile; nextRecommendation: JourneyRecommendation | null }>(
       `/plannr/topics/${slug}/complete`,
       { method: 'POST', body: JSON.stringify(payload) },
     ),
+
+  saveTopicProgress: (slug: string, body: {
+    completedBlockIds?: string[]
+    practiceSolvedIds?: string[]
+    checkScores?: Record<string, number>
+  }) =>
+    request<{ progress: ModuleTopicProgress }>(`/plannr/topics/${slug}/progress`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  submitPractice: (slug: string, itemId: string, body: {
+    selectedOptionIds?: string[]
+    selectedElementIds?: string[]
+    selfScore?: number
+  }) =>
+    request<PracticeSubmitResult>(`/plannr/topics/${slug}/practice/${itemId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  submitKnowledgeCheck: (slug: string, checkId: string, body: {
+    selectedOptionIds?: string[]
+    selfScore?: number
+  }) =>
+    request<CheckSubmitResult>(`/plannr/topics/${slug}/checks/${checkId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  getRevisePack: () =>
+    request<RevisePackResponse>('/plannr/revise'),
+
+  listPracticeHub: () =>
+    request<{ items: PracticeHubItem[]; defaultDifficulty: 'easy' | 'medium' | 'hard' }>('/plannr/practice'),
+
+  getDiagnostic: () =>
+    request<{ questions: DiagnosticQuestion[] }>('/plannr/diagnostic'),
+
+  submitDiagnostic: (answers: { id: string; optionId: string }[]) =>
+    request<{
+      score: number
+      suggestedLevel: 'scratch' | 'oop' | 'basic-lld' | 'solving'
+      suggestedStage: number
+      answers: { id: string; correct: boolean }[]
+    }>('/plannr/diagnostic/submit', {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    }),
 
   getRecommendation: () =>
     request<{ recommendation: JourneyRecommendation | null }>('/plannr/recommendation'),
@@ -329,7 +618,6 @@ export const journeyApi = {
       body: JSON.stringify(body),
     }),
 
-  // ─── Multi-plan ─────────────────────────────────────────────────────────────
   listPlans: () =>
     request<{ plans: PlannrSummary[] }>('/plannr/plans'),
 
@@ -353,23 +641,18 @@ export const journeyApi = {
   deletePlan: (id: string) =>
     request<{ success: boolean }>(`/plannr/plans/${id}`, { method: 'DELETE' }),
 
-  /** GET /skills/readiness — overall interview readiness score + per-skill scores. */
   getSkillReadiness: () =>
     request<{ interviewReadiness: number; skills: Record<string, number> | null }>('/skills/readiness'),
 
-  /** GET /plannr/daily-practice — today's recommended practice plan. */
   getDailyPractice: () =>
     request<DailyPractice>('/plannr/daily-practice'),
 
-  /** GET /plannr/skills/page — full unified skills page data. */
   getSkillsPage: () =>
     request<SkillsPageResponse>('/plannr/skills/page'),
 
-  /** GET /plannr/spaced-repetition — items due for review today. */
   getSpacedRepetition: () =>
     request<{ items: SpacedRepetitionItem[]; count: number }>('/plannr/spaced-repetition'),
 
-  /** PATCH /plannr/spaced-repetition/:id/dismiss — mark an item as reviewed. */
   dismissSpacedRepetitionItem: (id: string) =>
     request<{ ok: boolean }>(`/plannr/spaced-repetition/${id}/dismiss`, { method: 'PATCH' }),
 }

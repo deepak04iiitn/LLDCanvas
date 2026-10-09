@@ -11,21 +11,28 @@ type StageStatus = 'completed' | 'active' | 'locked'
 function getStageStatus(stage: StageData): StageStatus {
   if (stage.topics.length === 0) return 'locked'
   if (stage.topics.every(t => t.userStatus === 'completed')) return 'completed'
-  if (stage.topics.some(t => ['recommended', 'in_progress', 'completed'].includes(t.userStatus ?? ''))) return 'active'
+  if (stage.topics.some(t =>
+    ['recommended', 'in_progress', 'completed', 'available'].includes(t.userStatus ?? ''),
+  )) return 'active'
   return 'locked'
+}
+
+const STATUS_META: Record<TopicUserStatus, { label: string; dot: string; ring: string }> = {
+  completed:   { label: 'Done',        dot: 'bg-brand',                ring: 'border-brand/20 bg-brand-tint/30' },
+  in_progress: { label: 'In progress', dot: 'bg-amber-400',            ring: 'border-amber-200 bg-amber-50/50' },
+  recommended: { label: 'Up next',     dot: 'bg-brand animate-pulse',  ring: 'border-brand bg-paper ring-2 ring-brand/10' },
+  available:   { label: 'Available',   dot: 'bg-brand/50',             ring: 'border-hairline bg-paper hover:border-brand/30' },
+  locked:      { label: 'Locked',      dot: 'bg-hairline-strong',      ring: 'border-hairline bg-paper opacity-50' },
 }
 
 // -- Topic Card ----------------------------------------------------------------
 function TopicCard({ topic }: { topic: JourneyTopic }) {
-  const status = (topic.userStatus ?? 'locked') as TopicUserStatus
+  const status: TopicUserStatus =
+    topic.userStatus && topic.userStatus in STATUS_META
+      ? topic.userStatus
+      : 'locked'
   const isClickable = status !== 'locked'
-
-  const statusMeta = {
-    completed:   { label: 'Done',        dot: 'bg-brand',         ring: 'border-brand/20 bg-brand-tint/30' },
-    in_progress: { label: 'In progress', dot: 'bg-amber-400',     ring: 'border-amber-200 bg-amber-50/50'  },
-    recommended: { label: 'Up next',     dot: 'bg-brand animate-pulse', ring: 'border-brand bg-paper ring-2 ring-brand/10' },
-    locked:      { label: 'Locked',      dot: 'bg-hairline-strong', ring: 'border-hairline bg-paper opacity-50' },
-  }[status]
+  const statusMeta = STATUS_META[status]
 
   const card = (
     <div className={cn(
@@ -50,20 +57,36 @@ function TopicCard({ topic }: { topic: JourneyTopic }) {
         {status === 'completed'   && <CheckCircle2 size={13} className="shrink-0 text-brand mt-0.5" />}
         {status === 'recommended' && <Star size={13} className="shrink-0 text-brand mt-0.5" />}
         {status === 'in_progress' && <Play size={13} className="shrink-0 text-brand mt-0.5" />}
+        {status === 'available'   && <Play size={13} className="shrink-0 text-ink-faint mt-0.5" />}
       </div>
 
       <div className="flex items-center gap-2 mt-auto">
         <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', statusMeta.dot)} />
         <span className="text-[10px] font-medium text-ink-faint">{statusMeta.label}</span>
+        {topic.trackPriority === 'optional' && (
+          <span className="rounded-full border border-hairline px-1.5 py-px font-mono text-[9px] uppercase tracking-wider text-ink-faint">
+            Optional
+          </span>
+        )}
+        {typeof topic.masteryScore === 'number' && topic.masteryScore > 0 && (
+          <span className="font-mono text-[10px] text-brand">{Math.round(topic.masteryScore)}%</span>
+        )}
         <span className="ml-auto flex items-center gap-0.5 text-[10px] text-ink-faint">
           <Clock size={9} /> {topic.estimatedMinutes}m
         </span>
       </div>
+      {status === 'locked' && (
+        <p className="text-[10px] leading-snug text-ink-faint border-t border-hairline pt-2">
+          {topic.prerequisites?.length
+            ? `Complete prior topics first (${topic.prerequisites.length} required).`
+            : 'Finish the current stage topics to unlock this one.'}
+        </p>
+      )}
     </div>
   )
 
   if (!isClickable) return card
-  return <Link href={`/plannr/topic/${topic.slug}`} className="block h-full">{card}</Link>
+  return <Link href={`/dashboard/plannr/topic/${topic.slug}`} className="block h-full">{card}</Link>
 }
 
 // -- Stage Section -------------------------------------------------------------
@@ -157,7 +180,7 @@ export function JourneyRoadmap() {
 
   return (
     <div className="h-full overflow-y-auto bg-paper">
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="w-full px-6 py-8 lg:px-8">
 
         {/* Back nav */}
         <div className="mb-6">

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 function PrereqBadge({ slug, title, completed }: { slug: string; title: string; icon: string; completed: boolean }) {
   return (
-    <Link href={`/plannr/topic/${slug}`}>
+    <Link href={`/dashboard/plannr/topic/${slug}`}>
       <div className={cn(
         'flex items-center gap-2 px-3 py-2 rounded-xl border text-[12px] transition-colors',
         completed
@@ -309,7 +309,7 @@ export function ExperienceDetail({ slug }: { slug: string }) {
       <div className="mx-auto max-w-3xl px-6 py-8 space-y-8">
         {/* Back */}
         <Link href="/dashboard/plannr/experiences" className="inline-flex items-center gap-1 text-[12px] text-ink-faint hover:text-ink">
-          <ArrowLeft size={12} /> All Experiences
+          <ArrowLeft size={12} /> All mocks
         </Link>
 
         {/* Header */}

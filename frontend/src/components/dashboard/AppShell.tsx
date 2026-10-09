@@ -28,7 +28,6 @@ import {
   Quote,
   ArrowUpRight,
   Plus,
-  Brain,
   Mic,
   BookOpen,
   Layers,
@@ -195,12 +194,6 @@ const NAV_GROUPS: NavGroup[] = [
     id: 'progress',
     label: 'Progress',
     items: [
-      {
-        label: 'Skills',
-        href: '/dashboard/skills',
-        Icon: Brain,
-        isActive: p => p.startsWith('/dashboard/skills'),
-      },
       {
         label: 'Practice Sessions',
         href: '/dashboard/sessions',

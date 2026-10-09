@@ -131,7 +131,7 @@ export function DayPlan() {
 
   return (
     <div className="h-full overflow-y-auto bg-paper">
-      <div className="mx-auto max-w-4xl px-6 py-8">
+      <div className="w-full px-6 py-8 lg:px-8">
 
         {/* -- Header -- */}
         <div className="mb-6">
@@ -175,7 +175,7 @@ export function DayPlan() {
               </div>
               {todayEntry && todayEntry.topics.length > 0 && (
                 <Link
-                  href={`/plannr/topic/${todayEntry.topics[0].slug}`}
+                  href={`/dashboard/plannr/topic/${todayEntry.topics[0].slug}`}
                   className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-brand-hover transition-colors"
                 >
                   <Play size={13} /> Start Today
@@ -313,7 +313,7 @@ export function DayPlan() {
                               {entry.topics.map(t => (
                                 <Link
                                   key={t.slug}
-                                  href={`/plannr/topic/${t.slug}`}
+                                  href={`/dashboard/plannr/topic/${t.slug}`}
                                   className="flex items-center gap-3 px-4 py-3 hover:bg-paper-elevated transition-colors group"
                                 >
                                   <span className="text-base shrink-0 w-6 text-center">{t.icon}</span>

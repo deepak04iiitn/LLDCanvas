@@ -188,7 +188,7 @@ export function DailyPracticeWidget() {
                 <p className="text-[11px] text-ink-faint mt-0.5 line-clamp-1">{plannrTopic.reason}</p>
               </div>
               <Link
-                href={`/plannr/topic/${plannrTopic.slug}`}
+                href={`/dashboard/plannr/topic/${plannrTopic.slug}`}
                 className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-brand px-3 py-1.5 text-[11px] font-semibold text-brand hover:bg-brand/5 transition-colors"
               >
                 Continue <ArrowRight size={10} />
