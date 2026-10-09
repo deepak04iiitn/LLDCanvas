@@ -204,6 +204,17 @@
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* Analyze running — vertical scan line */
+@keyframes analyze-scan {
+  0%   { top: 12%; opacity: 0; }
+  12%  { opacity: 0.55; }
+  88%  { opacity: 0.55; }
+  100% { top: 88%; opacity: 0; }
+}
+.analyze-scan-line {
+  animation: analyze-scan 1.6s ease-in-out infinite;
+}
+
 /* "New" badge shine sweep */
 @keyframes badge-shine {
   0%   { transform: translateX(-120%) skewX(-15deg); }

@@ -47,6 +47,7 @@ import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
 import { useReplayRecorder } from '@/hooks/useReplayRecorder'
 import { WorkspaceTabs } from '@/components/editor/workspace/WorkspaceTabs'
+import { useBackgroundAnalysis } from '@/hooks/useBackgroundAnalysis'
 import { api } from '@/lib/api'
 import { CheckCircle2 } from 'lucide-react'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -114,7 +115,17 @@ function makeCentreNode(
     id: nanoid(8),
     type: nodeType,
     position: { x: centre.x - 90 + jitter(), y: centre.y - 60 + jitter() },
-    data: { nodeType, name: nameMap[nodeType], attributes: [], methods: [], isEditing: true, ...overrides } as UMLNodeData,
+    selected: true,
+    data: {
+      nodeType,
+      name: nameMap[nodeType],
+      attributes: [],
+      methods: [],
+      isEditing: true,
+      // Show attribute/method compartments immediately (not only after a click)
+      alwaysExpanded: true,
+      ...overrides,
+    } as UMLNodeData,
   }
 }
 
@@ -208,6 +219,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     readOnly,
     shareToken,
   })
+
+  // Silent design analysis (Analyze tab reads cache; never interrupts editing)
+  const analysisDiagram = useMemo(
+    () => ({ nodes: nodes as unknown[], edges: edges as unknown[] }),
+    [nodes, edges],
+  )
+  const { cache: analysisCache, ready: analysisReady, analyzeNow } =
+    useBackgroundAnalysis(analysisDiagram)
 
   // ── Browser tab title ────────────────────────────────────────────────────
   useEffect(() => {
@@ -492,7 +511,11 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     (nodeType: UMLNodeData['nodeType'], overrides: Partial<UMLNodeData> = {}) => {
       const node = makeCentreNode(nodeType, rfInstance.current, overrides)
       history.push({ nodes, edges })
-      setNodes(prev => [...prev, node as Node])
+      // Select the new node (and clear others) so compartments open immediately
+      setNodes(prev => [
+        ...prev.map(n => (n.selected ? { ...n, selected: false } : n)),
+        node as Node,
+      ])
       recordReplay({
         type: 'add_node',
         payload: {
@@ -955,10 +978,13 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
             className="h-full"
             diagramId={diagramId}
             diagramTitle={title}
-            diagram={{ nodes, edges }}
+            diagram={analysisDiagram}
             selectedNode={selectedNode}
             selectedEdge={selectedEdge}
             onFocusElement={handleFocusElement}
+            analysisCache={analysisCache}
+            analysisReady={analysisReady}
+            analyzeNow={analyzeNow}
             canvas={
               <>
                 <CanvasView
