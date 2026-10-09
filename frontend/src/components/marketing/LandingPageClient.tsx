@@ -1427,7 +1427,7 @@ export function LandingPageClient() {
               <span className="text-brand">real interviews.</span>
             </motion.h1>
             <motion.p {...fadeUpProps(0.12)} className="mb-10 max-w-md text-[17px] leading-relaxed text-ink-muted">
-              A complete Low-Level Design interview prep platform — UML class diagram canvas,
+              A free Low-Level Design interview prep platform — UML class diagram canvas,
               timed Interview Mode, 110+ curated LLD problems, design pattern training,
               and applied challenge labs built around the exact conditions of the LLD round.
             </motion.p>

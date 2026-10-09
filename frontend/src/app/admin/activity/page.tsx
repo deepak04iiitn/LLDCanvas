@@ -36,18 +36,29 @@ const DAY_OPTIONS = [
   { label: '90d', value: 90 },
 ]
 
-type SortKey = 'date' | 'userName' | 'feature' | 'actions' | 'completions' | 'duration' | 'lastSeen'
+type SortKey = 'date' | 'userName' | 'feature' | 'actions' | 'completions' | 'score' | 'duration' | 'lastSeen'
 type SortDir = 'asc' | 'desc'
 
-const COLUMNS: { key: SortKey; label: string; align?: 'right' }[] = [
-  { key: 'date',        label: 'Date' },
-  { key: 'userName',    label: 'User' },
-  { key: 'feature',     label: 'Feature' },
-  { key: 'actions',     label: 'Actions',     align: 'right' },
-  { key: 'completions', label: 'Completions', align: 'right' },
-  { key: 'duration',    label: 'Duration',    align: 'right' },
-  { key: 'lastSeen',    label: 'Last Active' },
-]
+function getColumns(feature: string): { key: SortKey; label: string; align?: 'right' }[] {
+  if (feature === 'daily-quiz') {
+    return [
+      { key: 'date',     label: 'Quiz day' },
+      { key: 'userName', label: 'User' },
+      { key: 'feature',  label: 'Feature' },
+      { key: 'score',    label: 'Score', align: 'right' },
+      { key: 'lastSeen', label: 'Attempted at' },
+    ]
+  }
+  return [
+    { key: 'date',        label: 'Date' },
+    { key: 'userName',    label: 'User' },
+    { key: 'feature',     label: 'Feature' },
+    { key: 'actions',     label: 'Actions',     align: 'right' },
+    { key: 'completions', label: 'Completions', align: 'right' },
+    { key: 'duration',    label: 'Duration',    align: 'right' },
+    { key: 'lastSeen',    label: 'Last Active' },
+  ]
+}
 
 // ─── Subcomponents ─────────────────────────────────────────────────────────────
 
@@ -86,20 +97,17 @@ function Skeleton({ className }: { className?: string }) {
 
 // ─── CSV export ───────────────────────────────────────────────────────────────
 
-function downloadCsv(rows: UserActivityRow[]) {
-  const headers = ['Date', 'User Name', 'User Email', 'Feature', 'Actions', 'Completions', 'Duration (min)', 'Last Active']
+function downloadCsv(rows: UserActivityRow[], feature: string) {
+  const isQuiz = feature === 'daily-quiz'
+  const headers = isQuiz
+    ? ['Quiz day', 'User Name', 'User Email', 'Score', 'Percent', 'Attempted at']
+    : ['Date', 'User Name', 'User Email', 'Feature', 'Actions', 'Completions', 'Duration (min)', 'Last Active']
   const lines = [
     headers.join(','),
-    ...rows.map(r => [
-      r.date,
-      `"${r.userName}"`,
-      r.userEmail,
-      `"${r.featureLabel}"`,
-      r.actions,
-      r.completions,
-      r.durationMinutes ?? '',
-      r.lastSeen,
-    ].join(',')),
+    ...rows.map(r => (isQuiz
+      ? [r.date, `"${r.userName}"`, r.userEmail, r.scoreLabel ?? '', r.scorePercent ?? '', r.lastSeen]
+      : [r.date, `"${r.userName}"`, r.userEmail, `"${r.featureLabel}"`, r.actions, r.completions, r.durationMinutes ?? '', r.lastSeen]
+    ).join(',')),
   ]
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
   const url  = URL.createObjectURL(blob)
@@ -129,6 +137,8 @@ export default function AdminActivityPage() {
   const [exporting,  setExporting]  = useState(false)
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const columns = getColumns(feature)
+  const isQuiz = feature === 'daily-quiz'
 
   const load = useCallback(async (opts?: { resetPage?: boolean }) => {
     setLoading(true)
@@ -166,7 +176,7 @@ export default function AdminActivityPage() {
     try {
       // fetch all rows (up to 5000) for export
       const data = await adminApi.userActivity({ days, feature, search, page: 1, limit: 100, sortBy: sortKey, sortDir })
-      downloadCsv(data.rows)
+      downloadCsv(data.rows, feature)
     } catch { /* ignore */ }
     finally { setExporting(false) }
   }
@@ -239,7 +249,13 @@ export default function AdminActivityPage() {
             <Filter className="h-3.5 w-3.5 text-ink-faint" />
             <select
               value={feature}
-              onChange={e => { setFeature(e.target.value); setPage(1) }}
+              onChange={e => {
+                const next = e.target.value
+                setFeature(next)
+                setPage(1)
+                if (next === 'daily-quiz') setSortKey('lastSeen')
+                else if (sortKey === 'score') setSortKey('date')
+              }}
               className="rounded-lg border border-hairline bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/30"
             >
               {FEATURES.map(f => (
@@ -275,7 +291,7 @@ export default function AdminActivityPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-hairline bg-hairline/20">
-                {COLUMNS.map(col => (
+                {columns.map(col => (
                   <th
                     key={col.key}
                     onClick={() => handleSort(col.key)}
@@ -296,7 +312,7 @@ export default function AdminActivityPage() {
               {loading ? (
                 [...Array(10)].map((_, i) => (
                   <tr key={i}>
-                    {COLUMNS.map(col => (
+                    {columns.map(col => (
                       <td key={col.key} className="px-4 py-3">
                         <Skeleton className="h-4 rounded" />
                       </td>
@@ -305,7 +321,7 @@ export default function AdminActivityPage() {
                 ))
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={COLUMNS.length} className="px-4 py-16 text-center">
+                  <td colSpan={columns.length} className="px-4 py-16 text-center">
                     <Activity className="mx-auto mb-3 h-8 w-8 text-ink-faint opacity-20" />
                     <p className="text-sm font-medium text-ink-faint">No activity found</p>
                     <p className="mt-1 text-xs text-ink-faint opacity-60">
@@ -316,48 +332,56 @@ export default function AdminActivityPage() {
               ) : (
                 rows.map((row, i) => (
                   <tr key={i} className="hover:bg-hairline/30 transition-colors">
-                    {/* Date */}
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-faint">
                       {row.date}
                     </td>
-
-                    {/* User */}
                     <td className="px-4 py-3">
                       <p className="font-medium text-ink">{row.userName}</p>
                       <p className="text-xs text-ink-faint">{row.userEmail}</p>
                     </td>
-
-                    {/* Feature */}
                     <td className="px-4 py-3">
                       <FeatureBadge slug={row.feature} label={row.featureLabel} />
                     </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3 text-right">
-                      <span className="font-mono text-sm font-bold text-ink">{row.actions}</span>
-                    </td>
-
-                    {/* Completions */}
-                    <td className="px-4 py-3 text-right">
-                      <span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-emerald-600">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {row.completions}
-                      </span>
-                    </td>
-
-                    {/* Duration */}
-                    <td className="px-4 py-3 text-right">
-                      {row.durationMinutes != null ? (
-                        <span className="inline-flex items-center gap-1 font-mono text-sm text-ink">
-                          <Clock className="h-3 w-3 text-ink-faint" />
-                          {row.durationMinutes}m
-                        </span>
-                      ) : (
-                        <span className="text-xs text-ink-faint">—</span>
-                      )}
-                    </td>
-
-                    {/* Last Active */}
+                    {isQuiz ? (
+                      <td className="px-4 py-3 text-right">
+                        {row.scoreLabel ? (
+                          <span className={cn(
+                            'inline-flex items-center gap-1 font-mono text-sm font-semibold',
+                            (row.scorePercent ?? 0) >= 70 ? 'text-emerald-600'
+                              : (row.scorePercent ?? 0) >= 40 ? 'text-amber-600'
+                                : 'text-rose-600',
+                          )}>
+                            <CheckCircle2 className="h-3 w-3" />
+                            {row.scoreLabel}
+                            <span className="text-xs font-normal text-ink-faint">({row.scorePercent}%)</span>
+                          </span>
+                        ) : (
+                          <span className="text-xs text-ink-faint">—</span>
+                        )}
+                      </td>
+                    ) : (
+                      <>
+                        <td className="px-4 py-3 text-right">
+                          <span className="font-mono text-sm font-bold text-ink">{row.actions}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-emerald-600">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {row.completions}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {row.durationMinutes != null ? (
+                            <span className="inline-flex items-center gap-1 font-mono text-sm text-ink">
+                              <Clock className="h-3 w-3 text-ink-faint" />
+                              {row.durationMinutes}m
+                            </span>
+                          ) : (
+                            <span className="text-xs text-ink-faint">—</span>
+                          )}
+                        </td>
+                      </>
+                    )}
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-faint">
                       {row.lastSeen ? format(parseISO(row.lastSeen as unknown as string), 'MMM d, HH:mm') : '—'}
                     </td>

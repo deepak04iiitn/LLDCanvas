@@ -961,6 +961,17 @@ export interface AdminFeatureActivity {
 
 // ─── Plannr types ─────────────────────────────────────────────────────────────
 
+export interface AdminPlannrPreviewViewer {
+  userId: string
+  userName: string
+  userEmail: string
+  userPlan: 'free' | 'pro'
+  visitCount: number
+  firstViewedAt: string
+  lastViewedAt: string
+  sources: string[]
+}
+
 export interface AdminPlannrStats {
   profiles:    { total: number; active: number }
   topics:      { total: number; published: number }
@@ -969,6 +980,13 @@ export interface AdminPlannrStats {
   activity: {
     total: number; recent: number; today: number
     activeUsersToday: number; activeUsersThisPeriod: number
+  }
+  preview?: {
+    uniqueUsersAllTime: number
+    uniqueUsersThisPeriod: number
+    uniqueUsersToday: number
+    visitsThisPeriod: number
+    recentViewers: AdminPlannrPreviewViewer[]
   }
   dailyActivity:   { _id: string; count: number }[]
   activityByType:  { _id: string; count: number }[]
@@ -1141,6 +1159,11 @@ export interface UserActivityRow {
   completions:     number
   durationMinutes: number | null
   lastSeen:        string
+  /** Present on daily-quiz attempt rows */
+  scoreCorrect?:   number
+  scoreTotal?:     number
+  scorePercent?:   number | null
+  scoreLabel?:     string
 }
 
 export interface UserActivitySummary {

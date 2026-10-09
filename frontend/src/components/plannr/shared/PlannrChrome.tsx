@@ -85,6 +85,12 @@ export function PlannrChrome({ children }: { children: React.ReactNode }) {
       .catch(() => setHasPlans(false))
   }, [])
 
+  // Track Free/Pro users viewing Plannr preview / try access
+  useEffect(() => {
+    const source = onSetup ? 'setup' : 'hub'
+    journeyApi.trackPreviewVisit(source).catch(() => {})
+  }, [onSetup])
+
   // Immersive full-page onboarding — no chrome
   if (onSetup) {
     return (

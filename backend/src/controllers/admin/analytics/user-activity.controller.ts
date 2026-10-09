@@ -40,6 +40,9 @@ interface RawRow {
   completions:     number
   durationSeconds: number
   lastSeen:        Date
+  /** Per-attempt quiz score (only for daily-quiz attempt rows) */
+  scoreCorrect?:   number
+  scoreTotal?:     number
 }
 
 // ─── Main handler ───────────────────────────────────────────────────────────────
@@ -61,7 +64,27 @@ export async function adminGetUserActivity(req: Request, res: Response, next: Ne
     const str = (v: unknown) => String(v)
 
     // ── Daily Quiz ────────────────────────────────────────────────────────────
-    if (feature === 'all' || feature === 'daily-quiz') {
+    // Feature-scoped view: one row per attempt with score. Cross-feature "all": day aggregates.
+    if (feature === 'daily-quiz') {
+      const attempts = await QuizAttempt.find({ createdAt: { $gte: since } })
+        .select('userId correctCount total createdAt dateKey')
+        .sort({ createdAt: -1 })
+        .lean()
+      for (const a of attempts) {
+        const createdAt = (a as { createdAt?: Date }).createdAt ?? new Date()
+        allRows.push({
+          userId:          String(a.userId),
+          date:            a.dateKey || createdAt.toISOString().slice(0, 10),
+          feature:         'daily-quiz',
+          actions:         1,
+          completions:     a.correctCount ?? 0,
+          durationSeconds: 0,
+          lastSeen:        createdAt,
+          scoreCorrect:    a.correctCount ?? 0,
+          scoreTotal:      a.total ?? 0,
+        })
+      }
+    } else if (feature === 'all') {
       const data = await QuizAttempt.aggregate([
         { $match: { createdAt: { $gte: since } } },
         { $group: {
@@ -208,6 +231,12 @@ export async function adminGetUserActivity(req: Request, res: Response, next: Ne
         case 'feature':      va = a.feature;         vb = b.feature;         break
         case 'actions':      va = a.actions;         vb = b.actions;         break
         case 'completions':  va = a.completions;     vb = b.completions;     break
+        case 'score': {
+          const pctA = (a.scoreTotal ?? 0) > 0 ? (a.scoreCorrect ?? 0) / (a.scoreTotal as number) : -1
+          const pctB = (b.scoreTotal ?? 0) > 0 ? (b.scoreCorrect ?? 0) / (b.scoreTotal as number) : -1
+          va = pctA; vb = pctB
+          break
+        }
         case 'duration':     va = a.durationSeconds; vb = b.durationSeconds; break
         case 'lastSeen':     va = a.lastSeen.toISOString(); vb = b.lastSeen.toISOString(); break
         default:             va = a.date;            vb = b.date;            break
@@ -223,6 +252,11 @@ export async function adminGetUserActivity(req: Request, res: Response, next: Ne
 
     const rows = slice.map(r => {
       const u = userMap.get(r.userId)
+      const scoreCorrect = r.scoreCorrect
+      const scoreTotal   = r.scoreTotal
+      const scorePercent = scoreCorrect != null && scoreTotal != null && scoreTotal > 0
+        ? Math.round((scoreCorrect / scoreTotal) * 100)
+        : null
       return {
         date:           r.date,
         userId:         r.userId,
@@ -234,6 +268,12 @@ export async function adminGetUserActivity(req: Request, res: Response, next: Ne
         completions:    r.completions,
         durationMinutes: r.durationSeconds > 0 ? Math.round(r.durationSeconds / 60) : null,
         lastSeen:       r.lastSeen,
+        ...(scoreCorrect != null && scoreTotal != null ? {
+          scoreCorrect,
+          scoreTotal,
+          scorePercent,
+          scoreLabel: `${scoreCorrect}/${scoreTotal}`,
+        } : {}),
       }
     })
 

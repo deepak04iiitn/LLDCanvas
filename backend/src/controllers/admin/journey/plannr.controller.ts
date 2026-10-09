@@ -4,6 +4,8 @@ import { JourneyActivity }   from '../../../models/journey/journey-activity.mode
 import { JourneyTopic }      from '../../../models/journey/journey-topic.model'
 import { JourneyExperience } from '../../../models/journey/journey-experience.model'
 import { JourneyTip }        from '../../../models/journey/journey-tip.model'
+import { PlannrPreviewVisit } from '../../../models/journey/plannr-preview-visit.model'
+import { User } from '../../../models/user.model'
 
 // ─── Analytics & stats ────────────────────────────────────────────────────────
 
@@ -28,6 +30,11 @@ export async function adminGetStats(req: Request, res: Response, next: NextFunct
       activityByType,
       popularTopics,
       stageDistribution,
+      previewUniqueAllTime,
+      previewUniquePeriod,
+      previewUniqueToday,
+      previewVisitsPeriod,
+      recentPreviewDocs,
     ] = await Promise.all([
       JourneyProfile.countDocuments(),
       JourneyProfile.countDocuments({ isActive: true }),
@@ -63,11 +70,41 @@ export async function adminGetStats(req: Request, res: Response, next: NextFunct
         { $group: { _id: '$currentStage', count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]),
+      PlannrPreviewVisit.countDocuments(),
+      PlannrPreviewVisit.countDocuments({ lastViewedAt: { $gte: since } }),
+      PlannrPreviewVisit.countDocuments({ lastViewedAt: { $gte: today } }),
+      PlannrPreviewVisit.aggregate([
+        { $match: { lastViewedAt: { $gte: since } } },
+        { $group: { _id: null, visits: { $sum: '$visitCount' } } },
+      ]),
+      PlannrPreviewVisit.find({ lastViewedAt: { $gte: since } })
+        .sort({ lastViewedAt: -1 })
+        .limit(20)
+        .lean(),
     ])
 
     // Unique active users
     const activeUserIds = await JourneyActivity.distinct('userId', { completedAt: { $gte: since } })
     const todayUserIds  = await JourneyActivity.distinct('userId', { completedAt: { $gte: today } })
+
+    const previewUserIds = recentPreviewDocs.map(d => d.userId)
+    const previewUsers = previewUserIds.length
+      ? await User.find({ _id: { $in: previewUserIds } }).select('name email').lean()
+      : []
+    const previewUserMap = new Map(previewUsers.map(u => [String(u._id), u]))
+    const recentPreviewViewers = recentPreviewDocs.map(d => {
+      const u = previewUserMap.get(d.userId)
+      return {
+        userId:       d.userId,
+        userName:     u?.name  ?? 'Unknown',
+        userEmail:    u?.email ?? '',
+        userPlan:     d.userPlan,
+        visitCount:   d.visitCount,
+        firstViewedAt: d.firstViewedAt,
+        lastViewedAt:  d.lastViewedAt,
+        sources:      d.sources,
+      }
+    })
 
     res.json({
       profiles: { total: totalProfiles, active: activeProfiles },
@@ -80,6 +117,13 @@ export async function adminGetStats(req: Request, res: Response, next: NextFunct
         today: todayActivities,
         activeUsersToday: todayUserIds.length,
         activeUsersThisPeriod: activeUserIds.length,
+      },
+      preview: {
+        uniqueUsersAllTime: previewUniqueAllTime,
+        uniqueUsersThisPeriod: previewUniquePeriod,
+        uniqueUsersToday: previewUniqueToday,
+        visitsThisPeriod: previewVisitsPeriod[0]?.visits ?? 0,
+        recentViewers: recentPreviewViewers,
       },
       dailyActivity,
       activityByType,

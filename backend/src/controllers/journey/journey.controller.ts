@@ -5,6 +5,7 @@ import { JourneyTopic, type IJourneyTopic } from '../../models/journey/journey-t
 import { JourneyExperience } from '../../models/journey/journey-experience.model'
 import { JourneyActivity } from '../../models/journey/journey-activity.model'
 import { JourneyTip } from '../../models/journey/journey-tip.model'
+import { PlannrPreviewVisit, type PreviewSource } from '../../models/journey/plannr-preview-visit.model'
 import { QuizAttempt } from '../../models/learn/quiz-attempt.model'
 import { ExperienceAttempt } from '../../models/journey/experience-attempt.model'
 import { SpacedRepetitionQueue } from '../../models/spaced-repetition-queue.model'
@@ -581,6 +582,60 @@ export async function logActivity(req: Request, res: Response, next: NextFunctio
       completedAt:   new Date(),
     })
     res.status(201).json({ activity })
+  } catch (err) {
+    next(err)
+  }
+}
+
+/**
+ * POST /plannr/preview-visit
+ * Record that a Free/Pro user is viewing Plannr preview / try access.
+ * Ultimate users are ignored (they have full access, not preview).
+ */
+export async function trackPreviewVisit(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user!.id
+    const plan = req.user!.plan
+    if (plan !== 'free' && plan !== 'pro') {
+      res.json({ tracked: false, reason: 'full_access' })
+      return
+    }
+
+    const rawSource = String(req.body?.source ?? 'hub')
+    const source: PreviewSource =
+      rawSource === 'setup' || rawSource === 'generate' || rawSource === 'hub'
+        ? rawSource
+        : 'hub'
+    const now = new Date()
+
+    const existing = await PlannrPreviewVisit.findOne({ userId })
+    if (!existing) {
+      await PlannrPreviewVisit.create({
+        userId,
+        userPlan: plan,
+        firstViewedAt: now,
+        lastViewedAt: now,
+        visitCount: 1,
+        sources: [source],
+      })
+      res.status(201).json({ tracked: true, isNew: true })
+      return
+    }
+
+    // Dedupe bursts: only bump visitCount if last view was > 30 minutes ago
+    const THIRTY_MIN = 30 * 60 * 1000
+    const bumpCount = now.getTime() - existing.lastViewedAt.getTime() > THIRTY_MIN
+    const sources = existing.sources.includes(source)
+      ? existing.sources
+      : [...existing.sources, source]
+
+    existing.userPlan = plan
+    existing.lastViewedAt = now
+    existing.sources = sources
+    if (bumpCount) existing.visitCount += 1
+    await existing.save()
+
+    res.json({ tracked: true, isNew: false })
   } catch (err) {
     next(err)
   }

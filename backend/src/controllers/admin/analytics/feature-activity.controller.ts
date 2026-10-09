@@ -42,8 +42,16 @@ async function getActivities(slug: string, since: Date): Promise<ActivityRow[]> 
   switch (slug) {
     case 'daily-quiz': {
       const docs = await QuizAttempt.find({ createdAt: { $gte: since } })
-        .select('userId createdAt').lean()
-      return docs.map(d => ({ userId: String(d.userId), timestamp: (d as { createdAt?: Date }).createdAt ?? new Date(), action: 'Quiz attempt' }))
+        .select('userId createdAt correctCount total').lean()
+      return docs.map(d => {
+        const correct = d.correctCount ?? 0
+        const total   = d.total ?? 0
+        return {
+          userId: String(d.userId),
+          timestamp: (d as { createdAt?: Date }).createdAt ?? new Date(),
+          action: total > 0 ? `Scored ${correct}/${total}` : 'Quiz attempt',
+        }
+      })
     }
     case 'detective': {
       const docs = await DetectiveAttempt.find({ timestamp: { $gte: since } })

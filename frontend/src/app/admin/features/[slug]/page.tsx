@@ -1430,6 +1430,59 @@ function AnalyticsSection({ feature }: { feature: FeatureConfig }) {
           <div className="rounded-xl border border-hairline bg-paper-elevated p-4"><p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Tips published</p><p className="mt-1 text-xl font-bold text-ink">{s?.tips.total ?? 0}</p></div>
           <div className="rounded-xl border border-hairline bg-paper-elevated p-4"><p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Activities (30d)</p><p className="mt-1 text-xl font-bold text-ink">{s?.activity.total ?? 0}</p></div>
         </div>
+
+        {/* Preview / try access (Free + Pro) */}
+        <div className="rounded-2xl border border-violet-200 bg-violet-50/40 p-5 space-y-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-violet-700">Preview access</p>
+            <p className="mt-1 text-sm text-ink-muted">Free &amp; Pro users viewing Plannr try / preview mode</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-violet-200/80 bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Preview users (all time)</p>
+              <p className="mt-1 text-xl font-bold text-violet-800">{s?.preview?.uniqueUsersAllTime ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-violet-200/80 bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Active preview (30d)</p>
+              <p className="mt-1 text-xl font-bold text-violet-800">{s?.preview?.uniqueUsersThisPeriod ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-violet-200/80 bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Preview today</p>
+              <p className="mt-1 text-xl font-bold text-violet-800">{s?.preview?.uniqueUsersToday ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-violet-200/80 bg-white/70 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Visits (30d)</p>
+              <p className="mt-1 text-xl font-bold text-violet-800">{s?.preview?.visitsThisPeriod ?? 0}</p>
+            </div>
+          </div>
+          {(s?.preview?.recentViewers?.length ?? 0) > 0 && (
+            <div className="overflow-hidden rounded-xl border border-violet-200/80 bg-white/70">
+              <div className="border-b border-violet-100 px-4 py-2">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Recent preview viewers</p>
+              </div>
+              <div className="divide-y divide-violet-100">
+                {s!.preview!.recentViewers.slice(0, 10).map(v => (
+                  <div key={v.userId} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-ink">{v.userName}</p>
+                      <p className="truncate text-xs text-ink-faint">{v.userEmail}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-violet-700">
+                        {v.userPlan}
+                      </span>
+                      <p className="mt-0.5 font-mono text-[10px] text-ink-faint">
+                        {v.lastViewedAt ? format(parseISO(v.lastViewedAt), 'MMM d, HH:mm') : '—'}
+                        {' · '}{v.visitCount} visit{v.visitCount === 1 ? '' : 's'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {dailyData.length > 0 && (
           <div className="rounded-2xl border border-hairline bg-paper-elevated p-5">
             <p className="mb-4 font-mono text-[10px] uppercase tracking-widest text-ink-faint">Daily activities — last 30 days</p>
@@ -2101,10 +2154,11 @@ function ProblemsSection({ feature }: { feature: FeatureConfig }) {
 // ─── Feature Activity Tab ─────────────────────────────────────────────────────
 
 const DAY_OPTIONS = [{ label: '7d', value: 7 }, { label: '14d', value: 14 }, { label: '30d', value: 30 }, { label: '90d', value: 90 }]
-type SortKey = 'date' | 'userName' | 'actions' | 'completions' | 'duration' | 'lastSeen'
+type SortKey = 'date' | 'userName' | 'actions' | 'completions' | 'score' | 'duration' | 'lastSeen'
 type SortDir = 'asc' | 'desc'
 
 function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
+  const isQuiz = feature.type === 'quiz'
   const [rows,   setRows]   = useState<UserActivityRow[]>([])
   const [total,  setTotal]  = useState(0)
   const [pages,  setPages]  = useState(1)
@@ -2112,12 +2166,19 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
   const [days,   setDays]   = useState(30)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('date')
+  const [sortKey, setSortKey] = useState<SortKey>(isQuiz ? 'lastSeen' : 'date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [loading, setLoading] = useState(true)
   const [activeCnt,   setActiveCnt]   = useState(0)
   const [totalActions, setTotalActions] = useState(0)
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const avgScorePct = useMemo(() => {
+    if (!isQuiz || rows.length === 0) return null
+    const scored = rows.filter(r => r.scoreTotal != null && r.scoreTotal > 0 && r.scorePercent != null)
+    if (scored.length === 0) return null
+    return Math.round(scored.reduce((s, r) => s + (r.scorePercent ?? 0), 0) / scored.length)
+  }, [isQuiz, rows])
 
   const load = useCallback(async (opts?: { resetPage?: boolean }) => {
     setLoading(true)
@@ -2157,6 +2218,22 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
 
   const inp = 'rounded-lg border border-hairline bg-paper px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-brand/30'
 
+  const columns: [SortKey, string][] = isQuiz
+    ? [
+        ['date',     'Quiz day'],
+        ['userName', 'User'],
+        ['score',    'Score'],
+        ['lastSeen', 'Attempted at'],
+      ]
+    : [
+        ['date',        'Date'],
+        ['userName',    'User'],
+        ['actions',     'Actions'],
+        ['completions', 'Completions'],
+        ['duration',    'Duration'],
+        ['lastSeen',    'Last Active'],
+      ]
+
   return (
     <div className="space-y-5">
       {/* Summary bar */}
@@ -2167,16 +2244,24 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
           <p className="mt-0.5 text-xs text-ink-faint">last {days} days</p>
         </div>
         <div className="rounded-xl border border-hairline bg-paper-elevated p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Total actions</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+            {isQuiz ? 'Quiz attempts' : 'Total actions'}
+          </p>
           <p className="mt-1 text-2xl font-bold text-ink">{loading ? '…' : totalActions}</p>
-          <p className="mt-0.5 text-xs text-ink-faint">across all users</p>
+          <p className="mt-0.5 text-xs text-ink-faint">{isQuiz ? 'individual submissions' : 'across all users'}</p>
         </div>
         <div className="rounded-xl border border-hairline bg-paper-elevated p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Avg / user</p>
-          <p className="mt-1 text-2xl font-bold text-ink">
-            {loading ? '…' : activeCnt > 0 ? Math.round(totalActions / activeCnt) : 0}
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+            {isQuiz ? 'Avg score (page)' : 'Avg / user'}
           </p>
-          <p className="mt-0.5 text-xs text-ink-faint">actions per active user</p>
+          <p className="mt-1 text-2xl font-bold text-ink">
+            {loading ? '…' : isQuiz
+              ? (avgScorePct != null ? `${avgScorePct}%` : '—')
+              : (activeCnt > 0 ? Math.round(totalActions / activeCnt) : 0)}
+          </p>
+          <p className="mt-0.5 text-xs text-ink-faint">
+            {isQuiz ? 'from rows on this page' : 'actions per active user'}
+          </p>
         </div>
       </div>
 
@@ -2212,7 +2297,7 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
       <div className="overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
         <div className="border-b border-hairline bg-hairline/30 px-5 py-3 flex items-center justify-between">
           <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint flex items-center gap-1.5">
-            <Users className="h-3 w-3" /> User activity log
+            <Users className="h-3 w-3" /> {isQuiz ? 'Quiz attempts' : 'User activity log'}
           </p>
           {!loading && <span className="font-mono text-[10px] text-ink-faint">{total.toLocaleString()} rows</span>}
         </div>
@@ -2220,14 +2305,7 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-hairline bg-hairline/20">
-                {([
-                  ['date',        'Date'],
-                  ['userName',    'User'],
-                  ['actions',     'Actions'],
-                  ['completions', 'Completions'],
-                  ['duration',    'Duration'],
-                  ['lastSeen',    'Last Active'],
-                ] as [SortKey, string][]).map(([key, label]) => (
+                {columns.map(([key, label]) => (
                   <th key={key} onClick={() => handleSort(key)}
                     className="cursor-pointer select-none whitespace-nowrap px-4 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-ink-faint hover:text-ink transition-colors">
                     {label}<SortIcon col={key} />
@@ -2239,7 +2317,7 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
               {loading ? (
                 [...Array(8)].map((_, i) => (
                   <tr key={i}>
-                    {[...Array(6)].map((__, j) => (
+                    {[...Array(columns.length)].map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 animate-pulse rounded bg-hairline" />
                       </td>
@@ -2247,7 +2325,7 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
                   </tr>
                 ))
               ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-16 text-center">
+                <tr><td colSpan={columns.length} className="px-4 py-16 text-center">
                   <Users className="mx-auto mb-3 h-7 w-7 text-ink-faint opacity-20" />
                   <p className="text-sm font-medium text-ink-faint">No activity found</p>
                   <p className="mt-1 text-xs text-ink-faint opacity-60">Try a wider date range or clear the search</p>
@@ -2259,17 +2337,38 @@ function FeatureActivityTab({ feature }: { feature: FeatureConfig }) {
                     <p className="font-medium text-ink">{row.userName}</p>
                     <p className="text-xs text-ink-faint">{row.userEmail}</p>
                   </td>
-                  <td className="px-4 py-3 font-mono text-sm font-bold text-ink">{row.actions}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-emerald-600">
-                      <CheckCircle2 className="h-3 w-3" />{row.completions}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.durationMinutes != null
-                      ? <span className="inline-flex items-center gap-1 font-mono text-sm text-ink"><Clock className="h-3 w-3 text-ink-faint" />{row.durationMinutes}m</span>
-                      : <span className="text-xs text-ink-faint">—</span>}
-                  </td>
+                  {isQuiz ? (
+                    <td className="px-4 py-3">
+                      {row.scoreLabel ? (
+                        <span className={cn(
+                          'inline-flex items-center gap-1.5 font-mono text-sm font-semibold',
+                          (row.scorePercent ?? 0) >= 70 ? 'text-emerald-600'
+                            : (row.scorePercent ?? 0) >= 40 ? 'text-amber-600'
+                              : 'text-rose-600',
+                        )}>
+                          <CheckCircle2 className="h-3 w-3" />
+                          {row.scoreLabel}
+                          <span className="text-xs font-normal text-ink-faint">({row.scorePercent}%)</span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-ink-faint">—</span>
+                      )}
+                    </td>
+                  ) : (
+                    <>
+                      <td className="px-4 py-3 font-mono text-sm font-bold text-ink">{row.actions}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1 font-mono text-sm font-semibold text-emerald-600">
+                          <CheckCircle2 className="h-3 w-3" />{row.completions}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {row.durationMinutes != null
+                          ? <span className="inline-flex items-center gap-1 font-mono text-sm text-ink"><Clock className="h-3 w-3 text-ink-faint" />{row.durationMinutes}m</span>
+                          : <span className="text-xs text-ink-faint">—</span>}
+                      </td>
+                    </>
+                  )}
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-faint">
                     {row.lastSeen ? format(parseISO(row.lastSeen as unknown as string), 'MMM d, HH:mm') : '—'}
                   </td>

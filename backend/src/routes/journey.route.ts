@@ -5,6 +5,7 @@ import * as journey from '../controllers/journey/journey.controller'
 const router = Router()
 
 router.post('/setup',                   requireAuth, journey.setup)
+router.post('/preview-visit',           requireAuth, journey.trackPreviewVisit)
 router.get('/profile',                  requireAuth, journey.getProfile)
 router.patch('/profile',                requireAuth, journey.updateActiveProfile)
 router.get('/dashboard',                requireAuth, journey.getDashboard)

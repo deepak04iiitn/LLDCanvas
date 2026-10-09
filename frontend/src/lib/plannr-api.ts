@@ -618,6 +618,13 @@ export const journeyApi = {
       body: JSON.stringify(body),
     }),
 
+  /** Record Free/Pro preview / try access (no-op for Ultimate). */
+  trackPreviewVisit: (source: 'hub' | 'setup' | 'generate' = 'hub') =>
+    request<{ tracked: boolean; isNew?: boolean; reason?: string }>('/plannr/preview-visit', {
+      method: 'POST',
+      body: JSON.stringify({ source }),
+    }),
+
   listPlans: () =>
     request<{ plans: PlannrSummary[] }>('/plannr/plans'),
 
