@@ -11,7 +11,7 @@ export type WorkspaceTabId = 'canvas' | 'analyze'
 
 const TABS: { id: WorkspaceTabId; label: string }[] = [
   { id: 'canvas', label: 'Canvas' },
-  { id: 'analyze', label: 'Analyze' },
+  { id: 'analyze', label: 'Analyze & Score' },
 ]
 
 export interface WorkspaceTabsProps {
