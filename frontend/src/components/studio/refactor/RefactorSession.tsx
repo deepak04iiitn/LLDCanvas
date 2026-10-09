@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CirclePlus,
+  Code2,
   Combine,
   Eraser,
   Hand,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { nanoid } from 'nanoid'
+import { CodePanel } from '@/components/editor/CodePanel'
 import { DebuggerCanvas } from '@/components/studio/debugger/DebuggerCanvas'
 import type { DebuggerDiagram } from '@/components/studio/debugger/DebuggerCanvas'
 import { ExtractClassPanel } from '@/components/studio/refactor/ExtractClassPanel'
@@ -87,6 +89,7 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
   const [reqPanelOpen,      setReqPanelOpen]    = useState(false)
   const [originalCollapsed, setOriginalCollapsed] = useState(false)
   const [hintDismissed,     setHintDismissed]   = useState(false)
+  const [codePanelOpen,     setCodePanelOpen]   = useState(false)
 
   const payload = (pack?.payload ?? {}) as {
     briefing?: string
@@ -349,8 +352,24 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
           <span className="font-mono text-[10px] text-ink-faint">Improve the structure</span>
         </div>
 
-        {/* Right — timer */}
-        <div className="flex items-center gap-4 shrink-0 flex-1 justify-end">
+        {/* Right — code + timer */}
+        <div className="flex items-center gap-3 shrink-0 flex-1 justify-end">
+          <button
+            type="button"
+            onClick={() => setCodePanelOpen(v => !v)}
+            aria-label={codePanelOpen ? 'Switch back to problem' : 'Open code editor'}
+            aria-pressed={codePanelOpen}
+            title={codePanelOpen ? 'Back to Problem (Esc)' : 'Code editor — full workspace'}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] transition-colors',
+              codePanelOpen
+                ? 'bg-brand-tint text-brand'
+                : 'text-ink-muted hover:bg-paper-elevated hover:text-ink',
+            )}
+          >
+            <Code2 size={14} />
+            <span className="hidden sm:inline">Code</span>
+          </button>
           <span className="font-mono text-[13px] tabular-nums text-ink-muted">{timerLabel}</span>
         </div>
       </header>
@@ -830,6 +849,12 @@ export function RefactorSession({ attemptId }: RefactorSessionProps) {
         </div>
       </div>
 
+      <CodePanel
+        open={codePanelOpen}
+        onClose={() => setCodePanelOpen(false)}
+        problemSlug={pack?.slug}
+        backLabel="Problem"
+      />
     </div>
   )
 }

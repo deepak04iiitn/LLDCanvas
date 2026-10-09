@@ -33,6 +33,7 @@ export default function DesignBugProblemsPage() {
       overviewHref="/dashboard/learn/debugger/design"
       overviewLabel="Design Bug Hunt"
       packsLoader={loadDesignBugs}
+      instructionKey="learn-design-bug"
     />
   )
 }

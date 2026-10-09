@@ -9,6 +9,11 @@ import { packIdOf, studioApi, type StudioPackSummary } from '@/lib/studio-api'
 import { useSession } from '@/lib/auth'
 import { useAuthModal } from '@/lib/auth-modal-store'
 import { ProblemCard, type ProblemStatus } from '@/components/studio/shell/ProblemCard'
+import {
+  FeatureInstructionsPanel,
+  ProblemsInstructionsTabs,
+} from '@/components/shared/FeatureInstructionsPanel'
+import type { FeatureInstructionKey } from '@/lib/feature-instructions'
 import { cn } from '@/lib/utils'
 
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
@@ -41,6 +46,8 @@ export interface ProblemLibraryProps {
   overviewLabel?: string
   /** Override the pack fetcher for non-studio features */
   packsLoader?: () => Promise<StudioPackSummary[]>
+  /** When set, shows Problems | Instructions tabs with curated how-to copy */
+  instructionKey?: FeatureInstructionKey
 }
 
 export function ProblemLibrary({
@@ -51,6 +58,7 @@ export function ProblemLibrary({
   overviewHref,
   overviewLabel = 'Overview',
   packsLoader,
+  instructionKey,
 }: ProblemLibraryProps) {
   const router   = useRouter()
   const pathname = usePathname()
@@ -61,6 +69,7 @@ export function ProblemLibrary({
   const [loading,    setLoading]    = useState(true)
   const [startingId, setStartingId] = useState<string | null>(null)
   const [diffFilter, setDiffFilter] = useState<DifficultyFilter>('all')
+  const [view, setView] = useState<'problems' | 'instructions'>('problems')
 
   // Load packs
   useEffect(() => {
@@ -156,34 +165,42 @@ export function ProblemLibrary({
           )}
         </div>
 
-        {/* Filter tabs */}
-        {!loading && packs.length > 0 && (
-          <div className="mx-auto max-w-5xl px-6 pb-0 flex items-center gap-1 overflow-x-auto scrollbar-none">
-            <SlidersHorizontal size={12} className="text-ink-faint shrink-0 mr-1" />
-            {DIFF_TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setDiffFilter(tab.id)}
-                className={cn(
-                  'shrink-0 rounded-t-lg px-4 py-2.5 text-[12px] font-semibold transition-all border-b-2',
-                  diffFilter === tab.id
-                    ? 'border-brand text-brand'
-                    : 'border-transparent text-ink-muted hover:text-ink',
-                )}
-              >
-                {tab.label}
-                {tab.id !== 'all' && counts[tab.id] > 0 && (
-                  <span className="ml-1.5 text-[10px] text-ink-faint font-normal">({counts[tab.id]})</span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="mx-auto max-w-5xl px-6 pb-0 flex items-end justify-between gap-4 flex-wrap">
+          {instructionKey ? (
+            <ProblemsInstructionsTabs view={view} onChange={setView} />
+          ) : (
+            <span />
+          )}
+          {view === 'problems' && !loading && packs.length > 0 && (
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+              <SlidersHorizontal size={12} className="text-ink-faint shrink-0 mr-1" />
+              {DIFF_TABS.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setDiffFilter(tab.id)}
+                  className={cn(
+                    'shrink-0 rounded-t-lg px-4 py-2.5 text-[12px] font-semibold transition-all border-b-2',
+                    diffFilter === tab.id
+                      ? 'border-brand text-brand'
+                      : 'border-transparent text-ink-muted hover:text-ink',
+                  )}
+                >
+                  {tab.label}
+                  {tab.id !== 'all' && counts[tab.id] > 0 && (
+                    <span className="ml-1.5 text-[10px] text-ink-faint font-normal">({counts[tab.id]})</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Body */}
       <div className="mx-auto max-w-5xl px-6 py-8">
-        {loading ? (
+        {instructionKey && view === 'instructions' ? (
+          <FeatureInstructionsPanel featureKey={instructionKey} />
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 size={24} className="animate-spin text-ink-faint" />
             <p className="text-[13px] text-ink-faint">Loading problems…</p>

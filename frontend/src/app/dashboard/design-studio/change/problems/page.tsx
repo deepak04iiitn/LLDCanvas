@@ -9,6 +9,10 @@ import { packIdOf, studioApi, type StudioPackSummary } from '@/lib/studio-api'
 import { useSession } from '@/lib/auth'
 import { useAuthModal } from '@/lib/auth-modal-store'
 import { cn } from '@/lib/utils'
+import {
+  FeatureInstructionsPanel,
+  ProblemsInstructionsTabs,
+} from '@/components/shared/FeatureInstructionsPanel'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -47,6 +51,7 @@ export default function ChangeProblemsPage() {
   const [loading,    setLoading]    = useState(true)
   const [startingId, setStartingId] = useState<string | null>(null)
   const [diff,       setDiff]       = useState<Diff>('all')
+  const [view,       setView]       = useState<'problems' | 'instructions'>('problems')
 
   useEffect(() => {
     let cancelled = false
@@ -118,30 +123,32 @@ export default function ChangeProblemsPage() {
             )}
           </div>
 
-          {/* Filter tabs */}
-          {!loading && packs.length > 0 && (
-            <div className="flex items-center gap-0">
-              {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
-                <button
-                  key={d}
-                  onClick={() => setDiff(d)}
-                  className={cn(
-                    'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
-                    diff === d
-                      ? 'border-ink text-ink'
-                      : 'border-transparent text-ink-faint hover:text-ink-muted',
-                  )}
-                >
-                  {d}
-                  {d !== 'all' && counts[d] > 0 && (
-                    <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
-                      ({counts[d]})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <ProblemsInstructionsTabs view={view} onChange={setView} />
+            {view === 'problems' && !loading && packs.length > 0 && (
+              <div className="flex items-center gap-0">
+                {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setDiff(d)}
+                    className={cn(
+                      'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
+                      diff === d
+                        ? 'border-ink text-ink'
+                        : 'border-transparent text-ink-faint hover:text-ink-muted',
+                    )}
+                  >
+                    {d}
+                    {d !== 'all' && counts[d] > 0 && (
+                      <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
+                        ({counts[d]})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -149,21 +156,26 @@ export default function ChangeProblemsPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl px-6 py-8">
 
-          {loading && (
+          {view === 'instructions' && (
+            <FeatureInstructionsPanel featureKey="studio-change" />
+          )}
+
+
+          {view === 'problems' && loading && (
             <div className="flex items-center justify-center py-32 gap-2.5 text-ink-faint">
               <Loader2 size={16} className="animate-spin" />
               <span className="text-[13px]">Loading problems…</span>
             </div>
           )}
 
-          {!loading && packs.length === 0 && (
+          {view === 'problems' && !loading && packs.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 text-center gap-2">
               <p className="text-[15px] font-medium text-ink">No problems yet</p>
               <p className="text-[13px] text-ink-muted">Problems will appear here once published.</p>
             </div>
           )}
 
-          {!loading && packs.length > 0 && !showDaily && visible.length === 0 && (
+          {view === 'problems' && !loading && packs.length > 0 && !showDaily && visible.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 gap-3 text-center">
               <p className="text-[14px] font-medium text-ink">No {diff} problems</p>
               <button
@@ -175,7 +187,7 @@ export default function ChangeProblemsPage() {
             </div>
           )}
 
-          {!loading && packs.length > 0 && (showDaily || visible.length > 0) && (
+          {view === 'problems' && !loading && packs.length > 0 && (showDaily || visible.length > 0) && (
             <>
               {/* Today's pick */}
               {showDaily && daily && (

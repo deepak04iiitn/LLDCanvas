@@ -8,6 +8,10 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import {
+  FeatureInstructionsPanel,
+  ProblemsInstructionsTabs,
+} from '@/components/shared/FeatureInstructionsPanel'
 import { learnApi } from '@/lib/learn-api'
 import type { ScenarioSummary, RoguelikeScenario, RunState } from '@/lib/learn-api'
 
@@ -132,6 +136,7 @@ export function RoguelikeLobby() {
   const [recentRuns,       setRecentRuns]        = useState<RunState[]>([])
   const [loadingScenarios, setLoadingScenarios]  = useState(true)
   const [diff,             setDiff]              = useState<Diff>('all')
+  const [view,             setView]              = useState<'problems' | 'instructions'>('problems')
   const [selectedScenario, setSelectedScenario]  = useState<ScenarioSummary | null>(null)
   const [fullScenario,     setFullScenario]      = useState<RoguelikeScenario | null>(null)
   const [loadingScenario,  setLoadingScenario]   = useState(false)
@@ -279,36 +284,44 @@ export function RoguelikeLobby() {
             </div>
           </div>
 
-          {/* Filter tabs */}
-          {!loadingScenarios && scenarios.length > 0 && (
-            <div className="flex items-center gap-0">
-              {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDiff(d)}
-                  className={cn(
-                    'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
-                    diff === d
-                      ? 'border-ink text-ink'
-                      : 'border-transparent text-ink-faint hover:text-ink-muted',
-                  )}
-                >
-                  {d}
-                  {d !== 'all' && counts[d] > 0 && (
-                    <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
-                      ({counts[d]})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <ProblemsInstructionsTabs view={view} onChange={setView} />
+            {view === 'problems' && !loadingScenarios && scenarios.length > 0 && (
+              <div className="flex items-center gap-0">
+                {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDiff(d)}
+                    className={cn(
+                      'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
+                      diff === d
+                        ? 'border-ink text-ink'
+                        : 'border-transparent text-ink-faint hover:text-ink-muted',
+                    )}
+                  >
+                    {d}
+                    {d !== 'all' && counts[d] > 0 && (
+                      <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
+                        ({counts[d]})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
       <div className="mx-auto w-full max-w-5xl px-6 py-8">
 
+        {view === 'instructions' && (
+          <FeatureInstructionsPanel featureKey="learn-roguelike" />
+        )}
+
+        {view === 'problems' && (
+        <>
         {/* ── Today's pick ──────────────────────────────────────────────── */}
         {showDaily && daily && (
           <div className="mb-8">
@@ -404,6 +417,8 @@ export function RoguelikeLobby() {
               ))}
             </div>
           </>
+        )}
+        </>
         )}
       </div>
 

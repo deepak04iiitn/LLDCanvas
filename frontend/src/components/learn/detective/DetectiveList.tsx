@@ -6,6 +6,10 @@ import { ArrowRight, Flame, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { learnApi, type DetectiveScenario } from '@/lib/learn-api'
 import { cn } from '@/lib/utils'
+import {
+  FeatureInstructionsPanel,
+  ProblemsInstructionsTabs,
+} from '@/components/shared/FeatureInstructionsPanel'
 
 // ── Meta ──────────────────────────────────────────────────────────────────────
 
@@ -63,6 +67,7 @@ export function DetectiveList() {
   const [scenarios, setScenarios] = useState<DetectiveScenario[]>([])
   const [loading,   setLoading]   = useState(true)
   const [diff,      setDiff]      = useState<Diff>('all')
+  const [view,      setView]      = useState<'problems' | 'instructions'>('problems')
 
   useEffect(() => {
     let cancelled = false
@@ -118,31 +123,33 @@ export function DetectiveList() {
             )}
           </div>
 
-          {/* Filter tabs */}
-          {!loading && scenarios.length > 0 && (
-            <div className="flex items-center gap-0">
-              {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDiff(d)}
-                  className={cn(
-                    'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
-                    diff === d
-                      ? 'border-ink text-ink'
-                      : 'border-transparent text-ink-faint hover:text-ink-muted',
-                  )}
-                >
-                  {d}
-                  {d !== 'all' && counts[d] > 0 && (
-                    <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
-                      ({counts[d]})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <ProblemsInstructionsTabs view={view} onChange={setView} />
+            {view === 'problems' && !loading && scenarios.length > 0 && (
+              <div className="flex items-center gap-0">
+                {(['all', 'easy', 'medium', 'hard'] as Diff[]).map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDiff(d)}
+                    className={cn(
+                      'px-4 py-2.5 text-[12px] font-medium capitalize border-b-2 transition-all',
+                      diff === d
+                        ? 'border-ink text-ink'
+                        : 'border-transparent text-ink-faint hover:text-ink-muted',
+                    )}
+                  >
+                    {d}
+                    {d !== 'all' && counts[d] > 0 && (
+                      <span className="ml-1 font-mono text-[10px] font-normal opacity-50">
+                        ({counts[d]})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -150,16 +157,20 @@ export function DetectiveList() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl px-6 py-8">
 
-          {loading && <SkeletonRows />}
+          {view === 'instructions' && (
+            <FeatureInstructionsPanel featureKey="learn-detective" />
+          )}
 
-          {!loading && scenarios.length === 0 && (
+          {view === 'problems' && loading && <SkeletonRows />}
+
+          {view === 'problems' && !loading && scenarios.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 text-center gap-2">
               <p className="text-[15px] font-medium text-ink">No scenarios yet</p>
               <p className="text-[13px] text-ink-muted">Scenarios will appear here once published.</p>
             </div>
           )}
 
-          {!loading && scenarios.length > 0 && !showDaily && filtered.length === 0 && (
+          {view === 'problems' && !loading && scenarios.length > 0 && !showDaily && filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center py-32 gap-3 text-center">
               <p className="text-[14px] font-medium text-ink">No {diff} scenarios</p>
               <button
@@ -171,7 +182,7 @@ export function DetectiveList() {
             </div>
           )}
 
-          {!loading && scenarios.length > 0 && (showDaily || filtered.length > 0) && (
+          {view === 'problems' && !loading && scenarios.length > 0 && (showDaily || filtered.length > 0) && (
             <>
               {/* Today's pick */}
               {showDaily && daily && (() => {

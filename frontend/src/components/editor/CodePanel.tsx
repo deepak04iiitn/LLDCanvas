@@ -117,6 +117,8 @@ interface CodePanelProps {
   open: boolean
   onClose: () => void
   problemSlug?: string
+  /** Label for the “back” side of the UML/Code switch. Default: UML (editor). Studio sessions use Problem. */
+  backLabel?: string
 }
 
 type ConsoleTab = 'output' | 'stdin'
@@ -154,7 +156,7 @@ const editorTheme = EditorView.theme({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
+export function CodePanel({ open, onClose, problemSlug, backLabel = 'UML' }: CodePanelProps) {
   const [lang,         setLang]         = useState<LangValue>('python-3.14')
   const [code,         setCode]         = useState(STARTERS['python-3.14'])
   const [stdin,        setStdin]        = useState('')
@@ -324,11 +326,11 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
           <div className="flex items-center rounded-xl border border-hairline bg-paper-elevated/80 p-0.5 shadow-sm backdrop-blur-sm">
             <button
               onClick={onClose}
-              title="Back to UML (Esc)"
+              title={`Back to ${backLabel} (Esc)`}
               className="flex items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-hairline/70 hover:text-ink"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">UML</span>
+              <span className="hidden sm:inline">{backLabel}</span>
             </button>
             <div className="flex items-center gap-1.5 rounded-[10px] bg-brand px-2.5 py-1.5 text-xs font-semibold text-brand-foreground shadow-sm">
               <Terminal className="h-3.5 w-3.5 opacity-90" />
@@ -451,7 +453,7 @@ export function CodePanel({ open, onClose, problemSlug }: CodePanelProps) {
             </span>
             <span className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint">
               <Keyboard className="h-3 w-3" />
-              Esc → UML
+              Esc → {backLabel}
             </span>
           </div>
 

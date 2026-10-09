@@ -8,12 +8,14 @@ import {
   Bug,
   ChevronDown,
   ChevronUp,
+  Code2,
   Crosshair,
   Loader2,
   Send,
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { CodePanel } from '@/components/editor/CodePanel'
 import { DebuggerCanvas, traceOutbound } from '@/components/studio/debugger/DebuggerCanvas'
 import { MarkIssueForm } from '@/components/studio/debugger/MarkIssueForm'
 import { type ConsoleLogEntry } from '@/components/studio/debugger/DebugConsole'
@@ -86,6 +88,7 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
   const [markDrawerOpen,     setMarkDrawerOpen]     = useState(false)
   const [consoleOpen,        setConsoleOpen]        = useState(false)
   const [feedbackDismissed,  setFeedbackDismissed]  = useState(false)
+  const [codePanelOpen,      setCodePanelOpen]      = useState(false)
   const consoleEndRef = useRef<HTMLDivElement>(null)
 
   const payload = (pack?.payload ?? {}) as {
@@ -324,8 +327,24 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
           })}
         </div>
 
-        {/* Right — timer + bug count */}
-        <div className="flex items-center gap-4 shrink-0 flex-1 justify-end">
+        {/* Right — code + timer + bug count */}
+        <div className="flex items-center gap-3 shrink-0 flex-1 justify-end">
+          <button
+            type="button"
+            onClick={() => setCodePanelOpen(v => !v)}
+            aria-label={codePanelOpen ? 'Switch back to problem' : 'Open code editor'}
+            aria-pressed={codePanelOpen}
+            title={codePanelOpen ? 'Back to Problem (Esc)' : 'Code editor — full workspace'}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.1em] transition-colors',
+              codePanelOpen
+                ? 'bg-brand-tint text-brand'
+                : 'text-ink-muted hover:bg-paper-elevated hover:text-ink',
+            )}
+          >
+            <Code2 size={14} />
+            <span className="hidden sm:inline">Code</span>
+          </button>
           <span className="font-mono text-[13px] tabular-nums text-ink-muted">{timerLabel}</span>
           <div className="flex items-center gap-1.5 font-mono text-[12px] text-ink-muted">
             <Bug size={13} />
@@ -583,6 +602,13 @@ export function DebuggerSession({ attemptId }: DebuggerSessionProps) {
       {showWalkthrough && (
         <DebuggerWalkthrough onDismiss={() => setShowWalkthrough(false)} />
       )}
+
+      <CodePanel
+        open={codePanelOpen}
+        onClose={() => setCodePanelOpen(false)}
+        problemSlug={pack?.slug}
+        backLabel="Problem"
+      />
     </div>
   )
 }
