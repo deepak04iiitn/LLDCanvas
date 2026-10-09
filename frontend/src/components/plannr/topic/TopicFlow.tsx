@@ -26,7 +26,7 @@ const STEPS: { id: StepId; shortLabel: string; icon: React.ElementType }[] = [
 ]
 
 // --- Smart content renderer ---------------------------------------------------
-// Converts plain text with •, ?, 1. 2. 3., \n into rich formatted markup.
+// Converts plain text with â€¢, ?, 1. 2. 3., \n into rich formatted markup.
 
 /** Returns true if the text looks like source code (class/func defs, braces, semicolons). */
 function looksLikeCode(text: string): boolean {
@@ -113,11 +113,11 @@ function parseContentBlock(raw: string): React.ReactNode[] {
       continue
     }
 
-    // Bullet: starts with •, ·, or -
-    if (/^[•·\-]\s*/.test(line)) {
+    // Bullet: starts with â€¢, Â·, or -
+    if (/^[â€¢Â·\-]\s*/.test(line)) {
       flushNumbered()
       flushArrows()
-      bulletGroup.push(line.replace(/^[•·\-]\s*/, ''))
+      bulletGroup.push(line.replace(/^[â€¢Â·\-]\s*/, ''))
       continue
     }
 
@@ -215,7 +215,7 @@ function SpotItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
 
   return (
-    <StepCard icon={Eye} eyebrow="Spot It — Find the Problem" accent="bg-violet-50">
+    <StepCard icon={Eye} eyebrow="Spot It â€” Find the Problem" accent="bg-violet-50">
       {topic.content.spotItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
           {topic.content.spotItPrompt}
@@ -261,7 +261,7 @@ function FixItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
 
   return (
-    <StepCard icon={Wrench} eyebrow="Fix It — Apply the Solution" accent="bg-orange-50">
+    <StepCard icon={Wrench} eyebrow="Fix It â€” Apply the Solution" accent="bg-orange-50">
       {topic.content.fixItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
           {topic.content.fixItPrompt}
@@ -433,7 +433,7 @@ function StepBar({ steps, current, pastSet, onClickPast }: {
                 </div>
               </button>
 
-              {/* Connector line — flex-1 stretch between nodes */}
+              {/* Connector line â€” flex-1 stretch between nodes */}
               {!isLast && (
                 <div className="flex-1 flex items-start pt-4 min-w-3">
                   <div className={cn(
@@ -491,7 +491,7 @@ export function TopicFlow({ slug }: { slug: string }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
-        <p className="text-[13px] text-ink-faint">Loading topic…</p>
+        <p className="text-[13px] text-ink-faint">Loading topicâ€¦</p>
       </div>
     )
   }
@@ -651,7 +651,7 @@ export function TopicFlow({ slug }: { slug: string }) {
               </span>
             </div>
 
-            {/* Continue / Complete — hidden on Check step (exercise drives nav) */}
+            {/* Continue / Complete â€” hidden on Check step (exercise drives nav) */}
             {currentStep.id !== 'checkUnderstanding' && (
               isLast ? (
                 <button

@@ -63,7 +63,7 @@ function PlanSwitcherButton({ onSwitch }: { onSwitch: () => void }) {
                     p.isActive ? 'bg-brand-tint/30 cursor-default' : 'hover:bg-paper-elevated')}>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-medium text-ink truncate">{p.planName}</p>
-                    <p className="text-[10px] text-ink-faint">{ROLE_LABELS[p.targetRole]} · {p.progressPercent}% done</p>
+                    <p className="text-[10px] text-ink-faint">{ROLE_LABELS[p.targetRole]} Â· {p.progressPercent}% done</p>
                   </div>
                   {p.isActive
                     ? <Check size={12} className="text-brand shrink-0" />
@@ -235,7 +235,7 @@ export function DayPlan() {
                     {hasToday && <span className="text-[11px] font-medium text-brand">Current week</span>}
                     <div className="flex-1 h-px bg-hairline" />
                     <span className="font-mono text-[10px] text-ink-faint">
-                      {weekDone}/{week.length} · {weekTotalMin}m total
+                      {weekDone}/{week.length} Â· {weekTotalMin}m total
                     </span>
                   </div>
 
@@ -283,7 +283,7 @@ export function DayPlan() {
                                 'text-[13px]',
                                 isDone ? 'text-ink-faint' : 'text-ink-muted',
                               )}>
-                                · {entry.focus}
+                                Â· {entry.focus}
                               </span>
                               {isToday && (
                                 <span className="rounded-full bg-brand px-2 py-0.5 text-[9px] font-bold text-white uppercase tracking-widest">

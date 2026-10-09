@@ -71,24 +71,10 @@ export default function EvolutionOverviewPage() {
   return (
     <div className="h-full overflow-y-auto bg-paper">
 
-      {/* ── Sticky breadcrumb ───────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 border-b border-hairline bg-paper/90 backdrop-blur-sm px-6 py-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint">
-          Design Studio &nbsp;/&nbsp; Architecture Evolution
-        </p>
-      </div>
-
       <div className="mx-auto max-w-5xl px-6">
 
         {/* ── HERO ────────────────────────────────────────────────────────── */}
-        <section className="pt-8 pb-14 border-b border-hairline">
-
-          {/* Kicker */}
-          <div className="flex items-center gap-3 mb-6">
-            <span className="font-mono text-[11px] text-ink-faint select-none">004</span>
-            <span className="h-px w-8 bg-hairline-strong" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">Architecture Evolution</span>
-          </div>
+        <section className="pt-14 pb-14 border-b border-hairline">
 
           {/* Headline */}
           <div className="max-w-3xl">

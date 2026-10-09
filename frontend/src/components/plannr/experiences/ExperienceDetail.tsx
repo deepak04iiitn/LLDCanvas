@@ -209,7 +209,7 @@ function PracticeSimulation({ exp }: { exp: JourneyExperience }) {
             key={probeStep}
             value={probeAnswers[probeStep] ?? ''}
             onChange={e => setProbeAnswers(prev => ({ ...prev, [probeStep]: e.target.value }))}
-            placeholder="Your answer… (at least 30 characters for full score)"
+            placeholder="Your answerâ€¦ (at least 30 characters for full score)"
             rows={4}
             className="w-full rounded-xl border border-hairline bg-paper p-3 text-[13px] text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
           />
@@ -245,7 +245,7 @@ function PracticeSimulation({ exp }: { exp: JourneyExperience }) {
                 disabled={submitting}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
               >
-                <Send size={13} /> {submitting ? 'Submitting…' : 'Submit'}
+                <Send size={13} /> {submitting ? 'Submittingâ€¦' : 'Submit'}
               </button>
             )}
           </div>

@@ -88,7 +88,7 @@ function GeneratingScreen({
           {done ? (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
               <h2 className="font-serif text-[30px] font-medium text-ink tracking-tight">Your plan is ready.</h2>
-              <p className="text-[13px] text-ink-muted mt-1.5">Taking you there now…</p>
+              <p className="text-[13px] text-ink-muted mt-1.5">Taking you there nowâ€¦</p>
             </div>
           ) : (
             <>
@@ -228,7 +228,7 @@ export function OnboardingWizard() {
         {/* Header */}
         <div className="mb-7">
           <p className="font-mono text-[10px] tracking-[0.24em] uppercase text-ink-faint mb-3">
-            plannr · setup
+            plannr Â· setup
           </p>
           <h1 className="font-serif text-[34px] font-medium text-ink leading-[0.92] tracking-tight">
             Build your plan.

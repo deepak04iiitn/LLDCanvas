@@ -18,9 +18,6 @@ export default function BudgetOverviewPage() {
 
       {/* ── Hero ───────────────────────────────────────────────────── */}
       <section className="border-b border-hairline px-6 py-14 sm:px-12 sm:py-20 max-w-5xl mx-auto">
-        <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint mb-6">
-          005 ——— Architecture Budget
-        </p>
         <h1 className="font-serif text-[42px] sm:text-[56px] leading-[1.05] text-ink tracking-tight">
           Budget is finite.<br />
           <span className="text-ink/40">Decisions aren&apos;t.</span>

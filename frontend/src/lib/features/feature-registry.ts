@@ -14,14 +14,14 @@ export interface FeatureDefinition {
   analyticsPrefix: string
 }
 
-/** All Interactive LLD features — hubs and plan gates read from this list. */
+/** All Interactive LLD features â€” hubs and plan gates read from this list. */
 export const FEATURES: FeatureDefinition[] = [
   // -- Design Studio (8) -----------------------------------------------------
   {
     id: 'debugger',
     category: 'design-studio',
     label: 'Design Debugger',
-    description: 'Find flaws in authored broken designs — mark issues, submit, reveal.',
+    description: 'Find flaws in authored broken designs â€” mark issues, submit, reveal.',
     href: '/dashboard/design-studio/debugger',
     adminHref: '/admin/studio/debugger',
     minPlan: 'pro',
@@ -66,7 +66,7 @@ export const FEATURES: FeatureDefinition[] = [
     category: 'design-studio',
     label: 'Architecture Budget',
     description:
-      'Marketplace prioritization under scarce budgets — invest, reserve, and face opportunity cost.',
+      'Marketplace prioritization under scarce budgets â€” invest, reserve, and face opportunity cost.',
     href: '/dashboard/design-studio/budget',
     adminHref: '/admin/studio/budget',
     minPlan: 'pro',
@@ -121,7 +121,7 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'code-debugger',
     category: 'learn',
     label: 'Debug Lab',
-    description: 'Code bugs & Design bugs — fix buggy code or hunt structural flaws in UML diagrams and sharpen your design instincts.',
+    description: 'Code bugs & Design bugs â€” fix buggy code or hunt structural flaws in UML diagrams and sharpen your design instincts.',
     href: '/dashboard/learn/debugger',
     flagKey: 'FF_LEARN_DEBUGGER',
     analyticsPrefix: 'learn_debugger',
@@ -132,7 +132,7 @@ export const FEATURES: FeatureDefinition[] = [
     id: 'plannr',
     category: 'plannr',
     label: 'Plannr',
-    description: 'Personalised roadmap, theory, interview experiences, tips & tricks, skill tracking — everything you need to ace LLD interviews.',
+    description: 'Personalised roadmap, theory, interview experiences, tips & tricks, skill tracking â€” everything you need to ace LLD interviews.',
     href: '/dashboard/plannr',
     flagKey: 'FF_PLANNR',
     analyticsPrefix: 'plannr',

@@ -75,11 +75,6 @@ export default function CodeBugLabPage() {
       <div className="border-b border-hairline px-6 pt-14 pb-0 sm:px-10">
         <div className="mx-auto max-w-4xl">
 
-          {/* Kicker */}
-          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-faint mb-5">
-            008 ——— Code Bug Lab
-          </p>
-
           {/* Headline + CTA */}
           <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between pb-10">
             <div className="min-w-0">

@@ -9,6 +9,10 @@ const OLD_SLUGS = [
   'count-words-split','stack-empty-check','gcd-euclidean','matrix-transpose',
   'two-sum-self-pair','run-length-encoding','count-negatives','sum-of-digits',
   'reverse-string-index','missing-number',
+  // leftover DSA batch (not in seed-debugger.ts)
+  'find-max-wrong-loop','count-vowels-wrong','reverse-string-java',
+  'sum-digits-java','two-sum-wrong','stack-underflow-python','gcd-bug',
+  'bubble-sort-index-error','linked-list-length-java',
 ]
 
 async function main() {
