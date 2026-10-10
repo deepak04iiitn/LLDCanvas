@@ -203,16 +203,16 @@ function LockedProblemRow({
       </div>
 
       <div className="absolute inset-0 flex items-center justify-center bg-paper/75 backdrop-blur-[1.5px]">
-        <div className="flex items-center gap-3 border border-hairline bg-paper px-4 py-2.5 shadow-sm">
+        <Link
+          href="/pricing"
+          className="inline-flex items-center gap-3 border border-hairline bg-paper px-4 py-2.5 shadow-sm transition-colors hover:border-brand/30 hover:bg-paper-elevated"
+        >
           <Lock className="h-3.5 w-3.5 text-ink-faint" />
           <span className="text-xs text-ink-muted">Locked on your plan</span>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:text-brand-hover"
-          >
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand">
             Upgrade <ArrowUpRight className="h-3 w-3" />
-          </Link>
-        </div>
+          </span>
+        </Link>
       </div>
     </div>
   )

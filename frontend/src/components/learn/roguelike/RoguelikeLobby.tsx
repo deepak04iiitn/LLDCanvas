@@ -14,7 +14,7 @@ import {
 } from '@/components/shared/FeatureInstructionsPanel'
 import { learnApi } from '@/lib/learn-api'
 import type { ScenarioSummary, RoguelikeScenario, RunState } from '@/lib/learn-api'
-import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
 import { annotateChallengeAccess } from '@/lib/challenge-access'
 import { usePlan } from '@/hooks/usePlan'
 
@@ -65,24 +65,12 @@ function ScenarioRow({
   const diff = (scenario.difficulty ?? 'medium').toLowerCase()
   const meta = DIFF_META[diff] ?? DIFF_META.medium
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'group flex w-full items-center gap-5 px-6 py-4 text-left transition-colors hover:bg-paper-elevated',
-        !isLast && 'border-b border-hairline',
-      )}
-    >
-      {/* Ordinal */}
+  const rowInner = (
+    <>
       <span className="w-5 shrink-0 select-none font-mono text-[11px] text-ink-faint text-right">
         {String(index + 1).padStart(2, '0')}
       </span>
-
-      {/* Difficulty dot */}
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', meta.dot)} title={meta.label} />
-
-      {/* Title + meta */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate font-serif text-[14px] font-medium leading-snug text-ink transition-colors group-hover:text-brand">
@@ -100,23 +88,37 @@ function ScenarioRow({
           {scenario.tags?.[0] ? ` · ${scenario.tags[0].toUpperCase()}` : ''}
         </p>
       </div>
-
-      {/* Difficulty label */}
       <span className={cn('hidden shrink-0 font-mono text-[11px] capitalize sm:block w-12 text-right', meta.text)}>
         {meta.label}
       </span>
+    </>
+  )
 
-      {scenario.locked ? (
-        <ChallengeLockCue
-          requiredPlan={scenario.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-          from={`roguelike_${scenario.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-        />
-      ) : (
-        <ArrowRight
-          size={14}
-          className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-ink"
-        />
+  if (scenario.locked) {
+    return (
+      <LockedChallengeOverlay
+        from={challengeLockFrom('roguelike', scenario.requiredPlan)}
+        className={cn(!isLast && 'border-b border-hairline')}
+      >
+        <div className="flex items-center gap-5 px-6 py-4">{rowInner}</div>
+      </LockedChallengeOverlay>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'group flex w-full items-center gap-5 px-6 py-4 text-left transition-colors hover:bg-paper-elevated',
+        !isLast && 'border-b border-hairline',
       )}
+    >
+      {rowInner}
+      <ArrowRight
+        size={14}
+        className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-ink"
+      />
     </button>
   )
 }
@@ -358,58 +360,70 @@ export function RoguelikeLobby() {
                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => handleScenarioClick(daily)}
-              className="group w-full text-left rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
-            >
-              <div className="flex items-start gap-5">
-                <div className="flex-1 min-w-0">
+            {daily.locked ? (
+              <LockedChallengeOverlay
+                from={challengeLockFrom('roguelike', daily.requiredPlan)}
+                className="rounded-2xl border border-hairline bg-paper-elevated"
+              >
+                <div className="px-6 py-5">
                   <div className="flex items-center gap-2 mb-2.5">
                     <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_META[daily.difficulty]?.dot ?? 'bg-ink/20')} />
                     <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_META[daily.difficulty]?.text ?? 'text-ink-faint')}>
                       {daily.difficulty}
                     </span>
-                    {(daily as any).stages?.length && (
-                      <span className="font-mono text-[10px] text-ink-faint">
-                        {(daily as any).stages.length} stages
-                      </span>
-                    )}
-                    {daily.estimatedMinutes && (
-                      <span className="font-mono text-[10px] text-ink-faint">· ~{daily.estimatedMinutes}m</span>
-                    )}
                   </div>
-                  <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
-                    {daily.title}
-                  </h3>
+                  <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2">{daily.title}</h3>
                   {daily.description && (
-                    <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
-                      {daily.description}
-                    </p>
-                  )}
-                  {daily.tags && daily.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {daily.tags.slice(0, 4).map(tag => (
-                        <span key={tag} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5 uppercase tracking-wide">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">{daily.description}</p>
                   )}
                 </div>
-                {daily.locked ? (
-                  <ChallengeLockCue
-                    requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-                    from={`roguelike_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-                    className="mt-0.5 self-start"
-                  />
-                ) : (
+              </LockedChallengeOverlay>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleScenarioClick(daily)}
+                className="group w-full text-left rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
+              >
+                <div className="flex items-start gap-5">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_META[daily.difficulty]?.dot ?? 'bg-ink/20')} />
+                      <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_META[daily.difficulty]?.text ?? 'text-ink-faint')}>
+                        {daily.difficulty}
+                      </span>
+                      {(daily as any).stages?.length && (
+                        <span className="font-mono text-[10px] text-ink-faint">
+                          {(daily as any).stages.length} stages
+                        </span>
+                      )}
+                      {daily.estimatedMinutes && (
+                        <span className="font-mono text-[10px] text-ink-faint">· ~{daily.estimatedMinutes}m</span>
+                      )}
+                    </div>
+                    <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
+                      {daily.title}
+                    </h3>
+                    {daily.description && (
+                      <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
+                        {daily.description}
+                      </p>
+                    )}
+                    {daily.tags && daily.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {daily.tags.slice(0, 4).map(tag => (
+                          <span key={tag} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5 uppercase tracking-wide">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
                     <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
                   </div>
-                )}
-              </div>
-            </button>
+                </div>
+              </button>
+            )}
           </div>
         )}
 

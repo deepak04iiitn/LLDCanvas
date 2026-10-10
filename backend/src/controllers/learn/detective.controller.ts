@@ -4,6 +4,11 @@ import { DetectiveAttempt } from '../../models/learn/detective-attempt.model'
 import { createError } from '../../middleware/error'
 import { applySkillDeltas } from '../../utils/skill-updater'
 import { randomBytes } from 'crypto'
+import {
+  isChallengeAccessible,
+  requiredPlanForChallenge,
+} from '../../config/challenge-access'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
@@ -27,7 +32,9 @@ export async function listDetective(req: Request, res: Response, next: NextFunct
       .select('slug title mode difficulty stem choices diagramSnapshot codeSnippet status order')
       .sort({ order: 1, createdAt: -1 })
       .lean()
-    res.json({ scenarios })
+    res.json({
+      scenarios: withChallengeLocks('detective', req.user?.plan, scenarios as { slug: string; difficulty?: string }[]),
+    })
   } catch (e) {
     next(e)
   }
@@ -36,6 +43,15 @@ export async function listDetective(req: Request, res: Response, next: NextFunct
 export async function startDetective(req: Request, res: Response, next: NextFunction) {
   try {
     const scenario = await findPublished(paramId(req.params.id))
+    const plan = req.user!.plan
+    if (!isChallengeAccessible('detective', plan, scenario.difficulty, scenario.slug)) {
+      const need = requiredPlanForChallenge('detective', scenario.difficulty, scenario.slug)
+      throw createError(
+        `This challenge requires ${need === 'ultimate' ? 'Ultimate' : 'Pro'}.`,
+        403,
+        { code: 'PLAN_GATE', requiredPlan: need === 'free' ? 'pro' : need },
+      )
+    }
     const attemptId = `det_${randomBytes(8).toString('hex')}`
     res.status(201).json({
       attemptId,

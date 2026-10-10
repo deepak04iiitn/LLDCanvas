@@ -6,7 +6,7 @@ import { formatDistanceToNow, format } from 'date-fns'
 import {
   Users, MessageSquareText, Share2, Clock, GitBranch,
   ChevronRight, CheckCircle2, UserCheck, Save, ArrowUpRight,
-  Layers, Hourglass, RefreshCw, Lock, Rocket, ArrowRight,
+  Layers, Hourglass, RefreshCw, Lock,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/dashboard/AppShell'
@@ -219,7 +219,7 @@ function VersionHistoryDrawer({
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function CollaborationsPage() {
-  const { isFree, plan } = usePlan()
+  const { isFree, isUltimate } = usePlan()
   const [stats,      setStats]      = useState<Stats | null>(null)
   const [diagrams,   setDiagrams]   = useState<Diagrams | null>(null)
   const [events,     setEvents]     = useState<ActivityEvent[]>([])
@@ -234,7 +234,7 @@ export default function CollaborationsPage() {
       const [s, d, a] = await Promise.all([
         api.collab.myStats(),
         api.collab.myDiagrams(),
-        api.collab.activity(),
+        api.collab.activity().catch(() => ({ events: [] as ActivityEvent[] })),
       ])
       setStats(s)
       setDiagrams(d)
@@ -262,66 +262,39 @@ export default function CollaborationsPage() {
   const ownedList       = diagrams?.owned ?? []
   const collaboratingList = diagrams?.collaborating ?? []
 
-  if (isFree) {
-    return (
-      <AppShell>
-        <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-md"
-          >
-            <div className="mb-4 flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-brand/20 bg-brand/10">
-                <Lock className="h-8 w-8 text-brand" />
-              </div>
-            </div>
-            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-brand/20 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-              <Rocket className="h-3 w-3" /> Pro Feature
-            </span>
-            <h2 className="mb-2 text-2xl font-bold text-ink">Collaborations</h2>
-            <p className="mb-2 text-sm text-ink-muted">
-              Invite teammates to edit your diagrams in real-time, with live cursors, @mentions, and discussion threads.
-            </p>
-            <p className="mb-8 text-sm text-ink-muted">
-              <span className="font-medium text-ink">Pro</span>: 2 seats (you + 1) · 3 collaborations / mo
-              &nbsp;·&nbsp;
-              <span className="font-medium text-ink">Ultimate</span>: Unlimited seats &amp; collaborations + activity timeline + version history
-            </p>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-2 rounded-xl bg-brand px-8 py-3 text-sm font-semibold text-white hover:bg-brand/90 transition-colors shadow-lg shadow-brand/25"
-            >
-              Upgrade to Pro <ArrowRight className="h-4 w-4" />
-            </Link>
-          </motion.div>
-        </div>
-      </AppShell>
-    )
-  }
-
   return (
     <AppShell>
       <div className="flex h-full flex-col overflow-hidden">
         {/* Header */}
         <div className="shrink-0 border-b border-hairline bg-paper-elevated px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <h1 className="text-lg font-semibold text-ink">Collaborations</h1>
               <p className="mt-0.5 text-xs text-ink-faint">
                 Real-time shared diagrams, activity feed & version history
               </p>
             </div>
-            <button
-              onClick={() => load(true)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted transition hover:bg-hairline hover:text-ink',
-                refreshing && 'opacity-60 pointer-events-none',
+            <div className="flex shrink-0 items-center gap-2">
+              {isFree && (
+                <Link
+                  href="/pricing?from=collaborations"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:bg-brand-hover"
+                >
+                  <Lock size={12} />
+                  Upgrade to invite
+                </Link>
               )}
-            >
-              <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-              Refresh
-            </button>
+              <button
+                onClick={() => load(true)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg border border-hairline px-3 py-1.5 text-xs text-ink-muted transition hover:bg-hairline hover:text-ink',
+                  refreshing && 'opacity-60 pointer-events-none',
+                )}
+              >
+                <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
 
@@ -394,7 +367,11 @@ export default function CollaborationsPage() {
                         <EmptyState
                           icon={Share2}
                           title="No shared diagrams yet"
-                          body="Invite collaborators from the editor to get started."
+                          body={
+                            isFree
+                              ? 'Upgrade to Pro to invite collaborators from the editor (2 seats · 3 / mo).'
+                              : 'Invite collaborators from the editor to get started.'
+                          }
                         />
                       ) : ownedList.map((d, i) => (
                         <motion.div
@@ -466,12 +443,21 @@ export default function CollaborationsPage() {
                             >
                               Open <ArrowUpRight size={10} />
                             </Link>
-                            <button
-                              onClick={() => setVersionFor({ id: d._id, title: d.title })}
-                              className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-ink-muted transition hover:bg-gray-200 hover:text-ink"
-                            >
-                              <GitBranch size={10} /> History
-                            </button>
+                            {isUltimate ? (
+                              <button
+                                onClick={() => setVersionFor({ id: d._id, title: d.title })}
+                                className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-ink-muted transition hover:bg-gray-200 hover:text-ink"
+                              >
+                                <GitBranch size={10} /> History
+                              </button>
+                            ) : (
+                              <Link
+                                href="/pricing?from=collab_history"
+                                className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-amber-700 transition hover:bg-amber-50"
+                              >
+                                <Lock size={10} /> History
+                              </Link>
+                            )}
                           </div>
                         </motion.div>
                       ))}
@@ -534,12 +520,21 @@ export default function CollaborationsPage() {
                             >
                               Open <ArrowUpRight size={10} />
                             </Link>
-                            <button
-                              onClick={() => setVersionFor({ id: d._id, title: d.title })}
-                              className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-ink-muted transition hover:bg-gray-200 hover:text-ink"
-                            >
-                              <GitBranch size={10} /> History
-                            </button>
+                            {isUltimate ? (
+                              <button
+                                onClick={() => setVersionFor({ id: d._id, title: d.title })}
+                                className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-ink-muted transition hover:bg-gray-200 hover:text-ink"
+                              >
+                                <GitBranch size={10} /> History
+                              </button>
+                            ) : (
+                              <Link
+                                href="/pricing?from=collab_history"
+                                className="flex items-center gap-1 rounded-lg bg-hairline px-2.5 py-1 text-[11px] font-medium text-amber-700 transition hover:bg-amber-50"
+                              >
+                                <Lock size={10} /> History
+                              </Link>
+                            )}
                           </div>
                         </motion.div>
                       ))}
@@ -562,6 +557,22 @@ export default function CollaborationsPage() {
                     {[...Array(5)].map((_, i) => (
                       <div key={i} className="h-14 animate-pulse rounded-xl bg-hairline" />
                     ))}
+                  </div>
+                ) : !isUltimate ? (
+                  <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
+                      <Lock size={16} className="text-amber-600" />
+                    </div>
+                    <p className="text-sm font-medium text-ink-muted">Activity timeline</p>
+                    <p className="max-w-[220px] text-xs text-ink-faint">
+                      Ultimate unlocks the 30-day activity feed and version history.
+                    </p>
+                    <Link
+                      href="/pricing?from=collab_activity"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-brand-foreground transition hover:bg-brand-hover"
+                    >
+                      Upgrade
+                    </Link>
                   </div>
                 ) : events.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">

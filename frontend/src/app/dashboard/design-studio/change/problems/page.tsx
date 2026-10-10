@@ -9,7 +9,7 @@ import { packIdOf, studioApi, type StudioPackSummary } from '@/lib/studio-api'
 import { useSession } from '@/lib/auth'
 import { useAuthModal } from '@/lib/auth-modal-store'
 import { cn } from '@/lib/utils'
-import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
 import { annotateChallengeAccess } from '@/lib/challenge-access'
 import { usePlan } from '@/hooks/usePlan'
 import {
@@ -206,60 +206,74 @@ export default function ChangeProblemsPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <Flame size={11} className="text-amber-500 shrink-0" />
                     <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
-                      Today&apos;s pick
+                      Today's pick
                     </span>
                     <span className="ml-auto font-mono text-[10px] text-ink-faint">
-                      {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date().toLocaleDateString('en-US', {
+                        weekday: 'short', month: 'short', day: 'numeric',
+                      })}
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onStart(daily)}
-                    disabled={!!startingId}
-                    className="group w-full text-left rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all disabled:opacity-60"
-                  >
-                    <div className="flex items-start gap-5">
-                      <div className="flex-1 min-w-0">
+                  {daily.locked ? (
+                    <LockedChallengeOverlay
+                      from={challengeLockFrom('change_one', daily.requiredPlan)}
+                      className="rounded-2xl border border-hairline bg-paper-elevated"
+                    >
+                      <div className="px-6 py-5">
                         <div className="flex items-center gap-2 mb-2.5">
                           <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[(daily.difficulty ?? 'easy').toLowerCase()] ?? 'bg-ink/20')} />
                           <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[(daily.difficulty ?? 'easy').toLowerCase()] ?? 'text-ink-faint')}>
                             {daily.difficulty ?? 'Easy'}
                           </span>
                         </div>
-                        <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
-                          {daily.title}
-                        </h3>
+                        <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2">{daily.title}</h3>
                         {daily.description && (
-                          <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
-                            {daily.description}
-                          </p>
-                        )}
-                        {daily.tags && daily.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 mt-3.5">
-                            {daily.tags.slice(0, 5).map(tag => (
-                              <span key={tag} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5 uppercase tracking-wide">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
+                          <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">{daily.description}</p>
                         )}
                       </div>
-                      {daily.locked ? (
-                        <ChallengeLockCue
-                          requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-                          from={`change_one_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-                          className="mt-0.5 self-start"
-                        />
-                      ) : (
+                    </LockedChallengeOverlay>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onStart(daily)}
+                      disabled={!!startingId}
+                      className="group w-full text-left rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all disabled:opacity-60"
+                    >
+                      <div className="flex items-start gap-5">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[(daily.difficulty ?? 'easy').toLowerCase()] ?? 'bg-ink/20')} />
+                            <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[(daily.difficulty ?? 'easy').toLowerCase()] ?? 'text-ink-faint')}>
+                              {daily.difficulty ?? 'Easy'}
+                            </span>
+                          </div>
+                          <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
+                            {daily.title}
+                          </h3>
+                          {daily.description && (
+                            <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
+                              {daily.description}
+                            </p>
+                          )}
+                          {daily.tags && daily.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-3.5">
+                              {daily.tags.slice(0, 5).map(tag => (
+                                <span key={tag} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5 uppercase tracking-wide">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
                           {startingId === dailyId
                             ? <Loader2 size={14} className="animate-spin" />
                             : <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />}
                         </div>
-                      )}
-                    </div>
-                  </button>
+                      </div>
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -276,18 +290,8 @@ export default function ChangeProblemsPage() {
                       const id   = packIdOf(pack)
                       const d    = (pack.difficulty ?? 'easy').toLowerCase()
                       const last = i === visible.length - 1
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          disabled={!!startingId}
-                          onClick={() => onStart(pack)}
-                          className={cn(
-                            'group w-full text-left flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
-                            !last && 'border-b border-hairline',
-                            startingId === id && 'opacity-60 pointer-events-none',
-                          )}
-                        >
+                      const rowInner = (
+                        <>
                           <span className="font-mono text-[11px] text-ink-faint shrink-0 w-5 text-right select-none">
                             {String(i + 1).padStart(2, '0')}
                           </span>
@@ -305,17 +309,37 @@ export default function ChangeProblemsPage() {
                           <span className={cn('font-mono text-[11px] capitalize shrink-0 hidden sm:block', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                             {pack.difficulty ?? 'easy'}
                           </span>
-                          {pack.locked ? (
-                            <ChallengeLockCue
-                              requiredPlan={pack.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-                              from={`change_one_${pack.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-                            />
-                          ) : startingId === id
+                        </>
+                      )
+
+                      if (pack.locked) {
+                        return (
+                          <LockedChallengeOverlay
+                            key={id}
+                            from={challengeLockFrom('change_one', pack.requiredPlan)}
+                            className={cn(!last && 'border-b border-hairline')}
+                          >
+                            <div className="flex items-center gap-5 px-6 py-4">{rowInner}</div>
+                          </LockedChallengeOverlay>
+                        )
+                      }
+
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          disabled={!!startingId}
+                          onClick={() => onStart(pack)}
+                          className={cn(
+                            'group w-full text-left flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
+                            !last && 'border-b border-hairline',
+                            startingId === id && 'opacity-60 pointer-events-none',
+                          )}
+                        >
+                          {rowInner}
+                          {startingId === id
                             ? <Loader2 size={13} className="animate-spin text-ink-faint shrink-0" />
-                            : <ArrowRight
-                                size={14}
-                                className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all"
-                              />}
+                            : <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />}
                         </button>
                       )
                     })}

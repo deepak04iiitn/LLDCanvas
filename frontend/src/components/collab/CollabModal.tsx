@@ -400,12 +400,18 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInv
                       <Zap size={14} className="text-amber-600" />
                     </div>
                     <p className="text-xs font-semibold text-amber-800">
-                      {atMonthlyLimit ? 'Monthly collaboration limit reached' : 'Collaborator seat limit reached'}
+                      {atMonthlyLimit
+                        ? 'Monthly collaboration limit reached'
+                        : maxInvites === 0
+                          ? 'Collaboration is a Pro feature'
+                          : 'Collaborator seat limit reached'}
                     </p>
                     <p className="mt-0.5 text-[11px] text-amber-700">
                       {atMonthlyLimit
                         ? `Pro allows ${monthlyCap} collaborations per month. Upgrade to Ultimate for unlimited.`
-                        : `Pro allows ${maxInvites} collaborator (+ you) per diagram. Upgrade to invite more.`}
+                        : maxInvites === 0
+                          ? 'Upgrade to Pro to invite teammates (2 seats · 3 collaborations / mo).'
+                          : `Pro allows ${maxInvites} collaborator (+ you) per diagram. Upgrade to invite more.`}
                     </p>
                     <Link
                       href="/pricing?from=collab_limit"

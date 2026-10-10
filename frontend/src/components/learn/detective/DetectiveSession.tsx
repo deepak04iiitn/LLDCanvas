@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Loader2,
@@ -92,6 +92,7 @@ export interface DetectiveSessionProps {
 // ── Component ────────────────────────────────────────────────────────────────
 export function DetectiveSession({ breadcrumb: _breadcrumb }: DetectiveSessionProps) {
   const params = useParams()
+  const router = useRouter()
   const id = String(params.id ?? '')
 
   const [scenario, setScenario] = useState<ScenarioPayload | null>(null)
@@ -119,6 +120,11 @@ export function DetectiveSession({ breadcrumb: _breadcrumb }: DetectiveSessionPr
         }, 1000)
       }
     } catch (e) {
+      const err = e as Error & { code?: string; requiredPlan?: string }
+      if (err.code === 'PLAN_GATE' || /requires/i.test(err.message)) {
+        router.push(`/pricing?from=detective_${err.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`)
+        return
+      }
       toast.error(e instanceof Error ? e.message : 'Failed to start scenario')
     } finally {
       if (!cancelled.value) setLoading(false)

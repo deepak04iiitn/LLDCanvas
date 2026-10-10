@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, Lightbulb, OctagonAlert, Quote, Sparkles } from 'lucide-react'
+import { BookOpen, Check, Lightbulb, OctagonAlert, Quote } from 'lucide-react'
 import {
   FEATURE_INSTRUCTIONS,
   type FeatureInstructionKey,
@@ -79,7 +79,7 @@ export function FeatureInstructionsPanel({ featureKey, className }: FeatureInstr
           <ul className="space-y-3">
             {guide.tips.map(tip => (
               <li key={tip} className="flex gap-2.5 text-[13px] text-ink leading-relaxed">
-                <Sparkles size={12} className="mt-1 shrink-0 text-emerald-500" />
+                <Check size={13} strokeWidth={2.25} className="mt-0.5 shrink-0 text-emerald-600" />
                 <span>{tip}</span>
               </li>
             ))}

@@ -16,7 +16,6 @@ import {
   Infinity,
   Play,
   Lock,
-  Rocket,
   BookOpen,
   CheckCircle2,
 } from 'lucide-react'
@@ -98,6 +97,44 @@ function EditorPreview() {
   )
 }
 
+function StartInterviewCta({
+  isFree,
+  onStart,
+  className,
+  variant = 'primary',
+  showArrow = false,
+}: {
+  isFree: boolean
+  onStart: () => void
+  className?: string
+  variant?: 'primary' | 'inverted'
+  showArrow?: boolean
+}) {
+  const base = cn(
+    'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all',
+    variant === 'inverted'
+      ? 'bg-brand-foreground text-brand hover:opacity-95'
+      : 'bg-brand text-brand-foreground shadow-sm hover:bg-brand-hover',
+    className,
+  )
+  if (isFree) {
+    return (
+      <Link href="/pricing?from=interview_mode" className={base}>
+        <Lock className="h-3.5 w-3.5" />
+        Upgrade to start
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    )
+  }
+  return (
+    <button type="button" onClick={onStart} className={cn(base, 'active:scale-[0.98]')}>
+      <Play className="h-3.5 w-3.5 fill-current" />
+      Start Interview
+      {showArrow && <ArrowRight className="h-4 w-4" />}
+    </button>
+  )
+}
+
 export default function InterviewModePage() {
   const { isFree } = usePlan()
   const [setupOpen, setSetupOpen] = useState(false)
@@ -105,38 +142,10 @@ export default function InterviewModePage() {
   return (
     <AppShell>
       <div className="no-scrollbar flex h-full flex-col overflow-y-auto bg-paper">
-        <InterviewSetupModal open={setupOpen} onClose={() => setSetupOpen(false)} />
+        {!isFree && (
+          <InterviewSetupModal open={setupOpen} onClose={() => setSetupOpen(false)} />
+        )}
 
-        {isFree ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center"
-          >
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-lg shadow-brand/20">
-              <Lock className="h-6 w-6" />
-            </div>
-            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-tint px-3 py-1 text-xs font-semibold text-brand">
-              <Rocket className="h-3 w-3" /> Pro feature
-            </span>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink">Interview Mode</h1>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-muted">
-              Timed LLD sessions with notes, fullscreen focus, and automatic Practice Log tracking.
-            </p>
-            <p className="mt-3 text-sm text-ink-faint">
-              <span className="font-medium text-ink">Pro</span>: 10 sessions/month
-              <span className="mx-2">·</span>
-              <span className="font-medium text-ink">Ultimate</span>: Unlimited + analytics
-            </p>
-            <Link
-              href="/pricing"
-              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
-            >
-              Upgrade to Pro <ArrowRight className="h-4 w-4" />
-            </Link>
-          </motion.div>
-        ) : (
-          <>
             {/* Compact header */}
             <header className="flex shrink-0 items-center justify-between gap-4 border-b border-hairline bg-paper-elevated px-5 py-4 sm:px-8">
               <div className="min-w-0">
@@ -153,14 +162,7 @@ export default function InterviewModePage() {
                   <BookOpen className="h-3.5 w-3.5" />
                   Log
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => setSetupOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-sm transition-all hover:bg-brand-hover active:scale-[0.98]"
-                >
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                  Start Interview
-                </button>
+                <StartInterviewCta isFree={isFree} onStart={() => setSetupOpen(true)} />
               </div>
             </header>
 
@@ -202,15 +204,15 @@ export default function InterviewModePage() {
                   </div>
 
                   <div className="mt-7 flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSetupOpen(true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground shadow-md shadow-brand/20 transition-all hover:bg-brand-hover active:scale-[0.98]"
-                    >
-                      Start Interview
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                    <p className="text-xs text-ink-faint">Opens the editor with a timer</p>
+                    <StartInterviewCta
+                      isFree={isFree}
+                      onStart={() => setSetupOpen(true)}
+                      showArrow
+                      className="px-5 py-3 shadow-md shadow-brand/20"
+                    />
+                    <p className="text-xs text-ink-faint">
+                      {isFree ? 'Pro · 10 sessions/mo · Ultimate unlimited' : 'Opens the editor with a timer'}
+                    </p>
                   </div>
                 </div>
 
@@ -271,22 +273,15 @@ export default function InterviewModePage() {
                       ))}
                     </ul>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSetupOpen(true)}
-                    className={cn(
-                      'inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand-foreground px-5 py-3',
-                      'text-sm font-semibold text-brand transition-opacity hover:opacity-95',
-                    )}
-                  >
-                    <Play className="h-4 w-4 fill-current" />
-                    Start Interview
-                  </button>
+                  <StartInterviewCta
+                    isFree={isFree}
+                    onStart={() => setSetupOpen(true)}
+                    variant="inverted"
+                    className="shrink-0 px-5 py-3"
+                  />
                 </div>
               </section>
             </div>
-          </>
-        )}
       </div>
     </AppShell>
   )

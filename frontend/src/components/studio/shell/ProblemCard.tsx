@@ -1,9 +1,10 @@
 'use client'
 
-import { ArrowRight, CheckCircle2, Clock, Loader2, Play, RotateCcw } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Loader2, Play, RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { StudioPackSummary } from '@/lib/studio-api'
 import { packIdOf } from '@/lib/studio-api'
+import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
 
 export type ProblemStatus = 'not_started' | 'in_progress' | 'completed'
 
@@ -34,23 +35,21 @@ export interface ProblemCardProps {
 }
 
 export function ProblemCard({ pack, status = 'not_started', isStarting, onStart, className }: ProblemCardProps) {
-  const id = packIdOf(pack)
   const diff = (pack.difficulty ?? 'easy').toLowerCase() as string
   const s = STATUS_CONFIG[status]
   const Icon = s.icon
 
-  return (
+  const card = (
     <div
       className={cn(
-        'group relative flex flex-col rounded-2xl border border-hairline bg-paper-elevated overflow-hidden transition-all duration-200 hover:shadow-md hover:border-brand/20',
+        'group relative flex flex-col rounded-2xl border border-hairline bg-paper-elevated overflow-hidden transition-all duration-200',
+        !pack.locked && 'hover:shadow-md hover:border-brand/20',
         className,
       )}
     >
-      {/* Difficulty left bar */}
       <div className={cn('absolute left-0 top-0 bottom-0 w-1', DIFFICULTY_BAR[diff] ?? 'bg-brand/30')} />
 
       <div className="flex-1 flex flex-col pl-5 pr-5 pt-5 pb-4 ml-0.5">
-        {/* Top row: difficulty + completion */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className={cn(
             'inline-flex items-center rounded-full border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide',
@@ -70,19 +69,16 @@ export function ProblemCard({ pack, status = 'not_started', isStarting, onStart,
           )}
         </div>
 
-        {/* Title */}
         <h3 className="font-serif text-[15px] font-medium text-ink leading-snug mb-1.5 group-hover:text-brand transition-colors">
           {pack.title}
         </h3>
 
-        {/* Description */}
         {pack.description && (
           <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 flex-1 mb-3">
             {pack.description}
           </p>
         )}
 
-        {/* Tags */}
         {pack.tags && pack.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {pack.tags.slice(0, 3).map(tag => (
@@ -93,25 +89,39 @@ export function ProblemCard({ pack, status = 'not_started', isStarting, onStart,
           </div>
         )}
 
-        {/* CTA */}
-        <button
-          type="button"
-          disabled={isStarting}
-          onClick={() => onStart(pack)}
-          className={cn(
-            'mt-auto inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all',
-            s.className,
-            isStarting && 'opacity-60 cursor-not-allowed',
-          )}
-        >
-          {isStarting ? (
-            <Loader2 size={13} className="animate-spin" />
-          ) : (
-            <Icon size={13} fill={status === 'not_started' ? 'currentColor' : 'none'} />
-          )}
-          {isStarting ? 'Opening…' : s.label}
-        </button>
+        {!pack.locked && (
+          <button
+            type="button"
+            disabled={isStarting}
+            onClick={() => onStart(pack)}
+            className={cn(
+              'mt-auto inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-[13px] font-semibold transition-all',
+              s.className,
+              isStarting && 'opacity-60 cursor-not-allowed',
+            )}
+          >
+            {isStarting ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Icon size={13} fill={status === 'not_started' ? 'currentColor' : 'none'} />
+            )}
+            {isStarting ? 'Opening…' : s.label}
+          </button>
+        )}
       </div>
     </div>
   )
+
+  if (pack.locked) {
+    return (
+      <LockedChallengeOverlay
+        from={challengeLockFrom(String(pack.type || 'challenge'), pack.requiredPlan)}
+        className="rounded-2xl"
+      >
+        {card}
+      </LockedChallengeOverlay>
+    )
+  }
+
+  return card
 }

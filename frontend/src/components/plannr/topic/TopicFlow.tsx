@@ -217,24 +217,26 @@ function InterviewContextStep({ content }: { content: string }) {
 
 function SpotItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
+  const content = topic.content
+  if (!content) return null
 
   return (
     <StepCard icon={Eye} eyebrow="Spot It — Find the Problem" accent="bg-violet-50">
-      {topic.content.spotItPrompt && (
+      {content.spotItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
-          {topic.content.spotItPrompt}
+          {content.spotItPrompt}
         </p>
       )}
 
-      {topic.content.spotItDesign && (
+      {content.spotItDesign && (
         <div className="rounded-xl border border-hairline bg-[#1E1E2E] text-[#CDD6F4] px-5 py-4 my-4">
           <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">
-            {topic.content.spotItDesign}
+            {content.spotItDesign}
           </p>
         </div>
       )}
 
-      {topic.content.spotItAnswer && (
+      {content.spotItAnswer && (
         !revealed ? (
           <button
             onClick={() => setRevealed(true)}
@@ -245,12 +247,12 @@ function SpotItStep({ topic }: { topic: JourneyTopic }) {
         ) : (
           <div className="mt-2 rounded-xl border border-brand/20 bg-brand-tint/20 px-5 py-4">
             <p className="text-[11px] font-mono font-bold uppercase tracking-widest text-brand mb-3">Answer</p>
-            {looksLikeCode(topic.content.spotItAnswer) ? (
+            {looksLikeCode(content.spotItAnswer) ? (
               <div className="rounded-xl border border-hairline bg-[#1E1E2E] text-[#CDD6F4] px-5 py-4">
-                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{topic.content.spotItAnswer}</p>
+                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{content.spotItAnswer}</p>
               </div>
             ) : (
-              <div className="space-y-2">{parseContentBlock(topic.content.spotItAnswer)}</div>
+              <div className="space-y-2">{parseContentBlock(content.spotItAnswer)}</div>
             )}
           </div>
         )
@@ -263,16 +265,18 @@ function SpotItStep({ topic }: { topic: JourneyTopic }) {
 
 function FixItStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
+  const content = topic.content
+  if (!content) return null
 
   return (
     <StepCard icon={Wrench} eyebrow="Fix It — Apply the Solution" accent="bg-orange-50">
-      {topic.content.fixItPrompt && (
+      {content.fixItPrompt && (
         <p className="text-[15px] font-medium leading-relaxed text-ink mb-4">
-          {topic.content.fixItPrompt}
+          {content.fixItPrompt}
         </p>
       )}
 
-      {topic.content.fixItAnswer && (
+      {content.fixItAnswer && (
         !revealed ? (
           <button
             onClick={() => setRevealed(true)}
@@ -283,12 +287,12 @@ function FixItStep({ topic }: { topic: JourneyTopic }) {
         ) : (
           <div className="mt-2 rounded-xl border border-brand/20 bg-brand-tint/20 px-5 py-4">
             <p className="text-[11px] font-mono font-bold uppercase tracking-widest text-brand mb-3">Fix</p>
-            {looksLikeCode(topic.content.fixItAnswer) ? (
+            {looksLikeCode(content.fixItAnswer) ? (
               <div className="rounded-xl border border-hairline bg-[#1E1E2E] text-[#CDD6F4] px-5 py-4">
-                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{topic.content.fixItAnswer}</p>
+                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{content.fixItAnswer}</p>
               </div>
             ) : (
-              <div className="space-y-2">{parseContentBlock(topic.content.fixItAnswer)}</div>
+              <div className="space-y-2">{parseContentBlock(content.fixItAnswer)}</div>
             )}
           </div>
         )
@@ -301,18 +305,20 @@ function FixItStep({ topic }: { topic: JourneyTopic }) {
 
 function FollowUpStep({ topic }: { topic: JourneyTopic }) {
   const [revealed, setRevealed] = useState(false)
+  const content = topic.content
+  if (!content) return null
 
   return (
     <StepCard icon={Repeat} eyebrow="Follow-up Question" accent="bg-teal-50">
-      {topic.content.followUp && (
+      {content.followUp && (
         <div className="rounded-xl border border-hairline bg-paper px-5 py-4 mb-4">
           <p className="text-[16px] font-medium leading-relaxed text-ink">
-            {topic.content.followUp}
+            {content.followUp}
           </p>
         </div>
       )}
 
-      {topic.content.followUpAnswer && (
+      {content.followUpAnswer && (
         !revealed ? (
           <button
             onClick={() => setRevealed(true)}
@@ -323,12 +329,12 @@ function FollowUpStep({ topic }: { topic: JourneyTopic }) {
         ) : (
           <div className="mt-2 rounded-xl border border-brand/20 bg-brand-tint/20 px-5 py-4">
             <p className="text-[11px] font-mono font-bold uppercase tracking-widest text-brand mb-3">Answer</p>
-            {looksLikeCode(topic.content.followUpAnswer) ? (
+            {looksLikeCode(content.followUpAnswer) ? (
               <div className="rounded-xl border border-hairline bg-[#1E1E2E] text-[#CDD6F4] px-5 py-4">
-                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{topic.content.followUpAnswer}</p>
+                <p className="font-mono text-[12.5px] leading-relaxed whitespace-pre-wrap">{content.followUpAnswer}</p>
               </div>
             ) : (
-              <div className="space-y-2">{parseContentBlock(topic.content.followUpAnswer)}</div>
+              <div className="space-y-2">{parseContentBlock(content.followUpAnswer)}</div>
             )}
           </div>
         )
@@ -518,10 +524,11 @@ export function TopicFlow({ slug }: { slug: string }) {
   // -- Render step content ------------------------------------------------------
   function renderStep() {
     if (!topic) return null
+    const content = topic.content
     switch (currentStep.id) {
-      case 'learn':            return <LearnStep content={topic.content.learn} />
-      case 'whyItMatters':     return <WhyMattersStep content={topic.content.whyItMatters} />
-      case 'interviewContext': return <InterviewContextStep content={topic.content.interviewTip} />
+      case 'learn':            return <LearnStep content={content?.learn ?? ''} />
+      case 'whyItMatters':     return <WhyMattersStep content={content?.whyItMatters ?? ''} />
+      case 'interviewContext': return <InterviewContextStep content={content?.interviewTip ?? ''} />
       case 'spotIt':           return <SpotItStep topic={topic} />
       case 'fixIt':            return <FixItStep topic={topic} />
       case 'checkUnderstanding':

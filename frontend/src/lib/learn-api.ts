@@ -19,9 +19,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const err = new Error(body?.error ?? `API error ${res.status}`) as Error & {
       banned?: boolean
       status?: number
+      code?: string
+      requiredPlan?: string
     }
     err.status = res.status
     err.banned = body?.banned === true
+    err.code = body?.code
+    err.requiredPlan = body?.requiredPlan
     throw err
   }
 
@@ -214,6 +218,8 @@ export interface DetectiveScenario {
   stem: string
   choices: string[]
   order?: number
+  locked?: boolean
+  requiredPlan?: 'free' | 'pro' | 'ultimate'
 }
 
 export interface RoguelikeRun {

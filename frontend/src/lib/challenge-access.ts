@@ -11,6 +11,7 @@ import type { PlanName } from './plans'
 export type ChallengeFeature =
   | 'roguelike'
   | 'debug-lab'
+  | 'detective'
   | 'debugger'
   | 'refactor'
   | 'change_one'
@@ -45,6 +46,29 @@ export const CHALLENGE_ALLOWLISTS: Record<ChallengeFeature, Allowlists> = {
       'content-management',
       'music-streaming',
       'warehouse-management',
+    ],
+  },
+
+  // Pattern Detective
+  detective: {
+    freeEasy: [
+      'observer-order-status',
+      'factory-payment-gateway',
+      'explain-when-none',
+      'singleton-config-b2',
+      'factory-shape-b2',
+      'observer-newsletter-b2',
+      'builder-pizza-b2',
+      'decorator-coffee-b2',
+      'strategy-sort-b2',
+      'facade-home-theater-b2',
+    ],
+    proMedium: [
+      'simple-dto-trap',
+      'decorator-notifier',
+      'abstract-factory-ui-b2',
+      'strategy-payment-b2',
+      'observer-event-b2',
     ],
   },
 

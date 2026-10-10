@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Flame } from 'lucide-react'
 import { toast } from 'sonner'
 import { learnApi, type DebuggerChallenge } from '@/lib/learn-api'
-import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
 import { annotateChallengeAccess } from '@/lib/challenge-access'
 import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/utils'
@@ -214,56 +214,66 @@ export function DebuggerProblemList() {
                       </span>
                     </div>
 
-                    <Link
-                      href={daily.locked
-                        ? `/pricing?from=debug_lab_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`
-                        : `/dashboard/learn/debugger/${id}`}
-                      className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
-                    >
-                      <div className="flex items-start gap-5">
-                        <div className="flex-1 min-w-0">
+                    {daily.locked ? (
+                      <LockedChallengeOverlay
+                        from={challengeLockFrom('debug_lab', daily.requiredPlan)}
+                        className="rounded-2xl border border-hairline bg-paper-elevated"
+                      >
+                        <div className="px-6 py-5">
                           <div className="flex items-center gap-2 mb-2.5">
                             <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[d] ?? 'bg-ink/20')} />
                             <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                               {daily.difficulty ?? 'Easy'}
                             </span>
-                            {daily.bugType && (
-                              <span className="font-mono text-[10px] text-ink-faint border border-hairline rounded-full px-2 py-0.5 uppercase tracking-wide">
-                                {daily.bugType.replace(/-/g, ' ')}
-                              </span>
-                            )}
                           </div>
-                          <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
-                            {daily.title}
-                          </h3>
+                          <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2">{daily.title}</h3>
                           {daily.description && (
-                            <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
-                              {daily.description}
-                            </p>
-                          )}
-                          {langs.length > 0 && (
-                            <div className="flex gap-1.5 mt-3">
-                              {langs.map(l => (
-                                <span key={l} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5">
-                                  {l}
-                                </span>
-                              ))}
-                            </div>
+                            <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">{daily.description}</p>
                           )}
                         </div>
-                        {daily.locked ? (
-                          <ChallengeLockCue
-                            requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-                            from={`debug_lab_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-                            className="mt-0.5 self-start"
-                          />
-                        ) : (
+                      </LockedChallengeOverlay>
+                    ) : (
+                      <Link
+                        href={`/dashboard/learn/debugger/${id}`}
+                        className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
+                      >
+                        <div className="flex items-start gap-5">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2.5">
+                              <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[d] ?? 'bg-ink/20')} />
+                              <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[d] ?? 'text-ink-faint')}>
+                                {daily.difficulty ?? 'Easy'}
+                              </span>
+                              {daily.bugType && (
+                                <span className="font-mono text-[10px] text-ink-faint border border-hairline rounded-full px-2 py-0.5 uppercase tracking-wide">
+                                  {daily.bugType.replace(/-/g, ' ')}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
+                              {daily.title}
+                            </h3>
+                            {daily.description && (
+                              <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
+                                {daily.description}
+                              </p>
+                            )}
+                            {langs.length > 0 && (
+                              <div className="flex gap-1.5 mt-3">
+                                {langs.map(l => (
+                                  <span key={l} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5">
+                                    {l}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
                             <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
                           </div>
-                        )}
-                      </div>
-                    </Link>
+                        </div>
+                      </Link>
+                    )}
                   </div>
                 )
               })()}
@@ -283,19 +293,8 @@ export function DebuggerProblemList() {
                       const last = i === filtered.length - 1
                       const langs = (c.variants ?? [])
                         .map(v => LANG_SHORT[v.language] ?? v.language).slice(0, 3)
-                      const href = c.locked
-                        ? `/pricing?from=debug_lab_${c.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`
-                        : `/dashboard/learn/debugger/${id}`
-                      return (
-                        <Link
-                          key={id}
-                          href={href}
-                          className={cn(
-                            'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
-                            !last && 'border-b border-hairline',
-                            c.locked && 'opacity-80',
-                          )}
-                        >
+                      const rowInner = (
+                        <>
                           <span className="font-mono text-[11px] text-ink-faint shrink-0 w-5 text-right select-none">
                             {String(i + 1).padStart(2, '0')}
                           </span>
@@ -314,14 +313,30 @@ export function DebuggerProblemList() {
                           <span className={cn('font-mono text-[11px] capitalize shrink-0 hidden sm:block w-12 text-right', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                             {c.difficulty ?? 'easy'}
                           </span>
-                          {c.locked ? (
-                            <ChallengeLockCue
-                              requiredPlan={c.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
-                              from={`debug_lab_${c.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
-                            />
-                          ) : (
-                            <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />
+                        </>
+                      )
+                      if (c.locked) {
+                        return (
+                          <LockedChallengeOverlay
+                            key={id}
+                            from={challengeLockFrom('debug_lab', c.requiredPlan)}
+                            className={cn(!last && 'border-b border-hairline')}
+                          >
+                            <div className="flex items-center gap-5 px-6 py-4">{rowInner}</div>
+                          </LockedChallengeOverlay>
+                        )
+                      }
+                      return (
+                        <Link
+                          key={id}
+                          href={`/dashboard/learn/debugger/${id}`}
+                          className={cn(
+                            'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
+                            !last && 'border-b border-hairline',
                           )}
+                        >
+                          {rowInner}
+                          <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />
                         </Link>
                       )
                     })}

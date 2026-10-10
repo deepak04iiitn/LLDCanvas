@@ -167,7 +167,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: '/dashboard/interview-mode',
         Icon: Mic,
         isActive: p => p.startsWith('/dashboard/interview-mode'),
-        minPlan: 'pro',
       },
       {
         label: 'Practice Problems',
@@ -186,7 +185,6 @@ const NAV_GROUPS: NavGroup[] = [
         href: '/dashboard/collaborations',
         Icon: Users,
         isActive: p => p.startsWith('/dashboard/collaborations'),
-        minPlan: 'pro',
       },
     ],
   },

@@ -10,6 +10,9 @@ import {
   FeatureInstructionsPanel,
   ProblemsInstructionsTabs,
 } from '@/components/shared/FeatureInstructionsPanel'
+import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
+import { annotateChallengeAccess } from '@/lib/challenge-access'
+import { usePlan } from '@/hooks/usePlan'
 
 // ── Meta ──────────────────────────────────────────────────────────────────────
 
@@ -64,6 +67,7 @@ function SkeletonRows() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export function DetectiveList() {
+  const { plan } = usePlan()
   const [scenarios, setScenarios] = useState<DetectiveScenario[]>([])
   const [loading,   setLoading]   = useState(true)
   const [diff,      setDiff]      = useState<Diff>('all')
@@ -72,11 +76,15 @@ export function DetectiveList() {
   useEffect(() => {
     let cancelled = false
     learnApi.detective.list()
-      .then(d => { if (!cancelled) setScenarios(d.scenarios ?? []) })
+      .then(d => {
+        if (!cancelled) {
+          setScenarios(annotateChallengeAccess('detective', plan ?? 'free', d.scenarios ?? []))
+        }
+      })
       .catch(e => toast.error(e instanceof Error ? e.message : 'Failed to load scenarios'))
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [plan])
 
   const counts = useMemo(() => ({
     all:    scenarios.length,
@@ -203,35 +211,55 @@ export function DetectiveList() {
                       </span>
                     </div>
 
-                    <Link
-                      href={`/dashboard/learn/detective/${id}`}
-                      className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
-                    >
-                      <div className="flex items-start gap-5">
-                        <div className="flex-1 min-w-0">
+                    {daily.locked ? (
+                      <LockedChallengeOverlay
+                        from={challengeLockFrom('detective', daily.requiredPlan)}
+                        className="rounded-2xl border border-hairline bg-paper-elevated"
+                      >
+                        <div className="px-6 py-5">
                           <div className="flex items-center gap-2 mb-2.5">
                             <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[d] ?? 'bg-ink/20')} />
                             <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                               {daily.difficulty ?? 'Medium'}
                             </span>
-                            <span className="font-mono text-[10px] text-ink-faint border border-hairline rounded-full px-2 py-0.5 uppercase tracking-wide">
-                              {mode}
-                            </span>
                           </div>
-                          <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
-                            {daily.title}
-                          </h3>
+                          <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2">{daily.title}</h3>
                           {daily.stem && (
-                            <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
-                              {daily.stem}
-                            </p>
+                            <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">{daily.stem}</p>
                           )}
                         </div>
-                        <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
-                          <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                      </LockedChallengeOverlay>
+                    ) : (
+                      <Link
+                        href={`/dashboard/learn/detective/${id}`}
+                        className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
+                      >
+                        <div className="flex items-start gap-5">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2.5">
+                              <span className={cn('h-2 w-2 rounded-full shrink-0', DIFF_DOT[d] ?? 'bg-ink/20')} />
+                              <span className={cn('font-mono text-[10px] font-semibold uppercase tracking-[0.1em]', DIFF_TEXT[d] ?? 'text-ink-faint')}>
+                                {daily.difficulty ?? 'Medium'}
+                              </span>
+                              <span className="font-mono text-[10px] text-ink-faint border border-hairline rounded-full px-2 py-0.5 uppercase tracking-wide">
+                                {mode}
+                              </span>
+                            </div>
+                            <h3 className="font-serif text-[20px] font-medium text-ink leading-snug mb-2 group-hover:text-brand transition-colors">
+                              {daily.title}
+                            </h3>
+                            {daily.stem && (
+                              <p className="text-[13px] text-ink-muted leading-relaxed line-clamp-2 max-w-2xl">
+                                {daily.stem}
+                              </p>
+                            )}
+                          </div>
+                          <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
+                            <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                          </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    )}
                   </div>
                 )
               })()}
@@ -250,15 +278,8 @@ export function DetectiveList() {
                       const d    = (s.difficulty ?? 'medium').toLowerCase()
                       const mode = MODE_LABELS[s.mode] ?? s.mode
                       const last = i === filtered.length - 1
-                      return (
-                        <Link
-                          key={id}
-                          href={`/dashboard/learn/detective/${id}`}
-                          className={cn(
-                            'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
-                            !last && 'border-b border-hairline',
-                          )}
-                        >
+                      const rowInner = (
+                        <>
                           <span className="font-mono text-[11px] text-ink-faint shrink-0 w-5 text-right select-none">
                             {String(i + 1).padStart(2, '0')}
                           </span>
@@ -279,6 +300,29 @@ export function DetectiveList() {
                           <span className={cn('font-mono text-[11px] capitalize shrink-0 hidden sm:block w-12 text-right', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                             {s.difficulty ?? 'medium'}
                           </span>
+                        </>
+                      )
+                      if (s.locked) {
+                        return (
+                          <LockedChallengeOverlay
+                            key={id}
+                            from={challengeLockFrom('detective', s.requiredPlan)}
+                            className={cn(!last && 'border-b border-hairline')}
+                          >
+                            <div className="flex items-center gap-5 px-6 py-4">{rowInner}</div>
+                          </LockedChallengeOverlay>
+                        )
+                      }
+                      return (
+                        <Link
+                          key={id}
+                          href={`/dashboard/learn/detective/${id}`}
+                          className={cn(
+                            'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
+                            !last && 'border-b border-hairline',
+                          )}
+                        >
+                          {rowInner}
                           <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />
                         </Link>
                       )

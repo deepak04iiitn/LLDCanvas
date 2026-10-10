@@ -7,7 +7,7 @@ import {
   Check, X, Rocket, Crown, Zap, ArrowRight,
   Code2, Users, BookOpen, BarChart3, Terminal,
   Clock, Lock, Infinity as InfinityIcon, Star, FlaskConical, Info,
-  Flame, Map, Bug, Wrench, RefreshCcw, Pencil, TrendingUp, DollarSign, Gamepad2,
+  Flame, Map, Bug, Wrench, RefreshCcw, Pencil, TrendingUp, DollarSign, Gamepad2, Search,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -113,6 +113,7 @@ const FEATURES: FeatureRow[] = [
   { label: 'Practice Problems',        icon: Code2,       free: '10 Easy only', pro: 'All Easy + 10 Medium', ultimate: 'Easy + Medium + Hard', highlight: false },
   { label: 'Daily Quiz',               icon: Flame,       free: 'Unlimited',   pro: 'Unlimited',   ultimate: 'Unlimited',  highlight: true  },
   { label: 'Roguelike',                icon: Gamepad2,    free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Pattern Detective',        icon: Search,      free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
   { label: 'Debug Lab',                icon: Bug,         free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
   { label: 'Debug & Fix',              icon: Wrench,      free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
   { label: 'Refactor',                 icon: RefreshCcw,  free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },

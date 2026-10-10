@@ -24,7 +24,7 @@ router.get('/score/config', requireAuth, score.getActiveConfig)
 
 // ── Detective ─────────────────────────────────────────────────────────────────
 /** Public browse — start/submit/history require auth. */
-router.get('/detective', detective.listDetective)
+router.get('/detective', optionalAuth, detective.listDetective)
 // history MUST come before /:id to avoid param collision
 router.get('/detective/history', requireAuth, detective.getAttemptHistory)
 router.post('/detective/:id/start', requireAuth, detective.startDetective)
