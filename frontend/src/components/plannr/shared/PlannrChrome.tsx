@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { journeyApi } from '@/lib/plannr-api'
 import { cn } from '@/lib/utils'
-import { JourneySidebar } from '@/components/plannr/shared/JourneySidebar'
 import { PlannrSwitcher } from '@/components/plannr/shared/PlannrSwitcher'
 import { usePlan } from '@/hooks/usePlan'
 
@@ -70,10 +69,11 @@ function isSetupPath(path: string) {
   return path === '/dashboard/plannr/setup' || path.startsWith('/dashboard/plannr/setup/')
 }
 
-/**
- * When the user has any Plannr plans: full-bleed content + thin top nav (no left dashboard sidebar).
- * When no plans yet: keep the journey sidebar for setup/intro browsing.
- */
+function isHubPath(path: string) {
+  return path === '/dashboard/plannr'
+}
+
+/** Preview banner + top nav on subpages; hub/setup are chrome-free. */
 function PreviewBanner() {
   return (
     <div className="shrink-0 border-b border-amber-500/25 bg-amber-500/10 px-4 py-2.5 sm:px-8">
@@ -81,7 +81,7 @@ function PreviewBanner() {
         <p className="flex items-center gap-2 text-sm text-ink">
           <Crown className="h-4 w-4 shrink-0 text-amber-600" />
           <span>
-            You’re <span className="font-semibold">previewing Plannr</span>. Upgrade to Ultimate to use this plan.
+            You’re <span className="font-semibold">previewing Plannr</span>. Upgrade to Ultimate to use this feature completely.
           </span>
         </p>
         <Link
@@ -98,16 +98,9 @@ function PreviewBanner() {
 export function PlannrChrome({ children }: { children: React.ReactNode }) {
   const path = usePathname()
   const onSetup = isSetupPath(path)
+  const onHub = isHubPath(path)
   const { isUltimate, loading: planLoading } = usePlan()
-  const [hasPlans, setHasPlans] = useState<boolean | null>(null)
   const showPreview = !planLoading && !isUltimate
-
-  useEffect(() => {
-    journeyApi
-      .listPlans()
-      .then(d => setHasPlans((d.plans?.length ?? 0) > 0))
-      .catch(() => setHasPlans(false))
-  }, [])
 
   // Track Free/Pro users viewing Plannr preview / try access
   useEffect(() => {
@@ -116,35 +109,21 @@ export function PlannrChrome({ children }: { children: React.ReactNode }) {
     journeyApi.trackPreviewVisit(source).catch(() => {})
   }, [onSetup, showPreview])
 
-  // Immersive full-page onboarding — no chrome
-  if (onSetup) {
+  // Hub + setup: no Plannr nav — content only (preview banner still shown when needed)
+  if (onSetup || onHub) {
     return (
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
         {showPreview && <PreviewBanner />}
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</div>
-      </div>
-    )
-  }
-
-  if (hasPlans === null || hasPlans) {
-    return (
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
-        {showPreview && <PreviewBanner />}
-        {hasPlans && <PlannrTopNav />}
         <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
       {showPreview && <PreviewBanner />}
-      <div className="flex min-h-0 flex-1">
-        <div className="hidden md:block shrink-0">
-          <JourneySidebar />
-        </div>
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</div>
-      </div>
+      <PlannrTopNav />
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">{children}</div>
     </div>
   )
 }
