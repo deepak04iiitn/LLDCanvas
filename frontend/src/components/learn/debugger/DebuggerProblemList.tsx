@@ -38,6 +38,16 @@ const LANG_SHORT: Record<string, string> = {
   'typescript-deno': 'TypeScript',
 }
 
+/** Show a few language names + “+ many more” so users don’t think only 3 are supported. */
+function langPreview(variants: { language: string }[] | undefined, limit = 3) {
+  const all = (variants ?? []).map(v => LANG_SHORT[v.language] ?? v.language)
+  const shown = all.slice(0, limit)
+  const hasMore = all.length > limit
+  return { shown, hasMore, line: shown.length
+    ? `${shown.join(' · ')}${hasMore ? ' · + many more' : ''}`
+    : '' }
+}
+
 function getDailyChallenge(challenges: DebuggerChallenge[]): DebuggerChallenge | null {
   if (!challenges.length) return null
   const dayOfYear = Math.floor(
@@ -198,8 +208,7 @@ export function DebuggerProblemList() {
               {showDaily && daily && (() => {
                 const id   = daily.slug || daily._id || daily.id || ''
                 const d    = (daily.difficulty ?? 'easy').toLowerCase()
-                const langs = (daily.variants ?? [])
-                  .map(v => LANG_SHORT[v.language] ?? v.language).slice(0, 3)
+                const { shown: langs, hasMore: moreLangs } = langPreview(daily.variants)
                 return (
                   <div className="mb-8">
                     <div className="flex items-center gap-2 mb-3">
@@ -259,12 +268,17 @@ export function DebuggerProblemList() {
                               </p>
                             )}
                             {langs.length > 0 && (
-                              <div className="flex gap-1.5 mt-3">
+                              <div className="flex flex-wrap gap-1.5 mt-3">
                                 {langs.map(l => (
                                   <span key={l} className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5">
                                     {l}
                                   </span>
                                 ))}
+                                {moreLangs && (
+                                  <span className="font-mono text-[10px] text-ink-faint border border-hairline rounded px-1.5 py-0.5">
+                                    + many more
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -291,8 +305,7 @@ export function DebuggerProblemList() {
                       const id   = c.slug || c._id || c.id || ''
                       const d    = (c.difficulty ?? 'easy').toLowerCase()
                       const last = i === filtered.length - 1
-                      const langs = (c.variants ?? [])
-                        .map(v => LANG_SHORT[v.language] ?? v.language).slice(0, 3)
+                      const { line: langLine } = langPreview(c.variants)
                       const rowInner = (
                         <>
                           <span className="font-mono text-[11px] text-ink-faint shrink-0 w-5 text-right select-none">
@@ -306,7 +319,7 @@ export function DebuggerProblemList() {
                             {c.bugType && (
                               <p className="mt-0.5 font-mono text-[10px] text-ink-faint truncate">
                                 {c.bugType.replace(/-/g, ' ').toUpperCase()}
-                                {langs.length > 0 && ` · ${langs.join(' · ')}`}
+                                {langLine && ` · ${langLine}`}
                               </p>
                             )}
                           </div>
