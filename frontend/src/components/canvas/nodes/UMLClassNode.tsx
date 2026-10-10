@@ -327,10 +327,11 @@ interface AttrRowProps {
   onDelete: (id: string) => void
   autoOpen?: boolean
   onConsumedAutoOpen?: () => void
+  readOnly?: boolean
 }
 
-function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen }: AttrRowProps) {
-  const [editing, setEditing] = useState(autoOpen)
+function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen, readOnly }: AttrRowProps) {
+  const [editing, setEditing] = useState(autoOpen && !readOnly)
   const [draft, setDraft]     = useState<UMLAttribute>(attr)
 
   // Tell the parent we've consumed the auto-open request only AFTER this row
@@ -343,7 +344,7 @@ function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (autoOpen) onConsumedAutoOpen?.() }, [])
 
-  function open()   { setDraft({ ...attr }); setEditing(true) }
+  function open()   { if (readOnly) return; setDraft({ ...attr }); setEditing(true) }
   function cancel() { setDraft({ ...attr }); setEditing(false) }
   function commit() {
     const name = draft.name.trim()
@@ -406,11 +407,15 @@ function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpe
 
   return (
     <div
-      className="group/row nodrag flex cursor-pointer items-center px-2 py-[3px]
-                 hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
+      className={cn(
+        'group/row nodrag flex items-center px-2 py-[3px]',
+        readOnly
+          ? 'cursor-default'
+          : 'cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/30',
+      )}
       onPointerDown={e => e.stopPropagation()}
       onClick={open}
-      title="Click to edit"
+      title={readOnly ? undefined : 'Click to edit'}
     >
       <span className={cn(
         'flex-1 select-none truncate font-mono text-[11px] leading-5 text-gray-700 dark:text-gray-300',
@@ -418,17 +423,19 @@ function AttrRow({ attr, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpe
       )}>
         {formatAttribute(attr)}
       </span>
-      <button
-        onPointerDown={e => e.stopPropagation()}
-        onClick={e => { e.stopPropagation(); onDelete(attr.id) }}
-        className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
-                   hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
-                   dark:text-gray-600 dark:hover:text-red-400"
-        tabIndex={-1}
-        title="Remove"
-      >
-        <Trash2 className="h-2.5 w-2.5" />
-      </button>
+      {!readOnly && (
+        <button
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onDelete(attr.id) }}
+          className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
+                     hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
+                     dark:text-gray-600 dark:hover:text-red-400"
+          tabIndex={-1}
+          title="Remove"
+        >
+          <Trash2 className="h-2.5 w-2.5" />
+        </button>
+      )}
     </div>
   )
 }
@@ -441,17 +448,18 @@ interface MethodRowProps {
   onDelete: (id: string) => void
   autoOpen?: boolean
   onConsumedAutoOpen?: () => void
+  readOnly?: boolean
 }
 
-function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen }: MethodRowProps) {
-  const [editing, setEditing] = useState(autoOpen)
+function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoOpen = false, onConsumedAutoOpen, readOnly }: MethodRowProps) {
+  const [editing, setEditing] = useState(autoOpen && !readOnly)
   const [draft, setDraft]     = useState<UMLMethod>(method)
 
   // See the matching comment in AttrRow - same fix, same reason.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (autoOpen) onConsumedAutoOpen?.() }, [])
 
-  function open()   { setDraft({ ...method }); setEditing(true) }
+  function open()   { if (readOnly) return; setDraft({ ...method }); setEditing(true) }
   function cancel() { setDraft({ ...method }); setEditing(false) }
   function commit() {
     const name = draft.name.trim()
@@ -570,11 +578,15 @@ function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoO
 
   return (
     <div
-      className="group/row nodrag flex cursor-pointer items-center px-2 py-[3px]
-                 hover:bg-slate-50/80 dark:hover:bg-slate-800/30"
+      className={cn(
+        'group/row nodrag flex items-center px-2 py-[3px]',
+        readOnly
+          ? 'cursor-default'
+          : 'cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/30',
+      )}
       onPointerDown={e => e.stopPropagation()}
       onClick={open}
-      title="Click to edit"
+      title={readOnly ? undefined : 'Click to edit'}
     >
       <span className={cn(
         'flex-1 select-none truncate font-mono text-[11px] leading-5 text-gray-700 dark:text-gray-300',
@@ -583,17 +595,19 @@ function MethodRow({ method, className: nodeClassName, onUpdate, onDelete, autoO
       )}>
         {formatMethod(method, nodeClassName)}
       </span>
-      <button
-        onPointerDown={e => e.stopPropagation()}
-        onClick={e => { e.stopPropagation(); onDelete(method.id) }}
-        className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
-                   hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
-                   dark:text-gray-600 dark:hover:text-red-400"
-        tabIndex={-1}
-        title="Remove"
-      >
-        <Trash2 className="h-2.5 w-2.5" />
-      </button>
+      {!readOnly && (
+        <button
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onDelete(method.id) }}
+          className="ml-1 shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all
+                     hover:text-red-500 hover:opacity-100 group-hover/row:opacity-60
+                     dark:text-gray-600 dark:hover:text-red-400"
+          tabIndex={-1}
+          title="Remove"
+        >
+          <Trash2 className="h-2.5 w-2.5" />
+        </button>
+      )}
     </div>
   )
 }
@@ -764,6 +778,10 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
   const isInterface = data.nodeType === 'interface'
   const isAbstract  = data.nodeType === 'abstract-class'
   const isEnum      = data.nodeType === 'enum'
+  const highlighted = Boolean((data as { highlighted?: boolean }).highlighted)
+  const marked = Boolean((data as { marked?: boolean }).marked)
+  const locked = Boolean((data as { locked?: boolean }).locked)
+  const showEditChrome = !locked && (selected || !!data.alwaysExpanded)
 
   const effectiveStereotype =
     data.stereotype ?? (isInterface ? 'interface' : isEnum ? 'enum' : undefined)
@@ -774,24 +792,24 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
     isInterface ? 'border-dashed' : 'border-solid',
     isEraserTarget
       ? 'border-2 border-red-500 opacity-60 shadow-[0_0_0_3px_rgba(239,68,68,0.25)]'
-      : selected
-        ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
-        : 'border-slate-200 dark:border-slate-600',
+      : marked
+        ? 'border-2 border-amber-500 shadow-[0_0_0_3px_rgba(245,158,11,0.25)]'
+        : highlighted
+          ? 'border-2 border-indigo-400 shadow-[0_0_0_3px_rgba(99,102,241,0.22)]'
+          : selected
+            ? 'border-indigo-500 border-2 shadow-[0_0_0_3px_rgba(99,102,241,0.18)]'
+            : 'border-slate-200 dark:border-slate-600',
   )
 
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger>
+  const body = (
         <div
           ref={nodeRef}
           className={containerCls}
-          onMouseMove={onBorderMouseMove}
-          onMouseLeave={onBorderMouseLeave}
+          onMouseMove={locked ? undefined : onBorderMouseMove}
+          onMouseLeave={locked ? undefined : onBorderMouseLeave}
         >
           {HANDLE_POSITIONS.map(({ id: hid, position, style }) => {
-            // Only the handle nearest the cursor is visible — giving a
-            // "floating indicator" effect that implies free placement.
-            const visible = hid === activeHandle
+            const visible = !locked && hid === activeHandle
             return (
               <Handle
                 key={hid}
@@ -799,11 +817,12 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                 type="source"
                 position={position}
                 style={style}
+                isConnectable={!locked}
                 className={
                   HANDLE_BASE +
                   (visible
                     ? ' opacity-100! hover:scale-125!'
-                    : ' opacity-0!')
+                    : ' opacity-0!' + (locked ? ' !pointer-events-none' : ''))
                 }
               />
             )
@@ -816,7 +835,7 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                 «{effectiveStereotype}»
               </p>
             )}
-            {editingName ? (
+            {editingName && !locked ? (
               <input
                 ref={nameInputRef}
                 value={nameDraft}
@@ -830,9 +849,10 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
               />
             ) : (
               <p
-                onDoubleClick={() => { setEditingName(true); setTimeout(() => { nameInputRef.current?.focus(); nameInputRef.current?.select() }, 0) }}
+                onDoubleClick={locked ? undefined : () => { setEditingName(true); setTimeout(() => { nameInputRef.current?.focus(); nameInputRef.current?.select() }, 0) }}
                 className={cn(
-                  'cursor-text select-none text-sm font-bold leading-snug text-gray-900 dark:text-gray-100',
+                  'select-none text-sm font-bold leading-snug text-gray-900 dark:text-gray-100',
+                  !locked && 'cursor-text',
                   (isAbstract || isInterface) && 'italic',
                 )}
               >
@@ -847,37 +867,44 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
           </div>
 
           {/* ── Attributes section ──────────────────────────────────────── */}
-          <Divider />
-          <div className="py-0.5">
-            {data.attributes.map(attr => {
-              const isNew = attr.id === pendingAttrId
-              return (
-                <AttrRow
-                  key={attr.id}
-                  attr={attr}
-                  onUpdate={updateAttribute}
-                  onDelete={deleteAttribute}
-                  autoOpen={isNew}
-                  onConsumedAutoOpen={isNew ? () => setPendingAttrId(null) : undefined}
-                />
-              )
-            })}
-            <button
-              className="nodrag flex w-full items-center gap-1 px-2 py-[3px] text-[10px]
-                         text-gray-300 transition-colors
-                         hover:bg-indigo-50/80 hover:text-indigo-500
-                         dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
-              onPointerDown={e => e.stopPropagation()}
-              onClick={addAttribute}
-              title={isEnum ? 'Add constant' : 'Add attribute'}
-            >
-              <Plus className="h-3 w-3" />
-              <span>{isEnum ? 'add constant' : 'add attribute'}</span>
-            </button>
-          </div>
+          {(data.attributes.length > 0 || showEditChrome) && (
+            <>
+              <Divider />
+              <div className="py-0.5">
+                {data.attributes.map(attr => {
+                  const isNew = attr.id === pendingAttrId
+                  return (
+                    <AttrRow
+                      key={attr.id}
+                      attr={attr}
+                      onUpdate={locked ? () => {} : updateAttribute}
+                      onDelete={locked ? () => {} : deleteAttribute}
+                      autoOpen={!locked && isNew}
+                      onConsumedAutoOpen={isNew ? () => setPendingAttrId(null) : undefined}
+                      readOnly={locked}
+                    />
+                  )
+                })}
+                {showEditChrome && (
+                  <button
+                    className="nodrag flex w-full items-center gap-1 px-2 py-[3px] text-[10px]
+                               text-gray-300 transition-colors
+                               hover:bg-indigo-50/80 hover:text-indigo-500
+                               dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={addAttribute}
+                    title={isEnum ? 'Add constant' : 'Add attribute'}
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>{isEnum ? 'add constant' : 'add attribute'}</span>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
           {/* ── Methods section ─────────────────────────────────────────── */}
-          {!isEnum && (
+          {!isEnum && (data.methods.length > 0 || showEditChrome) && (
             <>
               <Divider />
               <div className="py-0.5">
@@ -888,44 +915,55 @@ export function UMLClassNode({ id, data: rawData, selected }: NodeProps) {
                       key={method.id}
                       method={method}
                       className={data.name}
-                      onUpdate={updateMethod}
-                      onDelete={deleteMethod}
-                      autoOpen={isNew}
+                      onUpdate={locked ? () => {} : updateMethod}
+                      onDelete={locked ? () => {} : deleteMethod}
+                      autoOpen={!locked && isNew}
                       onConsumedAutoOpen={isNew ? () => setPendingMethodId(null) : undefined}
+                      readOnly={locked}
                     />
                   )
                 })}
-                <div
-                  className="nodrag flex items-center"
-                  onPointerDown={e => e.stopPropagation()}
-                >
-                  <button
-                    className="flex flex-1 items-center gap-1 px-2 py-[3px] text-[10px]
-                               text-gray-300 transition-colors
-                               hover:bg-indigo-50/80 hover:text-indigo-500
-                               dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
-                    onClick={addMethod}
-                    title="Add method"
+                {showEditChrome && (
+                  <div
+                    className="nodrag flex items-center"
+                    onPointerDown={e => e.stopPropagation()}
                   >
-                    <Plus className="h-3 w-3" />
-                    <span>add method</span>
-                  </button>
-                  <button
-                    className="px-2 py-[3px] text-gray-300 transition-colors
-                               hover:bg-emerald-50/80 hover:text-emerald-600
-                               dark:text-gray-600 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400"
-                    onClick={addConstructor}
-                    title="Add constructor"
-                  >
-                    <FunctionSquare className="h-3 w-3" />
-                  </button>
-                </div>
+                    <button
+                      className="flex flex-1 items-center gap-1 px-2 py-[3px] text-[10px]
+                                 text-gray-300 transition-colors
+                                 hover:bg-indigo-50/80 hover:text-indigo-500
+                                 dark:text-gray-600 dark:hover:bg-indigo-950/20 dark:hover:text-indigo-400"
+                      onClick={addMethod}
+                      title="Add method"
+                    >
+                      <Plus className="h-3 w-3" />
+                      <span>add method</span>
+                    </button>
+                    <button
+                      className="px-2 py-[3px] text-gray-300 transition-colors
+                                 hover:bg-emerald-50/80 hover:text-emerald-600
+                                 dark:text-gray-600 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-400"
+                      onClick={addConstructor}
+                      title="Add constructor"
+                    >
+                      <FunctionSquare className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}
 
           <div className="h-1" />
         </div>
+  )
+
+  if (locked) return body
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>
+        {body}
       </ContextMenuTrigger>
 
       {/* ── Context Menu ───────────────────────────────────────────────── */}

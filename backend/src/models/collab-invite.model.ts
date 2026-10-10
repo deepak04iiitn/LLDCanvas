@@ -27,5 +27,6 @@ const collabInviteSchema = new Schema<ICollabInvite>(
 
 collabInviteSchema.index({ diagramId: 1 })
 collabInviteSchema.index({ email: 1, diagramId: 1 })
+collabInviteSchema.index({ invitedBy: 1, createdAt: -1 })
 
 export const CollabInvite = model<ICollabInvite>('CollabInvite', collabInviteSchema)

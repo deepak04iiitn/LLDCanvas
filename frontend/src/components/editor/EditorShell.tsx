@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -45,6 +45,9 @@ import { ProblemDiscussionPanel } from '@/components/editor/ProblemDiscussionPan
 import { ProblemNotesPanel } from '@/components/editor/ProblemNotesPanel'
 import { useHistoryStack } from '@/hooks/useHistoryStack'
 import { saveLocalDiagram } from '@/hooks/useLocalDiagram'
+import { useReplayRecorder } from '@/hooks/useReplayRecorder'
+import { WorkspaceTabs } from '@/components/editor/workspace/WorkspaceTabs'
+import { useBackgroundAnalysis } from '@/hooks/useBackgroundAnalysis'
 import { api } from '@/lib/api'
 import { CheckCircle2 } from 'lucide-react'
 import { PATTERN_BY_KEY, type PatternData } from '@/data/patterns'
@@ -112,7 +115,17 @@ function makeCentreNode(
     id: nanoid(8),
     type: nodeType,
     position: { x: centre.x - 90 + jitter(), y: centre.y - 60 + jitter() },
-    data: { nodeType, name: nameMap[nodeType], attributes: [], methods: [], isEditing: true, ...overrides } as UMLNodeData,
+    selected: true,
+    data: {
+      nodeType,
+      name: nameMap[nodeType],
+      attributes: [],
+      methods: [],
+      isEditing: true,
+      // Show attribute/method compartments immediately (not only after a click)
+      alwaysExpanded: true,
+      ...overrides,
+    } as UMLNodeData,
   }
 }
 
@@ -140,6 +153,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const history = useHistoryStack()
+  const { record: recordReplay } = useReplayRecorder(diagramId)
   const [shareModalOpen, setShareModalOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [problemPanelState, setProblemPanelState] = useState<'open' | 'collapsed'>(
@@ -205,6 +219,14 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     readOnly,
     shareToken,
   })
+
+  // Silent design analysis (Analyze tab reads cache; never interrupts editing)
+  const analysisDiagram = useMemo(
+    () => ({ nodes: nodes as unknown[], edges: edges as unknown[] }),
+    [nodes, edges],
+  )
+  const { cache: analysisCache, ready: analysisReady, analyzeNow } =
+    useBackgroundAnalysis(analysisDiagram)
 
   // ── Browser tab title ────────────────────────────────────────────────────
   useEffect(() => {
@@ -301,6 +323,49 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
 
   // ── Derived: selection count ──────────────────────────────────────────────
   const selectedCount = nodes.filter(n => n.selected).length
+  const selectedNode = useMemo(() => {
+    const n = nodes.find(nd => nd.selected)
+    if (!n) return null
+    const data = n.data as UMLNodeData | undefined
+    return {
+      id: n.id,
+      name: data?.name,
+      elementId: (data as { elementId?: string } | undefined)?.elementId ?? n.id,
+    }
+  }, [nodes])
+  const selectedEdge = useMemo(() => {
+    const e = edges.find(ed => ed.selected)
+    if (!e) return null
+    const data = e.data as UMLEdgeData | undefined
+    return {
+      id: e.id,
+      elementId: typeof data?.elementId === 'string' ? data.elementId : e.id,
+      source: e.source,
+      target: e.target,
+      data: {
+        relationshipType: data?.relationshipType,
+        label: data?.label,
+        elementId: typeof data?.elementId === 'string' ? data.elementId : e.id,
+      },
+    }
+  }, [edges])
+  const displayNodes = nodes
+  const displayEdges = edges
+
+  const handleFocusElement = useCallback(
+    (elementId: string) => {
+      setNodes(nds =>
+        nds.map(n => {
+          const data = n.data as UMLNodeData & { elementId?: string }
+          const eid = data?.elementId ?? n.id
+          return { ...n, selected: eid === elementId || n.id === elementId }
+        }),
+      )
+      setEdges(eds => eds.map(e => ({ ...e, selected: false })))
+    },
+    [setNodes, setEdges],
+  )
+
   const [canvasMode, setCanvasMode] = useState<'pan' | 'select' | 'eraser'>('pan')
 
   // Keep the module-level EraserState in sync so node/edge components can
@@ -313,11 +378,22 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
   const handleEraseNode = useCallback(
     (nodeId: string) => {
       history.push({ nodes, edges })
+      const erased = nodes.find(n => n.id === nodeId)
       setNodes(nds => nds.filter(n => n.id !== nodeId))
       setEdges(eds => eds.filter(e => e.source !== nodeId && e.target !== nodeId))
       EraserState.setHoveredId(null)
+      recordReplay({
+        type: 'remove_node',
+        payload: {
+          id: nodeId,
+          name: (erased?.data as UMLNodeData | undefined)?.name,
+          position: erased?.position,
+          data: erased?.data,
+          nodeType: (erased?.data as UMLNodeData | undefined)?.nodeType,
+        },
+      })
     },
-    [history, nodes, edges, setNodes, setEdges],
+    [history, nodes, edges, setNodes, setEdges, recordReplay],
   )
 
   const handleEraseEdge = useCallback(
@@ -325,8 +401,9 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       history.push({ nodes, edges })
       setEdges(eds => eds.filter(e => e.id !== edgeId))
       EraserState.setHoveredId(null)
+      recordReplay({ type: 'remove_edge', payload: { id: edgeId } })
     },
-    [history, nodes, edges, setEdges],
+    [history, nodes, edges, setEdges, recordReplay],
   )
 
   // ── Clear selection ───────────────────────────────────────────────────────
@@ -394,11 +471,12 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       resetConnectionDraft()
 
       history.push({ nodes, edges })
+      const edgeId = nanoid(8)
       setEdges(eds =>
         addEdge(
           {
             ...pendingConn,
-            id: nanoid(8),
+            id: edgeId,
             type: relType,
             data: {
               relationshipType: relType,
@@ -410,10 +488,22 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           eds,
         ),
       )
+      recordReplay({
+        type: 'add_edge',
+        payload: {
+          id: edgeId,
+          source: pendingConn.source,
+          target: pendingConn.target,
+          sourceHandle: pendingConn.sourceHandle ?? null,
+          targetHandle: pendingConn.targetHandle ?? null,
+          relationshipType: relType,
+          type: relType,
+        },
+      })
       setPendingConn(null)
       setPickerOpen(false)
     },
-    [pendingConn, history, nodes, edges, setEdges],
+    [pendingConn, history, nodes, edges, setEdges, recordReplay],
   )
 
   // ── Insert node ───────────────────────────────────────────────────────────
@@ -421,9 +511,24 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     (nodeType: UMLNodeData['nodeType'], overrides: Partial<UMLNodeData> = {}) => {
       const node = makeCentreNode(nodeType, rfInstance.current, overrides)
       history.push({ nodes, edges })
-      setNodes(prev => [...prev, node as Node])
+      // Select the new node (and clear others) so compartments open immediately
+      setNodes(prev => [
+        ...prev.map(n => (n.selected ? { ...n, selected: false } : n)),
+        node as Node,
+      ])
+      recordReplay({
+        type: 'add_node',
+        payload: {
+          id: node.id,
+          name: (node.data as UMLNodeData)?.name,
+          nodeType,
+          type: node.type,
+          position: node.position,
+          data: node.data,
+        },
+      })
     },
-    [history, nodes, edges, setNodes],
+    [history, nodes, edges, setNodes, recordReplay],
   )
 
   // ── Insert with stereotype ────────────────────────────────────────────────
@@ -485,10 +590,39 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       setNodes(prev => [...prev, ...newNodes as Node[]])
       setEdges(prev => [...prev, ...newEdges as Edge[]])
 
+      for (const n of newNodes) {
+        recordReplay({
+          type: 'add_node',
+          payload: {
+            id: n.id,
+            name: (n.data as UMLNodeData | undefined)?.name,
+            nodeType: (n.data as UMLNodeData | undefined)?.nodeType,
+            type: n.type,
+            position: n.position,
+            data: n.data,
+          },
+        })
+      }
+      for (const e of newEdges) {
+        const ed = e.data as UMLEdgeData | undefined
+        recordReplay({
+          type: 'add_edge',
+          payload: {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? null,
+            targetHandle: e.targetHandle ?? null,
+            relationshipType: ed?.relationshipType ?? e.type,
+            type: e.type,
+          },
+        })
+      }
+
       toast.success(`${pattern.name} pattern inserted`)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, edges, history, setNodes, setEdges],
+    [nodes, edges, history, setNodes, setEdges, recordReplay],
   )
 
   // ── Import a Draft Notation snippet - one-shot, additive (not a live panel) ─
@@ -520,10 +654,40 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
       setNodes(prev => [...prev, ...newNodes as Node[]])
       setEdges(prev => [...prev, ...parsedEdges as Edge[]])
       setImportDraftOpen(false)
+
+      for (const n of newNodes) {
+        recordReplay({
+          type: 'add_node',
+          payload: {
+            id: n.id,
+            name: (n.data as UMLNodeData | undefined)?.name,
+            nodeType: (n.data as UMLNodeData | undefined)?.nodeType,
+            type: n.type,
+            position: n.position,
+            data: n.data,
+          },
+        })
+      }
+      for (const e of parsedEdges) {
+        const ed = e.data as UMLEdgeData | undefined
+        recordReplay({
+          type: 'add_edge',
+          payload: {
+            id: e.id,
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle ?? null,
+            targetHandle: e.targetHandle ?? null,
+            relationshipType: ed?.relationshipType ?? e.type,
+            type: e.type,
+          },
+        })
+      }
+
       toast.success(`Imported ${parsedNodes.length} class${parsedNodes.length === 1 ? '' : 'es'}`)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nodes, edges, history, setNodes, setEdges],
+    [nodes, edges, history, setNodes, setEdges, recordReplay],
   )
 
   // ── Delete selected ───────────────────────────────────────────────────────
@@ -533,9 +697,15 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     if (selected.length === 0) return
     const selectedIds = new Set(selected.map(n => n.id))
     history.push({ nodes, edges })
+    for (const n of selected) {
+      recordReplay({
+        type: 'remove_node',
+        payload: { id: n.id, name: (n.data as UMLNodeData | undefined)?.name },
+      })
+    }
     setNodes(nds => nds.filter(n => !selectedIds.has(n.id)))
     setEdges(eds => eds.filter(e => !selectedIds.has(e.source) && !selectedIds.has(e.target)))
-  }, [getNodes, history, nodes, edges, setNodes, setEdges])
+  }, [getNodes, history, nodes, edges, setNodes, setEdges, recordReplay])
 
   const handleClearEditor = useCallback(() => {
     if (nodes.length === 0 && edges.length === 0) return
@@ -804,88 +974,104 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
           className="relative flex-1 overflow-hidden"
           onMouseMove={handleCanvasMouseMove}
         >
-          <CanvasView
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={readOnly ? () => {} : onNodesChange}
-            onEdgesChange={readOnly ? () => {} : onEdgesChange}
-            onConnect={readOnly ? () => {} : onConnect}
-            onConnectStart={readOnly ? undefined : onConnectStart}
-            onInit={inst => { rfInstance.current = inst }}
-            onNodesDelete={readOnly ? () => {} : onNodesDelete}
-            canvasMode={canvasMode}
-            selectedCount={selectedCount}
-            onDuplicate={handleDuplicate}
-            onDelete={handleDelete}
-            onClearSelection={handleClearSelection}
-            onEraseNode={readOnly ? undefined : handleEraseNode}
-            onEraseEdge={readOnly ? undefined : handleEraseEdge}
-            readOnly={readOnly}
+          <WorkspaceTabs
+            className="h-full"
+            diagramId={diagramId}
+            diagramTitle={title}
+            diagram={analysisDiagram}
+            selectedNode={selectedNode}
+            selectedEdge={selectedEdge}
+            onFocusElement={handleFocusElement}
+            analysisCache={analysisCache}
+            analysisReady={analysisReady}
+            analyzeNow={analyzeNow}
+            canvas={
+              <>
+                <CanvasView
+                  nodes={displayNodes}
+                  edges={displayEdges}
+                  onNodesChange={readOnly ? () => {} : onNodesChange}
+                  onEdgesChange={readOnly ? () => {} : onEdgesChange}
+                  onConnect={readOnly ? () => {} : onConnect}
+                  onConnectStart={readOnly ? undefined : onConnectStart}
+                  onInit={inst => { rfInstance.current = inst }}
+                  onNodesDelete={readOnly ? () => {} : onNodesDelete}
+                  canvasMode={canvasMode}
+                  selectedCount={selectedCount}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                  onClearSelection={handleClearSelection}
+                  onEraseNode={readOnly ? undefined : handleEraseNode}
+                  onEraseEdge={readOnly ? undefined : handleEraseEdge}
+                  readOnly={readOnly}
+                />
+
+                {/* Collab overlays */}
+                {diagramId && <CollabCursors />}
+                {diagramId && collaborators.length > 0 && <CollabPresenceDock />}
+                {diagramId && (
+                  <DiscussionPanel
+                    open={discussionPanelOpen}
+                    onClose={() => setDiscussionPanelOpen(false)}
+                    diagramId={diagramId}
+                  />
+                )}
+
+                {/* Problem community discussion panel */}
+                {problemSlug && (
+                  <ProblemDiscussionPanel
+                    open={problemDiscussionOpen}
+                    onClose={() => setProblemDiscussionOpen(false)}
+                    slug={problemSlug}
+                  />
+                )}
+
+                {/* Per-problem private notes panel */}
+                {problemSlug && (
+                  <ProblemNotesPanel
+                    open={problemNotesOpen}
+                    onClose={() => setProblemNotesOpen(false)}
+                    slug={problemSlug}
+                  />
+                )}
+
+                <RelationshipPicker
+                  open={pickerOpen}
+                  position={pickerPos}
+                  onSelect={onRelationshipPick}
+                  onClose={() => { setPickerOpen(false); setPendingConn(null) }}
+                />
+
+                {/* ── Mark as Complete - bottom-left corner, practice problems only ──
+                    Bumped up when the collab presence dock (also bottom-left) is
+                    showing, so the two don't overlap. */}
+                {effectiveProblemSlug && !activeSession && !readOnly && (
+                  <div className={`absolute left-4 z-20 ${diagramId && collaborators.length > 0 ? 'bottom-16' : 'bottom-4'}`}>
+                    {completed ? (
+                      <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 shadow-sm">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span className="text-sm font-semibold text-emerald-700">Completed!</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleMarkComplete}
+                        disabled={completing}
+                        className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2
+                                   text-sm font-semibold text-emerald-700 shadow-sm transition-all
+                                   hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md
+                                   disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        {completing
+                          ? (activeSession ? 'Submitting & ending…' : 'Marking…')
+                          : 'Mark as Complete'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            }
           />
-
-          {/* Collab overlays */}
-          {diagramId && <CollabCursors />}
-          {diagramId && collaborators.length > 0 && <CollabPresenceDock />}
-          {diagramId && (
-            <DiscussionPanel
-              open={discussionPanelOpen}
-              onClose={() => setDiscussionPanelOpen(false)}
-              diagramId={diagramId}
-            />
-          )}
-
-          {/* Problem community discussion panel */}
-          {problemSlug && (
-            <ProblemDiscussionPanel
-              open={problemDiscussionOpen}
-              onClose={() => setProblemDiscussionOpen(false)}
-              slug={problemSlug}
-            />
-          )}
-
-          {/* Per-problem private notes panel */}
-          {problemSlug && (
-            <ProblemNotesPanel
-              open={problemNotesOpen}
-              onClose={() => setProblemNotesOpen(false)}
-              slug={problemSlug}
-            />
-          )}
-
-          <RelationshipPicker
-            open={pickerOpen}
-            position={pickerPos}
-            onSelect={onRelationshipPick}
-            onClose={() => { setPickerOpen(false); setPendingConn(null) }}
-          />
-
-          {/* ── Mark as Complete - bottom-left corner, practice problems only ──
-              Bumped up when the collab presence dock (also bottom-left) is
-              showing, so the two don't overlap. */}
-          {effectiveProblemSlug && !activeSession && !readOnly && (
-            <div className={`absolute left-4 z-20 ${diagramId && collaborators.length > 0 ? 'bottom-16' : 'bottom-4'}`}>
-              {completed ? (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 shadow-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-semibold text-emerald-700">Completed!</span>
-                </div>
-              ) : (
-                <button
-                  onClick={handleMarkComplete}
-                  disabled={completing}
-                  className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2
-                             text-sm font-semibold text-emerald-700 shadow-sm transition-all
-                             hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md
-                             disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {completing
-                    ? (activeSession ? 'Submitting & ending…' : 'Marking…')
-                    : 'Mark as Complete'}
-                </button>
-              )}
-            </div>
-          )}
         </main>
 
         {/* Problem panel - right sidebar when practicing */}

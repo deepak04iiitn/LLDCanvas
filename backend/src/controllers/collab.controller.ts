@@ -59,10 +59,12 @@ export const collabController = {
         return res.json({ invite: existing, token: existing.token, updated: true })
       }
 
-      // Enforce per-plan collaborator limit (owner counts as 1).
+      // Enforce per-plan seat + monthly collaboration limits.
       // Re-count AFTER the existing-invite check to avoid a race where two
       // concurrent requests both pass and both create new invites.
       const limits = getLimits(req.user!.plan)
+
+      // Seat limit: maxCollaborators includes the owner (Pro = 2 → 1 invitee).
       if (limits.maxCollaborators !== Infinity) {
         const maxInvites = Math.max(0, limits.maxCollaborators - 1)
         const currentCount = await CollabInvite.countDocuments({
@@ -70,7 +72,29 @@ export const collabController = {
           status: { $ne: 'revoked' },
         })
         if (currentCount >= maxInvites) {
-          throw createError(`Your plan allows up to ${limits.maxCollaborators} people (including you). Upgrade to invite more collaborators.`, 403)
+          throw createError(
+            `Your plan allows up to ${limits.maxCollaborators} people per diagram (including you). Upgrade to invite more.`,
+            403,
+            { code: 'PLAN_GATE', requiredPlan: 'ultimate' },
+          )
+        }
+      }
+
+      // Monthly collaboration meter: each new invite created this calendar month.
+      if (limits.collaborationsPerMonth !== Infinity) {
+        const monthStart = new Date()
+        monthStart.setUTCDate(1)
+        monthStart.setUTCHours(0, 0, 0, 0)
+        const usedThisMonth = await CollabInvite.countDocuments({
+          invitedBy: req.user!.id,
+          createdAt: { $gte: monthStart },
+        })
+        if (usedThisMonth >= limits.collaborationsPerMonth) {
+          throw createError(
+            `Your plan allows ${limits.collaborationsPerMonth} collaborations per month. Upgrade to Ultimate for unlimited.`,
+            403,
+            { code: 'PLAN_GATE', requiredPlan: 'ultimate' },
+          )
         }
       }
 
@@ -241,12 +265,25 @@ export const collabController = {
         diagramId: { $in: sharedDiagramIds },
       })
 
+      const limits = getLimits(req.user!.plan)
+      const monthStart = new Date()
+      monthStart.setUTCDate(1)
+      monthStart.setUTCHours(0, 0, 0, 0)
+      const collaborationsThisMonth = await CollabInvite.countDocuments({
+        invitedBy: userId,
+        createdAt: { $gte: monthStart },
+      })
+
+      // Infinity is not JSON-safe — send null to mean unlimited.
       res.json({
         sharedDiagrams:   sharedDiagramIds.length,
         collaboratingOn,
         totalCollaborators: collaborators.length,
         pendingInvites,
         totalComments,
+        collaborationsThisMonth,
+        collaborationsPerMonth: limits.collaborationsPerMonth === Infinity ? null : limits.collaborationsPerMonth,
+        maxCollaborators: limits.maxCollaborators === Infinity ? null : limits.maxCollaborators,
       })
     } catch (err) { next(err) }
   },

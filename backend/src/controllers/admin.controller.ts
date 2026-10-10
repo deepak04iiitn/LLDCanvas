@@ -17,7 +17,20 @@ import { createError } from '../middleware/error'
 import { Subscription } from '../models/subscription.model'
 import { RevenueEvent } from '../models/revenue-event.model'
 import { User } from '../models/user.model'
-import { PRICING, type PlanName } from '../config/plans'
+import { PRICING, type PlanName }         from '../config/plans'
+import { JourneyProfile }                  from '../models/journey/journey-profile.model'
+import { JourneyTopic }                    from '../models/journey/journey-topic.model'
+import { JourneyActivity }                 from '../models/journey/journey-activity.model'
+import { QuizQuestion }                    from '../models/learn/quiz-question.model'
+import { QuizAttempt }                     from '../models/learn/quiz-attempt.model'
+import { DetectiveScenario }               from '../models/learn/detective-scenario.model'
+import { DetectiveAttempt }                from '../models/learn/detective-attempt.model'
+import { DebuggerChallenge }               from '../models/learn/debugger-challenge.model'
+import { DebuggerSolve }                   from '../models/learn/debugger-solve.model'
+import { RoguelikeScenario }               from '../models/learn/roguelike-scenario.model'
+import { RoguelikeRun }                    from '../models/learn/roguelike-run.model'
+import { ChallengePack }                   from '../models/studio/challenge-pack.model'
+import { ChallengeAttempt }                from '../models/studio/challenge-attempt.model'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -583,6 +596,79 @@ export const adminController = {
     } catch (err) {
       next(err)
     }
+  },
+
+  // ─── New features overview stats ────────────────────────────────────────────
+
+  getFeaturesOverview: async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      const since30 = daysAgo(30)
+
+      const [
+        plannrProfiles, plannrActiveProfiles, plannrTopics, plannrActivities30d,
+        quizQuestions, quizAttempts30d, quizActiveUsers30d,
+        detectiveScenarios, detectiveAttempts30d,
+        debuggerChallenges, debuggerSolves30d,
+        roguelikeScenarios, roguelikeRuns30d,
+        debugFixPacks, refactorPacks, changeOnePacks, evolutionPacks, budgetPacks,
+        studioAttempts30d,
+      ] = await Promise.all([
+        JourneyProfile.countDocuments(),
+        JourneyProfile.countDocuments({ status: 'active' }),
+        JourneyTopic.countDocuments({ status: 'published' }),
+        JourneyActivity.countDocuments({ completedAt: { $gte: since30 } }),
+
+        QuizQuestion.countDocuments({ status: 'published' }),
+        QuizAttempt.countDocuments({ createdAt: { $gte: since30 } }),
+        QuizAttempt.distinct('userId', { createdAt: { $gte: since30 } }).then(a => a.length),
+
+        DetectiveScenario.countDocuments({ status: 'published' }),
+        DetectiveAttempt.countDocuments({ timestamp: { $gte: since30 } }),
+
+        DebuggerChallenge.countDocuments({ status: 'published' }),
+        DebuggerSolve.countDocuments({ solvedAt: { $gte: since30 } }),
+
+        RoguelikeScenario.countDocuments({ status: 'published' }),
+        RoguelikeRun.countDocuments({ startedAt: { $gte: since30 } }),
+
+        ChallengePack.countDocuments({ type: 'debugger',   status: 'published' }),
+        ChallengePack.countDocuments({ type: 'refactor',   status: 'published' }),
+        ChallengePack.countDocuments({ type: 'change_one', status: 'published' }),
+        ChallengePack.countDocuments({ type: 'evolution',  status: 'published' }),
+        ChallengePack.countDocuments({ type: 'budget',     status: 'published' }),
+        ChallengeAttempt.aggregate([
+          { $match: { createdAt: { $gte: since30 } } },
+          { $group: { _id: '$type', count: { $sum: 1 } } },
+        ]),
+      ])
+
+      const [detectiveAccuracy, debuggerSuccessRate, roguelikeCompletionRate] = await Promise.all([
+        DetectiveAttempt.countDocuments({ timestamp: { $gte: since30 }, isCorrect: true })
+          .then(c => detectiveAttempts30d > 0 ? Math.round((c / detectiveAttempts30d) * 100) : 0),
+        DebuggerSolve.countDocuments({ solvedAt: { $gte: since30 }, isSolved: true })
+          .then(s => debuggerSolves30d > 0 ? Math.round((s / debuggerSolves30d) * 100) : 0),
+        RoguelikeRun.countDocuments({ startedAt: { $gte: since30 }, status: 'completed' })
+          .then(c => roguelikeRuns30d > 0 ? Math.round((c / roguelikeRuns30d) * 100) : 0),
+      ])
+
+      const studioMap: Record<string, number> = {}
+      for (const a of studioAttempts30d as { _id: string; count: number }[]) studioMap[a._id] = a.count
+
+      res.json({
+        plannr:    { profiles: plannrProfiles, active: plannrActiveProfiles, topics: plannrTopics, activities30d: plannrActivities30d },
+        dailyQuiz: { questions: quizQuestions, attempts30d: quizAttempts30d, activeUsers30d: quizActiveUsers30d },
+        detective: { scenarios: detectiveScenarios, attempts30d: detectiveAttempts30d, accuracy: detectiveAccuracy },
+        debugLab:  { challenges: debuggerChallenges, solves30d: debuggerSolves30d, successRate: debuggerSuccessRate },
+        roguelike: { scenarios: roguelikeScenarios, runs30d: roguelikeRuns30d, completionRate: roguelikeCompletionRate },
+        studio: {
+          debugFix:  { packs: debugFixPacks,  attempts30d: studioMap['debugger']   ?? 0 },
+          refactor:  { packs: refactorPacks,  attempts30d: studioMap['refactor']   ?? 0 },
+          changeOne: { packs: changeOnePacks, attempts30d: studioMap['change_one'] ?? 0 },
+          evolution: { packs: evolutionPacks, attempts30d: studioMap['evolution']  ?? 0 },
+          budget:    { packs: budgetPacks,    attempts30d: studioMap['budget']      ?? 0 },
+        },
+      })
+    } catch (err) { next(err) }
   },
 
   // ─── Problems management ─────────────────────────────────────────────────────

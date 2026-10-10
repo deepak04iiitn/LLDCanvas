@@ -24,8 +24,7 @@ function CollabAcceptInner() {
     if (!session) {
       // Save intended destination, then send to landing auth modal - same
       // pattern as the share-link flow in /editor/[id]/page.tsx
-      sessionStorage.setItem('postLoginRedirect', `/collab/accept?token=${token}`)
-      router.replace('/?auth=1')
+      router.replace(`/sign-in?next=${encodeURIComponent(`/collab/accept?token=${token}`)}`)
       return
     }
 

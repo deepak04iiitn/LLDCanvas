@@ -344,11 +344,38 @@ function SubmitPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ─── Compact side card ────────────────────────────────────────────────────────
+
+function CompactCard({ t, delay }: { t: Testimonial; delay: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }} transition={{ duration: 0.4, delay }}
+      className="flex flex-col gap-3 rounded-xl border border-hairline bg-paper p-5"
+    >
+      <StarRow rating={t.rating} />
+      <p className="flex-1 text-[13px] leading-relaxed text-ink-muted line-clamp-3">
+        &ldquo;{t.content}&rdquo;
+      </p>
+      <div className="flex items-center gap-2.5 border-t border-hairline pt-3">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-hairline font-bold text-[10px] text-ink-muted">
+          {initials(t.name)}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-ink">{t.name}</p>
+          <p className="truncate text-[10px] text-ink-faint">{t.role}</p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(FALLBACK)
   const [panelOpen,    setPanelOpen]    = useState(false)
+  const [activeIdx,    setActiveIdx]    = useState(0)
 
   useEffect(() => {
     api.testimonials.getApproved()
@@ -356,6 +383,17 @@ export function TestimonialsSection() {
       .catch(() => {})
   }, [])
 
+  // Auto-rotate featured testimonial every 5 s
+  useEffect(() => {
+    const id = setInterval(() => setActiveIdx(i => (i + 1) % 3), 5000)
+    return () => clearInterval(id)
+  }, [])
+
+  const spotlight = testimonials.slice(0, 3)
+  const sideCards = testimonials.slice(3, 6)
+  const active    = spotlight[activeIdx] ?? FALLBACK[0]
+
+  // Marquee rows from the full set so they feel populated
   const mid  = Math.ceil(testimonials.length / 2)
   const row1 = [...testimonials.slice(0, mid)]
   const row2 = [...testimonials.slice(mid)]
@@ -364,57 +402,107 @@ export function TestimonialsSection() {
 
   return (
     <>
-      <section id="testimonials" className="scroll-mt-20 overflow-hidden py-20">
-        {/* Section header */}
-        <div className="mx-auto mb-12 max-w-7xl px-5 sm:px-8">
-          <div className="flex items-center gap-2.5">
-            <div className="h-px flex-1 bg-hairline" />
-            <span className="flex items-center gap-1.5 rounded-full border border-hairline bg-paper px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              from our community
-            </span>
-            <div className="h-px flex-1 bg-hairline" />
-          </div>
+      <section id="testimonials" className="scroll-mt-20 overflow-hidden border-b border-hairline bg-paper py-20">
 
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <div className="mx-auto mb-10 max-w-7xl px-5 sm:px-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="font-serif text-2xl font-medium text-ink sm:text-3xl">
+              <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest text-ink-faint">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                from our community
+              </span>
+              <h2 className="mt-3 font-serif text-3xl font-medium text-ink sm:text-4xl">
                 Loved by engineers,{' '}
                 <em className="not-italic text-brand">trusted by interviewers.</em>
               </h2>
-              <p className="mt-2 text-sm text-ink-faint">
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-faint">
                 Real stories from developers who aced their LLD and system design interview rounds.
               </p>
             </div>
-
-            {/* Right side: rating + CTA */}
-            <div className="flex shrink-0 flex-col items-end gap-2.5">
-              {/* Compact rating pill */}
-              <div className="flex items-center gap-1.5 rounded-full border border-hairline bg-paper-elevated px-3 py-1.5 shadow-sm">
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-paper-elevated px-5 py-2.5 shadow-sm">
                 <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                 <span className="text-sm font-bold text-ink">4.9</span>
-                <span className="text-[11px] text-ink-faint">· {testimonials.length}+ reviews</span>
+                <span className="text-sm text-ink-faint">· {testimonials.length}+ reviews</span>
               </div>
-
-              {/* Write a review button */}
               <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                 onClick={() => setPanelOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 hover:bg-brand/90 transition-colors"
+                className="flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand/20 transition-colors hover:bg-brand/90"
               >
-                <PenLine className="h-3.5 w-3.5" />
-                Write a review
+                <PenLine className="h-3.5 w-3.5" /> Write a review
               </motion.button>
             </div>
           </div>
         </div>
 
-        {/* Dual scrolling rows */}
-        <div className="space-y-4">
-        <MarqueeRow items={row1} reverse={false} speed={22} />
-        <MarqueeRow items={row2} reverse={true}  speed={27} />
+        {/* ── Spotlight + side grid ──────────────────────────────────────── */}
+        <div className="mx-auto mb-10 max-w-7xl px-5 sm:px-8">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_300px] xl:grid-cols-[1fr_340px]">
+
+            {/* Large rotating featured quote */}
+            <div className="relative overflow-hidden rounded-2xl border border-brand/20 bg-brand-tint p-8 sm:p-10">
+              {/* Decorative large quote mark */}
+              <Quote className="absolute right-8 top-8 h-20 w-20 text-brand/6" aria-hidden />
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeIdx}
+                  initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  <StarRow rating={active.rating} size="lg" />
+                  <blockquote className="mt-6 font-serif text-xl font-medium leading-[1.45] text-ink sm:text-2xl lg:text-[1.6rem]">
+                    &ldquo;{active.content}&rdquo;
+                  </blockquote>
+                  <div className="mt-8 flex items-center gap-4">
+                    <div className={cn(
+                      'flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-2',
+                      'bg-brand/15 text-brand ring-brand/20',
+                    )}>
+                      {initials(active.name)}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-ink">{active.name}</p>
+                      <p className="text-sm text-ink-faint">{active.role}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Dot navigation */}
+              <div className="mt-8 flex items-center gap-2">
+                {spotlight.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveIdx(i)}
+                    aria-label={`Testimonial ${i + 1}`}
+                    className={cn(
+                      'h-1.5 rounded-full transition-all duration-300',
+                      i === activeIdx ? 'w-7 bg-brand' : 'w-1.5 bg-hairline-strong hover:bg-ink-faint/40',
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Right — compact card stack */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              {sideCards.map((t, i) => (
+                <CompactCard key={t._id} t={t} delay={i * 0.07} />
+              ))}
+            </div>
+
+          </div>
         </div>
+
+        {/* ── Infinite marquee rows ──────────────────────────────────────── */}
+        <div className="space-y-3">
+          <MarqueeRow items={row1} reverse={false} speed={22} />
+          <MarqueeRow items={row2} reverse={true}  speed={27} />
+        </div>
+
       </section>
 
       {/* Sliding submit panel */}

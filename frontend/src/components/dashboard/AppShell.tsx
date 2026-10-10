@@ -10,10 +10,15 @@ import {
   Menu,
   Timer,
   BarChart2,
-  Mic,
-  BookOpen,
-  Layers,
-  Users,
+  MapPin,
+  HelpCircle,
+  Bug,
+  Gamepad2,
+  Wrench,
+  GitBranch,
+  Diff,
+  DollarSign,
+  ScanSearch,
   Rocket,
   Crown,
   Zap,
@@ -23,6 +28,11 @@ import {
   Quote,
   ArrowUpRight,
   Plus,
+  Mic,
+  BookOpen,
+  Layers,
+  Users,
+  TrendingUp,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
@@ -62,12 +72,89 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Workspace',
     items: [
       {
-        label: 'My UML Diagrams',
+        label: 'My Diagrams',
         href: '/dashboard',
         Icon: FolderOpen,
-        // Dashboard home only (not /dashboard/problems, sessions, etc.)
         isActive: p => p.replace(/\/$/, '') === '/dashboard',
         createHref: '/dashboard?new=1',
+      },
+    ],
+  },
+  {
+    id: 'plannr',
+    label: 'Plannr',
+    items: [
+      {
+        label: 'Your Plan',
+        href: '/dashboard/plannr',
+        Icon: MapPin,
+        isActive: p => p.startsWith('/dashboard/plannr'),
+      },
+    ],
+  },
+  {
+    id: 'learn',
+    label: 'Learn',
+    items: [
+      {
+        label: 'Daily Quiz',
+        href: '/dashboard/learn/quiz',
+        Icon: HelpCircle,
+        isActive: p => p.startsWith('/dashboard/learn/quiz'),
+      },
+      {
+        label: 'Pattern Detective',
+        href: '/dashboard/learn/detective',
+        Icon: ScanSearch,
+        isActive: p => p.startsWith('/dashboard/learn/detective'),
+      },
+      {
+        label: 'Debug Lab',
+        href: '/dashboard/learn/debugger',
+        Icon: Bug,
+        isActive: p => p.startsWith('/dashboard/learn/debugger'),
+      },
+      {
+        label: 'LLD Roguelike',
+        href: '/dashboard/learn/roguelike',
+        Icon: Gamepad2,
+        isActive: p => p.startsWith('/dashboard/learn/roguelike'),
+      },
+    ],
+  },
+  {
+    id: 'studio',
+    label: 'Design Studio',
+    items: [
+      {
+        label: 'Debug and Fix',
+        href: '/dashboard/design-studio/debugger',
+        Icon: Wrench,
+        isActive: p => p.startsWith('/dashboard/design-studio/debugger'),
+      },
+      {
+        label: 'Refactor',
+        href: '/dashboard/design-studio/refactor',
+        Icon: GitBranch,
+        isActive: p => p.startsWith('/dashboard/design-studio/refactor'),
+      },
+      {
+        label: 'Change One Thing',
+        href: '/dashboard/design-studio/change',
+        Icon: Diff,
+        isActive: p => p.startsWith('/dashboard/design-studio/change'),
+      },
+      {
+        label: 'Evolution',
+        href: '/dashboard/design-studio/evolution',
+        Icon: TrendingUp,
+        isActive: p => p.startsWith('/dashboard/design-studio/evolution'),
+      },
+      {
+        label: 'Budget Pressure',
+        href: '/dashboard/design-studio/budget',
+        Icon: DollarSign,
+        isActive: p => p.startsWith('/dashboard/design-studio/budget'),
       },
     ],
   },
@@ -80,33 +167,7 @@ const NAV_GROUPS: NavGroup[] = [
         href: '/dashboard/interview-mode',
         Icon: Mic,
         isActive: p => p.startsWith('/dashboard/interview-mode'),
-        minPlan: 'pro',
       },
-      {
-        label: 'Practice Sessions',
-        href: '/dashboard/sessions',
-        Icon: Timer,
-        isActive: p => p.startsWith('/dashboard/sessions'),
-      },
-      {
-        label: 'Stats',
-        href: '/dashboard/stats',
-        Icon: BarChart2,
-        isActive: p => p.startsWith('/dashboard/stats'),
-      },
-      {
-        label: 'Collaborations',
-        href: '/dashboard/collaborations',
-        Icon: Users,
-        isActive: p => p.startsWith('/dashboard/collaborations'),
-        minPlan: 'pro',
-      },
-    ],
-  },
-  {
-    id: 'library',
-    label: 'Library',
-    items: [
       {
         label: 'Practice Problems',
         href: '/dashboard/problems',
@@ -118,6 +179,30 @@ const NAV_GROUPS: NavGroup[] = [
         href: '/dashboard/revision',
         Icon: Layers,
         isActive: p => p.startsWith('/dashboard/revision'),
+      },
+      {
+        label: 'Collaborations',
+        href: '/dashboard/collaborations',
+        Icon: Users,
+        isActive: p => p.startsWith('/dashboard/collaborations'),
+      },
+    ],
+  },
+  {
+    id: 'progress',
+    label: 'Progress',
+    items: [
+      {
+        label: 'Practice Sessions',
+        href: '/dashboard/sessions',
+        Icon: Timer,
+        isActive: p => p.startsWith('/dashboard/sessions'),
+      },
+      {
+        label: 'Stats',
+        href: '/dashboard/stats',
+        Icon: BarChart2,
+        isActive: p => p.startsWith('/dashboard/stats'),
       },
     ],
   },
@@ -556,7 +641,7 @@ export function AppShell({ children, mobileBanner }: AppShellProps) {
             )}
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
+          <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
         </div>
 
         <TestimonialModal open={shareOpen} onClose={() => setShareOpen(false)} />

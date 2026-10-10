@@ -11,6 +11,8 @@ import {
   RotateCcw, Eye, BookOpen, Layers, MessageSquareText,
   Share2, GitBranch, UserCheck, Trophy, Terminal, Ban,
   IndianRupee, CreditCard, Rocket, Bug,
+  Map, Brain, Search, Stethoscope, Gamepad2, Wrench,
+  RefreshCcw, Pencil, Coins, Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
@@ -76,8 +78,9 @@ function Skeleton({ className = '' }: { className?: string }) {
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-type LiveMetrics    = Awaited<ReturnType<typeof adminApi.analytics>>
-type FeatureStats   = Awaited<ReturnType<typeof adminApi.featureStats>>
+type LiveMetrics       = Awaited<ReturnType<typeof adminApi.analytics>>
+type FeatureStats      = Awaited<ReturnType<typeof adminApi.featureStats>>
+type FeaturesOverview  = Awaited<ReturnType<typeof adminApi.featuresOverview>>
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AdminOverviewPage() {
@@ -87,18 +90,20 @@ export default function AdminOverviewPage() {
   const [featureStats, setFeatureStats] = useState<FeatureStats | null>(null)
   const [codeStats,    setCodeStats]    = useState<CodeStats | null>(null)
   const [billingOverview, setBillingOverview] = useState<{ totalSubscriptions: number; activeSubscriptions: number; mrr: number; planDistribution: Record<string, number> } | null>(null)
-  const [feedbackStats, setFeedbackStats] = useState<{ total: number; byStatus: Record<string, number> } | null>(null)
+  const [feedbackStats,     setFeedbackStats]     = useState<{ total: number; byStatus: Record<string, number> } | null>(null)
+  const [featuresOverview,  setFeaturesOverview]  = useState<FeaturesOverview | null>(null)
   const [loading,      setLoading]      = useState(true)
   const [liveLoading,  setLiveLoading]  = useState(true)
 
   const loadOverview = useCallback(async () => {
     try {
-      const [data, fs, cs, billing, fb] = await Promise.all([
+      const [data, fs, cs, billing, fb, fo] = await Promise.all([
         adminApi.overview(),
         adminApi.featureStats(),
         adminApi.code.stats(),
         adminApi.billing.overview().catch(() => null),
         adminApi.feedback.stats().catch(() => null),
+        adminApi.featuresOverview().catch(() => null),
       ])
       setStats(data.stats)
       setCharts(data.charts)
@@ -106,6 +111,7 @@ export default function AdminOverviewPage() {
       setCodeStats(cs)
       if (billing) setBillingOverview(billing)
       if (fb) setFeedbackStats(fb)
+      if (fo) setFeaturesOverview(fo)
     } finally {
       setLoading(false)
     }
@@ -505,11 +511,8 @@ export default function AdminOverviewPage() {
                 { href: '/admin/revenue',       Icon: IndianRupee,       label: 'Revenue',                sub: billingOverview ? `₹${billingOverview.mrr.toLocaleString('en-IN')} MRR` : '-', color: 'text-emerald-600', bg: 'bg-emerald-50' },
                 { href: '/admin/feedback',      Icon: Bug,               label: 'Feedback & Reports',     sub: feedbackStats ? `${feedbackStats.byStatus.open ?? 0} open · ${feedbackStats.total} total` : '-', color: 'text-red-600', bg: 'bg-red-50' },
               ].map(nav => (
-                <Link
-                  key={nav.href}
-                  href={nav.href}
-                  className="flex items-center gap-3 rounded-xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)] transition hover:shadow-md hover:border-brand/20"
-                >
+                <Link key={nav.href} href={nav.href}
+                  className="flex items-center gap-3 rounded-xl border border-hairline bg-paper-elevated p-4 shadow-[0_1px_6px_rgba(0,0,0,0.04)] transition hover:shadow-md hover:border-brand/20">
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${nav.bg}`}>
                     <nav.Icon className={`h-4 w-4 ${nav.color}`} />
                   </div>
@@ -524,6 +527,114 @@ export default function AdminOverviewPage() {
           </div>
         </>
       )}
+
+      {/* ── New Features ─────────────────────────────────────────────────────── */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-brand" />
+            <h2 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-ink-faint">
+              New Features (30-day activity)
+            </h2>
+          </div>
+          <Link href="/admin/activity" className="flex items-center gap-1 text-xs text-brand hover:underline">
+            Full activity table <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
+
+        {featuresOverview ? (() => {
+          const fo = featuresOverview
+          const cards = [
+            {
+              slug: 'plannr',     label: 'Plannr',            Icon: Map,        href: '/admin/features/plannr',
+              bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200',
+              stat: fo.plannr.profiles, statLabel: 'learners',
+              meta: [`${fo.plannr.active} active plans`, `${fo.plannr.topics} topics`, `${fo.plannr.activities30d} activities`],
+            },
+            {
+              slug: 'daily-quiz', label: 'Daily Quiz',        Icon: Brain,      href: '/admin/features/daily-quiz',
+              bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',
+              stat: fo.dailyQuiz.questions, statLabel: 'questions',
+              meta: [`${fo.dailyQuiz.attempts30d} attempts`, `${fo.dailyQuiz.activeUsers30d} active users`],
+            },
+            {
+              slug: 'detective',  label: 'Pattern Detective', Icon: Search,     href: '/admin/features/detective',
+              bg: 'bg-teal-50',   text: 'text-teal-700',   border: 'border-teal-200',
+              stat: fo.detective.scenarios, statLabel: 'scenarios',
+              meta: [`${fo.detective.attempts30d} attempts`, `${fo.detective.accuracy}% accuracy`],
+            },
+            {
+              slug: 'debug-lab',  label: 'Debug Lab',         Icon: Stethoscope,href: '/admin/features/debug-lab',
+              bg: 'bg-red-50',    text: 'text-red-700',    border: 'border-red-200',
+              stat: fo.debugLab.challenges, statLabel: 'challenges',
+              meta: [`${fo.debugLab.solves30d} solves`, `${fo.debugLab.successRate}% success`],
+            },
+            {
+              slug: 'roguelike',  label: 'LLD Roguelike',     Icon: Gamepad2,   href: '/admin/features/roguelike',
+              bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200',
+              stat: fo.roguelike.scenarios, statLabel: 'scenarios',
+              meta: [`${fo.roguelike.runs30d} runs`, `${fo.roguelike.completionRate}% completed`],
+            },
+            {
+              slug: 'debug-fix',  label: 'Debug & Fix',       Icon: Wrench,     href: '/admin/features/debug-fix',
+              bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200',
+              stat: fo.studio.debugFix.packs, statLabel: 'packs',
+              meta: [`${fo.studio.debugFix.attempts30d} attempts`],
+            },
+            {
+              slug: 'refactor',   label: 'Refactor',           Icon: RefreshCcw, href: '/admin/features/refactor',
+              bg: 'bg-cyan-50',   text: 'text-cyan-700',   border: 'border-cyan-200',
+              stat: fo.studio.refactor.packs, statLabel: 'packs',
+              meta: [`${fo.studio.refactor.attempts30d} attempts`],
+            },
+            {
+              slug: 'change-one', label: 'Change One Thing',  Icon: Pencil,     href: '/admin/features/change-one',
+              bg: 'bg-pink-50',   text: 'text-pink-700',   border: 'border-pink-200',
+              stat: fo.studio.changeOne.packs, statLabel: 'packs',
+              meta: [`${fo.studio.changeOne.attempts30d} attempts`],
+            },
+            {
+              slug: 'evolution',  label: 'Evolution',         Icon: TrendingUp, href: '/admin/features/evolution',
+              bg: 'bg-emerald-50',text: 'text-emerald-700',border: 'border-emerald-200',
+              stat: fo.studio.evolution.packs, statLabel: 'packs',
+              meta: [`${fo.studio.evolution.attempts30d} attempts`],
+            },
+            {
+              slug: 'budget',     label: 'Budget Pressure',   Icon: Coins,      href: '/admin/features/budget',
+              bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200',
+              stat: fo.studio.budget.packs, statLabel: 'packs',
+              meta: [`${fo.studio.budget.attempts30d} attempts`],
+            },
+          ]
+          return (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {cards.map(c => (
+                <Link key={c.slug} href={c.href}
+                  className={`group flex flex-col rounded-xl border ${c.border} ${c.bg} p-4 transition hover:shadow-md hover:brightness-95`}>
+                  <div className="flex items-start justify-between">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg bg-white/70 ${c.text}`}>
+                      <c.Icon className="h-4 w-4" />
+                    </div>
+                    <ArrowUpRight className={`h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity ${c.text}`} />
+                  </div>
+                  <p className={`mt-3 text-xs font-semibold ${c.text}`}>{c.label}</p>
+                  <p className="mt-1 text-2xl font-bold text-ink">{c.stat}</p>
+                  <p className={`text-[10px] ${c.text} opacity-70`}>{c.statLabel}</p>
+                  <div className="mt-2 space-y-0.5 border-t border-black/10 pt-2">
+                    {c.meta.map(m => (
+                      <p key={m} className="font-mono text-[9px] text-ink-faint">{m}</p>
+                    ))}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )
+        })() : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

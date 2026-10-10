@@ -94,8 +94,7 @@ export default function EditorPage() {
     if (access.kind !== 'need-auth') return
     // Save the intended destination so we can return after sign-in
     const redirect = `/editor/${id}?share=${shareToken}`
-    sessionStorage.setItem('postLoginRedirect', redirect)
-    router.replace('/?auth=1')
+    router.replace(`/sign-in?next=${encodeURIComponent(redirect)}`)
     toast('Please sign in to view this shared diagram.', { duration: 5000, icon: '🔐' })
   }, [access.kind, id, shareToken, router])
 

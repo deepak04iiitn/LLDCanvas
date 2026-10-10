@@ -1,19 +1,29 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowUpRight } from 'lucide-react'
 
 const LINKS = [
-  { href: '/features/editor',              label: 'The Editor',          note: 'UML diagram canvas'   },
-  { href: '/features/draft-notation',      label: 'Draft Notation',      note: 'Text → diagram'   },
-  { href: '/features/interview-mode',      label: 'Interview Mode',      note: 'Timed practice'        },
-  { href: '/features/interview-questions', label: 'Interview Questions', note: '110+ problems'         },
-  { href: '/features/revision-notes',      label: 'Revision Notes',      note: 'Concept refreshers'    },
-  { href: '/features/code-execution',      label: 'Code Execution',      note: '12 languages'          },
-  { href: '/features/collaboration',       label: 'Collaboration',       note: 'Real-time sync'        },
-  { href: '/pricing',                      label: 'Pricing',             note: 'Plans & billing'       },
-  { href: '/docs',                         label: 'Docs',                note: 'Guides & API'          },
+  { href: '/features/editor',                   label: 'The Editor',               note: 'UML diagram canvas'     },
+  { href: '/features/draft-notation',           label: 'Draft Notation',           note: 'Text → diagram'         },
+  { href: '/features/interview-mode',           label: 'Interview Mode',           note: 'Timed practice'         },
+  { href: '/features/interview-questions',      label: 'Interview Questions',      note: '110+ problems'          },
+  { href: '/features/revision-notes',           label: 'Revision Notes',           note: 'Concept refreshers'     },
+  { href: '/features/code-execution',           label: 'Code Execution',           note: '12 languages'           },
+  { href: '/features/collaboration',            label: 'Collaboration',            note: 'Real-time sync'         },
+  { href: '/features/plannr',                   label: 'Plannr',                   note: 'Structured prep roadmap'},
+  { href: '/features/daily-quiz',               label: 'Daily Quiz',               note: 'Stay sharp every day'   },
+  { href: '/features/pattern-detective',        label: 'Pattern Detective',        note: 'Spot patterns in real code'},
+  { href: '/features/debug-lab',                label: 'Debug Lab',                note: 'Annotate design flaws'  },
+  { href: '/features/roguelike',                label: 'Roguelike',                note: 'Procedural LLD runs'    },
+  { href: '/features/debug-and-fix',            label: 'Debug & Fix',              note: 'Fix broken designs'     },
+  { href: '/features/refactor',                 label: 'Refactor',                 note: 'Clean the monolith'     },
+  { href: '/features/change-one-thing',         label: 'Change One Thing',         note: 'OCP under pressure'     },
+  { href: '/features/evolution',                label: 'Evolution',                note: 'Multi-stage growth'     },
+  { href: '/features/budget-pressure',          label: 'Budget Pressure',          note: 'Design within constraints'},
+  { href: '/pricing',                           label: 'Pricing',                  note: 'Plans & billing'        },
+  { href: '/docs',                              label: 'Docs',                     note: 'Guides & API'           },
 ]
 
 // Rendered near the bottom of every /features/** page - every page links to

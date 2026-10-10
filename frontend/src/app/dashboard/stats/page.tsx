@@ -13,10 +13,12 @@ import { WeeklyReport } from '@/components/stats/WeeklyReport'
 import { MonthlyReport } from '@/components/stats/MonthlyReport'
 import { PersonalBests } from '@/components/stats/PersonalBests'
 import { api } from '@/lib/api'
+import { learnApi, type QuizStreak } from '@/lib/learn-api'
 import type { PracticeStats, AdvancedStats } from '@/types'
 import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
 import Link from 'next/link'
+import { StreakCalendar } from '@/components/learn/quiz/StreakCalendar'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -62,13 +64,14 @@ function SkeletonBlock({ h = 'h-48' }: { h?: string }) {
 
 // ─── Tab definition ──────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'avg-time' | 'reports' | 'bests'
+type Tab = 'overview' | 'avg-time' | 'reports' | 'bests' | 'daily-quiz'
 
 const TABS: { id: Tab; label: string; Icon: typeof Clock }[] = [
-  { id: 'overview',  label: 'Overview',       Icon: LayoutDashboard },
-  { id: 'avg-time',  label: 'Avg Time',        Icon: Clock           },
-  { id: 'reports',   label: 'Reports',         Icon: TrendingUp      },
-  { id: 'bests',     label: 'Personal Bests',  Icon: Trophy          },
+  { id: 'overview',   label: 'Overview',       Icon: LayoutDashboard },
+  { id: 'daily-quiz', label: 'Daily Quiz',      Icon: Flame           },
+  { id: 'avg-time',   label: 'Avg Time',        Icon: Clock           },
+  { id: 'reports',    label: 'Reports',         Icon: TrendingUp      },
+  { id: 'bests',      label: 'Personal Bests',  Icon: Trophy          },
 ]
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -106,11 +109,13 @@ function PlanLockedTab({ label, requiredPlan }: { label: string; requiredPlan: '
 }
 
 export default function StatsPage() {
-  const [stats,    setStats]    = useState<PracticeStats | null>(null)
-  const [advanced, setAdvanced] = useState<AdvancedStats | null>(null)
-  const [loading,  setLoading]  = useState(true)
-  const [advLoad,  setAdvLoad]  = useState(true)
-  const [tab,      setTab]      = useState<Tab>('overview')
+  const [stats,       setStats]       = useState<PracticeStats | null>(null)
+  const [advanced,    setAdvanced]    = useState<AdvancedStats | null>(null)
+  const [loading,     setLoading]     = useState(true)
+  const [advLoad,     setAdvLoad]     = useState(true)
+  const [tab,         setTab]         = useState<Tab>('overview')
+  const [quizStreak,  setQuizStreak]  = useState<QuizStreak | null>(null)
+  const [quizLoading, setQuizLoading] = useState(false)
   const { plan, isFree, isUltimate } = usePlan()
 
   useEffect(() => {
@@ -128,6 +133,15 @@ export default function StatsPage() {
       setAdvLoad(false)
     }
   }, [isFree])
+
+  useEffect(() => {
+    if (tab !== 'daily-quiz' || quizStreak) return
+    setQuizLoading(true)
+    learnApi.quiz.streak()
+      .then(setQuizStreak)
+      .catch(() => {})
+      .finally(() => setQuizLoading(false))
+  }, [tab, quizStreak])
 
   return (
     <AppShell>
@@ -241,6 +255,65 @@ export default function StatsPage() {
                     ? <div className="h-28 animate-pulse rounded-xl bg-hairline" />
                     : stats && <ActivityCalendar activity={stats.dailyActivity} />}
                 </div>
+              </motion.div>
+            )}
+
+            {/* ── Daily Quiz tab ──────────────────────────────────────────── */}
+            {tab === 'daily-quiz' && (
+              <motion.div
+                key="daily-quiz"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="w-full space-y-6"
+              >
+                {quizLoading ? (
+                  <><SkeletonCard /><SkeletonBlock h="h-40" /></>
+                ) : quizStreak ? (
+                  <>
+                    {/* Summary chips */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <StatCard
+                        label="Current streak"
+                        value={quizStreak.currentStreak > 0 ? `${quizStreak.currentStreak} 🔥` : '—'}
+                        sub="consecutive days"
+                        Icon={Flame}
+                        accent="text-amber-500"
+                        iconBg="bg-amber-50"
+                      />
+                      <StatCard
+                        label="Longest streak"
+                        value={String(quizStreak.longestStreak || '—')}
+                        sub="personal best"
+                        Icon={Trophy}
+                        accent="text-brand"
+                        iconBg="bg-brand/10"
+                      />
+                      <StatCard
+                        label="Days completed"
+                        value={String(quizStreak.totalDays)}
+                        sub="total quiz days"
+                        Icon={CheckCircle2}
+                        accent="text-emerald-600"
+                        iconBg="bg-emerald-50"
+                      />
+                    </div>
+
+                    {/* Heatmap calendar */}
+                    <div className="rounded-2xl border border-hairline bg-white p-6 shadow-sm">
+                      <h2 className="mb-1 text-sm font-semibold text-ink">Quiz activity</h2>
+                      <p className="mb-5 text-[11px] text-ink-faint">Days you completed the daily quiz in the last 30 days</p>
+                      <StreakCalendar
+                        last30Days={quizStreak.last30Days}
+                        last365Days={quizStreak.last365Days}
+                        currentStreak={quizStreak.currentStreak}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-ink-faint py-12 text-center">Complete your first daily quiz to see stats here.</p>
+                )}
               </motion.div>
             )}
 

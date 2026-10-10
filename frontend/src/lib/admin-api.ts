@@ -159,6 +159,22 @@ export const adminApi = {
       hourlyActiveUsers: { hour: string; users: number }[]
     }>('/analytics'),
 
+  featuresOverview: () =>
+    req<{
+      plannr:    { profiles: number; active: number; topics: number; activities30d: number }
+      dailyQuiz: { questions: number; attempts30d: number; activeUsers30d: number }
+      detective: { scenarios: number; attempts30d: number; accuracy: number }
+      debugLab:  { challenges: number; solves30d: number; successRate: number }
+      roguelike: { scenarios: number; runs30d: number; completionRate: number }
+      studio: {
+        debugFix:  { packs: number; attempts30d: number }
+        refactor:  { packs: number; attempts30d: number }
+        changeOne: { packs: number; attempts30d: number }
+        evolution: { packs: number; attempts30d: number }
+        budget:    { packs: number; attempts30d: number }
+      }
+    }>('/features-overview'),
+
   featureStats: () =>
     req<{
       problems:  { total: number; active: number; inactive: number; problemsByDifficulty: { _id: string; count: number }[]; topProblems: { title: string; difficulty: string; attempts: number; submitted: number }[] }
@@ -488,6 +504,243 @@ export const adminApi = {
     deleteComment: (id: string) =>
       req<{ ok: boolean }>(`/blog/comments/${id}`, { method: 'DELETE' }),
   },
+
+  // ─── Per-feature user activity (all features) ────────────────────────────────
+  featureActivity: (slug: string, days?: number) =>
+    req<AdminFeatureActivity>(`/plannr/feature-activity/${slug}${days ? `?days=${days}` : ''}`),
+
+  // ─── Cross-feature User Activity table ───────────────────────────────────────
+  userActivity: (params: { days?: number; feature?: string; search?: string; page?: number; limit?: number; sortBy?: string; sortDir?: 'asc' | 'desc' }) => {
+    const qs = new URLSearchParams()
+    if (params.days)    qs.set('days',    String(params.days))
+    if (params.feature && params.feature !== 'all') qs.set('feature', params.feature)
+    if (params.search)  qs.set('search',  params.search)
+    if (params.page)    qs.set('page',    String(params.page))
+    if (params.limit)   qs.set('limit',   String(params.limit))
+    if (params.sortBy)  qs.set('sortBy',  params.sortBy)
+    if (params.sortDir) qs.set('sortDir', params.sortDir)
+    return req<UserActivityResponse>(`/user-activity${qs.toString() ? '?' + qs : ''}`)
+  },
+
+  // ─── Plannr admin ─────────────────────────────────────────────────────────────
+  plannr: {
+    stats: (days?: number) =>
+      req<AdminPlannrStats>(`/plannr/stats${days ? `?days=${days}` : ''}`),
+
+    listProfiles: (params?: { page?: number; limit?: number }) => {
+      const qs = new URLSearchParams()
+      if (params?.page)  qs.set('page',  String(params.page))
+      if (params?.limit) qs.set('limit', String(params.limit))
+      return req<{ profiles: AdminJourneyProfile[]; total: number; page: number; limit: number; totalPages: number }>(
+        `/plannr/profiles${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+
+    // Topics
+    listTopics: (params?: { q?: string; status?: string; stage?: number }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)      qs.set('q',      params.q)
+      if (params?.status) qs.set('status', params.status)
+      if (params?.stage)  qs.set('stage',  String(params.stage))
+      return req<{ topics: AdminJourneyTopic[] }>(`/plannr/topics${qs.toString() ? '?' + qs : ''}`)
+    },
+    createTopic: (body: Partial<AdminJourneyTopic>) =>
+      req<AdminJourneyTopic>('/plannr/topics', { method: 'POST', body: JSON.stringify(body) }),
+    updateTopic: (id: string, body: Partial<AdminJourneyTopic>) =>
+      req<AdminJourneyTopic>(`/plannr/topics/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishTopic: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/plannr/topics/${id}/publish`, { method: 'POST' }),
+    deleteTopic: (id: string) =>
+      req<{ ok: boolean }>(`/plannr/topics/${id}`, { method: 'DELETE' }),
+    bulkDeleteTopics: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/plannr/topics/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+
+    // Experiences
+    listExperiences: (params?: { q?: string; status?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)      qs.set('q',      params.q)
+      if (params?.status) qs.set('status', params.status)
+      return req<{ experiences: AdminJourneyExperience[] }>(`/plannr/experiences${qs.toString() ? '?' + qs : ''}`)
+    },
+    createExperience: (body: Partial<AdminJourneyExperience>) =>
+      req<AdminJourneyExperience>('/plannr/experiences', { method: 'POST', body: JSON.stringify(body) }),
+    updateExperience: (id: string, body: Partial<AdminJourneyExperience>) =>
+      req<AdminJourneyExperience>(`/plannr/experiences/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishExperience: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/plannr/experiences/${id}/publish`, { method: 'POST' }),
+    deleteExperience: (id: string) =>
+      req<{ ok: boolean }>(`/plannr/experiences/${id}`, { method: 'DELETE' }),
+    bulkDeleteExperiences: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/plannr/experiences/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+
+    // Tips
+    listTips: (params?: { status?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.status) qs.set('status', params.status)
+      return req<{ tips: AdminJourneyTip[] }>(`/plannr/tips${qs.toString() ? '?' + qs : ''}`)
+    },
+    createTip: (body: Partial<AdminJourneyTip>) =>
+      req<AdminJourneyTip>('/plannr/tips', { method: 'POST', body: JSON.stringify(body) }),
+    updateTip: (id: string, body: Partial<AdminJourneyTip>) =>
+      req<AdminJourneyTip>(`/plannr/tips/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishTip: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/plannr/tips/${id}/publish`, { method: 'POST' }),
+    deleteTip: (id: string) =>
+      req<{ ok: boolean }>(`/plannr/tips/${id}`, { method: 'DELETE' }),
+    bulkDeleteTips: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/plannr/tips/bulk-delete', { method: 'POST', body: JSON.stringify({ ids }) }),
+  },
+
+  studio: {
+    listPacks: (type?: ChallengePackType) => {
+      const qs = new URLSearchParams()
+      if (type) qs.set('type', type)
+      const q = qs.toString()
+      return req<{ packs: AdminChallengePack[] }>(`/studio/packs${q ? `?${q}` : ''}`)
+    },
+    createPack: (body: Partial<AdminChallengePack> & { type: ChallengePackType; slug: string; title: string }) =>
+      req<AdminChallengePack>('/studio/packs', { method: 'POST', body: JSON.stringify(body) }),
+    updatePack: (id: string, body: Partial<AdminChallengePack>) =>
+      req<AdminChallengePack>(`/studio/packs/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deletePack: (id: string) =>
+      req<{ ok: boolean }>(`/studio/packs/${id}`, { method: 'DELETE' }),
+    publishPack: (id: string) =>
+      req<AdminChallengePack>(`/studio/packs/${id}/publish`, { method: 'POST' }),
+    bulkDeletePacks: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/studio/packs/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids }),
+      }),
+  },
+
+  learn: {
+    // ── Daily Quiz ────────────────────────────────────────────────────────────
+    listQuiz: () =>
+      req<{ questions: AdminQuizQuestion[] }>('/learn/quiz'),
+    createQuiz: (body: Partial<AdminQuizQuestion> & { slug: string; prompt: string; choices: string[]; correctIndex: number }) =>
+      req<AdminQuizQuestion>('/learn/quiz', { method: 'POST', body: JSON.stringify(body) }),
+    updateQuiz: (id: string, body: Partial<AdminQuizQuestion>) =>
+      req<AdminQuizQuestion>(`/learn/quiz/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    deleteQuiz: (id: string) =>
+      req<{ ok: boolean }>(`/learn/quiz/${id}`, { method: 'DELETE' }),
+
+    // ── Pattern Detective ─────────────────────────────────────────────────────
+    detectiveStats: (days?: number) =>
+      req<AdminDetectiveStats>(`/learn/detective/stats${days ? `?days=${days}` : ''}`),
+    listDetective: (params?: { q?: string; status?: string; difficulty?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)          qs.set('q', params.q)
+      if (params?.status)     qs.set('status', params.status)
+      if (params?.difficulty) qs.set('difficulty', params.difficulty)
+      return req<{ scenarios: AdminDetectiveScenario[] }>(`/learn/detective${qs.toString() ? '?' + qs : ''}`)
+    },
+    createDetective: (body: Partial<AdminDetectiveScenario>) =>
+      req<AdminDetectiveScenario>('/learn/detective', { method: 'POST', body: JSON.stringify(body) }),
+    updateDetective: (id: string, body: Partial<AdminDetectiveScenario>) =>
+      req<AdminDetectiveScenario>(`/learn/detective/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishDetective: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/learn/detective/${id}/publish`, { method: 'POST' }),
+    deleteDetective: (id: string) =>
+      req<{ ok: boolean }>(`/learn/detective/${id}`, { method: 'DELETE' }),
+    bulkDeleteDetective: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/learn/detective/bulk-delete', {
+        method: 'POST', body: JSON.stringify({ ids }),
+      }),
+
+    // ── Debug Lab ─────────────────────────────────────────────────────────────
+    debuggerStats: (days?: number) =>
+      req<AdminDebuggerStats>(`/learn/debugger/stats${days ? `?days=${days}` : ''}`),
+    listDebugger: (params?: { q?: string; status?: string; difficulty?: string; bugType?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)          qs.set('q', params.q)
+      if (params?.status)     qs.set('status', params.status)
+      if (params?.difficulty) qs.set('difficulty', params.difficulty)
+      if (params?.bugType)    qs.set('bugType', params.bugType)
+      return req<{ challenges: AdminDebuggerChallenge[] }>(`/learn/debugger${qs.toString() ? '?' + qs : ''}`)
+    },
+    createDebugger: (body: Partial<AdminDebuggerChallenge>) =>
+      req<AdminDebuggerChallenge>('/learn/debugger', { method: 'POST', body: JSON.stringify(body) }),
+    updateDebugger: (id: string, body: Partial<AdminDebuggerChallenge>) =>
+      req<AdminDebuggerChallenge>(`/learn/debugger/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishDebugger: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/learn/debugger/${id}/publish`, { method: 'POST' }),
+    deleteDebugger: (id: string) =>
+      req<{ ok: boolean }>(`/learn/debugger/${id}`, { method: 'DELETE' }),
+    bulkDeleteDebugger: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/learn/debugger/bulk-delete', {
+        method: 'POST', body: JSON.stringify({ ids }),
+      }),
+
+    // ── LLD Roguelike ─────────────────────────────────────────────────────────
+    roguelikeStats: (days?: number) =>
+      req<AdminRoguelikeStats>(`/learn/roguelike/stats${days ? `?days=${days}` : ''}`),
+    listRoguelikeScenarios: (params?: { q?: string; status?: string; difficulty?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.q)          qs.set('q', params.q)
+      if (params?.status)     qs.set('status', params.status)
+      if (params?.difficulty) qs.set('difficulty', params.difficulty)
+      return req<{ scenarios: AdminRoguelikeScenario[] }>(`/learn/roguelike/scenarios${qs.toString() ? '?' + qs : ''}`)
+    },
+    createRoguelikeScenario: (body: Partial<AdminRoguelikeScenario>) =>
+      req<AdminRoguelikeScenario>('/learn/roguelike/scenarios', { method: 'POST', body: JSON.stringify(body) }),
+    updateRoguelikeScenario: (id: string, body: Partial<AdminRoguelikeScenario>) =>
+      req<AdminRoguelikeScenario>(`/learn/roguelike/scenarios/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    publishRoguelikeScenario: (id: string) =>
+      req<{ ok: boolean; status: string }>(`/learn/roguelike/scenarios/${id}/publish`, { method: 'POST' }),
+    deleteRoguelikeScenario: (id: string) =>
+      req<{ ok: boolean }>(`/learn/roguelike/scenarios/${id}`, { method: 'DELETE' }),
+    bulkDeleteRoguelikeScenarios: (ids: string[]) =>
+      req<{ ok: boolean; deleted: number }>('/learn/roguelike/scenarios/bulk-delete', {
+        method: 'POST', body: JSON.stringify({ ids }),
+      }),
+    listRoguelikeRuns: (params?: { page?: number; limit?: number; status?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.page)   qs.set('page',   String(params.page))
+      if (params?.limit)  qs.set('limit',  String(params.limit))
+      if (params?.status) qs.set('status', params.status)
+      return req<{ runs: AdminRoguelikeRun[]; total: number; page: number; limit: number; totalPages: number }>(
+        `/learn/roguelike/runs${qs.toString() ? '?' + qs : ''}`,
+      )
+    },
+  },
+
+}
+
+// ─── Interactive LLD admin types ──────────────────────────────────────────────
+
+export type ChallengePackType = 'debugger' | 'refactor' | 'change_one' | 'evolution' | 'budget'
+export type ChallengePackStatus = 'draft' | 'published' | 'archived'
+
+export interface AdminChallengePack {
+  _id: string
+  type: ChallengePackType
+  slug: string
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  description: string
+  diagramSnapshot: Record<string, unknown>
+  payload: Record<string, unknown>
+  status: ChallengePackStatus
+  planMin: 'free' | 'pro' | 'ultimate'
+  problemId?: string
+  tags: string[]
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminQuizQuestion {
+  _id: string
+  slug: string
+  topic: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  prompt: string
+  choices: string[]
+  correctIndex: number
+  explanation: string
+  status: 'draft' | 'published' | 'archived'
+  createdAt: string
+  updatedAt: string
 }
 
 // ─── Admin testimonial type ───────────────────────────────────────────────────
@@ -692,6 +945,241 @@ export interface AdminBlogComment {
   isDeleted:   boolean
   isReported:  boolean
   createdAt:   string
+}
+
+// ─── Feature activity types ───────────────────────────────────────────────────
+
+export interface AdminFeatureActivity {
+  activeToday:       number
+  activeThisWeek:    number
+  activeThisPeriod:  number
+  totalActions:      number
+  dailyActivity:     { date: string; count: number }[]
+  recentActivity:    { userId: string; userName: string; userEmail: string; action: string; timestamp: string }[]
+  topUsers:          { userId: string; userName: string; userEmail: string; count: number }[]
+}
+
+// ─── Plannr types ─────────────────────────────────────────────────────────────
+
+export interface AdminPlannrPreviewViewer {
+  userId: string
+  userName: string
+  userEmail: string
+  userPlan: 'free' | 'pro'
+  visitCount: number
+  firstViewedAt: string
+  lastViewedAt: string
+  sources: string[]
+}
+
+export interface AdminPlannrStats {
+  profiles:    { total: number; active: number }
+  topics:      { total: number; published: number }
+  experiences: { total: number; published: number }
+  tips:        { total: number }
+  activity: {
+    total: number; recent: number; today: number
+    activeUsersToday: number; activeUsersThisPeriod: number
+  }
+  preview?: {
+    uniqueUsersAllTime: number
+    uniqueUsersThisPeriod: number
+    uniqueUsersToday: number
+    visitsThisPeriod: number
+    recentViewers: AdminPlannrPreviewViewer[]
+  }
+  dailyActivity:   { _id: string; count: number }[]
+  activityByType:  { _id: string; count: number }[]
+  popularTopics:   { _id: string; count: number }[]
+  stageDistribution: { _id: number; count: number }[]
+}
+
+export interface AdminJourneyProfile {
+  _id:               string
+  userId:            string
+  planName:          string
+  isActive:          boolean
+  targetRole:        string
+  preparationDays:   number
+  currentLevel:      string
+  currentStage:      number
+  topicsCompleted:   string[]
+  lastActiveDate:    string
+  createdAt:         string
+}
+
+export interface AdminJourneyTopic {
+  _id:              string
+  slug:             string
+  title:            string
+  subtitle:         string
+  stage:            number
+  order:            number
+  type:             string
+  description:      string
+  estimatedMinutes: number
+  icon:             string
+  tags:             string[]
+  status:           'draft' | 'published'
+  createdAt:        string
+  updatedAt:        string
+}
+
+export interface AdminJourneyExperience {
+  _id:             string
+  slug:            string
+  title:           string
+  company?:        string
+  round:           string
+  durationMinutes: number
+  problem:         string
+  tags:            string[]
+  order:           number
+  status:          'draft' | 'published'
+  createdAt:       string
+  updatedAt:       string
+}
+
+export interface AdminJourneyTip {
+  _id:    string
+  moment: string
+  title:  string
+  body:   string
+  order:  number
+  status: 'draft' | 'published'
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Detective types ──────────────────────────────────────────────────────────
+
+export interface AdminDetectiveScenario {
+  _id:            string
+  slug:           string
+  title:          string
+  mode:           string
+  difficulty:     'easy' | 'medium' | 'hard'
+  stem:           string
+  answer:         string
+  choices:        string[]
+  explanation:    string
+  description?:   string
+  codeSnippet?:   string
+  problemContext?: string
+  keyPatterns?:   string[]
+  status:         'draft' | 'published' | 'archived'
+  order:          number
+  createdAt:      string
+  updatedAt:      string
+}
+
+export interface AdminDetectiveStats {
+  scenarios:     { total: number; published: number; drafts: number }
+  attempts:      { total: number; correct: number; accuracy: number; recent: number }
+  dailyActivity: { _id: string; count: number }[]
+  topScenarios:  { title: string; slug: string; difficulty: string; attempts: number; correct: number }[]
+  diffBreakdown: { _id: string; count: number }[]
+}
+
+// ─── Debugger challenge types ─────────────────────────────────────────────────
+
+export interface AdminDebuggerChallenge {
+  _id:            string
+  slug:           string
+  title:          string
+  description:    string
+  difficulty:     'easy' | 'medium' | 'hard'
+  bugType:        string
+  tags:           string[]
+  status:         'draft' | 'published'
+  order:          number
+  createdAt:      string
+  updatedAt:      string
+}
+
+export interface AdminDebuggerStats {
+  challenges:    { total: number; published: number; drafts: number }
+  solves:        { total: number; success: number; rate: number; recent: number }
+  dailyActivity: { _id: string; count: number }[]
+  topChallenges: { title: string; slug: string; difficulty: string; bugType: string; solves: number; success: number }[]
+  diffBreakdown: { _id: string; count: number }[]
+  bugTypeBreakdown: { _id: string; count: number }[]
+}
+
+// ─── Roguelike types ──────────────────────────────────────────────────────────
+
+export interface AdminRoguelikeScenario {
+  _id:              string
+  slug:             string
+  title:            string
+  icon:             string
+  description:      string
+  systemContext?:   string
+  difficulty:       'easy' | 'medium' | 'hard' | 'hardcore'
+  modes:            string[]
+  tags:             string[]
+  status:           'draft' | 'published'
+  order:            number
+  estimatedMinutes: number
+  createdAt:        string
+  updatedAt:        string
+}
+
+export interface AdminRoguelikeRun {
+  _id:         string
+  userId:      { _id: string; name: string; email: string } | string
+  scenarioId:  { _id: string; title: string; slug: string } | string
+  status:      'active' | 'completed' | 'failed' | 'abandoned'
+  mode:        string
+  startedAt:   string
+  completedAt: string | null
+  createdAt:   string
+}
+
+export interface AdminRoguelikeStats {
+  scenarios:     { total: number; published: number; drafts: number }
+  runs:          { total: number; completed: number; completionRate: number; recent: number }
+  dailyActivity: { _id: string; count: number }[]
+  topScenarios:  { title: string; slug: string; difficulty: string; runs: number; completed: number }[]
+  runsByMode:    { _id: string; count: number }[]
+}
+
+// ─── Blog analytics ───────────────────────────────────────────────────────────
+
+// ─── User Activity (cross-feature) ────────────────────────────────────────────
+
+export interface UserActivityRow {
+  date:            string
+  userId:          string
+  userName:        string
+  userEmail:       string
+  feature:         string
+  featureLabel:    string
+  actions:         number
+  completions:     number
+  durationMinutes: number | null
+  lastSeen:        string
+  /** Present on daily-quiz attempt rows */
+  scoreCorrect?:   number
+  scoreTotal?:     number
+  scorePercent?:   number | null
+  scoreLabel?:     string
+}
+
+export interface UserActivitySummary {
+  totalActiveUsers:  number
+  totalActions:      number
+  topFeatureSlug:    string
+  topFeatureLabel:   string
+  avgActionsPerUser: number
+}
+
+export interface UserActivityResponse {
+  rows:    UserActivityRow[]
+  total:   number
+  page:    number
+  pages:   number
+  summary: UserActivitySummary
 }
 
 export interface AdminBlogAnalytics {

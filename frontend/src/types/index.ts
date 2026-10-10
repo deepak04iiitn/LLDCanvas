@@ -214,6 +214,7 @@ export interface UMLNodeData {
   noteText?: string         // used only when nodeType === 'note'
   packageName?: string
   isEditing?: boolean       // triggers auto-focus of name on mount
+  alwaysExpanded?: boolean  // always show attribute/method sections (e.g. in roguelike)
   [key: string]: unknown    // React Flow requires index signature on node data
 }
 

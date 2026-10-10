@@ -1,7 +1,11 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { AuthModal } from '@/components/auth/AuthModal'
+import { createContext, useContext, type ReactNode } from 'react'
+
+// ---------------------------------------------------------------------------
+// AuthModalProvider — previously opened a modal dialog; now navigates to
+// dedicated /sign-in or /sign-up pages so the flows have their own URLs.
+// ---------------------------------------------------------------------------
 
 interface AuthModalContextValue {
   openAuthModal: (redirectTo?: string, mode?: 'signin' | 'signup') => void
@@ -16,19 +20,22 @@ export function useAuthModal() {
 }
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false)
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  function openAuthModal(redirectTo?: string, mode: 'signin' | 'signup' = 'signin') {
+    // Build the target URL with an optional ?next= param so the auth page
+    // knows where to redirect after successful authentication.
+    let url = mode === 'signup' ? '/sign-up' : '/sign-in'
+    if (redirectTo) url += `?next=${encodeURIComponent(redirectTo)}`
 
-  function openAuthModal(redirectTo?: string, authMode: 'signin' | 'signup' = 'signin') {
-    if (redirectTo) sessionStorage.setItem('postLoginRedirect', redirectTo)
-    setMode(authMode)
-    setOpen(true)
+    // Use window.location so this works outside of React Router / Next.js
+    // router context (e.g. in legacy event handlers).
+    if (typeof window !== 'undefined') {
+      window.location.href = url
+    }
   }
 
   return (
     <AuthModalContext.Provider value={{ openAuthModal }}>
       {children}
-      <AuthModal open={open} onOpenChange={setOpen} defaultMode={mode} />
     </AuthModalContext.Provider>
   )
 }

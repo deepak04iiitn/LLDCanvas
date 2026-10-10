@@ -614,7 +614,7 @@ export function Topbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Code mode — full-width UML ↔ Code switch */}
+        {/* Code mode — full-width code runner overlay */}
         {onOpenCode && (
           <Tooltip>
             <TooltipTrigger

@@ -12,11 +12,12 @@ import {
 import { useEditor } from '@/contexts/EditorContext'
 import type { UMLEdgeData, RelationshipType, Waypoint } from '@/types'
 import { useEraserHighlight } from '@/lib/eraserState'
+import { useMarkerPrefix } from '@/components/canvas/UMLMarkers'
 
 // ─── Marker resolution ────────────────────────────────────────────────────────
 
-function markerId(base: string, dark: boolean) {
-  return `url(#${base}${dark ? '-dark' : ''})`
+function markerUrl(prefix: string, base: string, dark: boolean) {
+  return `url(#${prefix}${base}${dark ? '-dark' : ''})`
 }
 
 interface MarkerConfig {
@@ -25,27 +26,29 @@ interface MarkerConfig {
   strokeDasharray?: string
 }
 
-function getMarkers(type: RelationshipType, dark: boolean): MarkerConfig {
+function getMarkers(type: RelationshipType, dark: boolean, prefix: string): MarkerConfig {
+  const m = (base: string) => markerUrl(prefix, base, dark)
   switch (type) {
     case 'inheritance':
-      return { markerEnd: markerId('uml-inheritance', dark) }
+      return { markerEnd: m('inheritance') }
     case 'realization':
-      return { markerEnd: markerId('uml-realization', dark), strokeDasharray: '6 3' }
+      return { markerEnd: m('realization'), strokeDasharray: '6 3' }
     case 'dependency':
-      return { markerEnd: markerId('uml-dependency', dark), strokeDasharray: '6 3' }
+      return { markerEnd: m('dependency'), strokeDasharray: '6 3' }
     case 'association':
-      return { markerEnd: markerId('uml-dependency', dark) }
+      return { markerEnd: m('dependency') }
     case 'bidirectional':
       return {
-        markerEnd: markerId('uml-dependency', dark),
-        markerStart: markerId('uml-dependency', dark),
+        markerEnd: m('dependency'),
+        markerStart: m('dependency'),
       }
+    // Diamond sits on the WHOLE (source) side — matches RelationshipPicker icons
     case 'aggregation':
-      return { markerEnd: markerId('uml-aggregation', dark) }
+      return { markerStart: m('aggregation') }
     case 'composition':
-      return { markerEnd: markerId('uml-composition', dark) }
+      return { markerStart: m('composition') }
     default:
-      return {}
+      return { markerEnd: m('dependency') }
   }
 }
 
@@ -275,16 +278,18 @@ export function UMLEdge({
   source,
   target,
 }: EdgeProps) {
-  const edgeData = (rawData ?? {}) as Partial<UMLEdgeData>
+  const edgeData = (rawData ?? {}) as Partial<UMLEdgeData> & { hideChrome?: boolean }
   const relType: RelationshipType = edgeData.relationshipType ?? 'association'
   // 'step' → auto-elbow (legacy); everything else (undefined/'straight') → straight + manual waypoints
   const lineStyle = edgeData.lineStyle === 'step' ? 'step' : 'straight'
   const waypoints: Waypoint[] = Array.isArray(edgeData.waypoints)
     ? (edgeData.waypoints as Waypoint[])
     : []
+  const hideChrome = Boolean(edgeData.hideChrome)
 
   const { theme } = useEditor()
   const dark = theme === 'dark'
+  const markerPrefix = useMarkerPrefix()
   const { setEdges, screenToFlowPosition } = useReactFlow()
   const [hovered, setHovered] = useState(false)
   const isEraserTarget = useEraserHighlight(id)
@@ -296,42 +301,49 @@ export function UMLEdge({
   const stroke = isEraserTarget ? eraserColor : selected ? selectedColor : hovered ? hoverColor : edgeColor
   const strokeWidth = isEraserTarget ? 2.5 : selected ? 2 : hovered ? 2 : 1.5
 
-  const markers = getMarkers(relType, dark)
+  const markers = getMarkers(relType, dark, markerPrefix)
 
   // ── Marker endpoint offset ──────────────────────────────────────────────────
-  // For filled markers (triangles and diamonds) we use refX=0 (the marker's
-  // inner/base edge at the path endpoint). The edge path is shortened by the
-  // marker depth so the outer tip lands exactly at the node handle — no
-  // fill-vs-stroke rendering gap is possible with this approach.
-  //
-  // Depths are in marker-user-units (markerUnits="strokeWidth", so the actual
-  // rendered depth = depth × strokeWidth flow-units).
-  //
-  //   Inheritance / Realization triangle: depth = 9  (M 0 … L 9 4.5 …)
-  //   Aggregation / Composition diamond:  depth = 13 (M 0 4.5 … L 13 4.5 …)
-  //   Dependency / Association chevron:   depth = 0  (open, no fill, no gap)
-  //   Bidirectional chevrons:             depth = 0  (same)
-  const MARKER_DEPTH: Partial<Record<RelationshipType, number>> = {
-    inheritance: 9,
-    realization: 9,
-    aggregation: 13,
-    composition: 13,
-  }
-  const markerDepth = MARKER_DEPTH[relType] ?? 0
+  // Filled markers (triangles at target, diamonds at source) use refX=0.
+  // Shorten the path on that end so the outer tip lands on the node border.
+  const endMarkerDepth =
+    relType === 'inheritance' || relType === 'realization' ? 9 : 0
+  const startMarkerDepth =
+    relType === 'aggregation' || relType === 'composition' ? 13 : 0
 
-  // Pull the target position back by markerDepth so the path ends at the
-  // marker's inner edge; the marker body then fills the gap to the real handle.
+  // Step elbows need room; a short gap produces sideways U-stubs — use straight.
+  const span = Math.hypot(targetX - sourceX, targetY - sourceY)
+  const effectiveLineStyle =
+    lineStyle === 'step' && span < 120 ? 'straight' : lineStyle
+
   function markerAdjustedTarget(
-    px: number, py: number,   // point before target (last waypoint or source)
-    tx: number, ty: number,   // original target handle position
+    px: number,
+    py: number,
+    tx: number,
+    ty: number,
   ): [number, number] {
-    if (markerDepth === 0) return [tx, ty]
+    if (endMarkerDepth === 0) return [tx, ty]
     const dx = tx - px
     const dy = ty - py
     const len = Math.hypot(dx, dy)
     if (len < 1) return [tx, ty]
-    const offset = markerDepth * strokeWidth
+    const offset = endMarkerDepth // userSpaceOnUse — absolute flow units
     return [tx - (dx / len) * offset, ty - (dy / len) * offset]
+  }
+
+  function markerAdjustedSource(
+    sx: number,
+    sy: number,
+    nx: number,
+    ny: number,
+  ): [number, number] {
+    if (startMarkerDepth === 0) return [sx, sy]
+    const dx = nx - sx
+    const dy = ny - sy
+    const len = Math.hypot(dx, dy)
+    if (len < 1) return [sx, sy]
+    const offset = startMarkerDepth
+    return [sx + (dx / len) * offset, sy + (dy / len) * offset]
   }
 
   // ── Self-loop (source === target) ──────────────────────────────────────────
@@ -357,23 +369,48 @@ export function UMLEdge({
     edgePath = `M ${sourceX},${sourceY} C ${c1x},${c1y} ${c2x},${c2y} ${targetX},${targetY}`
     labelX = (sourceX + targetX) / 2 + dir.x * loopSize
     labelY = (sourceY + targetY) / 2 + dir.y * loopSize
-  } else if (lineStyle === 'step') {
-    // Legacy auto-elbow routing. Nudge the target back along the axis
-    // dictated by targetPosition so the marker inner edge lands at path end.
+  } else if (effectiveLineStyle === 'step') {
+    let adjSX = sourceX
+    let adjSY = sourceY
     let adjTX = targetX
     let adjTY = targetY
-    if (markerDepth > 0) {
-      const offset = markerDepth * strokeWidth
+    if (endMarkerDepth > 0) {
+      const offset = endMarkerDepth
       switch (targetPosition) {
-        case Position.Left:   adjTX = targetX - offset; break
-        case Position.Right:  adjTX = targetX + offset; break
-        case Position.Top:    adjTY = targetY - offset; break
-        case Position.Bottom: adjTY = targetY + offset; break
+        case Position.Left:
+          adjTX = targetX - offset
+          break
+        case Position.Right:
+          adjTX = targetX + offset
+          break
+        case Position.Top:
+          adjTY = targetY - offset
+          break
+        case Position.Bottom:
+          adjTY = targetY + offset
+          break
+      }
+    }
+    if (startMarkerDepth > 0) {
+      const offset = startMarkerDepth
+      switch (sourcePosition) {
+        case Position.Left:
+          adjSX = sourceX - offset
+          break
+        case Position.Right:
+          adjSX = sourceX + offset
+          break
+        case Position.Top:
+          adjSY = sourceY - offset
+          break
+        case Position.Bottom:
+          adjSY = sourceY + offset
+          break
       }
     }
     ;[edgePath, labelX, labelY] = getSmoothStepPath({
-      sourceX,
-      sourceY,
+      sourceX: adjSX,
+      sourceY: adjSY,
       sourcePosition,
       targetX: adjTX,
       targetY: adjTY,
@@ -381,17 +418,23 @@ export function UMLEdge({
       borderRadius: 10,
     })
   } else if (waypoints.length > 0) {
-    // Straight polyline with manual waypoints
+    const firstWP = waypoints[0]
     const lastWP = waypoints[waypoints.length - 1]
+    const [adjSX, adjSY] = markerAdjustedSource(sourceX, sourceY, firstWP.x, firstWP.y)
     const [adjTX, adjTY] = markerAdjustedTarget(lastWP.x, lastWP.y, targetX, targetY)
-    edgePath = buildPolylinePath(sourceX, sourceY, waypoints, adjTX, adjTY)
-    const mid = polylineMidpoint(sourceX, sourceY, waypoints, adjTX, adjTY)
+    edgePath = buildPolylinePath(adjSX, adjSY, waypoints, adjTX, adjTY)
+    const mid = polylineMidpoint(adjSX, adjSY, waypoints, adjTX, adjTY)
     labelX = mid.x
     labelY = mid.y
   } else {
-    // Plain straight line (default for new edges)
-    const [adjTX, adjTY] = markerAdjustedTarget(sourceX, sourceY, targetX, targetY)
-    ;[edgePath, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX: adjTX, targetY: adjTY })
+    const [adjSX, adjSY] = markerAdjustedSource(sourceX, sourceY, targetX, targetY)
+    const [adjTX, adjTY] = markerAdjustedTarget(adjSX, adjSY, targetX, targetY)
+    ;[edgePath, labelX, labelY] = getStraightPath({
+      sourceX: adjSX,
+      sourceY: adjSY,
+      targetX: adjTX,
+      targetY: adjTY,
+    })
   }
 
   // ── Shared edge-data updater ────────────────────────────────────────────────
@@ -510,8 +553,8 @@ export function UMLEdge({
         />
       ))}
 
-      {/* Edge label + routing toggle — shown when selected */}
-      {selected && (
+      {/* Edge label + routing toggle — shown when selected (hidden in studio/refactor) */}
+      {selected && !hideChrome && (
         <EdgeLabelRenderer>
           <div
             style={{
@@ -554,22 +597,24 @@ export function UMLEdge({
       )}
 
       {/* Multiplicity labels */}
-      <EdgeLabelRenderer>
-        <MultiplicityLabel
-          value={edgeData.sourceMultiplicity}
-          x={srcLabelX}
-          y={srcLabelY}
-          onChange={v => updateMultiplicity('sourceMultiplicity', v)}
-          dark={dark}
-        />
-        <MultiplicityLabel
-          value={edgeData.targetMultiplicity}
-          x={tgtLabelX}
-          y={tgtLabelY}
-          onChange={v => updateMultiplicity('targetMultiplicity', v)}
-          dark={dark}
-        />
-      </EdgeLabelRenderer>
+      {!hideChrome && (
+        <EdgeLabelRenderer>
+          <MultiplicityLabel
+            value={edgeData.sourceMultiplicity}
+            x={srcLabelX}
+            y={srcLabelY}
+            onChange={v => updateMultiplicity('sourceMultiplicity', v)}
+            dark={dark}
+          />
+          <MultiplicityLabel
+            value={edgeData.targetMultiplicity}
+            x={tgtLabelX}
+            y={tgtLabelY}
+            onChange={v => updateMultiplicity('targetMultiplicity', v)}
+            dark={dark}
+          />
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 }

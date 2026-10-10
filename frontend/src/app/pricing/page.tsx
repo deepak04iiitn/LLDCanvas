@@ -1,20 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Check, X, Rocket, Crown, Zap, ArrowRight,
   Code2, Users, BookOpen, BarChart3, Terminal,
   Clock, Lock, Infinity as InfinityIcon, Star, FlaskConical, Info,
+  Flame, Map, Bug, Wrench, RefreshCcw, Pencil, TrendingUp, DollarSign, Gamepad2, Search,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { usePlan } from '@/hooks/usePlan'
+import { useSession } from '@/lib/auth'
 import { SiteNavbar } from '@/components/marketing/SiteNavbar'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { fadeUpProps, inViewProps } from '@/lib/motion'
+import { toast } from 'sonner'
 
 declare global {
   interface Window {
@@ -40,9 +44,10 @@ const PLANS = [
     features: [
       'Unlimited UML canvas & playground',
       '16 of 23 design pattern templates',
-      '10 curated Easy problems',
+      '~10 Easy challenges per mode (allowlist)',
+      'Unlimited Daily Quiz',
+      'Plannr try / preview only',
       '15 code executions / day',
-      'Revision notes',
     ],
   },
   {
@@ -54,15 +59,16 @@ const PLANS = [
     btnCls:      'bg-brand text-brand-foreground hover:bg-brand-hover',
     priceINR:    { monthly: 199,  yearly: 1999  },
     priceUSD:    { monthly: 10, yearly: 100 },
-    tagline:     'For serious engineers leveling up',
+    tagline:     'Crack LLD interviews',
     highlight:   true,
     features: [
       'Everything in Free',
-      'All Easy + 10 curated Medium problems',
-      'Full templates, hints & community',
+      'All Easy + 5 curated Medium per mode',
+      'Practice Problems: all Easy + 10 Medium',
+      'Interview Mode · 10 sessions / mo',
+      'Collab: 2 seats · 3 invites / mo',
+      'Plannr try / preview only (same as Free)',
       '25 code executions / day',
-      '10 interview mode sessions / mo',
-      'Collaboration - up to 3 people',
     ],
   },
   {
@@ -74,14 +80,15 @@ const PLANS = [
     btnCls:      'bg-amber-500 text-white hover:bg-amber-600',
     priceINR:    { monthly: 399,  yearly: 3999  },
     priceUSD:    { monthly: 20, yearly: 200 },
-    tagline:     'For teams and power users',
+    tagline:     'Master software design',
     highlight:   false,
     features: [
       'Everything in Pro',
-      'Full problem library - Easy, Medium & Hard',
-      'Unlimited interview sessions & collaboration',
-      'Version history + activity timeline',
-      'Full analytics & priority support',
+      'All Easy / Medium / Hard challenges',
+      'Full Plannr — use your generated plan',
+      'Unlimited interview sessions',
+      'Unlimited collaboration',
+      'Version history, analytics & priority support',
       '50 code executions / day',
     ],
   },
@@ -104,13 +111,23 @@ const FEATURES: FeatureRow[] = [
   { label: 'Export',                   icon: ArrowRight,  free: false,         pro: 'PlantUML, Mermaid, Draft', ultimate: 'Full access', highlight: false },
   { label: 'Import',                   icon: ArrowRight,  free: true,          pro: true,           ultimate: true,         highlight: false },
   { label: 'Practice Problems',        icon: Code2,       free: '10 Easy only', pro: 'All Easy + 10 Medium', ultimate: 'Easy + Medium + Hard', highlight: false },
+  { label: 'Daily Quiz',               icon: Flame,       free: 'Unlimited',   pro: 'Unlimited',   ultimate: 'Unlimited',  highlight: true  },
+  { label: 'Roguelike',                icon: Gamepad2,    free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Pattern Detective',        icon: Search,      free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Debug Lab',                icon: Bug,         free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Debug & Fix',              icon: Wrench,      free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Refactor',                 icon: RefreshCcw,  free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Change One Thing',         icon: Pencil,      free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Evolution',                icon: TrendingUp,  free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Budget Pressure',          icon: DollarSign,  free: '~10 Easy',    pro: 'All Easy + 5 Medium', ultimate: 'All difficulties', highlight: false },
+  { label: 'Plannr',                   icon: Map,         free: 'Try / preview', pro: 'Try / preview', ultimate: 'Full access', highlight: true },
   { label: 'Hints',                    icon: Zap,         free: false,         pro: true,           ultimate: true,         highlight: false },
   { label: 'Community Discussion',     icon: Users,       free: false,         pro: true,           ultimate: true,         highlight: false },
-  { label: 'Code Executions / day',    icon: Terminal,    free: '15',          pro: '25',           ultimate: '50',          highlight: true  },
+  { label: 'Code Executions / day',    icon: Terminal,    free: '15',          pro: '25',           ultimate: '50',          highlight: false },
   { label: 'Revision Notes',           icon: BookOpen,    free: true,          pro: true,           ultimate: true,         highlight: false },
   { label: 'Bookmarks',                icon: Star,        free: false,         pro: true,           ultimate: true,         highlight: false },
   { label: 'Interview Mode',           icon: Clock,       free: false,         pro: '10 sessions/mo', ultimate: 'Unlimited', highlight: false },
-  { label: 'Collaboration',            icon: Users,       free: false,         pro: 'Up to 3',      ultimate: 'Unlimited',  highlight: true  },
+  { label: 'Collaboration',            icon: Users,       free: false,         pro: '2 seats · 3 / mo', ultimate: 'Unlimited',  highlight: true },
   { label: 'Activity Timeline',        icon: BarChart3,   free: false,         pro: false,          ultimate: true,         highlight: false },
   { label: 'Version History',          icon: Clock,       free: false,         pro: false,          ultimate: true,         highlight: false },
   { label: 'Analytics',                icon: BarChart3,   free: false,         pro: 'Basic',        ultimate: 'Full',        highlight: false },
@@ -249,6 +266,8 @@ export default function PricingPage() {
   const [geoReady, setGeoReady] = useState(false)
   const [loadingTier, setLoadingTier] = useState<'pro' | 'ultimate' | null>(null)
   const { plan: currentPlan, loading: planLoading, refresh } = usePlan()
+  const { data: session } = useSession()
+  const router = useRouter()
 
   const isIntlGateway = gateway === 'dodo'
 
@@ -281,6 +300,11 @@ export default function PricingPage() {
   }, [gateway])
 
   async function handleUpgrade(tier: 'pro' | 'ultimate', isYearly: boolean) {
+    // Not signed in → send to sign-in page, come back here after auth
+    if (!session) {
+      router.push('/sign-in?next=/pricing')
+      return
+    }
     setLoadingTier(tier)
     try {
       // Re-fetch gateway at click time so we never race the initial geo default
@@ -323,7 +347,7 @@ export default function PricingPage() {
             await refresh()
             window.location.href = '/dashboard?upgraded=1'
           } catch {
-            alert('Payment verification failed. Contact support.')
+            toast.error('Payment verification failed. Please contact support.')
           }
         },
         modal: {
@@ -334,7 +358,7 @@ export default function PricingPage() {
       const rzp = new window.Razorpay(options)
       rzp.open()
     } catch (err) {
-      alert((err as Error).message ?? 'Something went wrong')
+      toast.error((err as Error).message ?? 'Something went wrong')
       setLoadingTier(null)
     }
   }

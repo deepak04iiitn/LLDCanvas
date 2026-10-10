@@ -1,7 +1,8 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
+import { DEV_UNLOCK } from '@/lib/dev-unlock'
 
 export type PlanName = 'free' | 'pro' | 'ultimate'
 
@@ -14,7 +15,10 @@ export interface PlanLimits {
   communityDiscussion: boolean
   revisionBookmarks: boolean
   interviewSessionsPerMonth: number
+  /** Max people per diagram including owner (Pro = 2). */
   maxCollaborators: number
+  /** New invites allowed per calendar month (Pro = 3). */
+  collaborationsPerMonth: number
   activityTimeline: boolean
   versionHistory: boolean
   analyticsLevel: 'none' | 'basic' | 'full'
@@ -48,13 +52,14 @@ const DEFAULT_FREE_LIMITS: PlanLimits = {
   revisionBookmarks: false,
   interviewSessionsPerMonth: 0,
   maxCollaborators: 0,
+  collaborationsPerMonth: 0,
   activityTimeline: false,
   versionHistory: false,
   analyticsLevel: 'none',
   betaFeatures: false,
 }
 
-const CACHE_KEY = 'lld_plan_v1'
+const CACHE_KEY = 'lld_plan_v2'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 function readCache(): PlanData | null {
@@ -63,7 +68,7 @@ function readCache(): PlanData | null {
     if (!raw) return null
     const { data, ts } = JSON.parse(raw) as { data: PlanData; ts: number }
     if (Date.now() - ts > CACHE_TTL) return null
-    return data
+    return { ...data, limits: normalizeLimits(data.limits) }
   } catch {
     return null
   }
@@ -73,6 +78,24 @@ function writeCache(data: PlanData) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }))
   } catch {}
+}
+
+/** JSON turns Infinity into null — revive unlimited numeric plan fields. */
+function reviveLimit(n: number | null | undefined, fallback = 0): number {
+  if (n === null || n === Infinity) return Infinity
+  if (typeof n !== 'number' || Number.isNaN(n)) return fallback
+  return n
+}
+
+function normalizeLimits(raw: PlanLimits | Record<string, unknown> | null | undefined): PlanLimits {
+  const base = { ...DEFAULT_FREE_LIMITS, ...(raw ?? {}) } as PlanLimits
+  return {
+    ...base,
+    patternTemplates:          reviveLimit(base.patternTemplates as number | null, DEFAULT_FREE_LIMITS.patternTemplates),
+    interviewSessionsPerMonth: reviveLimit(base.interviewSessionsPerMonth as number | null, 0),
+    maxCollaborators:          reviveLimit(base.maxCollaborators as number | null, 0),
+    collaborationsPerMonth:    reviveLimit(base.collaborationsPerMonth as number | null, 0),
+  }
 }
 
 export function clearPlanCache() {
@@ -89,7 +112,7 @@ function fetchPlan(): Promise<PlanData> {
   _inflight = api.billing.plan().then((raw: Record<string, unknown>) => {
     const data: PlanData = {
       plan:         raw.plan as PlanName,
-      limits:       raw.limits as unknown as PlanLimits,
+      limits:       normalizeLimits(raw.limits as PlanLimits),
       subscription: raw.subscription as PlanData['subscription'],
     }
     _resolved = data
@@ -152,9 +175,12 @@ export function usePlan() {
 
   // Key fix: isFree / isPro are false while loading so gates stay hidden
   // until we actually know the plan - preventing the lock-flicker
-  const isPro      = !state.loading && (state.plan === 'pro' || state.plan === 'ultimate')
-  const isUltimate = !state.loading && state.plan === 'ultimate'
-  const isFree     = !state.loading && state.plan === 'free'
+  const isPro      = DEV_UNLOCK || (!state.loading && (state.plan === 'pro' || state.plan === 'ultimate'))
+  const isUltimate = DEV_UNLOCK || (!state.loading && state.plan === 'ultimate')
+  const isFree     = !DEV_UNLOCK && !state.loading && state.plan === 'free'
 
-  return { ...state, isPro, isUltimate, isFree, refresh }
+  // When DEV_UNLOCK is on, surface as ultimate so every gate passes
+  const plan: PlanName = DEV_UNLOCK ? 'ultimate' : state.plan
+
+  return { ...state, plan, isPro, isUltimate, isFree, refresh }
 }

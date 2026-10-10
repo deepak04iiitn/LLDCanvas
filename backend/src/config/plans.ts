@@ -9,7 +9,16 @@ export interface PlanLimits {
   communityDiscussion: boolean
   revisionBookmarks: boolean
   interviewSessionsPerMonth: number // Infinity = unlimited
+  /**
+   * Max people on a single diagram including the owner.
+   * Pro = 2 (you + 1 invitee). Ultimate = Infinity.
+   */
   maxCollaborators: number          // 0 = no collab
+  /**
+   * New collaboration invites the owner may create per calendar month.
+   * Pro = 3. Ultimate = Infinity. Free = 0.
+   */
+  collaborationsPerMonth: number
   activityTimeline: boolean
   versionHistory: boolean
   analyticsLevel: 'none' | 'basic' | 'full'
@@ -27,6 +36,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     revisionBookmarks: false,
     interviewSessionsPerMonth: 0,
     maxCollaborators: 0,
+    collaborationsPerMonth: 0,
     activityTimeline: false,
     versionHistory: false,
     analyticsLevel: 'none',
@@ -41,7 +51,8 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     communityDiscussion: true,
     revisionBookmarks: true,
     interviewSessionsPerMonth: 10,
-    maxCollaborators: 3,
+    maxCollaborators: 2,           // you + 1 invitee
+    collaborationsPerMonth: 3,     // 3 new invites / calendar month
     activityTimeline: false,
     versionHistory: false,
     analyticsLevel: 'basic',
@@ -57,6 +68,7 @@ export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
     revisionBookmarks: true,
     interviewSessionsPerMonth: Infinity,
     maxCollaborators: Infinity,
+    collaborationsPerMonth: Infinity,
     activityTimeline: true,
     versionHistory: true,
     analyticsLevel: 'full',

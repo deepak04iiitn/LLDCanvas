@@ -5,23 +5,36 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Rss,
-  Briefcase,
+  CreditCard, Layers, Mail, Rss, Briefcase, Info, Scale, Cookie,
+  CalendarDays, Search, Bug, Wrench, RefreshCw,
+  TrendingUp, DollarSign, Gamepad2, SlidersHorizontal, Flame,
 } from 'lucide-react'
 import { Wordmark } from '@/components/Brand'
 import { useSession } from '@/lib/auth'
-import { useAuthModal } from '@/lib/auth-modal-store'
 
 // ─── Feature links ────────────────────────────────────────────────────────────
 
 const FEATURE_LINKS = [
   { label: 'UML Diagram Editor',        href: '/features/editor',              Icon: LayoutTemplate },
   { label: 'Draft Notation',            href: '/features/draft-notation',      Icon: PenLine        },
-  { label: 'LLD Interview Questions',   href: '/features/interview-questions',  Icon: ListChecks     },
-  { label: 'LLD Interview Mode',        href: '/features/interview-mode',       Icon: Timer          },
-  { label: 'Real-Time Collaboration',   href: '/features/collaboration',        Icon: Users          },
-  { label: 'Code Execution Sandbox',    href: '/features/code-execution',       Icon: Terminal       },
-  { label: 'SOLID & System Design Notes', href: '/features/revision-notes',     Icon: BookOpen       },
+  { label: 'Code Execution',            href: '/features/code-execution',      Icon: Terminal       },
+  { label: 'Real-Time Collaboration',   href: '/features/collaboration',       Icon: Users          },
+  { label: 'Interview Mode',            href: '/features/interview-mode',      Icon: Timer          },
+  { label: 'LLD Interview Questions',   href: '/features/interview-questions', Icon: ListChecks     },
+  { label: 'Revision Notes',            href: '/features/revision-notes',      Icon: BookOpen       },
+  { label: 'Daily Quiz',               href: '/features/daily-quiz',          Icon: Flame          },
+  { label: 'Plannr',                    href: '/features/plannr',              Icon: CalendarDays   },
+]
+
+const CHALLENGE_LINKS = [
+  { label: 'Pattern Detective',         href: '/features/pattern-detective',   Icon: Search         },
+  { label: 'Debug Lab',                 href: '/features/debug-lab',           Icon: Bug            },
+  { label: 'Debug & Fix',              href: '/features/debug-and-fix',       Icon: Wrench         },
+  { label: 'LLD Roguelike',            href: '/features/roguelike',           Icon: Gamepad2       },
+  { label: 'Refactor',                 href: '/features/refactor',            Icon: RefreshCw      },
+  { label: 'Change One Thing',         href: '/features/change-one-thing',    Icon: SlidersHorizontal },
+  { label: 'Evolution',                href: '/features/evolution',           Icon: TrendingUp     },
+  { label: 'Budget Pressure',          href: '/features/budget-pressure',     Icon: DollarSign     },
 ]
 
 // ─── Nav link helper ──────────────────────────────────────────────────────────
@@ -45,12 +58,7 @@ function NavLink({ href, Icon, children }: { href: string; Icon: React.ElementTy
 export function SiteFooter() {
   const [mounted, setMounted] = useState(false)
   const { data: session } = useSession()
-  const { openAuthModal } = useAuthModal()
-
   useEffect(() => { setMounted(true) }, [])
-
-  function openSignin() { openAuthModal(undefined, 'signin') }
-  function openSignup() { openAuthModal(undefined, 'signup') }
 
   return (
     <>
@@ -86,9 +94,10 @@ export function SiteFooter() {
                 <Wordmark height={36} />
               </Link>
               <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-                The complete free platform for Low-Level Design and system design interview
-                preparation - practice LLD interview questions, design with UML and 23 design
-                patterns, run code, and collaborate in real time.
+                The free Low-Level Design interview prep platform — UML canvas, Draft Notation,
+                110+ LLD problems, Interview Mode, design pattern training, code execution,
+                real-time collaboration, and 8 applied Challenge Labs including Roguelike,
+                Debug Lab, Refactor, and Budget Pressure.
               </p>
             </div>
 
@@ -107,17 +116,32 @@ export function SiteFooter() {
                 </ul>
               </div>
 
+              {/* Challenge Labs */}
+              <div>
+                <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
+                  Challenge Labs
+                </p>
+                <ul className="space-y-3">
+                  {CHALLENGE_LINKS.map(({ label, href, Icon }) => (
+                    <NavLink key={label} href={href} Icon={Icon}>{label}</NavLink>
+                  ))}
+                </ul>
+              </div>
+
               {/* Platform */}
               <div>
                 <p className="mb-4 font-mono text-[9px] font-semibold tracking-[0.18em] text-brand/60 uppercase">
                   Platform
                 </p>
                 <ul className="space-y-3">
-                  <NavLink href="/editor/local" Icon={Pencil}>Open Editor</NavLink>
-                  <NavLink href="/playground"   Icon={ArrowUpRight}>Playground</NavLink>
-                  <NavLink href="/features"     Icon={Layers}>All Features</NavLink>
-                  <NavLink href="/pricing"      Icon={CreditCard}>Pricing</NavLink>
-                  <NavLink href="/blog"         Icon={Rss}>Blog</NavLink>
+                  <NavLink href="/editor/local"    Icon={Pencil}>Open Editor</NavLink>
+                  <NavLink href="/playground"    Icon={ArrowUpRight}>Playground</NavLink>
+                  <NavLink href="/features"      Icon={Layers}>All Features</NavLink>
+                  <NavLink href="/pricing"       Icon={CreditCard}>Pricing</NavLink>
+                  <NavLink href="/blog"          Icon={Rss}>Blog</NavLink>
+                  <NavLink href="/about"         Icon={Info}>About</NavLink>
+                  <NavLink href="/terms"         Icon={Scale}>Terms &amp; Conditions</NavLink>
+                  <NavLink href="/cookie-policy" Icon={Cookie}>Cookie Policy</NavLink>
                   {mounted && session && (
                     <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
                   )}
@@ -161,22 +185,22 @@ export function SiteFooter() {
                   </p>
                   <ul className="space-y-3">
                     <li>
-                      <button
-                        onClick={openSignin}
+                      <Link
+                        href="/sign-in"
                         className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                       >
                         <LogIn size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
                         Sign in
-                      </button>
+                      </Link>
                     </li>
                     <li>
-                      <button
-                        onClick={openSignup}
+                      <Link
+                        href="/sign-up"
                         className="group flex items-center gap-2 text-sm text-ink-muted transition-colors duration-150 hover:text-ink"
                       >
                         <UserPlus size={12} className="shrink-0 text-ink-faint transition-colors group-hover:text-brand" />
                         Create account
-                      </button>
+                      </Link>
                     </li>
                   </ul>
                 </div>
@@ -199,6 +223,18 @@ export function SiteFooter() {
               <span className="text-ink-faint/30">·</span>
               <Link href="/features" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
                 Features
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/about" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                About
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/terms" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Terms
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/cookie-policy" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Cookies
               </Link>
               <span className="text-ink-faint/30">·</span>
               <p className="font-mono text-[11px] text-ink-faint">India</p>

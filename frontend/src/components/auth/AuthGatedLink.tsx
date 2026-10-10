@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useSession } from '@/lib/auth'
-import { useAuthModal } from '@/lib/auth-modal-store'
 
 interface AuthGatedLinkProps {
   href: string
@@ -13,19 +12,18 @@ interface AuthGatedLinkProps {
 /**
  * A button that behaves like a link but gates on authentication.
  * - Logged in  → navigates directly to `href`
- * - Logged out → opens the auth modal; after successful login the user is
- *               automatically redirected to `href`
+ * - Logged out → redirects to /sign-in?next=<href> so the user lands back
+ *               on the intended page after successful authentication
  */
 export function AuthGatedLink({ href, className, children }: AuthGatedLinkProps) {
   const router = useRouter()
   const { data: session } = useSession()
-  const { openAuthModal } = useAuthModal()
 
   function handleClick() {
     if (session) {
       router.push(href)
     } else {
-      openAuthModal(href, 'signin')
+      router.push(`/sign-in?next=${encodeURIComponent(href)}`)
     }
   }
 

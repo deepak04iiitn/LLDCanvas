@@ -250,6 +250,11 @@ export const api = {
         totalCollaborators: number
         pendingInvites: number
         totalComments: number
+        collaborationsThisMonth: number
+        /** null = unlimited (Ultimate) */
+        collaborationsPerMonth: number | null
+        /** null = unlimited (Ultimate) */
+        maxCollaborators: number | null
       }>('/collab/my-stats'),
 
     myDiagrams: () =>

@@ -28,7 +28,16 @@ import testimonialRouter   from './routes/testimonial.route'
 import publicRouter        from './routes/public.route'
 import blogRouter          from './routes/blog.route'
 import patternRouter       from './routes/pattern.route'
+import artifactRouter      from './routes/artifact.route'
+import studioRouter        from './routes/studio.route'
+import learnRouter         from './routes/learn.route'
+import journeyRouter       from './routes/journey.route'
+import skillsRouter        from './routes/skills.route'
+import adminStudioRouter   from './routes/admin/studio.route'
+import adminLearnRouter    from './routes/admin/learn.route'
+import adminJourneyRouter  from './routes/admin/journey.route'
 import { startSubscriptionExpiryJob } from './jobs/expire-subscriptions'
+import { startSpacedRepetitionJob } from './jobs/spaced-repetition'
 
 const app    = express()
 const httpServer = createServer(app)
@@ -110,6 +119,14 @@ app.use('/billing',         billingRouter)
 app.use('/feedback',        feedbackRouter)
 app.use('/testimonials',    testimonialRouter)
 app.use('/blog',            blogRouter)
+app.use('/artifacts',       artifactRouter)
+app.use('/studio',          studioRouter)
+app.use('/learn',           learnRouter)
+app.use('/plannr',         journeyRouter)
+app.use('/skills',         skillsRouter)
+app.use('/admin/studio',    adminStudioRouter)
+app.use('/admin/learn',     adminLearnRouter)
+app.use('/admin/plannr',    adminJourneyRouter)
 
 // ─── Error handler — must be last ─────────────────────────────────────────────
 app.use(errorHandler)
@@ -120,8 +137,29 @@ const PORT = Number(process.env.PORT) || 4000
 async function start() {
   await connectDB()
   await ensureAdminUser()
+  // Drop stale unique index on userId that predates multi-Plannr support.
+  // Safe to run on every start — silently ignored if already gone.
+  try {
+    const mongoose = await import('mongoose')
+    const col = mongoose.default.connection.collection('journeyprofiles')
+    const indexes = await col.indexes()
+    const stale = indexes.find(
+      (ix: Record<string, unknown>) =>
+        ix.unique === true &&
+        ix.key &&
+        typeof ix.key === 'object' &&
+        Object.keys(ix.key as object).join(',') === 'userId',
+    )
+    if (stale) {
+      await col.dropIndex('userId_1')
+      console.log('✓ Dropped stale journeyprofiles.userId_1 unique index')
+    }
+  } catch (e) {
+    console.warn('Index migration skipped:', e)
+  }
   initSocketServer(httpServer, allowedOrigins)
   startSubscriptionExpiryJob()
+  startSpacedRepetitionJob()
   httpServer.listen(PORT, () => {
     console.log(`✓ API + Socket.io listening on http://localhost:${PORT}`)
   })

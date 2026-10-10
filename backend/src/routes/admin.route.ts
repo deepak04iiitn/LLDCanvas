@@ -16,7 +16,8 @@ import {
   bulkDeleteTestimonials,
   testimonialStats,
 } from '../controllers/testimonial.controller'
-import { adminBlogController } from '../controllers/blog.controller'
+import { adminBlogController }      from '../controllers/blog.controller'
+import { adminGetUserActivity }      from '../controllers/admin/analytics/user-activity.controller'
 
 const router = Router()
 
@@ -26,6 +27,7 @@ router.use(requireAuth, requireAdmin)
 router.get('/overview',                       adminController.getOverview)
 router.get('/analytics',                      adminController.getAnalytics)
 router.get('/feature-stats',                  adminController.getNewFeatureStats)
+router.get('/features-overview',              adminController.getFeaturesOverview)
 
 // Users
 router.get('/users',                          adminController.listUsers)
@@ -100,6 +102,9 @@ router.get   ('/testimonials',       listTestimonials)
 router.post  ('/testimonials/bulk-delete', bulkDeleteTestimonials)
 router.patch ('/testimonials/:id',   updateTestimonial)
 router.delete('/testimonials/:id',   deleteTestimonial)
+
+// Feature user activity (cross-feature aggregation)
+router.get('/user-activity', adminGetUserActivity)
 
 // Blog management
 router.get   ('/blog/analytics',       adminBlogController.analytics)
