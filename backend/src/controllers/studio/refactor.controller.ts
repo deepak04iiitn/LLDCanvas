@@ -7,15 +7,16 @@ import {
   submitRefactor,
 } from '../../services/studio/challenge-session.service'
 import { applySkillDeltas } from '../../utils/skill-updater'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
 }
 
-export async function listRefactorPacks(_req: Request, res: Response, next: NextFunction) {
+export async function listRefactorPacks(req: Request, res: Response, next: NextFunction) {
   try {
     const packs = await listPublishedPacks('refactor')
-    res.json({ packs })
+    res.json({ packs: withChallengeLocks('refactor', req.user?.plan, packs) })
   } catch (e) {
     next(e)
   }
@@ -24,7 +25,7 @@ export async function listRefactorPacks(_req: Request, res: Response, next: Next
 export async function start(req: Request, res: Response, next: NextFunction) {
   try {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, 'refactor')
+    const session = await startSession(req.user!.id, packId, 'refactor', req.user!.plan)
     res.status(201).json(session)
   } catch (e) {
     next(e)

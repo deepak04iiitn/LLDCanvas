@@ -9,15 +9,16 @@ import {
 } from '../../services/studio/challenge-session.service'
 import type { BudgetStageSubmission } from '../../services/studio/budgetGrade'
 import { applySkillDeltas } from '../../utils/skill-updater'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
 }
 
-export async function listBudgetPacks(_req: Request, res: Response, next: NextFunction) {
+export async function listBudgetPacks(req: Request, res: Response, next: NextFunction) {
   try {
     const packs = await listPublishedPacks('budget')
-    res.json({ packs })
+    res.json({ packs: withChallengeLocks('budget', req.user?.plan, packs) })
   } catch (e) {
     next(e)
   }
@@ -26,7 +27,7 @@ export async function listBudgetPacks(_req: Request, res: Response, next: NextFu
 export async function start(req: Request, res: Response, next: NextFunction) {
   try {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, 'budget')
+    const session = await startSession(req.user!.id, packId, 'budget', req.user!.plan)
     res.status(201).json(session)
   } catch (e) {
     next(e)

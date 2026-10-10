@@ -207,7 +207,14 @@ interface CollabModalProps {
 export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInvitesChange }: CollabModalProps) {
   const { limits, isUltimate } = usePlan()
   // maxCollaborators includes the owner, so max invites = maxCollaborators - 1
-  const maxInvites = limits.maxCollaborators === Infinity ? Infinity : Math.max(0, limits.maxCollaborators - 1)
+  // JSON null (from Infinity) is treated as unlimited.
+  const seatCap = limits.maxCollaborators == null || limits.maxCollaborators === Infinity
+    ? Infinity
+    : limits.maxCollaborators
+  const maxInvites = seatCap === Infinity ? Infinity : Math.max(0, seatCap - 1)
+  const monthlyCap = limits.collaborationsPerMonth == null || limits.collaborationsPerMonth === Infinity
+    ? Infinity
+    : limits.collaborationsPerMonth
 
   const [invites,     setInvites]     = useState<CollabInvite[]>([])
   const [loading,     setLoading]     = useState(false)
@@ -218,14 +225,21 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInv
   const [linkRole,    setLinkRole]    = useState<'editor' | 'viewer'>('viewer')
   const [linkCopied,  setLinkCopied]  = useState(false)
   const [latestToken, setLatestToken] = useState<string | null>(null)
+  const [usedThisMonth, setUsedThisMonth] = useState(0)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const data = await apiFetch(`/collab/${diagramId}/invites`)
-      const list = data.invites ?? []
+      const [inviteData, stats] = await Promise.all([
+        apiFetch(`/collab/${diagramId}/invites`),
+        apiFetch('/collab/my-stats').catch(() => null),
+      ])
+      const list = inviteData.invites ?? []
       setInvites(list)
       onInvitesChange?.(list.length)
+      if (stats && typeof stats.collaborationsThisMonth === 'number') {
+        setUsedThisMonth(stats.collaborationsThisMonth)
+      }
     } catch { /* silently fail */ }
     finally { setLoading(false) }
   }, [diagramId, onInvitesChange])
@@ -312,7 +326,9 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInv
   }
 
   const collabUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/collab/join/${diagramId}`
-  const atLimit = maxInvites !== Infinity && invites.length >= maxInvites
+  const atSeatLimit = maxInvites !== Infinity && invites.length >= maxInvites
+  const atMonthlyLimit = monthlyCap !== Infinity && usedThisMonth >= monthlyCap
+  const atLimit = atSeatLimit || atMonthlyLimit
 
   return (
     <AnimatePresence>
@@ -362,13 +378,20 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInv
 
               {/* ── Invite by email ──────────────────────────────────────── */}
               <div className="border-b border-hairline px-5 py-5">
-                <div className="mb-3 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Invite by email</p>
-                  {maxInvites !== Infinity && (
-                    <p className={cn('text-[10px] font-medium', atLimit ? 'text-red-500' : 'text-ink-faint')}>
-                      {invites.length}/{maxInvites} seats used
-                    </p>
-                  )}
+                  <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5">
+                    {maxInvites !== Infinity && (
+                      <p className={cn('text-[10px] font-medium', atSeatLimit ? 'text-red-500' : 'text-ink-faint')}>
+                        {invites.length}/{maxInvites} seat{maxInvites === 1 ? '' : 's'}
+                      </p>
+                    )}
+                    {monthlyCap !== Infinity && (
+                      <p className={cn('text-[10px] font-medium', atMonthlyLimit ? 'text-red-500' : 'text-ink-faint')}>
+                        {usedThisMonth}/{monthlyCap} this month
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {atLimit ? (
@@ -376,12 +399,16 @@ export function CollabModal({ open, onOpenChange, diagramId, diagramTitle, onInv
                     <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
                       <Zap size={14} className="text-amber-600" />
                     </div>
-                    <p className="text-xs font-semibold text-amber-800">Collaborator limit reached</p>
+                    <p className="text-xs font-semibold text-amber-800">
+                      {atMonthlyLimit ? 'Monthly collaboration limit reached' : 'Collaborator seat limit reached'}
+                    </p>
                     <p className="mt-0.5 text-[11px] text-amber-700">
-                      Your plan allows {maxInvites} {maxInvites === 1 ? 'collaborator' : 'collaborators'} (+ you). Upgrade to invite more.
+                      {atMonthlyLimit
+                        ? `Pro allows ${monthlyCap} collaborations per month. Upgrade to Ultimate for unlimited.`
+                        : `Pro allows ${maxInvites} collaborator (+ you) per diagram. Upgrade to invite more.`}
                     </p>
                     <Link
-                      href="/pricing"
+                      href="/pricing?from=collab_limit"
                       onClick={() => onOpenChange(false)}
                       className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-amber-600"
                     >

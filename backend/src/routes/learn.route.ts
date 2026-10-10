@@ -31,9 +31,9 @@ router.post('/detective/:id/start', requireAuth, detective.startDetective)
 router.post('/detective/:id/submit', requireAuth, detective.submitDetective)
 
 // ── Roguelike (new) ───────────────────────────────────────────────────────────
-router.get('/roguelike/featured', roguelike.getFeaturedScenario)
-router.get('/roguelike/scenarios', roguelike.listScenarios)
-router.get('/roguelike/scenarios/:slug', roguelike.getScenario)
+router.get('/roguelike/featured', optionalAuth, roguelike.getFeaturedScenario)
+router.get('/roguelike/scenarios', optionalAuth, roguelike.listScenarios)
+router.get('/roguelike/scenarios/:slug', optionalAuth, roguelike.getScenario)
 
 router.post('/roguelike/runs', requireAuth, roguelike.startRun)
 router.get('/roguelike/runs', requireAuth, roguelike.listRuns)
@@ -47,15 +47,15 @@ router.post('/roguelike/start', requireAuth, roguelike.startRun)
 router.get('/roguelike/:runId', requireAuth, roguelike.getRun)
 
 // ── Debugger (code bugs) ──────────────────────────────────────────────────────
-router.get('/debugger',                               debugger_.listChallenges)
+router.get('/debugger',                               optionalAuth, debugger_.listChallenges)
 // history BEFORE /:id to avoid param collision
 router.get('/debugger/history',    requireAuth,        debugger_.getSolveHistory)
-router.get('/debugger/:id',                            debugger_.getChallenge)
+router.get('/debugger/:id',                            optionalAuth, debugger_.getChallenge)
 router.post('/debugger/:id/solve', requireAuth,        debugger_.recordSolve)
 
 // ── Debug Lab — design bugs ───────────────────────────────────────────────────
-router.get('/debuglab/design',                         debugger_.listDesignBugs)
-router.get('/debuglab/design/:id',                     debugger_.getDesignBug)
+router.get('/debuglab/design',                         optionalAuth, debugger_.listDesignBugs)
+router.get('/debuglab/design/:id',                     optionalAuth, debugger_.getDesignBug)
 router.post('/debuglab/design/:id/submit', requireAuth, debugger_.submitDesignBug)
 
 export default router

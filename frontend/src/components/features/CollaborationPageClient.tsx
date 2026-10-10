@@ -63,7 +63,7 @@ const HOW_IT_WORKS = [
 const FAQ = [
   {
     q: 'How many people can collaborate on one diagram?',
-    a: 'Pro plans support up to 3 collaborators per diagram. Ultimate supports unlimited collaborators per diagram.',
+    a: 'Pro allows 2 people per diagram (you + 1 collaborator) and up to 3 new collaborations per month. Ultimate is unlimited on both seats and monthly collaborations.',
   },
   {
     q: 'How do I invite someone to collaborate?',

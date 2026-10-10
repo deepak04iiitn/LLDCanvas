@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { ArrowRight, Flame } from 'lucide-react'
 import { toast } from 'sonner'
 import { learnApi, type DebuggerChallenge } from '@/lib/learn-api'
+import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { annotateChallengeAccess } from '@/lib/challenge-access'
+import { usePlan } from '@/hooks/usePlan'
 import { cn } from '@/lib/utils'
 import {
   FeatureInstructionsPanel,
@@ -66,6 +69,7 @@ function SkeletonRows() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 export function DebuggerProblemList() {
+  const { plan } = usePlan()
   const [challenges, setChallenges] = useState<DebuggerChallenge[]>([])
   const [loading,    setLoading]    = useState(true)
   const [diff,       setDiff]       = useState<Diff>('all')
@@ -74,11 +78,15 @@ export function DebuggerProblemList() {
   useEffect(() => {
     let cancelled = false
     learnApi.debugger.list()
-      .then(d => { if (!cancelled) setChallenges(d.challenges ?? []) })
+      .then(d => {
+        if (!cancelled) {
+          setChallenges(annotateChallengeAccess('debug-lab', plan ?? 'free', d.challenges ?? []))
+        }
+      })
       .catch(e => toast.error(e instanceof Error ? e.message : 'Failed to load challenges'))
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [plan])
 
   const counts = useMemo(() => ({
     all:    challenges.length,
@@ -207,7 +215,9 @@ export function DebuggerProblemList() {
                     </div>
 
                     <Link
-                      href={`/dashboard/learn/debugger/${id}`}
+                      href={daily.locked
+                        ? `/pricing?from=debug_lab_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`
+                        : `/dashboard/learn/debugger/${id}`}
                       className="group block rounded-2xl border border-hairline bg-paper-elevated px-6 py-5 hover:border-ink/20 hover:bg-paper transition-all"
                     >
                       <div className="flex items-start gap-5">
@@ -241,9 +251,17 @@ export function DebuggerProblemList() {
                             </div>
                           )}
                         </div>
-                        <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
-                          <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
-                        </div>
+                        {daily.locked ? (
+                          <ChallengeLockCue
+                            requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+                            from={`debug_lab_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+                            className="mt-0.5 self-start"
+                          />
+                        ) : (
+                          <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
+                            <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        )}
                       </div>
                     </Link>
                   </div>
@@ -265,13 +283,17 @@ export function DebuggerProblemList() {
                       const last = i === filtered.length - 1
                       const langs = (c.variants ?? [])
                         .map(v => LANG_SHORT[v.language] ?? v.language).slice(0, 3)
+                      const href = c.locked
+                        ? `/pricing?from=debug_lab_${c.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`
+                        : `/dashboard/learn/debugger/${id}`
                       return (
                         <Link
                           key={id}
-                          href={`/dashboard/learn/debugger/${id}`}
+                          href={href}
                           className={cn(
                             'group flex items-center gap-5 px-6 py-4 transition-colors hover:bg-paper-elevated',
                             !last && 'border-b border-hairline',
+                            c.locked && 'opacity-80',
                           )}
                         >
                           <span className="font-mono text-[11px] text-ink-faint shrink-0 w-5 text-right select-none">
@@ -292,7 +314,14 @@ export function DebuggerProblemList() {
                           <span className={cn('font-mono text-[11px] capitalize shrink-0 hidden sm:block w-12 text-right', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                             {c.difficulty ?? 'easy'}
                           </span>
-                          <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />
+                          {c.locked ? (
+                            <ChallengeLockCue
+                              requiredPlan={c.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+                              from={`debug_lab_${c.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+                            />
+                          ) : (
+                            <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />
+                          )}
                         </Link>
                       )
                     })}

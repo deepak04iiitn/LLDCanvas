@@ -9,6 +9,11 @@ import {
 } from '../../models/learn/roguelike-run.model'
 import { createError } from '../../middleware/error'
 import { applySkillDeltas } from '../../utils/skill-updater'
+import {
+  isChallengeAccessible,
+  requiredPlanForChallenge,
+} from '../../config/challenge-access'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]): string {
   return Array.isArray(id) ? id[0] : id
@@ -212,7 +217,7 @@ export async function listScenarios(req: Request, res: Response, next: NextFunct
       .select('slug title icon description difficulty modes tags order estimatedMinutes initialConstraints')
       .sort({ order: 1 })
       .lean()
-    res.json({ scenarios })
+    res.json({ scenarios: withChallengeLocks('roguelike', req.user?.plan, scenarios) })
   } catch (e) {
     next(e)
   }
@@ -223,7 +228,8 @@ export async function getScenario(req: Request, res: Response, next: NextFunctio
     const slug = paramId(req.params.slug)
     const scenario = await RoguelikeScenario.findOne({ slug, status: 'published' }).lean()
     if (!scenario) throw createError('Scenario not found', 404)
-    res.json({ scenario })
+    const [annotated] = withChallengeLocks('roguelike', req.user?.plan, [scenario])
+    res.json({ scenario: annotated })
   } catch (e) {
     next(e)
   }
@@ -268,6 +274,17 @@ export async function startRun(req: Request, res: Response, next: NextFunction) 
         status: 'published',
       })
       if (!scenario) throw createError('Scenario not found', 404)
+    }
+
+    const plan = req.user!.plan
+    const difficulty = scenario!.difficulty ?? 'easy'
+    if (!isChallengeAccessible('roguelike', plan, difficulty, scenario!.slug)) {
+      const need = requiredPlanForChallenge('roguelike', difficulty, scenario!.slug)
+      throw createError(
+        `This scenario requires ${need === 'ultimate' ? 'Ultimate' : 'Pro'}.`,
+        403,
+        { code: 'PLAN_GATE', requiredPlan: need === 'free' ? 'pro' : need },
+      )
     }
 
     const health: ArchitectureHealth = { ...INITIAL_HEALTH }

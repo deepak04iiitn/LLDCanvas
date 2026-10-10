@@ -66,6 +66,8 @@ export interface JourneyProfile {
   userId: string
   planName?: string
   onboardingComplete: boolean
+  /** Free/Pro try mode — generated plan is preview-only */
+  isTrial?: boolean
   targetRole: 'sde1' | 'sde2' | 'backend' | 'fullstack' | 'general'
   preparationDays: 7 | 14 | 30 | 60
   currentLevel: 'scratch' | 'oop' | 'basic-lld' | 'solving'

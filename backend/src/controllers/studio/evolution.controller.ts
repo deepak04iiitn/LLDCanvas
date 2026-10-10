@@ -9,15 +9,16 @@ import {
 } from '../../services/studio/challenge-session.service'
 import type { EvolutionStageSubmission } from '../../services/studio/evolutionGrade'
 import { applySkillDeltas } from '../../utils/skill-updater'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
 }
 
-export async function listEvolutionPacks(_req: Request, res: Response, next: NextFunction) {
+export async function listEvolutionPacks(req: Request, res: Response, next: NextFunction) {
   try {
     const packs = await listPublishedPacks('evolution')
-    res.json({ packs })
+    res.json({ packs: withChallengeLocks('evolution', req.user?.plan, packs) })
   } catch (e) {
     next(e)
   }
@@ -26,7 +27,7 @@ export async function listEvolutionPacks(_req: Request, res: Response, next: Nex
 export async function start(req: Request, res: Response, next: NextFunction) {
   try {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, 'evolution')
+    const session = await startSession(req.user!.id, packId, 'evolution', req.user!.plan)
     res.status(201).json(session)
   } catch (e) {
     next(e)

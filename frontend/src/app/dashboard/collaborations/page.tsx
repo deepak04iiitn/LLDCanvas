@@ -284,9 +284,9 @@ export default function CollaborationsPage() {
               Invite teammates to edit your diagrams in real-time, with live cursors, @mentions, and discussion threads.
             </p>
             <p className="mb-8 text-sm text-ink-muted">
-              <span className="font-medium text-ink">Pro</span>: Up to 3 collaborators per diagram
+              <span className="font-medium text-ink">Pro</span>: 2 seats (you + 1) · 3 collaborations / mo
               &nbsp;·&nbsp;
-              <span className="font-medium text-ink">Ultimate</span>: Unlimited + activity timeline + version history
+              <span className="font-medium text-ink">Ultimate</span>: Unlimited seats &amp; collaborations + activity timeline + version history
             </p>
             <Link
               href="/pricing"

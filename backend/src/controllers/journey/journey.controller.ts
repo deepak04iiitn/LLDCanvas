@@ -6,6 +6,8 @@ import { JourneyExperience } from '../../models/journey/journey-experience.model
 import { JourneyActivity } from '../../models/journey/journey-activity.model'
 import { JourneyTip } from '../../models/journey/journey-tip.model'
 import { PlannrPreviewVisit, type PreviewSource } from '../../models/journey/plannr-preview-visit.model'
+import { assertPlannrFullAccess, isPlannrPreview } from '../../utils/plannr-access'
+import { createError } from '../../middleware/error'
 import { QuizAttempt } from '../../models/learn/quiz-attempt.model'
 import { ExperienceAttempt } from '../../models/journey/experience-attempt.model'
 import { SpacedRepetitionQueue } from '../../models/spaced-repetition-queue.model'
@@ -69,11 +71,13 @@ export async function setup(req: Request, res: Response, next: NextFunction): Pr
     await JourneyProfile.updateMany({ userId, isActive: true }, { $set: { isActive: false } })
 
     const safePlanName = (planName ?? 'My Plannr').trim() || 'My Plannr'
+    const trial = isPlannrPreview(req)
     const profile = await JourneyProfile.findOneAndUpdate(
       { userId, planName: safePlanName },
       {
         $set: {
           isActive: true,
+          isTrial: trial,
           targetRole: targetRole ?? 'general',
           preparationDays: preparationDays ?? 30,
           currentLevel: level,
@@ -97,7 +101,7 @@ export async function setup(req: Request, res: Response, next: NextFunction): Pr
       { upsert: true, new: true, setDefaultsOnInsert: true },
     )
 
-    res.status(201).json({ profile })
+    res.status(201).json({ profile, preview: trial })
   } catch (err) {
     next(err)
   }
@@ -179,6 +183,7 @@ export async function getDashboard(req: Request, res: Response, next: NextFuncti
       JourneyActivity.find({ userId: req.user!.id }).sort({ completedAt: -1 }).limit(5),
     ])
 
+    const preview = isPlannrPreview(req)
     res.json({
       profile,
       recommendation,
@@ -187,6 +192,7 @@ export async function getDashboard(req: Request, res: Response, next: NextFuncti
       totalTopics:     progress.total,
       progressPercent: progress.percent,
       onboarded:       true,
+      preview,
     })
   } catch (err) {
     next(err)
@@ -331,6 +337,7 @@ export async function getTopic(req: Request, res: Response, next: NextFunction):
 /** POST /plannr/topics/:slug/bookmark — toggle mark-for-revision */
 export async function toggleRevisionBookmark(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const userId = req.user!.id
 
@@ -370,6 +377,7 @@ export async function toggleRevisionBookmark(req: Request, res: Response, next: 
 /** POST /journey/topics/:slug/complete */
 export async function completeTopic(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const { performance = 'good', exerciseScore, exerciseType: submittedExerciseType } = req.body
     const userId = req.user!.id
@@ -672,8 +680,16 @@ export async function listPlans(req: Request, res: Response, next: NextFunction)
 /** POST /plannr/plans — create a new plan (and switch to it) */
 export async function createPlan(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const userId = req.user!.id
     const { planName, targetRole, preparationDays, currentLevel } = req.body
+
+    const existingCount = await JourneyProfile.countDocuments({ userId })
+    const safePlanName = (planName || 'New Plannr').trim() || 'New Plannr'
+    const already = await JourneyProfile.exists({ userId, planName: safePlanName })
+    if (!already && existingCount >= 3) {
+      throw createError('Ultimate includes up to 3 active Plannr plans.', 400)
+    }
 
     const level = currentLevel ?? 'scratch'
     const stage = startStageForLevel(level)
@@ -686,12 +702,12 @@ export async function createPlan(req: Request, res: Response, next: NextFunction
     await JourneyProfile.updateMany({ userId, isActive: true }, { $set: { isActive: false } })
 
     // Upsert by userId+planName so duplicate submissions are idempotent
-    const safePlanName = (planName || 'New Plannr').trim() || 'New Plannr'
     const profile = await JourneyProfile.findOneAndUpdate(
       { userId, planName: safePlanName },
       {
         $set: {
           isActive:           true,
+          isTrial:            false,
           targetRole:         targetRole ?? 'general',
           preparationDays:    preparationDays ?? 30,
           currentLevel:       level,
@@ -720,6 +736,7 @@ export async function createPlan(req: Request, res: Response, next: NextFunction
 /** PATCH /plannr/plans/:id/switch — switch the active plan */
 export async function switchPlan(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const userId   = req.user!.id
     const planId   = req.params.id
 
@@ -762,6 +779,7 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
 /** POST /plannr/experiences/:slug/attempt */
 export async function submitExperienceAttempt(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const { probeAnswers, classesDrawn } = req.body
     const userId = req.user!.id
@@ -974,6 +992,7 @@ function getModuleProgress(
 /** POST /plannr/topics/:slug/progress — save block / practice progress */
 export async function saveTopicProgress(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const { completedBlockIds, practiceSolvedIds, checkScores } = req.body as {
       completedBlockIds?: string[]
@@ -1038,6 +1057,7 @@ export async function saveTopicProgress(req: Request, res: Response, next: NextF
 /** POST /plannr/topics/:slug/practice/:itemId/submit — grade native practice */
 export async function submitPracticeItem(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const itemId = String(req.params.itemId)
     const { selectedOptionIds, selectedElementIds, selfScore } = req.body as {
@@ -1160,6 +1180,7 @@ export async function submitPracticeItem(req: Request, res: Response, next: Next
 /** POST /plannr/topics/:slug/checks/:checkId/submit — grade knowledge check */
 export async function submitKnowledgeCheck(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    assertPlannrFullAccess(req)
     const slug = String(req.params.slug)
     const checkId = String(req.params.checkId)
     const { selectedOptionIds, selfScore } = req.body as {

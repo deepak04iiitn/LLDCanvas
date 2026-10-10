@@ -1,6 +1,12 @@
 import { ChallengePack, type ChallengePackType } from '../../models/studio/challenge-pack.model'
 import { ChallengeAttempt } from '../../models/studio/challenge-attempt.model'
 import { createError } from '../../middleware/error'
+import type { PlanName } from '../../config/plans'
+import {
+  isChallengeAccessible,
+  requiredPlanForChallenge,
+  studioTypeToFeature,
+} from '../../config/challenge-access'
 import { structuralDiff } from '../graph/structuralDiff'
 import { scoreDiagram } from '../graph/scoreEngine'
 import {
@@ -68,9 +74,10 @@ export async function startSession(
   userId: string,
   packIdOrSlug: string,
   type?: ChallengePackType,
+  plan?: PlanName,
 ) {
   // Prefer resuming an in-progress attempt for this pack (slug URLs / refresh-safe).
-  return openSession(userId, packIdOrSlug, type)
+  return openSession(userId, packIdOrSlug, type, plan)
 }
 
 /** Open by pack slug/id: resume in-progress attempt or create a new one. */
@@ -78,6 +85,7 @@ export async function openSession(
   userId: string,
   packIdOrSlug: string,
   type?: ChallengePackType,
+  plan?: PlanName,
 ) {
   const pack = await resolvePublishedPack(packIdOrSlug, type)
 
@@ -87,11 +95,25 @@ export async function openSession(
     status: 'in_progress',
   }).sort({ startedAt: -1 })
 
+  // Allow finishing a challenge already started (even if plan later locked it).
   if (existing) {
     return {
       attemptId: existing.id,
       pack: serializePack(pack),
       resumed: true,
+    }
+  }
+
+  const feature = studioTypeToFeature(pack.type)
+  if (feature && plan) {
+    const difficulty = (pack.difficulty ?? 'easy') as string
+    if (!isChallengeAccessible(feature, plan, difficulty, pack.slug)) {
+      const need = requiredPlanForChallenge(feature, difficulty, pack.slug)
+      throw createError(
+        `This challenge requires ${need === 'ultimate' ? 'Ultimate' : 'Pro'}.`,
+        403,
+        { code: 'PLAN_GATE', requiredPlan: need === 'free' ? 'pro' : need },
+      )
     }
   }
 

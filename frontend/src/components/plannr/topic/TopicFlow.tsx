@@ -12,6 +12,10 @@ import { StageTag } from '@/components/plannr/shared/StageTag'
 import { MiniExerciseGate } from '@/components/plannr/topic/MiniExerciseGate'
 import { AfterTopicActions } from '@/components/plannr/topic/AfterTopicActions'
 import { cn } from '@/lib/utils'
+import { usePlan } from '@/hooks/usePlan'
+import { UpgradeGate } from '@/components/billing/UpgradeGate'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 type StepId = 'learn' | 'whyItMatters' | 'interviewContext' | 'spotIt' | 'fixIt' | 'checkUnderstanding' | 'followUp'
 
@@ -453,6 +457,8 @@ function StepBar({ steps, current, pastSet, onClickPast }: {
 // --- Main TopicFlow -----------------------------------------------------------
 
 export function TopicFlow({ slug }: { slug: string }) {
+  const router = useRouter()
+  const { isUltimate } = usePlan()
   const [topic, setTopic] = useState<JourneyTopic | null>(null)
   const [loading, setLoading] = useState(true)
   const [stepIdx, setStepIdx] = useState(0)
@@ -470,6 +476,11 @@ export function TopicFlow({ slug }: { slug: string }) {
   const pastSet     = new Set(Array.from({ length: stepIdx }, (_, i) => i))
 
   function handleExerciseComplete(score: number) {
+    if (!isUltimate) {
+      toast.message('Preview mode — upgrade to Ultimate to earn credit for this topic')
+      router.push('/pricing?from=plannr_topic')
+      return
+    }
     setExerciseScore(score)
     const followUpIdx = STEPS.findIndex(s => s.id === 'followUp')
     setStepIdx(followUpIdx)
@@ -477,6 +488,10 @@ export function TopicFlow({ slug }: { slug: string }) {
 
   async function completeTopic() {
     if (!topic) return
+    if (!isUltimate) {
+      router.push('/pricing?from=plannr_complete')
+      return
+    }
     try {
       await journeyApi.completeTopic(topic.slug, {
         exerciseScore: exerciseScore ?? 50,
@@ -654,12 +669,22 @@ export function TopicFlow({ slug }: { slug: string }) {
             {/* Continue / Complete — hidden on Check step (exercise drives nav) */}
             {currentStep.id !== 'checkUnderstanding' && (
               isLast ? (
-                <button
-                  onClick={completeTopic}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity shadow-sm"
-                >
-                  <CheckCircle2 size={14} /> Complete Topic
-                </button>
+                isUltimate ? (
+                  <button
+                    onClick={completeTopic}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand text-white text-[13px] font-semibold hover:opacity-90 transition-opacity shadow-sm"
+                  >
+                    <CheckCircle2 size={14} /> Complete Topic
+                  </button>
+                ) : (
+                  <UpgradeGate
+                    feature="Complete topic"
+                    requiredPlan="ultimate"
+                    description="You’re previewing Plannr. Upgrade to Ultimate to use this plan."
+                    variant="inline"
+                    className="max-w-xs"
+                  />
+                )
               ) : (
                 <button
                   onClick={() => setStepIdx(s => s + 1)}

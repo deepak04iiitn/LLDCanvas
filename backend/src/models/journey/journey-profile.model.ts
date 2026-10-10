@@ -49,6 +49,11 @@ export interface IJourneyProfile extends Document {
   planName: string
   isActive: boolean
   onboardingComplete: boolean
+  /**
+   * Free/Pro preview / try-mode profile. Ultimate clears this.
+   * Mutating prep actions (complete topic, bookmarks, mocks, etc.) require Ultimate regardless.
+   */
+  isTrial: boolean
   targetRole: 'sde1' | 'sde2' | 'backend' | 'fullstack' | 'general'
   preparationDays: 7 | 14 | 30 | 60
   currentLevel: 'scratch' | 'oop' | 'basic-lld' | 'solving'
@@ -139,6 +144,7 @@ const journeyProfileSchema = new Schema<IJourneyProfile>(
     planName: { type: String, default: 'My Plannr' },
     isActive: { type: Boolean, default: true, index: true },
     onboardingComplete: { type: Boolean, default: false },
+    isTrial: { type: Boolean, default: false, index: true },
     targetRole: {
       type: String,
       enum: ['sde1', 'sde2', 'backend', 'fullstack', 'general'],

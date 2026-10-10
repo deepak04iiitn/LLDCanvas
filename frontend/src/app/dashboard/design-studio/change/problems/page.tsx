@@ -9,6 +9,9 @@ import { packIdOf, studioApi, type StudioPackSummary } from '@/lib/studio-api'
 import { useSession } from '@/lib/auth'
 import { useAuthModal } from '@/lib/auth-modal-store'
 import { cn } from '@/lib/utils'
+import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { annotateChallengeAccess } from '@/lib/challenge-access'
+import { usePlan } from '@/hooks/usePlan'
 import {
   FeatureInstructionsPanel,
   ProblemsInstructionsTabs,
@@ -46,6 +49,7 @@ export default function ChangeProblemsPage() {
   const pathname = usePathname()
   const { data: session }  = useSession()
   const { openAuthModal }  = useAuthModal()
+  const { plan } = usePlan()
 
   const [packs,      setPacks]      = useState<StudioPackSummary[]>([])
   const [loading,    setLoading]    = useState(true)
@@ -58,7 +62,9 @@ export default function ChangeProblemsPage() {
     ;(async () => {
       try {
         const res = await studioApi.packs.list('change_one')
-        if (!cancelled) setPacks(res.packs ?? [])
+        if (!cancelled) {
+          setPacks(annotateChallengeAccess('change_one', plan ?? 'free', res.packs ?? []))
+        }
       } catch (err) {
         if (!cancelled) toast.error((err as Error).message ?? 'Failed to load problems')
       } finally {
@@ -66,10 +72,15 @@ export default function ChangeProblemsPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [plan])
 
   const onStart = useCallback(async (pack: StudioPackSummary) => {
     if (!session) { openAuthModal(pathname, 'signin'); return }
+    if (pack.locked) {
+      const need = pack.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'
+      router.push(`/pricing?from=change_one_${need}`)
+      return
+    }
     const slug = pack.slug || packIdOf(pack)
     setStartingId(packIdOf(pack))
     try {
@@ -234,11 +245,19 @@ export default function ChangeProblemsPage() {
                           </div>
                         )}
                       </div>
-                      <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
-                        {startingId === dailyId
-                          ? <Loader2 size={14} className="animate-spin" />
-                          : <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />}
-                      </div>
+                      {daily.locked ? (
+                        <ChallengeLockCue
+                          requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+                          from={`change_one_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+                          className="mt-0.5 self-start"
+                        />
+                      ) : (
+                        <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
+                          {startingId === dailyId
+                            ? <Loader2 size={14} className="animate-spin" />
+                            : <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />}
+                        </div>
+                      )}
                     </div>
                   </button>
                 </div>
@@ -286,9 +305,17 @@ export default function ChangeProblemsPage() {
                           <span className={cn('font-mono text-[11px] capitalize shrink-0 hidden sm:block', DIFF_TEXT[d] ?? 'text-ink-faint')}>
                             {pack.difficulty ?? 'easy'}
                           </span>
-                          {startingId === id
+                          {pack.locked ? (
+                            <ChallengeLockCue
+                              requiredPlan={pack.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+                              from={`change_one_${pack.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+                            />
+                          ) : startingId === id
                             ? <Loader2 size={13} className="animate-spin text-ink-faint shrink-0" />
-                            : <ArrowRight size={14} className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all" />}
+                            : <ArrowRight
+                                size={14}
+                                className="text-ink-faint shrink-0 group-hover:translate-x-0.5 group-hover:text-ink transition-all"
+                              />}
                         </button>
                       )
                     })}

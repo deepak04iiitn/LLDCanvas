@@ -1,6 +1,8 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
+import { requireAuth, optionalAuth } from '../middleware/auth'
 import type { ChallengePackType } from '../models/studio/challenge-pack.model'
+import { withChallengeLocks } from '../utils/challenge-gate'
+import { studioTypeToFeature } from '../config/challenge-access'
 import {
   getSession,
   listPublishedPacks,
@@ -31,22 +33,27 @@ function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
 }
 
-/** Public — browse published packs without signing in. */
-router.get('/packs', async (req, res, next) => {
+/** Public — browse published packs without signing in (locks reflect Free if anonymous). */
+router.get('/packs', optionalAuth, async (req, res, next) => {
   try {
     const type = req.query.type as ChallengePackType | undefined
     const packs = await listPublishedPacks(type)
-    res.json({ packs })
+    const feature = type ? studioTypeToFeature(type) : null
+    res.json({
+      packs: feature
+        ? withChallengeLocks(feature, req.user?.plan, packs)
+        : packs,
+    })
   } catch (e) {
     next(e)
   }
 })
 
-router.get('/debugger/packs', debuggerCtrl.listDebuggerPacks)
-router.get('/refactor/packs', refactorCtrl.listRefactorPacks)
-router.get('/change-one/packs', changeOneCtrl.listChangeOnePacks)
-router.get('/evolution/packs', evolutionCtrl.listEvolutionPacks)
-router.get('/budget/packs', budgetCtrl.listBudgetPacks)
+router.get('/debugger/packs', optionalAuth, debuggerCtrl.listDebuggerPacks)
+router.get('/refactor/packs', optionalAuth, refactorCtrl.listRefactorPacks)
+router.get('/change-one/packs', optionalAuth, changeOneCtrl.listChangeOnePacks)
+router.get('/evolution/packs', optionalAuth, evolutionCtrl.listEvolutionPacks)
+router.get('/budget/packs', optionalAuth, budgetCtrl.listBudgetPacks)
 
 /** Design Replay — catalog + open read (title-only; no author fields). */
 /** Auth required for sessions / attempts. */
@@ -54,7 +61,7 @@ router.post('/start', requireAuth, async (req, res, next) => {
   try {
     const type = String(req.body.type ?? 'debugger') as ChallengePackType
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, type)
+    const session = await startSession(req.user!.id, packId, type, req.user!.plan)
     res.status(201).json(session)
   } catch (e) {
     next(e)
@@ -66,7 +73,7 @@ router.post('/open', requireAuth, async (req, res, next) => {
   try {
     const type = String(req.body.type ?? 'debugger') as ChallengePackType
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, type)
+    const session = await startSession(req.user!.id, packId, type, req.user!.plan)
     res.status(201).json(session)
   } catch (e) {
     next(e)

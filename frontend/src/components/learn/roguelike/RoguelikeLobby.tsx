@@ -14,6 +14,9 @@ import {
 } from '@/components/shared/FeatureInstructionsPanel'
 import { learnApi } from '@/lib/learn-api'
 import type { ScenarioSummary, RoguelikeScenario, RunState } from '@/lib/learn-api'
+import { ChallengeLockCue } from '@/components/billing/ChallengeLockCue'
+import { annotateChallengeAccess } from '@/lib/challenge-access'
+import { usePlan } from '@/hooks/usePlan'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -103,11 +106,17 @@ function ScenarioRow({
         {meta.label}
       </span>
 
-      {/* Arrow */}
-      <ArrowRight
-        size={14}
-        className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-ink"
-      />
+      {scenario.locked ? (
+        <ChallengeLockCue
+          requiredPlan={scenario.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+          from={`roguelike_${scenario.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+        />
+      ) : (
+        <ArrowRight
+          size={14}
+          className="shrink-0 text-ink-faint transition-all group-hover:translate-x-0.5 group-hover:text-ink"
+        />
+      )}
     </button>
   )
 }
@@ -131,6 +140,7 @@ function SkeletonRow() {
 // ── Main component ─────────────────────────────────────────────────────────────
 export function RoguelikeLobby() {
   const router = useRouter()
+  const { plan } = usePlan()
 
   const [scenarios,        setScenarios]        = useState<ScenarioSummary[]>([])
   const [recentRuns,       setRecentRuns]        = useState<RunState[]>([])
@@ -156,7 +166,8 @@ export function RoguelikeLobby() {
         ])
         if (cancelled) return
         if (scenariosRes.status === 'fulfilled') {
-          setScenarios(scenariosRes.value.scenarios.sort((a, b) => a.order - b.order))
+          const sorted = scenariosRes.value.scenarios.sort((a, b) => a.order - b.order)
+          setScenarios(annotateChallengeAccess('roguelike', plan ?? 'free', sorted))
         }
         if (runsRes.status === 'fulfilled') {
           setRecentRuns(runsRes.value.runs.slice(0, 5))
@@ -171,9 +182,13 @@ export function RoguelikeLobby() {
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [plan])
 
   async function handleScenarioClick(sc: ScenarioSummary) {
+    if (sc.locked) {
+      router.push(`/pricing?from=roguelike_${sc.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`)
+      return
+    }
     setSelectedScenario(sc)
     setFullScenario(null)
     setLoadingScenario(true)
@@ -194,11 +209,20 @@ export function RoguelikeLobby() {
 
   async function handleStart() {
     if (!selectedScenario) return
+    if (selectedScenario.locked) {
+      router.push(`/pricing?from=roguelike_${selectedScenario.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`)
+      return
+    }
     setStarting(true)
     try {
       const { runId } = await learnApi.roguelikeV2.startRun(selectedScenario.slug, selectedMode)
       router.push(`/dashboard/learn/roguelike/${runId}`)
     } catch (e) {
+      const err = e as Error & { requiredPlan?: string; code?: string }
+      if (err.code === 'PLAN_GATE' || /requires/i.test(err.message)) {
+        router.push(`/pricing?from=roguelike_gate`)
+        return
+      }
       toast.error(e instanceof Error ? e.message : 'Failed to start run')
       setStarting(false)
     }
@@ -373,9 +397,17 @@ export function RoguelikeLobby() {
                     </div>
                   )}
                 </div>
-                <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
-                  <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
-                </div>
+                {daily.locked ? (
+                  <ChallengeLockCue
+                    requiredPlan={daily.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'}
+                    from={`roguelike_${daily.requiredPlan === 'ultimate' ? 'hard' : 'medium'}`}
+                    className="mt-0.5 self-start"
+                  />
+                ) : (
+                  <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-ink text-paper group-hover:bg-ink/80 transition-colors mt-0.5">
+                    <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                )}
               </div>
             </button>
           </div>

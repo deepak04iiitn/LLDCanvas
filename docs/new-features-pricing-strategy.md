@@ -18,7 +18,7 @@ Keep the existing three-tier price points (**Free / Pro ₹199·mo / Ultimate �
 | Tier | Access |
 |------|--------|
 | **Free** | ~**10 curated Easy** challenges/scenarios (allowlist) |
-| **Pro** | **All Easy** + **5–10 curated Medium** |
+| **Pro** | **All Easy** + **5 curated Medium** |
 | **Ultimate** | **Everything** — all Easy, Medium, and Hard |
 
 Features this rule covers: **Roguelike, Debug Lab, Debug & Fix, Refactor, Change One Thing, Evolution, Budget Pressure.**
@@ -58,7 +58,7 @@ Features this rule covers: **Roguelike, Debug Lab, Debug & Fix, Refactor, Change
 | Practice problems | 10 curated Easy | All Easy + 10 curated Medium | All Easy/Medium/Hard |
 | Hints / community / bookmarks | No | Yes | Yes |
 | Interview Mode sessions / mo | 0 | 10 | Unlimited |
-| Collaborators | 0 | 3 | Unlimited |
+| Collaboration | 0 | 2 seats (incl. owner) · 3 invites / mo | Unlimited seats & invites |
 | Activity timeline / version history | No | No | Yes |
 | Analytics | None | Basic | Full |
 | Beta features flag | No | No | Yes |
@@ -113,13 +113,13 @@ Dashboard routes for Plannr, Design Studio (debugger/refactor/change/evolution/b
 | Feature | Free | Pro | Ultimate |
 |---------|------|-----|----------|
 | **Daily Quiz** | ✅ unlimited | ✅ | ✅ |
-| **Roguelike** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Debug Lab** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Debug & Fix** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Refactor** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Change One Thing** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Evolution** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
-| **Budget Pressure** | ~10 Easy (allowlist) | All Easy + 5–10 Medium | All Easy/Medium/Hard |
+| **Roguelike** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Debug Lab** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Debug & Fix** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Refactor** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Change One Thing** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Evolution** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
+| **Budget Pressure** | ~10 Easy (allowlist) | All Easy + 5 Medium | All Easy/Medium/Hard |
 | **Plannr** | ◐ **Try / preview only** | ◐ **Try / preview only** (same as Free) | ✅ **Full access — only tier that can use generated content** |
 
 Unlimited **replays** of any difficulty-based challenge you can open — no monthly attempt counters on those features.
@@ -135,13 +135,13 @@ Exactly like Practice Problems (`isProblemAccessible` / `FREE_EASY_PROBLEM_SLUGS
 | Tier | Rule |
 |------|------|
 | Free | Only slugs on that feature’s **Free Easy allowlist** (~10). Other Easy + all Medium/Hard locked. |
-| Pro | **Every Easy** pack/scenario for that feature, plus that feature’s **Pro Medium allowlist** (5–10). Hard locked. |
+| Pro | **Every Easy** pack/scenario for that feature, plus that feature’s **Pro Medium allowlist** (5). Hard locked. |
 | Ultimate | **All** published Easy, Medium, and Hard. |
 
 **Per feature:** maintain three constants (or one map), e.g.:
 
 - `FREE_ROGUELIKE_EASY_SLUGS` (~10)
-- `PRO_ROGUELIKE_MEDIUM_SLUGS` (5–10)
+- `PRO_ROGUELIKE_MEDIUM_SLUGS` (5)
 - same pattern for `debug-lab`, `debugger` (Debug & Fix), `refactor`, `change_one`, `evolution`, `budget`
 
 **`planMin` on packs (optional helper):** Easy allowlisted → effectively free; other Easy still free for Pro+; Medium allowlisted → pro; remaining Medium + all Hard → ultimate. Or simply ignore `planMin` and evaluate via allowlists + difficulty like Problems do today.
@@ -268,7 +268,7 @@ Deterministic graders → content allowlists are enough. Add AI metering later o
 
 ### Long-term growth
 
-New Easy packs: add to Free allowlist until ~10, then leave extras for Pro “all Easy.” New Medium: fill Pro allowlist to 5–10, then remainder Ultimate-only or expand Pro allowlist deliberately. New Hard: Ultimate.
+New Easy packs: add to Free allowlist until ~10, then leave extras for Pro “all Easy.” New Medium: fill Pro allowlist to 5, then remainder Ultimate-only or expand Pro allowlist deliberately. New Hard: Ultimate.
 
 ---
 
@@ -296,7 +296,7 @@ Reuse the Problems pattern — **allowlists + difficulty**, not monthly counters
 ```ts
 // Example shape in plans.ts (per feature key)
 FREE_EASY_SLUGS: Record<StudioOrLearnFeature, readonly string[]>  // ~10 each
-PRO_MEDIUM_SLUGS: Record<StudioOrLearnFeature, readonly string[]> // 5–10 each
+PRO_MEDIUM_SLUGS: Record<StudioOrLearnFeature, readonly string[]> // 5 each
 
 function canAccessChallenge(
   plan: PlanName,
@@ -332,7 +332,7 @@ plannr: {
 ### Migration
 
 1. Inventory published packs/scenarios by type × difficulty.
-2. Curate Free Easy (~10) and Pro Medium (5–10) allowlists per feature.
+2. Curate Free Easy (~10) and Pro Medium (5) allowlists per feature.
 3. Ship `canAccessChallenge` + UI badges behind a flag.
 4. Add rows to the pricing comparison table.
 
@@ -343,7 +343,7 @@ plannr: {
 ### Phase 0 — Inventory & dogfood (1 week)
 
 - Count published items by type × difficulty.
-- Lock Free Easy (~10) and Pro Medium (5–10) allowlists per feature.
+- Lock Free Easy (~10) and Pro Medium (5) allowlists per feature.
 - Verify locked cards show the right plan badge.
 
 ### Phase 1 — Soft launch (2 weeks)
@@ -370,7 +370,7 @@ plannr: {
 
 **Free Easy (~10):** short, clear teaching moments; strong reveal; not the hardest “hero” content.
 
-**Pro Medium (5–10):** representative interview-style challenges; leave some Medium for later expansion or Ultimate if the library is huge.
+**Pro Medium (5):** representative interview-style challenges; leave some Medium for later expansion or Ultimate if the library is huge.
 
 **Hard:** Ultimate only.
 
@@ -380,7 +380,7 @@ plannr: {
 
 **Free:** Unlimited Daily Quiz, UML canvas, ~10 Easy challenges per mode. Plannr **try/preview only**.
 
-**Pro — Crack LLD Interviews:** All Easy + 5–10 Medium per mode, Interview Mode, problem sets. Plannr **try/preview only** (same as Free).
+**Pro — Crack LLD Interviews:** All Easy + 5 Medium per mode, Interview Mode, problem sets. Plannr **try/preview only** (same as Free).
 
 **Ultimate — Master Software Design:** All Hard challenges + **full Plannr** (use your generated plan, all tracks, mocks, tips, cheatsheet).
 
@@ -390,7 +390,7 @@ plannr: {
 
 | Decision | Owner | Date | Notes |
 |----------|-------|------|-------|
-| Confirm ~10 Free Easy / 5–10 Pro Medium per feature | | | **Preferred simple model** |
+| Confirm ~10 Free Easy / 5 Pro Medium per feature | | | **Preferred simple model** |
 | Approve concrete allowlist slugs | | | |
 | Plannr = Ultimate-only to *use*; Free/Pro try/preview | | | **Agreed direction** |
 | Try: allow generate + read-only roadmap; block Start/Complete | | | |
@@ -404,4 +404,4 @@ plannr: {
 
 **Verified today:** Free/Pro/Ultimate prices exist; packs have `difficulty` + `planMin`; new features are **not yet gated**.
 
-**Proposed (simple):** Difficulty features → **~10 Easy free · all Easy + 5–10 Medium on Pro · all on Ultimate**. **Plannr → Ultimate-only to use; Free/Pro get try/preview (generate & view, cannot use generated content).** Daily Quiz stays fully free.
+**Proposed (simple):** Difficulty features → **~10 Easy free · all Easy + 5 Medium on Pro · all on Ultimate**. **Plannr → Ultimate-only to use; Free/Pro get try/preview (generate & view, cannot use generated content).** Daily Quiz stays fully free.

@@ -97,6 +97,8 @@ export interface ScenarioSummary {
   order: number
   estimatedMinutes: number
   initialConstraints: InitialConstraints
+  locked?: boolean
+  requiredPlan?: 'free' | 'pro' | 'ultimate'
 }
 
 export interface RoguelikeScenario extends ScenarioSummary {
@@ -252,6 +254,8 @@ export interface DebuggerChallenge {
   bugType: string
   tags: string[]
   order?: number
+  locked?: boolean
+  requiredPlan?: 'free' | 'pro' | 'ultimate'
   // explanation is NOT included in list/get — only returned after solve
 }
 

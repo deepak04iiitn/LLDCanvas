@@ -49,6 +49,8 @@ export interface StudioPackSummary {
   tags?: string[]
   planMin?: string
   order?: number
+  locked?: boolean
+  requiredPlan?: 'free' | 'pro' | 'ultimate'
 }
 
 export interface StudioPackDetail extends StudioPackSummary {

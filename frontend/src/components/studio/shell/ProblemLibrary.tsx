@@ -101,6 +101,11 @@ export function ProblemLibrary({
       openAuthModal(pathname, 'signin')
       return
     }
+    if (pack.locked) {
+      const need = pack.requiredPlan === 'ultimate' ? 'ultimate' : 'pro'
+      router.push(`/pricing?from=${encodeURIComponent(String(packType))}_${need}`)
+      return
+    }
     const slug = pack.slug || packIdOf(pack)
     setStartingId(packIdOf(pack))
     try {
@@ -109,7 +114,7 @@ export function ProblemLibrary({
       toast.error((err as Error).message ?? 'Failed to open challenge')
       setStartingId(null)
     }
-  }, [attemptBasePath, openAuthModal, pathname, router, session])
+  }, [attemptBasePath, openAuthModal, packType, pathname, router, session])
 
   // Derived counts per difficulty
   const counts = { easy: 0, medium: 0, hard: 0 }

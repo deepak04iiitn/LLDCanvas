@@ -11,22 +11,23 @@ import {
   submitDebugger,
 } from '../../services/studio/challenge-session.service'
 import { applySkillDeltas } from '../../utils/skill-updater'
+import { withChallengeLocks } from '../../utils/challenge-gate'
 
 function paramId(id: string | string[]) {
   return Array.isArray(id) ? id[0] : id
 }
 
-export async function listDebuggerPacks(_req: Request, res: Response, next: NextFunction) {
+export async function listDebuggerPacks(req: Request, res: Response, next: NextFunction) {
   try {
     const packs = await listPublishedPacks('debugger')
-    res.json({ packs })
+    res.json({ packs: withChallengeLocks('debugger', req.user?.plan, packs) })
   } catch (e) { next(e) }
 }
 
 export async function start(req: Request, res: Response, next: NextFunction) {
   try {
     const packId = String(req.body.packId ?? req.body.slug ?? '')
-    const session = await startSession(req.user!.id, packId, 'debugger')
+    const session = await startSession(req.user!.id, packId, 'debugger', req.user!.plan)
     res.status(201).json(session)
   } catch (e) { next(e) }
 }
