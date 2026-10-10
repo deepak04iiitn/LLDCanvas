@@ -33,7 +33,16 @@ import testimonialRouter from '../src/routes/testimonial.route'
 import publicRouter       from '../src/routes/public.route'
 import blogRouter         from '../src/routes/blog.route'
 import patternRouter      from '../src/routes/pattern.route'
+import artifactRouter     from '../src/routes/artifact.route'
+import studioRouter       from '../src/routes/studio.route'
+import learnRouter        from '../src/routes/learn.route'
+import journeyRouter      from '../src/routes/journey.route'
+import skillsRouter       from '../src/routes/skills.route'
+import adminStudioRouter  from '../src/routes/admin/studio.route'
+import adminLearnRouter   from '../src/routes/admin/learn.route'
+import adminJourneyRouter from '../src/routes/admin/journey.route'
 import { startSubscriptionExpiryJob } from '../src/jobs/expire-subscriptions'
+import { startSpacedRepetitionJob } from '../src/jobs/spaced-repetition'
 
 const app        = express()
 const httpServer = createServer(app)
@@ -112,6 +121,14 @@ app.use('/billing',        billingRouter)
 app.use('/feedback',       feedbackRouter)
 app.use('/testimonials',   testimonialRouter)
 app.use('/blog',           blogRouter)
+app.use('/artifacts',      artifactRouter)
+app.use('/studio',         studioRouter)
+app.use('/learn',          learnRouter)
+app.use('/plannr',         journeyRouter)
+app.use('/skills',         skillsRouter)
+app.use('/admin/studio',   adminStudioRouter)
+app.use('/admin/learn',    adminLearnRouter)
+app.use('/admin/plannr',   adminJourneyRouter)
 
 app.use(errorHandler)
 
@@ -130,6 +147,7 @@ function ensureOneTimeInit(): Promise<void> {
       await ensureAdminUser()
       initSocketServer(httpServer, allowedOrigins)
       startSubscriptionExpiryJob()
+      startSpacedRepetitionJob()
     })().catch((err) => {
       oneTimeInitPromise = null
       throw err
