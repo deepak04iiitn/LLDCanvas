@@ -470,6 +470,12 @@ export default function CookiePolicyPage() {
                     Terms &amp; Conditions <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                   <Link
+                    href="/privacy"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-hairline-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-brand hover:text-brand"
+                  >
+                    Privacy Policy <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                  <Link
                     href="/about"
                     className="inline-flex items-center gap-1.5 rounded-full border border-hairline-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-brand hover:text-brand"
                   >

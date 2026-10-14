@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   ArrowUpRight, BookOpen, LayoutDashboard, LogIn, Pencil, UserPlus,
   LayoutTemplate, PenLine, ListChecks, Timer, Users, Terminal,
-  CreditCard, Layers, Mail, Rss, Briefcase, Info, Scale, Cookie,
+  CreditCard, Layers, Mail, Rss, Briefcase, Info, Scale, Cookie, Shield,
   CalendarDays, Search, Bug, Wrench, RefreshCw,
   TrendingUp, DollarSign, Gamepad2, SlidersHorizontal, Flame,
 } from 'lucide-react'
@@ -141,6 +141,7 @@ export function SiteFooter() {
                   <NavLink href="/blog"          Icon={Rss}>Blog</NavLink>
                   <NavLink href="/about"         Icon={Info}>About</NavLink>
                   <NavLink href="/terms"         Icon={Scale}>Terms &amp; Conditions</NavLink>
+                  <NavLink href="/privacy"       Icon={Shield}>Privacy Policy</NavLink>
                   <NavLink href="/cookie-policy" Icon={Cookie}>Cookie Policy</NavLink>
                   {mounted && session && (
                     <NavLink href="/dashboard" Icon={LayoutDashboard}>Dashboard</NavLink>
@@ -231,6 +232,10 @@ export function SiteFooter() {
               <span className="text-ink-faint/30">·</span>
               <Link href="/terms" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
                 Terms
+              </Link>
+              <span className="text-ink-faint/30">·</span>
+              <Link href="/privacy" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
+                Privacy
               </Link>
               <span className="text-ink-faint/30">·</span>
               <Link href="/cookie-policy" className="font-mono text-[11px] text-ink-faint transition-colors hover:text-ink">
