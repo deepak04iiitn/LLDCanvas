@@ -54,14 +54,59 @@ async function cancelProviderSubscription(sub: {
 }, atPeriodEnd: boolean) {
   if (sub.paymentSource === 'manual') return
   if (sub.paymentSource === 'dodo') {
-    await dodo().subscriptions.update(sub.razorpaySubId, {
-      status: 'cancelled',
-      cancel_at_next_billing_date: atPeriodEnd,
-      cancel_reason: 'cancelled_by_customer',
-    })
+    // Period-end: only schedule cancel — do NOT set status=cancelled (that
+    // ends access immediately). Immediate: set status cancelled.
+    if (atPeriodEnd) {
+      await dodo().subscriptions.update(sub.razorpaySubId, {
+        cancel_at_next_billing_date: true,
+        cancel_reason: 'cancelled_by_customer',
+      })
+    } else {
+      await dodo().subscriptions.update(sub.razorpaySubId, {
+        status: 'cancelled',
+        cancel_at_next_billing_date: false,
+        cancel_reason: 'cancelled_by_customer',
+      })
+    }
     return
   }
+  // Razorpay: second arg true = cancel_at_cycle_end (access until period end)
   await rzp().subscriptions.cancel(sub.razorpaySubId, atPeriodEnd)
+}
+
+/** Paid window end — used when provider dates are missing (common right after verify). */
+function computePeriodEnd(sub: {
+  billingInterval: 'monthly' | 'yearly'
+  currentPeriodStart?: Date | null
+  createdAt?: Date
+}): Date {
+  const start = sub.currentPeriodStart ?? sub.createdAt ?? new Date()
+  const end = new Date(start)
+  if (sub.billingInterval === 'yearly') end.setFullYear(end.getFullYear() + 1)
+  else end.setMonth(end.getMonth() + 1)
+  if (end.getTime() > Date.now()) return end
+  const fromNow = new Date()
+  if (sub.billingInterval === 'yearly') fromNow.setFullYear(fromNow.getFullYear() + 1)
+  else fromNow.setMonth(fromNow.getMonth() + 1)
+  return fromNow
+}
+
+async function syncRazorpayPeriodDates(sub: InstanceType<typeof Subscription>) {
+  try {
+    const remote = await rzp().subscriptions.fetch(sub.razorpaySubId) as {
+      current_start?: number
+      current_end?: number
+    }
+    if (remote.current_start) {
+      sub.currentPeriodStart = new Date(remote.current_start * 1000)
+    }
+    if (remote.current_end) {
+      sub.currentPeriodEnd = new Date(remote.current_end * 1000)
+    }
+  } catch { /* non-fatal — fall through to compute */ }
+  if (!sub.currentPeriodEnd || sub.currentPeriodEnd.getTime() <= Date.now()) {
+    sub.currentPeriodEnd = computePeriodEnd(sub)
+  }
 }
 
 // ── GET /billing/geo ───────────────────────────────────────────────────────────
@@ -332,8 +377,18 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     }
 
     sub.status = 'active'
+    // verify often runs before activated webhook — always stamp period dates
+    // so a same-day cancel still has a paid window to honor.
+    if (sub.paymentSource === 'razorpay') {
+      await syncRazorpayPeriodDates(sub)
+    } else if (!sub.currentPeriodEnd) {
+      sub.currentPeriodEnd = computePeriodEnd(sub)
+    }
     await sub.save()
-    await User.findByIdAndUpdate(userId, { plan: sub.plan })
+    await User.findByIdAndUpdate(userId, {
+      plan: sub.plan,
+      $unset: { planOverriddenAt: 1 },
+    })
 
     res.json({ success: true, plan: sub.plan })
   } catch (err) {
@@ -352,11 +407,20 @@ export async function cancelSubscription(req: Request, res: Response, next: Next
     })
     if (!sub) throw createError('No active subscription found', 404)
 
-    await cancelProviderSubscription(sub, true)
-
+    // Persist cancel-at-period-end BEFORE calling the provider so a fast
+    // webhook cannot race and downgrade the user to free.
     sub.cancelAtPeriodEnd = true
     sub.cancelledAt = new Date()
+    if (sub.paymentSource === 'razorpay') {
+      await syncRazorpayPeriodDates(sub)
+    } else if (!sub.currentPeriodEnd || sub.currentPeriodEnd.getTime() <= Date.now()) {
+      sub.currentPeriodEnd = computePeriodEnd(sub)
+    }
+    // Keep status active — access continues until currentPeriodEnd (expire job).
+    // Do NOT clear User.plan here.
     await sub.save()
+
+    await cancelProviderSubscription(sub, true)
 
     res.json({ success: true, cancelAtPeriodEnd: true, currentPeriodEnd: sub.currentPeriodEnd })
   } catch (err) {
@@ -395,7 +459,10 @@ export async function handleWebhook(req: Request, res: Response) {
         if (sub.current_end)   dbSub.currentPeriodEnd   = new Date(sub.current_end   * 1000)
         await dbSub.save()
 
-        await User.findByIdAndUpdate(dbSub.userId, { plan: dbSub.plan })
+        await User.findByIdAndUpdate(dbSub.userId, {
+          plan: dbSub.plan,
+          $unset: { planOverriddenAt: 1 },
+        })
 
         if (event.event === 'subscription.charged') {
           const payment = (event.payload as { payment?: { entity?: { id?: string; amount?: number } } }).payment?.entity
@@ -419,25 +486,36 @@ export async function handleWebhook(req: Request, res: Response) {
       case 'subscription.cancelled':
       case 'subscription.completed':
       case 'subscription.expired': {
-        const sub = (event.payload as { subscription?: { entity?: { id?: string } } }).subscription?.entity
+        const sub = (event.payload as { subscription?: { entity?: { id?: string; current_end?: number; current_start?: number } } }).subscription?.entity
         if (!sub?.id) break
 
         const dbSub = await Subscription.findOne({ razorpaySubId: sub.id })
         if (!dbSub) break
 
+        if (sub.current_start) dbSub.currentPeriodStart = new Date(sub.current_start * 1000)
+        if (sub.current_end)   dbSub.currentPeriodEnd   = new Date(sub.current_end   * 1000)
+
+        // Keep paid access through the ongoing period on cancel-at-cycle-end
+        // (and when Razorpay emits cancelled early while current_end is still future).
+        if (event.event === 'subscription.cancelled') {
+          const stillPaid =
+            dbSub.currentPeriodEnd != null &&
+            dbSub.currentPeriodEnd.getTime() > Date.now()
+          if (dbSub.cancelAtPeriodEnd || stillPaid) {
+            dbSub.cancelAtPeriodEnd = true
+            if (!stillPaid) dbSub.currentPeriodEnd = computePeriodEnd(dbSub)
+            dbSub.cancelledAt = new Date()
+            dbSub.status = 'active'
+            await dbSub.save()
+            break
+          }
+        }
+
         dbSub.status = event.event === 'subscription.cancelled' ? 'cancelled'
           : event.event === 'subscription.completed' ? 'completed' : 'expired'
         dbSub.cancelledAt = new Date()
         await dbSub.save()
-
-        const hasActiveSub = await Subscription.exists({
-          userId: dbSub.userId,
-          _id:    { $ne: dbSub._id },
-          status: { $in: ['active', 'authenticated'] },
-        })
-        if (!hasActiveSub) {
-          await User.findByIdAndUpdate(dbSub.userId, { plan: 'free' })
-        }
+        await maybeDowngrade(dbSub.userId, dbSub._id)
         break
       }
 
@@ -463,6 +541,7 @@ type DodoSubPayload = {
   status?: string
   next_billing_date?: string
   previous_billing_date?: string | null
+  cancel_at_next_billing_date?: boolean
   currency?: string
   metadata?: Record<string, string | number | boolean>
   payment_id?: string
@@ -503,7 +582,10 @@ async function maybeDowngrade(userId: string, exceptSubId: unknown) {
     status: { $in: ['active', 'authenticated'] },
   })
   if (!hasActiveSub) {
-    await User.findByIdAndUpdate(userId, { plan: 'free' })
+    await User.findByIdAndUpdate(userId, {
+      plan: 'free',
+      $unset: { planOverriddenAt: 1 },
+    })
   }
 }
 
@@ -582,7 +664,10 @@ export async function handleDodoWebhook(req: Request, res: Response) {
         if (data.previous_billing_date) dbSub.currentPeriodStart = new Date(data.previous_billing_date)
         await dbSub.save()
 
-        await User.findByIdAndUpdate(dbSub.userId, { plan: dbSub.plan })
+        await User.findByIdAndUpdate(dbSub.userId, {
+          plan: dbSub.plan,
+          $unset: { planOverriddenAt: 1 },
+        })
         break
       }
 
@@ -600,6 +685,35 @@ export async function handleDodoWebhook(req: Request, res: Response) {
       case 'subscription.failed': {
         const dbSub = await findDodoSubscription(data)
         if (!dbSub) break
+
+        if (data.next_billing_date) {
+          dbSub.currentPeriodEnd = new Date(data.next_billing_date)
+        }
+        if (data.previous_billing_date) {
+          dbSub.currentPeriodStart = new Date(data.previous_billing_date)
+        }
+
+        // Scheduled cancel-at-period-end (or cancelled while paid window remains):
+        // keep plan until currentPeriodEnd / expire job.
+        if (event.type === 'subscription.cancelled') {
+          const stillPaid =
+            dbSub.currentPeriodEnd != null &&
+            dbSub.currentPeriodEnd.getTime() > Date.now()
+          const scheduledCancel =
+            data.cancel_at_next_billing_date === true ||
+            dbSub.cancelAtPeriodEnd ||
+            stillPaid
+
+          if (scheduledCancel) {
+            dbSub.cancelAtPeriodEnd = true
+            dbSub.cancelledAt = new Date()
+            if (!stillPaid) dbSub.currentPeriodEnd = computePeriodEnd(dbSub)
+            dbSub.status = 'active'
+            await dbSub.save()
+            break
+          }
+        }
+
         dbSub.status =
           event.type === 'subscription.cancelled' ? 'cancelled'
             : event.type === 'subscription.expired' ? 'expired'
