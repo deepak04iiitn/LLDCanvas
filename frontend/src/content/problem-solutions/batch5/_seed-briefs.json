@@ -1,0 +1,506 @@
+[
+  {
+    "slug": "podcast-platform",
+    "title": "Podcast Platform",
+    "difficulty": "medium",
+    "order": 30,
+    "description": "Design a podcast platform supporting show subscriptions, episode downloads, playback position sync, and recommendations.",
+    "category": "Streaming",
+    "functionalRequirements": [
+      "Subscribe to a podcast show to get new episode notifications",
+      "Stream or download an episode for offline playback",
+      "Resume playback from the last position, synced across devices",
+      "Adjust playback speed",
+      "Auto-download new episodes for subscribed shows",
+      "Recommend shows based on listening history"
+    ],
+    "nonFunctionalRequirements": [
+      "Playback position sync across devices within a few seconds",
+      "Support millions of episodes and concurrent streams"
+    ],
+    "hints": [
+      "Core entities: Show, Episode, Subscription, PlaybackState (userId, episodeId, positionSeconds, updatedAt), Download. Store PlaybackState server-side, upserted on a debounced timer (e.g. every 10s) during playback, not on every second.",
+      "Cross-device sync: when a device resumes an episode, fetch the latest PlaybackState by updatedAt (last-write-wins) — simple and sufficient since a user typically listens on one device at a time.",
+      "New-episode notifications: use a fan-out-on-write model for subscriptions with a reasonable subscriber count (notify all subscribers when an episode publishes) versus fan-out-on-read for shows with huge subscriber counts (compute \"any new episodes\" lazily when the user opens the app)."
+    ]
+  },
+  {
+    "slug": "cloud-file-sync-client",
+    "title": "Cloud File Sync Client (Dropbox-like)",
+    "difficulty": "medium",
+    "order": 31,
+    "description": "Design the client-side sync engine for a cloud storage service that keeps local and remote folders in sync, handling conflicts.",
+    "category": "Storage",
+    "functionalRequirements": [
+      "Detect local file changes (create, edit, delete, move)",
+      "Upload changed files to the cloud and download remote changes locally",
+      "Chunk large files for efficient partial re-upload on edit",
+      "Detect and resolve sync conflicts (same file edited on two devices)",
+      "Support selective sync (only sync chosen folders)",
+      "Show sync status per file (syncing, synced, conflict, error)"
+    ],
+    "nonFunctionalRequirements": [
+      "Only re-upload changed chunks, not the whole file, on edits",
+      "Sync engine must survive process crashes without losing track of pending changes"
+    ],
+    "hints": [
+      "Core entities: FileMetadata (path, hash, version, modifiedTime), Chunk, SyncQueue, ConflictRecord. Split files into fixed-size or content-defined chunks and hash each one — on edit, only chunks whose hash changed need re-upload.",
+      "Use a local persistent journal/queue of pending changes (append-only log on disk) so if the client crashes mid-sync, it can resume from the journal instead of re-scanning the entire file tree.",
+      "Conflict detection: track a version number (or vector clock) per file. If local and remote versions have both advanced independently since the last common sync point, it's a conflict — resolve by keeping both as \"file.txt\" and \"file (conflicted copy).txt\" rather than silently overwriting."
+    ]
+  },
+  {
+    "slug": "recipe-meal-planning",
+    "title": "Recipe & Meal Planning App",
+    "difficulty": "medium",
+    "order": 32,
+    "description": "Design an app for browsing recipes, planning weekly meals, and auto-generating a shopping list.",
+    "category": "Food-Tech",
+    "functionalRequirements": [
+      "Browse and search recipes by ingredient, cuisine, or dietary tag",
+      "Add a recipe to a weekly meal plan calendar",
+      "Scale recipe ingredient quantities based on serving size",
+      "Auto-generate a consolidated shopping list from a week's meal plan",
+      "Mark shopping list items as purchased",
+      "Save favorite recipes"
+    ],
+    "nonFunctionalRequirements": [
+      "Shopping list generation should merge duplicate ingredients across recipes",
+      "Search should return results in under 500ms"
+    ],
+    "hints": [
+      "Core entities: Recipe (ingredients with quantity+unit), MealPlan (date → Recipe), ShoppingList, Ingredient. Normalize ingredient units (e.g. convert tsp/tbsp/cup to a common base) so quantities can be merged correctly.",
+      "Shopping list generation: iterate all recipes in the meal plan, scale each ingredient by the plan's chosen serving multiplier, group by normalized ingredient name + unit, and sum quantities into one consolidated line item.",
+      "For search, build an inverted index over ingredient names, cuisine tags, and dietary tags so multi-filter queries (e.g. \"vegetarian\" AND \"Italian\") are a fast set intersection rather than a full scan."
+    ]
+  },
+  {
+    "slug": "fitness-tracker-app",
+    "title": "Fitness Tracker App",
+    "difficulty": "medium",
+    "order": 33,
+    "description": "Design a fitness tracking app that logs workouts, steps, and goals, and computes progress analytics.",
+    "category": "Fitness",
+    "functionalRequirements": [
+      "Log workouts (type, duration, calories, distance)",
+      "Track daily step count and active minutes",
+      "Set fitness goals (weekly steps, weight target) and track progress",
+      "Show historical trends (weekly/monthly charts)",
+      "Award achievement badges for milestones",
+      "Sync data from wearable devices"
+    ],
+    "nonFunctionalRequirements": [
+      "Ingest sensor data streams without data loss",
+      "Support millions of daily active users logging data continuously"
+    ],
+    "hints": [
+      "Core entities: User, Workout, DailyActivity (steps, activeMinutes, date), Goal, Achievement. Store DailyActivity as one row per user per day, updated incrementally as new step-count events arrive from the device.",
+      "For trend charts, pre-aggregate DailyActivity into weekly/monthly rollups on a scheduled job rather than summing raw daily rows on every dashboard load — classic write-time vs read-time aggregation trade-off.",
+      "Achievements: model as a rule engine — each Achievement has a trigger condition (e.g. \"7-day step streak >= 10k\") evaluated against the user's recent DailyActivity whenever new data lands; award once and never re-evaluate a completed achievement."
+    ]
+  },
+  {
+    "slug": "multiplayer-tictactoe-matchmaking",
+    "title": "Multiplayer Tic-Tac-Toe with Matchmaking",
+    "difficulty": "medium",
+    "order": 34,
+    "description": "Design a real-time multiplayer Tic-Tac-Toe game with matchmaking, live moves, and rematches.",
+    "category": "Gaming",
+    "functionalRequirements": [
+      "Match two waiting players into a new game session",
+      "Broadcast each move to both players in real time",
+      "Validate moves server-side (correct turn, empty cell)",
+      "Detect win, loss, and draw conditions",
+      "Support a rematch request between the same two players",
+      "Handle a player disconnecting mid-game"
+    ],
+    "nonFunctionalRequirements": [
+      "Move broadcast latency under 200ms",
+      "Support thousands of concurrent game sessions"
+    ],
+    "hints": [
+      "Core entities: MatchmakingQueue, GameSession, Board, Player, Move. Matchmaking is simply a FIFO queue — pop two waiting players and create a GameSession as soon as two are available.",
+      "Server is authoritative: every Move request is validated against the current Board and whose turn it is before being applied and broadcast — never trust a client-reported win/loss.",
+      "Win detection after each move only needs to check the row/column/diagonal through the just-played cell (not the whole board) — O(1) instead of scanning all 8 winning lines every time."
+    ]
+  },
+  {
+    "slug": "elevator-group-control-system",
+    "title": "Elevator Group Control System (Multiple Elevators)",
+    "difficulty": "medium",
+    "order": 35,
+    "description": "Design a control system that dispatches the optimal elevator among several to serve a hall call, minimizing wait time.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Handle hall calls (up/down) from any floor",
+      "Handle in-cabin floor requests from passengers",
+      "Dispatch the best elevator among N cars for a new hall call",
+      "Support elevator states: idle, moving up, moving down, door open",
+      "Batch requests along an elevator's current direction (SCAN-like)",
+      "Handle an elevator going out of service"
+    ],
+    "nonFunctionalRequirements": [
+      "Dispatch decision should compute in well under 100ms",
+      "Minimize average passenger wait time across the building"
+    ],
+    "hints": [
+      "Core entities: ElevatorController (dispatcher), Elevator (state, currentFloor, direction, requestQueue), HallCall, CabinRequest. Each Elevator maintains its own SCAN-ordered request queue (like a disk-scheduling elevator algorithm), serving requests in the current direction before reversing.",
+      "Dispatch heuristic: for a new hall call, score each idle/moving elevator by estimated time-to-arrival (distance, current direction alignment, number of pending stops) and assign the lowest-cost one — this is the crux of the classic \"elevator group control\" problem.",
+      "Model each elevator as its own state machine (Idle ⇄ MovingUp ⇄ MovingDown ⇄ DoorOpen) driven independently, with the ElevatorController only responsible for assigning calls, not micromanaging individual elevator movement."
+    ]
+  },
+  {
+    "slug": "online-polling-voting-platform",
+    "title": "Online Polling / Voting Platform",
+    "difficulty": "medium",
+    "order": 36,
+    "description": "Design a platform for creating polls and collecting votes at scale, with real-time result aggregation and fraud prevention.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Create a poll with multiple options and an optional end time",
+      "Cast a single vote per user per poll",
+      "Show live-updating vote counts and percentages",
+      "Prevent duplicate voting (same user, same poll)",
+      "Support anonymous vs. authenticated polls",
+      "Close a poll and lock in final results"
+    ],
+    "nonFunctionalRequirements": [
+      "Vote counting must be accurate under massive concurrent write load",
+      "Result display can be eventually consistent (few-second lag acceptable)"
+    ],
+    "hints": [
+      "Core entities: Poll, Option, Vote (userId, pollId, optionId, unique together). Enforce one-vote-per-user with a unique index on (pollId, userId) at the database level — this is the real duplicate-vote guard, not just an application check.",
+      "For hot polls with huge write volume, don't increment a shared counter row directly (contention bottleneck) — instead write append-only Vote records and maintain per-option counters via a sharded counter or a stream-processing aggregator that batches increments.",
+      "Live result display: push aggregated counts to clients via WebSocket on a throttled interval (e.g. every 1-2 seconds) computed from the sharded counters, rather than recomputing from all raw Vote rows on every poll."
+    ]
+  },
+  {
+    "slug": "warehouse-order-fulfillment",
+    "title": "Warehouse Order Fulfillment System",
+    "difficulty": "medium",
+    "order": 37,
+    "description": "Design a warehouse management system that picks, packs, and ships customer orders from inventory across multiple bins.",
+    "category": "Logistics",
+    "functionalRequirements": [
+      "Track inventory quantity per SKU across multiple warehouse bins",
+      "Allocate inventory to an order at checkout time",
+      "Generate an optimized pick list/path for warehouse staff",
+      "Pack items into shipment boxes based on size/weight",
+      "Update order status: allocated, picking, packed, shipped",
+      "Handle partial fulfillment when stock is insufficient"
+    ],
+    "nonFunctionalRequirements": [
+      "Inventory allocation must never oversell available stock",
+      "Support thousands of orders processed per hour"
+    ],
+    "hints": [
+      "Core entities: SKU, Bin, InventoryRecord (SKU, bin, quantity), Order, Allocation, PickList. Allocation should atomically decrement available quantity (reserve) at checkout time — use optimistic locking or a DB transaction to avoid overselling under concurrent checkouts.",
+      "Pick list optimization: given a set of allocated bins for an order, sort the picks by warehouse layout position (e.g. serpentine aisle order) so staff walk a near-optimal path instead of jumping randomly between aisles.",
+      "Partial fulfillment: if total available quantity across bins is less than ordered quantity, split the order into a fulfilled sub-shipment and a backorder for the remainder, tracked as separate fulfillment records against the same parent Order."
+    ]
+  },
+  {
+    "slug": "customer-support-ticketing",
+    "title": "Customer Support Ticketing System",
+    "difficulty": "medium",
+    "order": 38,
+    "description": "Design a support ticketing system (like Zendesk) handling ticket creation, assignment, SLA tracking, and escalation.",
+    "category": "Productivity",
+    "functionalRequirements": [
+      "Create a support ticket from a customer inquiry",
+      "Auto-assign or manually assign a ticket to an agent",
+      "Track ticket status: open, in-progress, waiting, resolved, closed",
+      "Set priority and SLA deadlines per ticket",
+      "Escalate a ticket that's about to breach its SLA",
+      "Support internal notes and customer-visible replies on a ticket"
+    ],
+    "nonFunctionalRequirements": [
+      "SLA breach detection must run reliably even under system load",
+      "Support tens of thousands of open tickets per organization"
+    ],
+    "hints": [
+      "Core entities: Ticket (status, priority, SLA deadline), Agent, Reply (internal vs public), EscalationRule. Model ticket status as a State Machine with allowed transitions (Open → InProgress → Waiting → Resolved → Closed, with Reopen from Closed).",
+      "SLA deadlines are computed at ticket creation/priority-change time (createdAt + SLA duration for that priority) and stored directly on the ticket — a scheduled job periodically scans tickets nearing/past deadline rather than computing deadlines on every check.",
+      "Auto-assignment: use round-robin or least-loaded-agent routing, factoring in agent skill tags matching the ticket's category — a simple weighted queue rather than a full ML system covers most real designs at this scope."
+    ]
+  },
+  {
+    "slug": "loyalty-points-rewards-program",
+    "title": "Loyalty Points & Rewards Program",
+    "difficulty": "medium",
+    "order": 39,
+    "description": "Design a loyalty program that earns points on purchases, tracks tiers, and lets users redeem rewards.",
+    "category": "Retail",
+    "functionalRequirements": [
+      "Earn points on qualifying purchases based on configurable rules",
+      "Track a member's point balance and lifetime spend",
+      "Assign membership tiers (Silver/Gold/Platinum) based on activity",
+      "Redeem points for rewards (discounts, free items)",
+      "Expire points after a period of inactivity",
+      "Show point-earning history and upcoming tier progress"
+    ],
+    "nonFunctionalRequirements": [
+      "Point balance updates must be atomic and auditable",
+      "Support millions of members with concurrent earn/redeem operations"
+    ],
+    "hints": [
+      "Core entities: Member, PointsLedger (append-only entries: earn/redeem/expire), EarningRule, Tier, Reward. Never store a single mutable \"balance\" field as the source of truth — derive it from summing the PointsLedger, cached for fast reads.",
+      "Use a Rules Engine / Strategy pattern for earning: each EarningRule (e.g. \"1 point per $1\", \"2x points on weekends\") evaluates a purchase and returns points to award — new promotions become new rules, not new code paths.",
+      "Tier evaluation runs periodically (e.g. nightly) over each member's trailing 12-month spend/points, comparing against tier thresholds — avoid recalculating tier on every single transaction for performance."
+    ]
+  },
+  {
+    "slug": "social-event-planning-app",
+    "title": "Social Event Planning App (Meetup-like)",
+    "difficulty": "medium",
+    "order": 40,
+    "description": "Design an app for creating and discovering local social events, with RSVPs, groups, and recommendations.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Create a group around a shared interest",
+      "Create an event under a group with date, location, and capacity",
+      "RSVP to an event (going, maybe, not going)",
+      "Discover nearby events based on user location and interests",
+      "Waitlist attendees once an event reaches capacity",
+      "Send event reminders to RSVP'd attendees"
+    ],
+    "nonFunctionalRequirements": [
+      "Nearby-event search should respond in under 300ms",
+      "Support millions of groups and events globally"
+    ],
+    "hints": [
+      "Core entities: Group, Event (location, capacity, startTime), RSVP, Member, Interest. Index event locations geospatially (geohash or a geo-index like PostGIS/Elasticsearch) for fast \"events near me\" queries.",
+      "Capacity + waitlist follows the same reserve-atomically-then-waitlist-on-full pattern used elsewhere (gym classes, e-book loans): an atomic increment-if-under-capacity on RSVP, FIFO waitlist otherwise.",
+      "Recommendations: score events by a simple weighted combination of interest-tag overlap with the user's followed Groups/Interests and physical distance, re-ranked and cached per user on a schedule rather than computed live on every page load."
+    ]
+  },
+  {
+    "slug": "airline-management",
+    "title": "Airline Management System",
+    "difficulty": "medium",
+    "order": 202,
+    "description": "Design an airline management system that handles aircraft fleet management, flight scheduling, passenger seat reservation with conflict-free booking, crew assignment, check-in, and boarding pass generation.",
+    "category": "Travel",
+    "functionalRequirements": [
+      "Manage a fleet of aircraft with different seat configurations (Economy, Business, First Class)",
+      "Schedule flights with route, departure/arrival times, and aircraft assignment",
+      "Search available flights by origin, destination, and date",
+      "Book seats for passengers with seat selection; prevent double-booking",
+      "Handle booking cancellation and seat release with refund policy",
+      "Check-in passengers within the check-in window and generate boarding passes",
+      "Assign crew members (pilots, cabin crew) to flights respecting duty-hour limits",
+      "Track flight status: SCHEDULED → CHECK_IN_OPEN → BOARDING → DEPARTED → LANDED → COMPLETED (or CANCELLED/DELAYED)"
+    ],
+    "nonFunctionalRequirements": [
+      "Seat booking is atomic — concurrent requests for the last seat must not double-book",
+      "Flight search returns results in under 2 seconds for up to 500 flights/day",
+      "Crew assignment respects regulatory duty-hour limits without manual checks"
+    ],
+    "hints": []
+  },
+  {
+    "slug": "restaurant-management",
+    "title": "Restaurant Management System",
+    "difficulty": "medium",
+    "order": 203,
+    "description": "Design a comprehensive restaurant management system that covers menu and inventory management, table assignments, order processing with kitchen workflow, billing with tax and discount support, and table reservations.",
+    "category": "Food & Beverage",
+    "functionalRequirements": [
+      "Manage menu with categories, items, prices, and real-time availability toggles",
+      "Assign tables to walk-in or reserved customers based on capacity",
+      "Take orders for dine-in, takeaway, and delivery channels",
+      "Route order tickets to kitchen display system (KDS) upon placement",
+      "Track order status: PLACED → PREPARING → READY → SERVED",
+      "Generate itemised bills with tax, service charge, and promotional discounts",
+      "Manage ingredient inventory and flag low-stock items automatically",
+      "Accept table reservations with date, time-slot, and party-size validation"
+    ],
+    "nonFunctionalRequirements": [
+      "Order placement to kitchen notification in under 1 second",
+      "Support 50+ concurrent occupied tables without performance degradation",
+      "Bill generation (with all decorators applied) completes within 500ms"
+    ],
+    "hints": []
+  },
+  {
+    "slug": "distributed-rate-limiter",
+    "title": "Distributed Rate Limiter (Multi-Node)",
+    "difficulty": "hard",
+    "order": 21,
+    "description": "Design a rate limiter that enforces a consistent request limit for a client across many API server instances.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Enforce a limit like \"100 requests per minute per API key\" globally, not per-server",
+      "Support multiple algorithms: fixed window, sliding window, token bucket",
+      "Allow per-client custom limits/tiers",
+      "Return remaining quota and reset time to the client",
+      "Gracefully degrade if the central rate-limit store becomes unavailable"
+    ],
+    "nonFunctionalRequirements": [
+      "Rate-limit check latency should add well under 5ms to each request",
+      "Must work correctly across hundreds of stateless API server instances",
+      "Should tolerate the rate-limit store being briefly unavailable without blocking all traffic"
+    ],
+    "hints": [
+      "Because request limits must hold across many stateless servers, per-process in-memory counters don't work — use a shared fast store (Redis) as the single source of truth for counters, since local server memory can't coordinate globally.",
+      "Sliding window log or sliding window counter in Redis: use INCR with an expiring key per (clientId, windowStart) for fixed windows, or a sorted set of request timestamps trimmed to the window for a precise sliding log — token bucket can be implemented with a Lua script in Redis for atomicity (check-and-decrement in one round trip).",
+      "For resilience, if Redis is unreachable, fail open with a conservative local fallback limiter (e.g. each node allows a small fraction of the global limit) rather than rejecting all traffic — document this trade-off explicitly as availability over strict correctness during outages."
+    ]
+  },
+  {
+    "slug": "news-feed-ranking-system",
+    "title": "News Feed Ranking System",
+    "difficulty": "hard",
+    "order": 21,
+    "description": "Design the backend for a social network news feed that aggregates and ranks posts from friends/follows at massive scale.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Aggregate posts from all accounts a user follows into one feed",
+      "Rank feed items by relevance (not strictly chronological)",
+      "Support near-real-time insertion of new posts into feeds",
+      "Handle both regular users and celebrities with millions of followers",
+      "Paginate the feed efficiently as the user scrolls",
+      "Exclude posts the user has already seen or hidden"
+    ],
+    "nonFunctionalRequirements": [
+      "Feed load latency under 200ms for a typical user",
+      "Support hundreds of millions of users, billions of posts",
+      "System must handle extreme fan-out for celebrity accounts without falling over"
+    ],
+    "hints": [
+      "Use a hybrid fan-out strategy: fan-out-on-write (push a new post into each follower's precomputed feed, stored e.g. in Redis lists) for regular users with a normal follower count, but fan-out-on-read (merge celebrity posts into the feed at read time instead of writing to millions of follower feeds) for accounts with huge followings — this avoids the \"celebrity write storm\" problem.",
+      "Ranking: compute a relevance score per candidate post (recency decay, affinity between user and poster, engagement signals) — do a first-pass candidate retrieval (recent posts from followed accounts, capped at a few hundred) then rank that smaller candidate set rather than scoring every post in the system.",
+      "Feed pagination: since the feed is dynamically ranked and merges multiple sources (precomputed pushed feed + live celebrity posts), use a cursor based on a composite (score, postId, timestamp) rather than simple offset pagination, so new posts arriving don't shift already-seen pages."
+    ]
+  },
+  {
+    "slug": "distributed-job-scheduler",
+    "title": "Distributed Job Scheduler (Airflow-like)",
+    "difficulty": "hard",
+    "order": 22,
+    "description": "Design a distributed system for scheduling and executing DAGs of interdependent jobs across a cluster of workers.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Define a job as a DAG of tasks with dependencies",
+      "Schedule DAG runs on a cron-like or event-triggered basis",
+      "Execute tasks on any available worker in a cluster, respecting dependency order",
+      "Retry failed tasks with backoff, and support manual re-runs",
+      "Track task/DAG run status and provide a monitoring view",
+      "Prevent the same task instance from running twice concurrently"
+    ],
+    "nonFunctionalRequirements": [
+      "Must survive scheduler node failure without losing or duplicating DAG runs",
+      "Support thousands of DAGs with tens of thousands of tasks scheduled per day",
+      "Task dispatch latency under a few seconds once dependencies are satisfied"
+    ],
+    "hints": [
+      "Core entities: DAG (tasks + dependency edges), DAGRun (one execution instance), TaskInstance (status per task per run), Worker. Persist DAGRun/TaskInstance state in a database — the scheduler process itself must be stateless/recoverable, deriving all decisions by querying persisted state, not in-memory data.",
+      "Use a leader-election scheme (e.g. via Zookeeper/etcd) so exactly one scheduler instance is actively assigning tasks at a time, with standby instances ready to take over on failure — this avoids duplicate scheduling from multiple active schedulers.",
+      "Task dispatch: workers pull ready tasks (all dependencies SUCCESS) from a shared queue rather than the scheduler pushing directly, using a distributed lock or a claim-with-lease pattern (worker claims a task with a lease; if it dies mid-execution, the lease expires and another worker can reclaim it) to guarantee exactly-once execution semantics."
+    ]
+  },
+  {
+    "slug": "distributed-notification-fanout",
+    "title": "Distributed Notification Fanout System",
+    "difficulty": "hard",
+    "order": 22,
+    "description": "Design a system that reliably delivers notifications (push, SMS, email) to millions of users with dedup, retries, and prioritization.",
+    "category": "Messaging",
+    "functionalRequirements": [
+      "Accept a notification request targeting a user, group, or topic subscribers",
+      "Fan out a topic notification to all its subscribers",
+      "Deliver via multiple channels (push, SMS, email) based on user preference",
+      "Deduplicate identical notifications sent in a short window",
+      "Retry failed deliveries with backoff and respect provider rate limits",
+      "Support notification priority (critical vs. marketing)"
+    ],
+    "nonFunctionalRequirements": [
+      "Deliver critical notifications within seconds even under heavy load",
+      "Support fanning out to tens of millions of subscribers for a single topic event",
+      "At-least-once delivery guarantee with idempotent handling on the client"
+    ],
+    "hints": [
+      "Core pipeline: Ingestion API → durable Message Queue (e.g. Kafka) → Fanout workers that expand a topic notification into per-user delivery tasks → per-channel Delivery workers (Push/SMS/Email) that call the respective provider APIs. Decoupling each stage with a queue lets you scale and retry independently.",
+      "Deduplication: assign each notification (or the (userId, templateId, dedupeWindow) tuple) an idempotency/dedupe key, checked against a short-TTL cache (Redis) before enqueueing delivery — this prevents duplicate sends from retries or overlapping triggers.",
+      "Priority and rate-limit handling: use separate queues per priority tier (critical vs. marketing) so critical notifications aren't stuck behind a backlog of bulk marketing sends, and apply a token-bucket limiter per downstream provider (APNs/FCM/Twilio) so a burst doesn't get the whole account throttled or banned by the provider."
+    ]
+  },
+  {
+    "slug": "content-delivery-network",
+    "title": "Content Delivery Network (CDN)",
+    "difficulty": "hard",
+    "order": 23,
+    "description": "Design a CDN that caches and serves static content from edge locations close to users, with origin fetch and cache invalidation.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Route a user request to the nearest/best edge server",
+      "Serve cached content from the edge if available (cache hit)",
+      "Fetch from origin on a cache miss and populate the edge cache",
+      "Support cache invalidation/purge for updated content",
+      "Support configurable TTLs per content type",
+      "Provide cache-hit-ratio and traffic analytics"
+    ],
+    "nonFunctionalRequirements": [
+      "Cache hit latency under 20ms from edge",
+      "Support petabytes of cacheable content across thousands of edge nodes globally",
+      "High availability — an edge node failure shouldn't cause origin overload"
+    ],
+    "hints": [
+      "Routing to the nearest edge is typically done via DNS-based geo-routing (Anycast IP or GeoDNS resolving to the closest edge PoP) so the client's first request already lands near them without any application-level logic.",
+      "Each edge node runs its own local cache (keyed by URL + relevant headers, e.g. Vary: Accept-Encoding) with an LRU/LFU eviction policy; on a miss, the edge does a \"cache-fill\" request to a regional/origin tier rather than every edge node hitting origin directly — a mid-tier cache layer protects the origin from thundering-herd traffic.",
+      "Invalidation at scale: rather than pushing a purge to every one of thousands of edges synchronously (slow, unreliable), use a versioned cache key (embed a content version/hash in the cache key) so publishing new content is just a new key — old cached versions simply expire via TTL and are never served again, avoiding a distributed invalidation problem entirely for immutable-content workloads. For mutable paths, maintain a purge queue consumed asynchronously by edges."
+    ]
+  },
+  {
+    "slug": "distributed-lock-manager",
+    "title": "Distributed Lock Manager (Zookeeper-like)",
+    "difficulty": "hard",
+    "order": 24,
+    "description": "Design a distributed coordination service that provides mutual exclusion locks and leader election across a cluster of nodes.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Acquire and release a named distributed lock",
+      "Support blocking acquire (wait until available) and try-acquire (fail fast)",
+      "Automatically release a lock if the holder crashes (no permanent deadlock)",
+      "Support leader election among a group of competing nodes",
+      "Notify waiters when a lock becomes available or leadership changes",
+      "Ensure at most one holder of a given lock at any time cluster-wide"
+    ],
+    "nonFunctionalRequirements": [
+      "The lock service itself must be fault-tolerant (survive minority node failures)",
+      "Lock state must be strongly consistent — no split-brain with two simultaneous holders",
+      "Failover/re-election should complete within a few seconds of a leader failure"
+    ],
+    "hints": [
+      "The lock service's own data (who holds which lock) must be replicated via a consensus protocol like Raft or Paxos across an odd number of nodes (e.g. 3 or 5), so it keeps functioning correctly as long as a majority quorum is alive — this is what makes the coordinator itself fault-tolerant and split-brain-proof.",
+      "A classic implementation pattern (as in ZooKeeper): create an ephemeral, sequentially-numbered node under a lock path when a client wants the lock; the client holding the lowest-numbered node holds the lock, and each other waiter watches the node just before its own — when that node is deleted (released or the holder's session expires), the next waiter is notified.",
+      "Crash recovery: bind the lock to the client's session (a heartbeat-based liveness lease) — if the holder's session/heartbeat times out (crash, network partition), the coordinator automatically deletes its ephemeral lock node, releasing the lock to the next waiter without requiring any manual intervention."
+    ]
+  },
+  {
+    "slug": "live-video-streaming-platform",
+    "title": "Live Video Streaming Platform (Twitch-like)",
+    "difficulty": "hard",
+    "order": 24,
+    "description": "Design a platform for low-latency live video broadcasting from a streamer to potentially millions of concurrent viewers.",
+    "category": "Streaming",
+    "functionalRequirements": [
+      "Ingest a live video stream from a broadcaster",
+      "Transcode the stream into multiple quality/bitrate renditions",
+      "Distribute the live stream to potentially millions of concurrent viewers",
+      "Support adaptive bitrate streaming based on viewer bandwidth",
+      "Provide live chat alongside the stream",
+      "Support stream recording/VOD for later playback"
+    ],
+    "nonFunctionalRequirements": [
+      "End-to-end latency (broadcaster to viewer) as low as a few seconds",
+      "Support a single stream scaling to millions of concurrent viewers",
+      "Graceful quality degradation under network congestion, not buffering/failure"
+    ],
+    "hints": [
+      "Pipeline: Broadcaster encodes and pushes via RTMP/WebRTC to an Ingest server → Transcoding service produces multiple bitrate renditions (e.g. via HLS/DASH segments) → segments are pushed to a CDN/edge network → viewers pull segments from the nearest edge, not from the origin ingest server, which is what allows scaling to millions of viewers.",
+      "Adaptive bitrate: the player periodically measures download throughput and switches between available renditions (manifest lists multiple quality variants) — this is a client-side decision, the server just needs to have produced and published all the bitrate variants as short segments (a few seconds each).",
+      "Latency vs. scale trade-off: shorter segment durations reduce latency but increase overhead (more requests, harder to cache efficiently) — protocols like Low-Latency HLS/DASH or WebRTC-based fan-out trees are used specifically to push latency down from the traditional ~30s of HLS to a few seconds while still using a CDN for the actual fan-out to viewers."
+    ]
+  }
+]

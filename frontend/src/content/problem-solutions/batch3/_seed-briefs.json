@@ -1,0 +1,566 @@
+[
+  {
+    "slug": "twitter",
+    "title": "Twitter / X",
+    "difficulty": "hard",
+    "order": 1,
+    "description": "Design a Twitter-like social platform supporting tweets, follows, timelines, trending topics, and notifications at massive scale.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Post tweets (text up to 280 chars, images, videos)",
+      "Follow and unfollow other users",
+      "Home timeline shows tweets from followed users, reverse chronological",
+      "Like, retweet, quote-tweet, and reply to tweets",
+      "Trending topics based on hashtag frequency",
+      "User search and tweet search",
+      "Notifications for likes, retweets, follows, and mentions"
+    ],
+    "nonFunctionalRequirements": [
+      "Support 300 million DAU with 500 million tweets per day",
+      "Timeline reads must be < 200ms (P99)",
+      "Eventual consistency acceptable for timelines",
+      "Tweets must be durable once posted (no loss)",
+      "Trending topics updated every 30 seconds"
+    ],
+    "hints": [
+      "Core entities: User, Tweet, Follow, Like, Retweet, Hashtag, Notification, Timeline. The key design challenge is the home timeline: fan-out on write (push tweets to followers' timelines on post) vs fan-out on read (pull tweets on request). Hybrid: fan-out on write for normal users, fan-out on read for celebrities (>1M followers).",
+      "Use a Timeline Service backed by a cache (Redis sorted set, score = tweet timestamp). On tweet creation: for each follower, push tweet ID into their timeline cache. Cap timeline cache at 800 entries. For display, fetch tweet details from a Tweet Cache by ID.",
+      "For trending topics, use a Count-Min Sketch (probabilistic data structure) to count hashtag occurrences in a sliding 24-hour window efficiently. A MapReduce job or stream processor aggregates counts every 30 seconds and updates the trending list."
+    ]
+  },
+  {
+    "slug": "whatsapp",
+    "title": "WhatsApp Messenger",
+    "difficulty": "hard",
+    "order": 2,
+    "description": "Design a real-time messaging system like WhatsApp supporting 1-1 chats, group messages, media sharing, and message status (sent/delivered/read).",
+    "category": "Messaging",
+    "functionalRequirements": [
+      "Send and receive text messages in real-time",
+      "Create groups with up to 256 members",
+      "Share media (images, videos, documents)",
+      "Message status: single tick (sent), double tick (delivered), blue tick (read)",
+      "End-to-end encryption for all messages",
+      "Last seen and online status",
+      "Push notifications for offline users"
+    ],
+    "nonFunctionalRequirements": [
+      "Support 2 billion users with 100 billion messages per day",
+      "Message delivery latency < 1 second for online users",
+      "Messages must not be lost even if recipient is offline for days",
+      "End-to-end encrypted — server should not be able to read messages"
+    ],
+    "hints": [
+      "Core entities: User, Message, Chat (1-1), Group, GroupMessage, MessageStatus, MediaFile. The key challenge is message delivery: use a WebSocket connection per user for real-time delivery. Messages are stored in a queue (Kafka) and consumed by a delivery service.",
+      "For offline delivery: when a user sends a message to an offline recipient, store the message in a persistent message queue associated with the recipient's user ID. When recipient reconnects, their device polls or the server pushes all queued messages.",
+      "For group messaging with 256 members, avoid fan-out at the application layer. Instead, store a single GroupMessage and let each member's client poll or subscribe to the group's message stream. Track per-user read receipts in a separate MessageStatus table."
+    ]
+  },
+  {
+    "slug": "netflix",
+    "title": "Netflix Streaming Service",
+    "difficulty": "hard",
+    "order": 3,
+    "description": "Design Netflix — a video streaming platform supporting content upload, transcoding, personalised recommendations, and adaptive bitrate streaming at global scale.",
+    "category": "Streaming",
+    "functionalRequirements": [
+      "Users sign up, subscribe to a plan, and manage profiles (up to 5 per account)",
+      "Browse and search the content catalog by genre, language, and type",
+      "Stream videos with adaptive bitrate (auto-adjust quality based on bandwidth)",
+      "Continue watching from where you left off",
+      "Personalised recommendations based on watch history",
+      "Download content for offline viewing (premium plan)",
+      "Multiple simultaneous streams per account (plan-dependent)"
+    ],
+    "nonFunctionalRequirements": [
+      "220 million subscribers across 190 countries",
+      "Video start time < 2 seconds globally via CDN",
+      "Adaptive bitrate from 240p to 4K within the same session",
+      "Recommendation model updated daily; inference < 100ms",
+      "99.99% streaming availability"
+    ],
+    "hints": [
+      "Core entities: User, Profile, Subscription, Content (Movie/Show/Episode), VideoAsset, WatchHistory, WatchProgress. The content pipeline: Upload → Transcode (multiple resolutions + codecs) → Store chunks in object storage → Distribute via CDN.",
+      "For adaptive bitrate streaming, split each video into 2-10 second segments at multiple bitrates (240p, 480p, 720p, 1080p, 4K). Serve an HLS or DASH manifest listing all segments. The client player switches bitrate between segments based on measured bandwidth.",
+      "Recommendation uses collaborative filtering: represent each user and content as embeddings via matrix factorization. Use an Approximate Nearest Neighbour index (e.g., FAISS) to quickly find content similar to what the user has watched. Store precomputed recommendations and refresh nightly."
+    ]
+  },
+  {
+    "slug": "google-drive",
+    "title": "Google Drive",
+    "difficulty": "hard",
+    "order": 4,
+    "description": "Design a cloud file storage system like Google Drive supporting file upload, sync, sharing, versioning, and collaborative access.",
+    "category": "Storage",
+    "functionalRequirements": [
+      "Upload and download files of any type/size",
+      "Organise files in a hierarchical folder structure",
+      "Share files/folders with view or edit permissions",
+      "Real-time collaborative editing for supported file types",
+      "Version history — restore any previous version",
+      "Sync files across multiple devices automatically",
+      "Full-text search across all user files"
+    ],
+    "nonFunctionalRequirements": [
+      "1 billion users, 15 GB free storage per user",
+      "Large file uploads (up to 5 TB) via resumable multipart upload",
+      "Sync conflict resolution without data loss",
+      "File deduplication at the block level to save storage",
+      "Global access with < 100ms metadata operations"
+    ],
+    "hints": [
+      "Core entities: User, File, Folder, FileVersion, FileBlock, SyncDevice, SharePermission. Split large files into fixed-size blocks (~4MB each). Each block is content-addressed (SHA-256 hash). If two users upload the same file, only one copy of each block is stored (deduplication).",
+      "For the sync protocol: maintain a local and remote change log (vector clock or Merkle tree per folder). On sync, compare the logs to find conflicting changes. If two devices modify the same file, create a conflict copy rather than losing data.",
+      "Metadata (file names, folder structure, permissions) is stored in a relational DB (sharded by user). Actual file blocks are stored in object storage (GCS/S3). A chunk server maps block hashes to object storage locations. The client uploads blocks directly to object storage via pre-signed URLs."
+    ]
+  },
+  {
+    "slug": "instagram",
+    "title": "Instagram",
+    "difficulty": "hard",
+    "order": 5,
+    "description": "Design Instagram — a photo/video sharing social network with feeds, stories, explore, direct messages, and influencer-scale follower graphs.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Upload photos and videos with captions, tags, and location",
+      "Follow other users and see their posts in a ranked feed",
+      "Stories that disappear after 24 hours",
+      "Explore page with trending and personalised content",
+      "Like, comment, save, and share posts",
+      "Direct messaging between users",
+      "Notifications for interactions on your content"
+    ],
+    "nonFunctionalRequirements": [
+      "2 billion DAU, 100 million photos uploaded per day",
+      "Feed ranked by ML model, refreshed on each open",
+      "Photos served via CDN globally in < 100ms",
+      "Stories deleted exactly at 24h via background jobs",
+      "Influencers with 100M+ followers — timeline fan-out strategy must adapt"
+    ],
+    "hints": [
+      "Core entities: User, Post, Media, Story, Follow, Like, Comment, DirectMessage, Notification, Feed. Media pipeline: Upload → Validate → Resize/transcode to multiple resolutions → Store in object storage → Invalidate CDN cache → Index for search.",
+      "Feed generation uses a hybrid strategy: for users with < 1M followers, fan-out on write (push post ID to followers' feed caches on upload). For celebrities (> 1M followers), fan-out on read (fetch their posts at read time and merge with the pre-built feed). Use Redis sorted sets for feed caches.",
+      "Stories use a time-based expiry: store story metadata with a TTL. A background worker runs every hour and soft-deletes stories past 24h. Media files are moved to cold storage after deletion. Use Bloom filters to efficiently check if a user has seen a story."
+    ]
+  },
+  {
+    "slug": "uber-full",
+    "title": "Uber (Full Design)",
+    "difficulty": "hard",
+    "order": 6,
+    "description": "Full-scale Uber design: real-time matching, dynamic pricing, trip management, driver supply management, and fraud detection.",
+    "category": "Transportation",
+    "functionalRequirements": [
+      "Rider requests a ride; system finds and assigns best driver in < 30 seconds",
+      "Dynamic surge pricing based on real-time supply/demand",
+      "Multi-product support: UberX, UberXL, UberPool, UberBlack",
+      "Live trip tracking with ETA updates for both rider and driver",
+      "Driver supply management and incentives",
+      "Fraud detection for fake rides and payment fraud",
+      "Dispute resolution and safety features (SOS button)"
+    ],
+    "nonFunctionalRequirements": [
+      "14 million trips per day globally across all cities",
+      "Driver location updated every 4 seconds",
+      "Matching latency < 5 seconds from request to driver assignment",
+      "Surge pricing recalculated every 60 seconds per geographic zone",
+      "System handles 1 million concurrent active trips"
+    ],
+    "hints": [
+      "Split into microservices: TripService, MatchingService, LocationService, PricingService, NotificationService. LocationService maintains a geospatial index (H3 hexagonal grid) of all active drivers, updated every 4 seconds. MatchingService queries LocationService for drivers in the rider's hex cell and expands outward.",
+      "For driver matching, use a supply-demand index per H3 cell at multiple resolutions. When a trip is requested: query available drivers in resolution-9 cell (≈0.1 km²), rank by ETA, send offer to top driver. If no response in 8 seconds, try the next. Expand search radius if no drivers found.",
+      "Surge pricing: for each H3 cell, compute surge_multiplier = f(demand_rate / supply_rate). If ratio > 1.2, apply surge. Use exponential smoothing to prevent wild oscillations. Store surge maps in Redis for sub-millisecond pricing lookups. Cap surge at 8x and notify riders before confirming."
+    ]
+  },
+  {
+    "slug": "youtube",
+    "title": "YouTube",
+    "difficulty": "hard",
+    "order": 7,
+    "description": "Design YouTube — video upload, transcoding pipeline, search, recommendations, comments, monetization, and global CDN delivery.",
+    "category": "Streaming",
+    "functionalRequirements": [
+      "Upload videos of any length (up to 12 hours)",
+      "Transcode to multiple resolutions: 360p to 4K",
+      "Adaptive bitrate streaming (HLS/DASH)",
+      "Subscribe to channels, like, comment, share",
+      "Search videos by title, description, and tags",
+      "Personalised homepage and recommended videos",
+      "Creator analytics: views, watch time, revenue",
+      "Live streaming"
+    ],
+    "nonFunctionalRequirements": [
+      "500 hours of video uploaded per minute",
+      "Video start time < 2 seconds globally",
+      "2 billion logged-in users per month",
+      "Transcoding pipeline completes 1-hour video in < 5 minutes"
+    ],
+    "hints": [
+      "Core entities: User, Channel, Video, VideoAsset (per resolution), Comment, Like, Subscription, WatchHistory. Upload pipeline: Raw upload to object storage → Message queue triggers Transcoding Workers → Segments stored in CDN-backed object storage → Metadata written to DB.",
+      "Transcoding: split video into 2-second GOP-aligned segments. Transcode each segment at multiple bitrates in parallel (worker pool). Generate HLS manifests (.m3u8) listing all segments. CDN caches segments at edge nodes near viewers.",
+      "Search uses an inverted index over video titles, descriptions, and auto-generated transcripts. Rank by: relevance score × log(views) × recency_decay. Recommendations use a two-tower neural network: user embedding × video embedding → affinity score, served via ANN index."
+    ]
+  },
+  {
+    "slug": "url-shortener",
+    "title": "URL Shortener (bit.ly)",
+    "difficulty": "hard",
+    "order": 8,
+    "description": "Design a URL shortening service at massive scale — generating unique short codes, redirecting users, and providing analytics.",
+    "category": "Developer Tools",
+    "functionalRequirements": [
+      "Shorten a long URL to a 7-character unique code",
+      "Redirect short URL to the original URL with < 10ms latency",
+      "Custom aliases (e.g., bit.ly/my-brand)",
+      "Optional expiration date on short URLs",
+      "Click analytics: total clicks, unique visitors, country, device",
+      "Bulk URL shortening via API",
+      "Delete or deactivate a short URL"
+    ],
+    "nonFunctionalRequirements": [
+      "100 million URLs created per day",
+      "10 billion redirects per day",
+      "Redirect latency < 10ms (P99)",
+      "Short codes globally unique with no collisions"
+    ],
+    "hints": [
+      "Core entities: ShortURL, OriginalURL, ClickEvent, Analytics. Short code generation: hash the long URL with MD5/SHA-256, base62-encode, take the first 7 chars. On collision, append a counter and retry. Alternatively, use a pre-generated sequence from a distributed ID generator (Snowflake).",
+      "Redirect flow: browser hits short URL → load balancer → App Server → Redis cache lookup (shortCode → originalURL, O(1)) → if miss, DB lookup → cache the result → HTTP 301/302 redirect. Use 302 (not 301) to ensure analytics hit the server on every click.",
+      "Analytics: asynchronously write ClickEvents to a Kafka topic. A stream processor aggregates counts by (shortCode, date, country, device) into a time-series store (e.g., ClickHouse). Never block the redirect path for analytics writes."
+    ]
+  },
+  {
+    "slug": "distributed-cache",
+    "title": "Distributed Cache (Redis-like)",
+    "difficulty": "hard",
+    "order": 9,
+    "description": "Design a distributed in-memory cache system supporting key-value operations, TTL, eviction policies, and consistent hashing.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "GET, SET, DEL key-value operations",
+      "TTL per key with lazy + active expiry",
+      "LRU and LFU eviction when memory limit is reached",
+      "Horizontal scaling by adding/removing cache nodes",
+      "Data replication across replicas for high availability",
+      "Pub-Sub for cache invalidation across nodes",
+      "Atomic operations: INCR, SETNX (for distributed locks)"
+    ],
+    "nonFunctionalRequirements": [
+      "GET/SET latency < 1ms (P99)",
+      "Consistent hashing for minimal key redistribution on node changes",
+      "Support 1 TB total cached data across 20 nodes",
+      "99.99% availability with replica failover"
+    ],
+    "hints": [
+      "Core entities: CacheNode, CacheEntry (key, value, TTL, lastAccessed, frequency), ConsistentHashRing, EvictionPolicy, ReplicationManager. Each node is an independent process with its own hash ring segment.",
+      "Consistent hashing: place nodes on a virtual ring (0 to 2^32). Each key maps to the nearest node clockwise. Use virtual nodes (100–200 per physical node) for even load distribution. On node addition/removal, only the keys in the affected ring segment need migration.",
+      "LRU eviction: maintain a doubly-linked list of CacheEntry nodes in access order + a hash map for O(1) lookup. On GET, move the accessed node to the head. On capacity exceeded, evict from the tail. Use a lock per hash bucket to reduce contention."
+    ]
+  },
+  {
+    "slug": "payment-gateway",
+    "title": "Payment Gateway (Stripe-like)",
+    "difficulty": "hard",
+    "order": 10,
+    "description": "Design a payment gateway supporting card processing, refunds, fraud detection, and PCI-compliant tokenization at scale.",
+    "category": "Fintech",
+    "functionalRequirements": [
+      "Accept card payments (credit, debit, prepaid)",
+      "Tokenize card data — merchants never see raw card numbers (PCI DSS)",
+      "Authorize, capture, and refund payments",
+      "Support 3D Secure (OTP) for strong customer authentication",
+      "Webhook notifications for payment events",
+      "Retry failed payments with intelligent retry logic",
+      "Multi-currency support with FX conversion",
+      "Fraud detection and risk scoring"
+    ],
+    "nonFunctionalRequirements": [
+      "Authorization response in < 300ms",
+      "Exactly-once payment processing (idempotency keys)",
+      "PCI DSS Level 1 compliance — card data never stored unencrypted",
+      "Support 10,000 transactions per second"
+    ],
+    "hints": [
+      "Core entities: Payment, PaymentMethod, Token (replaces card number), Merchant, Refund, Webhook, FraudScore, IdempotencyKey. Flow: Merchant API call → Idempotency check → Tokenization → Authorization request to card network → Capture → Webhook delivery.",
+      "Tokenization: store card data in a PCI-compliant Vault. Issue a random token (e.g., tok_abc123) to the merchant. All subsequent charges reference the token; the Vault resolves it to the real card number when communicating with the card network.",
+      "Idempotency: each payment request includes an idempotency key. Store (key → response) in Redis with a TTL. If the same key is seen again within the TTL, return the cached response without re-processing. This prevents duplicate charges on network retries."
+    ]
+  },
+  {
+    "slug": "search-autocomplete",
+    "title": "Search Autocomplete System",
+    "difficulty": "hard",
+    "order": 11,
+    "description": "Design a real-time search autocomplete system like Google\\",
+    "category": "Developer Tools",
+    "functionalRequirements": [
+      "Return top-5 completions for any typed prefix in < 100ms",
+      "Completions ranked by global search frequency",
+      "Personalized suggestions based on user's search history",
+      "Support 50+ languages and Unicode characters",
+      "Filter adult/offensive completions",
+      "Real-time updates — trending queries appear within minutes",
+      "Log search selections to improve rankings"
+    ],
+    "nonFunctionalRequirements": [
+      "Handle 10,000 prefix queries per second",
+      "Suggestions returned in < 100ms (P99)",
+      "Trie fits in memory: compressed to handle millions of terms",
+      "Ranking updated every 10 minutes from aggregated logs"
+    ],
+    "hints": [
+      "Core entities: TrieNode, SearchTerm, QueryLog, TopKCache, PersonalizationService. The Trie stores all indexed terms; each TrieNode caches the top-5 completions in its subtree (pre-computed). A prefix lookup = O(prefix_length) and then return cached top-5.",
+      "For scale, shard the Trie by first letter (or first two letters for hot prefixes). Each shard runs on its own server. The frontend routes the query to the correct shard. All shards return candidates; the aggregator merges and returns top-5.",
+      "Ranking pipeline: every 10 minutes, a MapReduce job processes QueryLogs to compute (term → frequency) counts. Merge with existing counts using exponential decay (recent queries weighted more). Update the top-5 cache for each TrieNode bottom-up."
+    ]
+  },
+  {
+    "slug": "real-time-leaderboard",
+    "title": "Real-Time Gaming Leaderboard",
+    "difficulty": "hard",
+    "order": 12,
+    "description": "Design a globally consistent real-time leaderboard for a game supporting millions of players with rank queries and score updates.",
+    "category": "Gaming",
+    "functionalRequirements": [
+      "Update a player's score in real time",
+      "Query global rank for any player in < 50ms",
+      "Top-100 leaderboard updated in near real-time",
+      "Paginated leaderboard: any page of 20 players by rank",
+      "Time-windowed leaderboards: daily, weekly, all-time",
+      "Friend leaderboard: rank among only the player's friends",
+      "Regional leaderboards by country"
+    ],
+    "nonFunctionalRequirements": [
+      "Handle 100,000 score updates per second",
+      "Global rank query in < 50ms for 100 million players",
+      "Leaderboard reads are highly available (eventual consistency OK)"
+    ],
+    "hints": [
+      "Core entities: Player, Score, Leaderboard (global/daily/friend), Rank. Use Redis Sorted Sets (ZADD, ZRANK, ZRANGE) as the primary data structure — score updates are O(log n), rank queries are O(log n), range queries are O(log n + k).",
+      "For 100 million players, a single Redis sorted set can hold all of them (Redis handles 2^32 members per sorted set). Score updates: ZADD leaderboard <score> <playerId>. Rank query: ZREVRANK leaderboard <playerId> (0-indexed, add 1 for display).",
+      "For time-windowed leaderboards, create separate sorted sets per window (leaderboard:daily:2024-01-15, leaderboard:weekly:2024-W03). Use EXPIRE to auto-clean old windows. Friend leaderboard: ZRANGEBYSCORE with a filter — fetch the player's friends list, then pipeline ZSCORE for each friend and sort client-side."
+    ]
+  },
+  {
+    "slug": "distributed-message-queue",
+    "title": "Distributed Message Queue (Kafka-like)",
+    "difficulty": "hard",
+    "order": 13,
+    "description": "Design a distributed, durable message queue like Apache Kafka supporting topics, partitions, consumer groups, and replay.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Producers publish messages to named topics",
+      "Topics partitioned for parallel consumption",
+      "Consumer groups — each message delivered to exactly one consumer per group",
+      "Message retention for a configurable period (replay)",
+      "At-least-once and exactly-once delivery semantics",
+      "Message ordering guaranteed within a partition",
+      "Horizontal scaling: add brokers to increase throughput"
+    ],
+    "nonFunctionalRequirements": [
+      "Write throughput: 1 million messages per second per broker",
+      "Message durability: replicated to N brokers before ACK",
+      "Consumer lag monitoring per group",
+      "Zero-copy I/O for high-throughput reads"
+    ],
+    "hints": [
+      "Core entities: Topic, Partition, Broker, Producer, Consumer, ConsumerGroup, Offset, Message. Each partition is an append-only log file on disk. Producers write to a partition (by key hash or round-robin). Consumers track their position via an Offset stored in a dedicated __consumer_offsets topic.",
+      "Replication: each partition has a leader broker and N-1 follower replicas. Producers write to the leader; followers pull and replicate. A message is \"committed\" only after all ISR (in-sync replicas) acknowledge. Leader election uses a ZooKeeper/Raft consensus on broker failure.",
+      "Zero-copy reads: use sendfile() system call to transfer data from the page cache directly to the network socket, bypassing user space. Combined with sequential disk I/O (append-only log), this achieves near-disk-speed throughput with very low CPU usage."
+    ]
+  },
+  {
+    "slug": "api-gateway",
+    "title": "API Gateway",
+    "difficulty": "hard",
+    "order": 14,
+    "description": "Design an API Gateway that handles routing, authentication, rate limiting, load balancing, and observability for microservices.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Route incoming requests to the correct microservice based on path/method",
+      "Authenticate requests via API keys, JWT, or OAuth 2.0",
+      "Rate limiting per client and per endpoint",
+      "Load balance across multiple instances of each service",
+      "Request/response transformation (header injection, body rewrite)",
+      "Circuit breaker to stop routing to unhealthy services",
+      "Centralized logging and distributed tracing (request correlation ID)"
+    ],
+    "nonFunctionalRequirements": [
+      "Add < 5ms latency to each proxied request",
+      "Handle 100,000 requests per second",
+      "99.99% availability — gateway itself must not be a single point of failure",
+      "Configuration changes apply without downtime"
+    ],
+    "hints": [
+      "Core entities: Route, ServiceRegistry, AuthPlugin, RateLimitPlugin, LoadBalancer, CircuitBreaker, RequestContext. The gateway processes each request through a Plugin Chain: Auth → RateLimit → Route → Transform → Forward → Log.",
+      "Use the Chain of Responsibility pattern for plugins. Each plugin implements handle(request, next) — it can reject the request or call next(). New plugins can be added without changing existing code. Store plugin config in a dynamic config store (etcd/Consul) to apply changes without restarts.",
+      "Circuit Breaker states: Closed (normal) → Open (errors > threshold, stop routing) → Half-Open (allow one probe request) → Closed/Open based on result. Track error rates per service with a sliding window counter. Use Exponential backoff before retrying a tripped circuit."
+    ]
+  },
+  {
+    "slug": "ride-sharing-backend",
+    "title": "Ride Sharing — Backend Deep Dive",
+    "difficulty": "hard",
+    "order": 15,
+    "description": "Deep-dive backend design for a ride-sharing platform: geospatial indexing, dynamic dispatch, real-time tracking, and the pricing engine.",
+    "category": "Transportation",
+    "functionalRequirements": [
+      "Index driver locations updated every 5 seconds",
+      "Find available drivers within a configurable radius of a rider",
+      "Dispatch optimization: minimize total wait time across all riders",
+      "Dynamic surge pricing computed per geohash cell per minute",
+      "ETA prediction using historical travel time data and current traffic",
+      "Trip state machine with event-driven transitions",
+      "Driver earnings calculation with incentive bonuses"
+    ],
+    "nonFunctionalRequirements": [
+      "Driver location index updated in < 50ms after each GPS ping",
+      "Nearest driver search in < 100ms for 1 million active drivers",
+      "Surge pricing recalculated every 60 seconds",
+      "ETA accuracy within ±2 minutes for 90% of trips"
+    ],
+    "hints": [
+      "Location Service: store driver locations in Redis using Geohash or H3 hex cells (resolution 9 ≈ 0.1 km²). Use Redis GEO commands: GEOADD, GEORADIUSBYMEMBER for radius searches in O(N+log M). Update on every GPS ping via a write-through pipeline.",
+      "Dispatch: when a trip request arrives, query the H3 cell and neighboring cells (k-ring 1 or 2) for available drivers. Score each driver: score = distance_penalty + direction_penalty + acceptance_rate_bonus. Send the trip offer to the top-scored driver; if no response in 8 seconds, try the next.",
+      "Surge pricing: maintain a time-series of (requests, available_drivers) per H3 cell sampled every minute. surge = f(demand_rate / supply_rate). Use exponential smoothing to dampen noise. Store the surge multiplier map in Redis for O(1) per-cell lookups at pricing time."
+    ]
+  },
+  {
+    "slug": "web-crawler",
+    "title": "Web Crawler",
+    "difficulty": "hard",
+    "order": 16,
+    "description": "Design a scalable web crawler that discovers, fetches, and indexes web pages across billions of URLs.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Start from seed URLs and discover new URLs via link extraction",
+      "Respect robots.txt and crawl-delay directives",
+      "De-duplicate URLs — never crawl the same page twice",
+      "Prioritize URLs by freshness, PageRank, and domain importance",
+      "Store fetched page content for indexing",
+      "Handle redirects, broken links, and timeouts gracefully",
+      "Support incremental re-crawl to keep content fresh"
+    ],
+    "nonFunctionalRequirements": [
+      "Crawl 1 billion URLs per day across a distributed cluster",
+      "URL deduplication with < 1% false positives (Bloom filter)",
+      "Politeness: max 1 request per domain per second",
+      "Fault-tolerant: worker failures do not lose URLs"
+    ],
+    "hints": [
+      "Core entities: URLFrontier (priority queue of URLs to crawl), Fetcher (HTTP client), Parser (HTML/link extractor), DuplicateDetector (Bloom filter + fingerprint store), Storage (object store for raw pages), Scheduler (politeness delay per domain).",
+      "URL Frontier is a multi-level priority queue. Level 1: per-domain back queues (FIFO, one per domain for politeness). Level 2: front queues sorted by priority. Selector picks a front queue by priority, then picks the next URL from the corresponding domain back queue that respects the crawl delay.",
+      "Deduplication: use a Bloom filter (billions of bits in memory) for fast \"probably not crawled\" check. For confirmed duplicates, use a MinHash fingerprint of the page content stored in a DB. If two pages have the same fingerprint, skip the duplicate."
+    ]
+  },
+  {
+    "slug": "typeahead-search",
+    "title": "Typeahead / Instant Search",
+    "difficulty": "hard",
+    "order": 17,
+    "description": "Design an instant search feature that returns results across multiple entity types (users, products, articles) as the user types.",
+    "category": "Developer Tools",
+    "functionalRequirements": [
+      "Return mixed results (users, products, articles) for any query prefix",
+      "Results ranked by relevance, popularity, and personalization",
+      "Spell correction for common typos",
+      "Faceted filtering: narrow results by category, price, date",
+      "Highlighting of matched query terms in results",
+      "Index updates appear in search within 5 seconds",
+      "Support 50+ languages with language-aware tokenization"
+    ],
+    "nonFunctionalRequirements": [
+      "Query latency < 50ms (P99)",
+      "Index size: 10 billion documents across 10 shards",
+      "Index update throughput: 100,000 documents per second"
+    ],
+    "hints": [
+      "Core entities: Document, Index, Shard, InvertedIndex (term → postings list), Posting (docId, TF, positions), QueryParser, Scorer, Highlighter. Each shard holds a subset of documents and an inverted index for fast term lookups.",
+      "Query processing: tokenize query → lookup term in inverted index → get candidate docIds → score each by TF-IDF × BM25 × PersonalizationBoost → merge and rank → return top-K. Use a two-phase retrieval: candidate generation (recall) then precise scoring (precision).",
+      "Near-real-time indexing: new documents go to an in-memory buffer (commit log). A background thread flushes the buffer to a new segment file every second. Periodic merges combine small segments into larger ones (like LSM-tree). Searches query both segments and the in-memory buffer simultaneously."
+    ]
+  },
+  {
+    "slug": "facebook",
+    "title": "Facebook / Social Graph",
+    "difficulty": "hard",
+    "order": 18,
+    "description": "Design Facebook — social graph, news feed ranking, groups, events, marketplace, and real-time notifications at 3-billion-user scale.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Friend/follow graph with mutual friend suggestions",
+      "News feed: ranked posts from friends, groups, and pages",
+      "Groups: public and private, with posts, events, and members",
+      "Events: create, RSVP, invite friends",
+      "Real-time notifications for likes, comments, tags",
+      "Marketplace: buy/sell listings with location filtering",
+      "Privacy settings: public, friends, custom audiences"
+    ],
+    "nonFunctionalRequirements": [
+      "3 billion MAU, 2 billion DAU",
+      "News feed ranked in < 500ms using ML model",
+      "Social graph: average 500 friends, max 5,000",
+      "Real-time notifications delivered in < 2 seconds"
+    ],
+    "hints": [
+      "The social graph is a massive undirected graph stored in TAO (Facebook's distributed graph DB) — optimized for fast edge traversals. Friends-of-friends queries use BFS limited to depth 2 with sampling for very high-degree nodes (celebrities).",
+      "News Feed ranking: candidate generation (retrieve last 500 posts from friends/groups) → feature extraction (recency, interaction probability, relationship closeness) → ML ranking model scores each post → top-300 posts shown. The ranker is updated continuously with implicit feedback (likes, comments, time spent).",
+      "Real-time notifications: use a long-polling or WebSocket connection per client. When an event fires (like, comment), publish to a Notification Queue. A Notification Service fans out to all relevant users' push channels. For web, use SSE; for mobile, FCM/APNs."
+    ]
+  },
+  {
+    "slug": "yelp-local-search",
+    "title": "Yelp / Local Business Search",
+    "difficulty": "hard",
+    "order": 19,
+    "description": "Design a location-based business discovery platform like Yelp — search nearby businesses, read reviews, and get recommendations.",
+    "category": "Social Media",
+    "functionalRequirements": [
+      "Search businesses by category, name, and location (lat/lng + radius)",
+      "View business details: hours, photos, contact, menu",
+      "Read and write reviews with star ratings (1-5)",
+      "Overall rating computed from all reviews",
+      "Photo upload for businesses and reviews",
+      "Business owner portal to manage their listing",
+      "Personalised recommendations based on past reviews",
+      "Filter by: open now, price range, rating, distance"
+    ],
+    "nonFunctionalRequirements": [
+      "Location search returns results in < 200ms",
+      "Support 100 million businesses globally",
+      "Review updates reflected in ratings within 30 seconds",
+      "Photos served via CDN with sub-100ms load time"
+    ],
+    "hints": [
+      "Core entities: Business, Category, Review, Photo, User, Location (lat/lng), BusinessHours, Rating. Store business locations in a geospatial index (PostGIS, Elasticsearch geo_point, or Redis GEOADD). Radius search: GEORADIUSBYMEMBER or Elasticsearch geo_distance query.",
+      "Rating aggregation: maintain a running (sum, count) per business. On each new review, atomically: sum += stars, count++, avg = sum/count. This avoids recomputing from all reviews. Use database transactions or a Redis HINCRBY for atomic updates.",
+      "For personalised recommendations, use collaborative filtering: find users with similar review patterns (cosine similarity on their rating vectors). Recommend businesses that similar users liked but the current user hasn't visited. Run this offline nightly and cache per user."
+    ]
+  },
+  {
+    "slug": "collaborative-text-editor",
+    "title": "Google Docs — Collaborative Real-Time Text Editor",
+    "difficulty": "hard",
+    "order": 20,
+    "description": "Design a collaborative document editor where multiple users can edit the same document simultaneously with real-time sync and no lost updates.",
+    "category": "Productivity",
+    "functionalRequirements": [
+      "Multiple users edit the same document concurrently in real time",
+      "Changes from one user appear on all other connected clients within a second",
+      "Support offline edits that merge correctly once reconnected",
+      "Maintain full version history with the ability to restore an earlier version",
+      "Show live cursor positions of other collaborators",
+      "Support comments anchored to specific text ranges"
+    ],
+    "nonFunctionalRequirements": [
+      "No lost updates even with simultaneous conflicting edits",
+      "Support hundreds of concurrent editors on a single popular document",
+      "Convergence: all clients must eventually see the identical document state"
+    ],
+    "hints": [
+      "The core challenge is concurrent edit merging. Two approaches: Operational Transformation (OT) — transform incoming remote operations against locally-applied concurrent ones before applying — or CRDTs (Conflict-free Replicated Data Types) where each character/element has a globally unique, order-preserving ID so merges are commutative and always converge without a central transform step.",
+      "For a from-scratch design, a sequence CRDT (like RGA or a simplified Logoot) is easier to reason about than OT: each inserted character gets a unique position identifier derived from its neighbors, so concurrent inserts at \"the same spot\" from different users naturally interleave into a consistent order on every replica.",
+      "Architecture: clients send local operations to a central server (or peer-to-peer) which broadcasts them to all other connected clients; the server also persists the operation log for version history/replay, and periodically snapshots the document to avoid replaying the entire history on load."
+    ]
+  }
+]

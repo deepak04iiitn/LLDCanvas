@@ -1,0 +1,102 @@
+[
+  {
+    "slug": "hotel-booking",
+    "exportName": "hotelBookingSolution",
+    "file": "hotel-booking"
+  },
+  {
+    "slug": "movie-ticket-booking",
+    "exportName": "movieTicketBookingSolution",
+    "file": "movie-ticket-booking"
+  },
+  {
+    "slug": "food-delivery",
+    "exportName": "foodDeliverySolution",
+    "file": "food-delivery"
+  },
+  {
+    "slug": "amazon-locker",
+    "exportName": "amazonLockerSolution",
+    "file": "amazon-locker"
+  },
+  {
+    "slug": "splitwise",
+    "exportName": "splitwiseSolution",
+    "file": "splitwise"
+  },
+  {
+    "slug": "cab-booking",
+    "exportName": "cabBookingSolution",
+    "file": "cab-booking"
+  },
+  {
+    "slug": "shopping-cart",
+    "exportName": "shoppingCartSolution",
+    "file": "shopping-cart"
+  },
+  {
+    "slug": "online-stock-brokerage",
+    "exportName": "onlineStockBrokerageSolution",
+    "file": "online-stock-brokerage"
+  },
+  {
+    "slug": "car-rental",
+    "exportName": "carRentalSolution",
+    "file": "car-rental"
+  },
+  {
+    "slug": "flight-reservation",
+    "exportName": "flightReservationSolution",
+    "file": "flight-reservation"
+  },
+  {
+    "slug": "stack-overflow",
+    "exportName": "stackOverflowSolution",
+    "file": "stack-overflow"
+  },
+  {
+    "slug": "linkedin",
+    "exportName": "linkedinSolution",
+    "file": "linkedin"
+  },
+  {
+    "slug": "spotify",
+    "exportName": "spotifySolution",
+    "file": "spotify"
+  },
+  {
+    "slug": "online-code-judge",
+    "exportName": "onlineCodeJudgeSolution",
+    "file": "online-code-judge"
+  },
+  {
+    "slug": "notification-service",
+    "exportName": "notificationServiceSolution",
+    "file": "notification-service"
+  },
+  {
+    "slug": "coupon-system",
+    "exportName": "couponSystemSolution",
+    "file": "coupon-system"
+  },
+  {
+    "slug": "inventory-management",
+    "exportName": "inventoryManagementSolution",
+    "file": "inventory-management"
+  },
+  {
+    "slug": "zoom",
+    "exportName": "zoomSolution",
+    "file": "zoom"
+  },
+  {
+    "slug": "design-pastebin",
+    "exportName": "designPastebinSolution",
+    "file": "design-pastebin"
+  },
+  {
+    "slug": "cricket-scoreboard",
+    "exportName": "cricketScoreboardSolution",
+    "file": "cricket-scoreboard"
+  }
+]
