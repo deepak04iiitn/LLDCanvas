@@ -874,6 +874,10 @@ export interface AdminSubscription {
   userName: string
   userEmail: string
   plan: string
+  /** Live access plan on the user doc (may differ after admin override). */
+  userPlan?: string
+  planOverriddenAt?: string | null
+  accessOverridden?: boolean
   razorpaySubId: string
   status: string
   billingInterval: 'monthly' | 'yearly'

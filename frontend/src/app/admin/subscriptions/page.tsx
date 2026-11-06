@@ -102,13 +102,24 @@ export default function AdminSubscriptionsPage() {
 
   async function handleOverridePlan() {
     if (!overrideModal) return
+    const nextPlan = overrideModal.plan
+    const label = nextPlan.charAt(0).toUpperCase() + nextPlan.slice(1)
     setActionLoading(true)
     try {
-      await adminApi.billing.overridePlan(overrideModal.sub._id, overrideModal.plan)
+      await adminApi.billing.overridePlan(overrideModal.sub._id, nextPlan)
       setOverrideModal(null)
-      load()
-    } catch { /* ignore */ }
-    setActionLoading(false)
+      toast.success(
+        nextPlan === 'free'
+          ? 'Plan updated — access set to Free'
+          : `Plan overridden to ${label}`,
+        { duration: 4000 },
+      )
+      await load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to override plan')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   async function handleCancel() {
@@ -117,9 +128,13 @@ export default function AdminSubscriptionsPage() {
     try {
       await adminApi.billing.cancelSubscription(cancelConfirm._id)
       setCancelConfirm(null)
-      load()
-    } catch { /* ignore */ }
-    setActionLoading(false)
+      toast.success('Subscription cancelled — user downgraded to Free', { duration: 4000 })
+      await load()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to cancel subscription')
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   async function handleBulkDelete() {
@@ -258,7 +273,8 @@ export default function AdminSubscriptionsPage() {
                   />
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">User</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Plan</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Sub plan</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Access</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Status</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Billing</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-ink-muted">Started</th>
@@ -268,11 +284,14 @@ export default function AdminSubscriptionsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
+                <tr><td colSpan={9} className="py-12 text-center text-sm text-ink-muted">Loading...</td></tr>
               ) : subs.length === 0 ? (
-                <tr><td colSpan={8} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
+                <tr><td colSpan={9} className="py-12 text-center text-sm text-ink-muted">No subscriptions found</td></tr>
               ) : subs.map((s, i) => {
+                const accessPlan = s.userPlan ?? s.plan
                 const PIcon = PLAN_ICON[s.plan as keyof typeof PLAN_ICON] ?? Zap
+                const AIcon = PLAN_ICON[accessPlan as keyof typeof PLAN_ICON] ?? Zap
+                const overridden = Boolean(s.accessOverridden)
                 return (
                   <motion.tr
                     key={s._id}
@@ -326,6 +345,25 @@ export default function AdminSubscriptionsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
+                      <div className="flex flex-col items-start gap-1">
+                        <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium', PLAN_BADGE[accessPlan] ?? PLAN_BADGE.free)}>
+                          <AIcon className="h-3 w-3" /> {accessPlan}
+                        </span>
+                        {overridden && (
+                          <span
+                            title={
+                              s.planOverriddenAt
+                                ? `Admin override · ${new Date(s.planOverriddenAt).toLocaleString()}`
+                                : 'Live access differs from subscription record'
+                            }
+                            className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 font-mono text-[9px] font-semibold uppercase tracking-wide text-violet-700"
+                          >
+                            overridden
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
                       <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_BADGE[s.status] ?? STATUS_BADGE.expired)}>
                         {s.status}
                       </span>
@@ -346,7 +384,7 @@ export default function AdminSubscriptionsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setOverrideModal({ sub: s, plan: s.plan })}
+                          onClick={() => setOverrideModal({ sub: s, plan: s.userPlan ?? s.plan })}
                           className="rounded-md border border-hairline px-2 py-1 text-xs font-medium text-ink-muted hover:bg-paper-elevated transition-colors"
                         >
                           Override plan
@@ -401,8 +439,14 @@ export default function AdminSubscriptionsPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mb-4 text-sm text-ink-muted">
-              Change plan for <strong className="text-ink">{overrideModal.sub.userName}</strong>
+            <p className="mb-2 text-sm text-ink-muted">
+              Change live access for <strong className="text-ink">{overrideModal.sub.userName}</strong>
+            </p>
+            <p className="mb-4 text-xs text-ink-faint">
+              Subscription record: <span className="capitalize">{overrideModal.sub.plan}</span>
+              {' · '}
+              Current access: <span className="capitalize">{overrideModal.sub.userPlan ?? overrideModal.sub.plan}</span>
+              {overrideModal.sub.accessOverridden ? ' (overridden)' : ''}
             </p>
             <select
               value={overrideModal.plan}
@@ -418,7 +462,12 @@ export default function AdminSubscriptionsPage() {
                 Cancel
               </button>
               <button onClick={handleOverridePlan} disabled={actionLoading} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-brand py-2 text-sm font-medium text-white hover:bg-brand/90 transition-colors disabled:opacity-60">
-                <Check className="h-3.5 w-3.5" /> Apply
+                {actionLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
+                {actionLoading ? 'Saving…' : 'Apply'}
               </button>
             </div>
           </motion.div>

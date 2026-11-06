@@ -11,6 +11,8 @@ export interface IUser extends Document {
   isAdmin: boolean
   blocked: boolean
   plan: PlanName
+  /** Set when an admin overrides plan access outside a live gateway sub. */
+  planOverriddenAt?: Date | null
   lastLoginAt?: Date
   createdAt: Date
   updatedAt: Date
@@ -27,6 +29,7 @@ const userSchema = new Schema<IUser>(
     isAdmin:      { type: Boolean, default: false },
     blocked:      { type: Boolean, default: false },
     plan:         { type: String, enum: ['free', 'pro', 'ultimate'], default: 'free', index: true },
+    planOverriddenAt: { type: Date, default: null },
     lastLoginAt:  { type: Date },
   },
   { timestamps: true }

@@ -1309,14 +1309,27 @@ export const adminController = {
 
       // Enrich with user info
       const userIds = [...new Set(subs.map(s => s.userId))]
-      const users = await User.find({ _id: { $in: userIds } }).select('name email plan').lean()
+      const users = await User.find({ _id: { $in: userIds } }).select('name email plan planOverriddenAt').lean()
       const userMap = new Map(users.map(u => [u._id.toString(), u]))
 
-      const enriched = subs.map(s => ({
-        ...s,
-        userName:  userMap.get(s.userId)?.name  ?? 'Unknown',
-        userEmail: userMap.get(s.userId)?.email ?? '',
-      }))
+      const enriched = subs.map(s => {
+        const u = userMap.get(s.userId)
+        const userPlan = (u?.plan ?? 'free') as string
+        const planOverriddenAt = u?.planOverriddenAt ?? null
+        const accessOverridden = Boolean(
+          planOverriddenAt ||
+          userPlan !== s.plan ||
+          (['cancelled', 'completed', 'expired'].includes(s.status) && userPlan !== 'free'),
+        )
+        return {
+          ...s,
+          userName:  u?.name  ?? 'Unknown',
+          userEmail: u?.email ?? '',
+          userPlan,
+          planOverriddenAt,
+          accessOverridden,
+        }
+      })
 
       res.json({ subscriptions: enriched, total, page, limit, totalPages: Math.ceil(total / limit) })
     } catch (err) { next(err) }
@@ -1409,8 +1422,18 @@ export const adminController = {
       const sub = await Subscription.findById(id)
       if (!sub) throw createError('Subscription not found', 404)
 
-      await User.findByIdAndUpdate(sub.userId, { plan })
-      res.json({ ok: true, plan, userId: sub.userId })
+      if (plan === 'free') {
+        await User.findByIdAndUpdate(sub.userId, {
+          plan: 'free',
+          $unset: { planOverriddenAt: 1 },
+        })
+      } else {
+        await User.findByIdAndUpdate(sub.userId, {
+          plan,
+          planOverriddenAt: new Date(),
+        })
+      }
+      res.json({ ok: true, plan, userId: sub.userId, overridden: plan !== 'free' })
     } catch (err) { next(err) }
   },
 
@@ -1454,7 +1477,10 @@ export const adminController = {
       await sub.save()
 
       // Downgrade user to free
-      await User.findByIdAndUpdate(sub.userId, { plan: 'free' })
+      await User.findByIdAndUpdate(sub.userId, {
+        plan: 'free',
+        $unset: { planOverriddenAt: 1 },
+      })
 
       res.json({ ok: true, userId: sub.userId })
     } catch (err) { next(err) }
@@ -1480,7 +1506,10 @@ export const adminController = {
           plan: { $in: ['pro', 'ultimate'] },
         })
         if (!stillActive) {
-          await User.findByIdAndUpdate(userId, { plan: 'free' })
+          await User.findByIdAndUpdate(userId, {
+            plan: 'free',
+            $unset: { planOverriddenAt: 1 },
+          })
         }
       }
 
@@ -1583,8 +1612,9 @@ export const adminController = {
         onboardingNote:     note ?? '',
       })
 
-      // Grant access
+      // Grant access (manual onboard is intentional access, not a silent override)
       user.plan = plan
+      user.planOverriddenAt = undefined
       await user.save()
 
       await RevenueEvent.create({

@@ -1,0 +1,119 @@
+/* Scoped styles for the editorial solution page only. */
+
+.solution-page {
+  --sol-code-bg: #151714;
+  --sol-code-fg: #e8e6df;
+  --sol-code-muted: #8a8778;
+  --sol-code-border: #2a2c28;
+}
+
+.solution-page .solution-hero {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(35, 78, 63, 0.06) 0%, transparent 72%),
+    var(--paper);
+}
+
+.solution-page .solution-hero::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.35;
+  background-image:
+    repeating-linear-gradient(
+      -18deg,
+      transparent,
+      transparent 11px,
+      rgba(32, 31, 28, 0.035) 11px,
+      rgba(32, 31, 28, 0.035) 12px
+    );
+  mask-image: linear-gradient(180deg, #000 20%, transparent 92%);
+}
+
+.solution-page .solution-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes solution-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.solution-page .solution-hero-content {
+  animation: solution-fade-up 0.55s ease-out both;
+}
+
+/* Dark code surface + highlight.js overrides */
+.solution-page .solution-code {
+  background: var(--sol-code-bg);
+  color: var(--sol-code-fg);
+  border-color: var(--sol-code-border);
+}
+
+.solution-page .solution-code .hljs {
+  background: transparent;
+  color: var(--sol-code-fg);
+}
+
+.solution-page .solution-code .hljs-comment,
+.solution-page .solution-code .hljs-quote {
+  color: #7d7a6c;
+  font-style: italic;
+}
+
+.solution-page .solution-code .hljs-keyword,
+.solution-page .solution-code .hljs-selector-tag,
+.solution-page .solution-code .hljs-literal {
+  color: #8fbfa8;
+}
+
+.solution-page .solution-code .hljs-string,
+.solution-page .solution-code .hljs-doctag,
+.solution-page .solution-code .hljs-template-variable {
+  color: #d4b483;
+}
+
+.solution-page .solution-code .hljs-number,
+.solution-page .solution-code .hljs-built_in,
+.solution-page .solution-code .hljs-type {
+  color: #c9a0a0;
+}
+
+.solution-page .solution-code .hljs-title,
+.solution-page .solution-code .hljs-section,
+.solution-page .solution-code .hljs-function .hljs-title,
+.solution-page .solution-code .hljs-title.function_ {
+  color: #b8d4c8;
+}
+
+.solution-page .solution-code .hljs-attr,
+.solution-page .solution-code .hljs-attribute,
+.solution-page .solution-code .hljs-variable,
+.solution-page .solution-code .hljs-params {
+  color: #cfcabe;
+}
+
+.solution-page .solution-code .hljs-meta,
+.solution-page .solution-code .hljs-punctuation {
+  color: #9a9688;
+}
+
+.solution-page .solution-code pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.solution-page .solution-code pre::-webkit-scrollbar-thumb {
+  background: #3a3d38;
+  border-radius: 4px;
+}

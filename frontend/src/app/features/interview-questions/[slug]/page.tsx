@@ -8,6 +8,7 @@ import { FeatureCrossLinks } from '@/components/features/FeatureCrossLinks'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { Reveal } from '@/components/features/Reveal'
 import { AuthGatedLink } from '@/components/auth/AuthGatedLink'
+import { getProblemSolution } from '@/content/problem-solutions'
 
 // ─── Difficulty colour tokens ─────────────────────────────────────────────────
 
@@ -60,6 +61,7 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
 
   const dc  = DIFF_CONFIG[problem.difficulty]
   const icon = INDUSTRY_ICONS[problem.category] ?? '⚡'
+  const hasOfficialSolution = Boolean(getProblemSolution(slug))
 
   return (
     <div className="overflow-hidden">
@@ -146,6 +148,14 @@ export default async function InterviewQuestionDetailPage({ params }: { params: 
             >
               Start Solving <ArrowRight size={14} />
             </AuthGatedLink>
+            {hasOfficialSolution && (
+              <AuthGatedLink
+                href={`/dashboard/problems/${slug}/solution`}
+                className="flex items-center gap-2 rounded-xl border border-hairline bg-paper-elevated px-7 py-3 text-sm font-semibold text-ink transition-all hover:border-brand/30 hover:text-brand active:scale-[0.98]"
+              >
+                Explore Solution <ArrowRight size={14} />
+              </AuthGatedLink>
+            )}
             <span className="font-mono text-[11px] text-ink-faint">
               {problem.functionalCount}F + {problem.nonFunctionalCount}NF requirements inside
             </span>

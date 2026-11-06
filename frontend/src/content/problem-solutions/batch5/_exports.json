@@ -1,0 +1,122 @@
+[
+  {
+    "slug": "podcast-platform",
+    "exportName": "podcastPlatformSolution",
+    "file": "podcast-platform",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "cloud-file-sync-client",
+    "exportName": "cloudFileSyncClientSolution",
+    "file": "cloud-file-sync-client",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "recipe-meal-planning",
+    "exportName": "recipeMealPlanningSolution",
+    "file": "recipe-meal-planning",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "fitness-tracker-app",
+    "exportName": "fitnessTrackerAppSolution",
+    "file": "fitness-tracker-app",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "multiplayer-tictactoe-matchmaking",
+    "exportName": "multiplayerTictactoeMatchmakingSolution",
+    "file": "multiplayer-tictactoe-matchmaking",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "elevator-group-control-system",
+    "exportName": "elevatorGroupControlSystemSolution",
+    "file": "elevator-group-control-system",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "online-polling-voting-platform",
+    "exportName": "onlinePollingVotingPlatformSolution",
+    "file": "online-polling-voting-platform",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "warehouse-order-fulfillment",
+    "exportName": "warehouseOrderFulfillmentSolution",
+    "file": "warehouse-order-fulfillment",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "customer-support-ticketing",
+    "exportName": "customerSupportTicketingSolution",
+    "file": "customer-support-ticketing",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "loyalty-points-rewards-program",
+    "exportName": "loyaltyPointsRewardsProgramSolution",
+    "file": "loyalty-points-rewards-program",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "social-event-planning-app",
+    "exportName": "socialEventPlanningAppSolution",
+    "file": "social-event-planning-app",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "airline-management",
+    "exportName": "airlineManagementSolution",
+    "file": "airline-management",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "restaurant-management",
+    "exportName": "restaurantManagementSolution",
+    "file": "restaurant-management",
+    "difficulty": "medium"
+  },
+  {
+    "slug": "distributed-rate-limiter",
+    "exportName": "distributedRateLimiterSolution",
+    "file": "distributed-rate-limiter",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "news-feed-ranking-system",
+    "exportName": "newsFeedRankingSystemSolution",
+    "file": "news-feed-ranking-system",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-job-scheduler",
+    "exportName": "distributedJobSchedulerSolution",
+    "file": "distributed-job-scheduler",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-notification-fanout",
+    "exportName": "distributedNotificationFanoutSolution",
+    "file": "distributed-notification-fanout",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "content-delivery-network",
+    "exportName": "contentDeliveryNetworkSolution",
+    "file": "content-delivery-network",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-lock-manager",
+    "exportName": "distributedLockManagerSolution",
+    "file": "distributed-lock-manager",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "live-video-streaming-platform",
+    "exportName": "liveVideoStreamingPlatformSolution",
+    "file": "live-video-streaming-platform",
+    "difficulty": "hard"
+  }
+]

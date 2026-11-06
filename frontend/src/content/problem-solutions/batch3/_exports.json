@@ -1,0 +1,102 @@
+[
+  {
+    "slug": "twitter",
+    "exportName": "twitterSolution",
+    "file": "twitter"
+  },
+  {
+    "slug": "whatsapp",
+    "exportName": "whatsappSolution",
+    "file": "whatsapp"
+  },
+  {
+    "slug": "netflix",
+    "exportName": "netflixSolution",
+    "file": "netflix"
+  },
+  {
+    "slug": "google-drive",
+    "exportName": "googleDriveSolution",
+    "file": "google-drive"
+  },
+  {
+    "slug": "instagram",
+    "exportName": "instagramSolution",
+    "file": "instagram"
+  },
+  {
+    "slug": "uber-full",
+    "exportName": "uberFullSolution",
+    "file": "uber-full"
+  },
+  {
+    "slug": "youtube",
+    "exportName": "youtubeSolution",
+    "file": "youtube"
+  },
+  {
+    "slug": "url-shortener",
+    "exportName": "urlShortenerSolution",
+    "file": "url-shortener"
+  },
+  {
+    "slug": "distributed-cache",
+    "exportName": "distributedCacheSolution",
+    "file": "distributed-cache"
+  },
+  {
+    "slug": "payment-gateway",
+    "exportName": "paymentGatewaySolution",
+    "file": "payment-gateway"
+  },
+  {
+    "slug": "search-autocomplete",
+    "exportName": "searchAutocompleteSolution",
+    "file": "search-autocomplete"
+  },
+  {
+    "slug": "real-time-leaderboard",
+    "exportName": "realTimeLeaderboardSolution",
+    "file": "real-time-leaderboard"
+  },
+  {
+    "slug": "distributed-message-queue",
+    "exportName": "distributedMessageQueueSolution",
+    "file": "distributed-message-queue"
+  },
+  {
+    "slug": "api-gateway",
+    "exportName": "apiGatewaySolution",
+    "file": "api-gateway"
+  },
+  {
+    "slug": "ride-sharing-backend",
+    "exportName": "rideSharingBackendSolution",
+    "file": "ride-sharing-backend"
+  },
+  {
+    "slug": "web-crawler",
+    "exportName": "webCrawlerSolution",
+    "file": "web-crawler"
+  },
+  {
+    "slug": "typeahead-search",
+    "exportName": "typeaheadSearchSolution",
+    "file": "typeahead-search"
+  },
+  {
+    "slug": "facebook",
+    "exportName": "facebookSolution",
+    "file": "facebook"
+  },
+  {
+    "slug": "yelp-local-search",
+    "exportName": "yelpLocalSearchSolution",
+    "file": "yelp-local-search"
+  },
+  {
+    "slug": "collaborative-text-editor",
+    "exportName": "collaborativeTextEditorSolution",
+    "file": "collaborative-text-editor"
+  }
+]

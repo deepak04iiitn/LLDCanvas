@@ -1,0 +1,62 @@
+[
+  {
+    "slug": "ad-click-tracking-billing",
+    "exportName": "adClickTrackingBillingSolution",
+    "file": "ad-click-tracking-billing",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-task-queue",
+    "exportName": "distributedTaskQueueSolution",
+    "file": "distributed-task-queue",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-unique-id-generator",
+    "exportName": "distributedUniqueIdGeneratorSolution",
+    "file": "distributed-unique-id-generator",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "fraud-detection-system",
+    "exportName": "fraudDetectionSystemSolution",
+    "file": "fraud-detection-system",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "search-engine-indexing-system",
+    "exportName": "searchEngineIndexingSystemSolution",
+    "file": "search-engine-indexing-system",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-metrics-monitoring",
+    "exportName": "distributedMetricsMonitoringSolution",
+    "file": "distributed-metrics-monitoring",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "distributed-session-store",
+    "exportName": "distributedSessionStoreSolution",
+    "file": "distributed-session-store",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "multiplayer-game-matchmaking",
+    "exportName": "multiplayerGameMatchmakingSolution",
+    "file": "multiplayer-game-matchmaking",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "realtime-collaborative-code-editor",
+    "exportName": "realtimeCollaborativeCodeEditorSolution",
+    "file": "realtime-collaborative-code-editor",
+    "difficulty": "hard"
+  },
+  {
+    "slug": "course-registration",
+    "exportName": "courseRegistrationSolution",
+    "file": "course-registration",
+    "difficulty": "hard"
+  }
+]

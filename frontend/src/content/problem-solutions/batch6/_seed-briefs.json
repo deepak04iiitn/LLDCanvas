@@ -1,0 +1,263 @@
+[
+  {
+    "slug": "ad-click-tracking-billing",
+    "title": "Ad Click Tracking & Billing System",
+    "difficulty": "hard",
+    "order": 25,
+    "description": "Design a system that tracks ad impressions/clicks at massive scale and computes accurate billing for advertisers.",
+    "category": "Ad-Tech",
+    "functionalRequirements": [
+      "Record ad impressions and clicks with low latency",
+      "Attribute a click to the correct ad, campaign, and advertiser",
+      "Aggregate click/impression counts per campaign in near real time",
+      "Compute advertiser billing based on cost-per-click or cost-per-impression",
+      "Detect and filter fraudulent/bot clicks before billing",
+      "Provide advertisers a near-real-time spend dashboard"
+    ],
+    "nonFunctionalRequirements": [
+      "Must handle extremely high write throughput (hundreds of thousands of events/sec)",
+      "Billing must be exactly-once — no double-charging or missed charges",
+      "Fraud filtering shouldn't meaningfully delay legitimate billing"
+    ],
+    "hints": [
+      "Ingest raw click/impression events into a durable, high-throughput log (Kafka) first, decoupling ingestion from processing — this absorbs traffic spikes and lets billing/fraud-detection consumers process at their own pace without dropping events.",
+      "Use stream processing (e.g. a windowed aggregation job) to compute near-real-time counts per campaign for the dashboard, while a separate, more rigorous batch job re-processes the full event log later (e.g. hourly) to produce the authoritative, fraud-filtered billing numbers — this \"speed layer + batch layer\" (Lambda architecture) balances real-time visibility with billing correctness.",
+      "Exactly-once billing: assign each click event a unique ID at generation time and dedupe on it during aggregation (e.g. via a distributed idempotency table or Kafka's exactly-once semantics) — combined with fraud heuristics (click velocity per IP/device, known bot signatures, impossible geo-velocity) applied as a filter stage before an event counts toward billable spend."
+    ]
+  },
+  {
+    "slug": "distributed-task-queue",
+    "title": "Distributed Task Queue (Celery/Sidekiq-like)",
+    "difficulty": "hard",
+    "order": 25,
+    "description": "Design a distributed background job processing system with reliable delivery, retries, and worker scaling.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Enqueue a task with a payload for asynchronous processing",
+      "Distribute tasks across a pool of workers for parallel execution",
+      "Retry a failed task with exponential backoff up to a max attempt count",
+      "Support delayed/scheduled task execution",
+      "Support task priorities and multiple named queues",
+      "Move a task to a dead-letter queue after exhausting retries"
+    ],
+    "nonFunctionalRequirements": [
+      "At-least-once delivery — a task must never be silently lost",
+      "Support horizontal scaling of workers to millions of tasks/day",
+      "A crashed worker mid-task must not lose that task permanently"
+    ],
+    "hints": [
+      "Use a visibility-timeout pattern (as in SQS): when a worker pulls a task, it becomes invisible to other workers for a configured duration rather than being deleted immediately; the worker explicitly deletes it on success. If the worker crashes before deleting it, the visibility timeout expires and another worker picks it up — this is what gives at-least-once delivery without a task ever being permanently lost.",
+      "Delayed/scheduled tasks: store them in a separate delayed-set (e.g. a Redis sorted set scored by executeAt) and a lightweight mover process periodically shifts due tasks into the live queue — avoids workers busy-polling for tasks that aren't ready yet.",
+      "Retries with backoff: track an attempt counter on the task; on failure, re-enqueue with a computed delay (base * 2^attempt, capped) using the same delayed-set mechanism; once attempts exceed the max, route the task to a dead-letter queue for manual inspection instead of retrying forever."
+    ]
+  },
+  {
+    "slug": "distributed-unique-id-generator",
+    "title": "Distributed Unique ID Generator (Snowflake-like)",
+    "difficulty": "hard",
+    "order": 26,
+    "description": "Design a service that generates globally unique, roughly time-sortable IDs across many machines without coordination.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Generate a unique ID with no central coordination required per request",
+      "IDs should be roughly sortable by creation time",
+      "Support many ID-generating nodes running independently",
+      "Guarantee no collisions even under massive concurrent generation",
+      "IDs should fit in a compact fixed-size integer (e.g. 64 bits)"
+    ],
+    "nonFunctionalRequirements": [
+      "Generate IDs at extremely high throughput per node (tens of thousands/sec) with no network round-trip",
+      "Must remain correct even if a node's clock drifts or resets slightly",
+      "No single point of failure — any node can generate IDs independently"
+    ],
+    "hints": [
+      "The classic Snowflake layout packs a 64-bit integer as: 1 unused sign bit + 41 bits timestamp (ms since a custom epoch) + 10 bits machine/worker ID + 12 bits per-millisecond sequence number. Because each node has a unique machine ID and its own local sequence counter, no coordination between nodes is needed at generation time.",
+      "Within a single millisecond, a node increments its 12-bit sequence counter (up to 4096 IDs/ms/node); if the counter overflows before the millisecond ticks over, the generator busy-waits for the next millisecond — this bounds max throughput per node while guaranteeing local uniqueness.",
+      "Clock issues: if a node detects its system clock has moved backward (NTP correction), it must refuse to generate IDs until the clock catches up past the last recorded timestamp — otherwise it could reuse a (timestamp, sequence) pair already issued, breaking global uniqueness. Machine IDs themselves are typically assigned via a coordination service (e.g. Zookeeper) once at startup, not per-request."
+    ]
+  },
+  {
+    "slug": "fraud-detection-system",
+    "title": "Fraud Detection System",
+    "difficulty": "hard",
+    "order": 26,
+    "description": "Design a real-time system that scores financial transactions for fraud risk and blocks/flags suspicious activity before it completes.",
+    "category": "Fintech",
+    "functionalRequirements": [
+      "Score an incoming transaction for fraud risk in real time, before it's approved",
+      "Combine rule-based checks (velocity, geo-mismatch, blacklists) with a risk model score",
+      "Support configurable rules that can be updated without a code deploy",
+      "Flag high-risk transactions for manual review instead of auto-blocking",
+      "Maintain a feedback loop from confirmed fraud/false-positive outcomes",
+      "Provide an audit trail of why a transaction was scored the way it was"
+    ],
+    "nonFunctionalRequirements": [
+      "Fraud scoring must complete within the payment's synchronous approval window (tens of milliseconds)",
+      "Must handle tens of thousands of transactions per second at peak",
+      "False-positive rate must stay low enough to not meaningfully harm legitimate users"
+    ],
+    "hints": [
+      "Split into a fast synchronous path and a slower asynchronous path: the synchronous path (within the payment approval window) runs only cheap, precomputed-feature rule checks (e.g. velocity counters from a fast in-memory store, blacklist lookups) and a lightweight model inference; the full deep analysis and case review happen asynchronously afterward without blocking the transaction.",
+      "Maintain real-time aggregated features (e.g. \"transactions from this card in the last 10 minutes\", \"distinct countries in the last hour\") via a stream-processing layer that continuously updates counters per entity (card, device, IP) — these precomputed features are what make sub-50ms scoring possible, since computing them from raw history on every transaction would be far too slow.",
+      "Use a layered decision system: hard rules (blacklists, impossible geo-velocity) that auto-block; a risk score from a model combining dozens of features that routes medium-risk transactions to manual review and lets low-risk ones straight through; and a feedback loop where confirmed fraud/false-positive labels from manual review get fed back to periodically retrain the model."
+    ]
+  },
+  {
+    "slug": "search-engine-indexing-system",
+    "title": "Search Engine Indexing System",
+    "difficulty": "hard",
+    "order": 27,
+    "description": "Design the backend indexing pipeline that powers full-text search over a massive, constantly growing document corpus.",
+    "category": "Developer Tools",
+    "functionalRequirements": [
+      "Ingest and tokenize documents from a large, growing corpus",
+      "Build an inverted index mapping terms to the documents containing them",
+      "Support full-text search queries returning ranked results",
+      "Support incremental index updates as new documents arrive (near real-time)",
+      "Support phrase and boolean (AND/OR/NOT) queries",
+      "Rank results by relevance (e.g. TF-IDF/BM25) not just presence"
+    ],
+    "nonFunctionalRequirements": [
+      "Search queries should return in well under 200ms",
+      "Support indexing billions of documents",
+      "Indexing throughput must keep pace with a high document ingestion rate"
+    ],
+    "hints": [
+      "Core structure: an Inverted Index — a map from each term to a postings list of (documentId, term frequency, positions) for every document containing that term. Query time then becomes intersecting/unioning postings lists for the query terms rather than scanning documents.",
+      "Indexing pipeline: Document ingestion → Tokenization/normalization (lowercasing, stemming, stop-word removal) → Postings list updates. Shard the index by document ID or term range across many index-server nodes so both indexing and query load are distributed, then merge partial results from each shard for a query (scatter-gather).",
+      "Relevance ranking: compute a score like BM25/TF-IDF combining term frequency in the document, inverse document frequency across the corpus, and document length normalization — the query engine retrieves candidate documents via the inverted index (cheap) then ranks only that candidate set (expensive), never scoring the entire corpus per query."
+    ]
+  },
+  {
+    "slug": "distributed-metrics-monitoring",
+    "title": "Distributed Metrics & Monitoring System",
+    "difficulty": "hard",
+    "order": 27,
+    "description": "Design a monitoring system (like Prometheus) that collects, stores, and alerts on time-series metrics from thousands of services.",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Collect numeric metrics (counters, gauges, histograms) from thousands of services",
+      "Store metrics as time series, queryable by service/metric name and time range",
+      "Support aggregation queries (sum, avg, percentile) over time windows",
+      "Define alert rules that trigger when a metric crosses a threshold",
+      "Visualize metrics on dashboards with live-updating graphs",
+      "Retain high-resolution recent data and downsampled older data"
+    ],
+    "nonFunctionalRequirements": [
+      "Ingest metrics from tens of thousands of hosts at high frequency (every few seconds) without data loss",
+      "Query latency for dashboard graphs under a second for common time ranges",
+      "Storage must scale efficiently — raw high-resolution data for years would be prohibitively expensive"
+    ],
+    "hints": [
+      "Use either a pull model (a central server periodically scrapes a metrics endpoint on each monitored service, like Prometheus) or a push model (agents push metrics to a collector) — pull simplifies service discovery and avoids overwhelming the collector during a metrics spike, since the collector controls its own scrape rate.",
+      "Store data in a purpose-built time-series database with columnar, delta/delta-of-delta compression for timestamps and values (metrics are highly compressible since consecutive values change little) — a generic row-oriented database would be far too expensive at this ingestion volume.",
+      "Downsampling: run background jobs that roll up raw high-resolution data (e.g. 15s intervals) into coarser aggregates (5min, 1hr) after it ages past a retention threshold, then delete the raw data — dashboards querying old, wide time ranges automatically hit the downsampled tier, keeping both storage cost and query latency bounded."
+    ]
+  },
+  {
+    "slug": "distributed-session-store",
+    "title": "Distributed Session Store",
+    "difficulty": "hard",
+    "order": 28,
+    "description": "Design a globally distributed session store that keeps a logged-in user\\",
+    "category": "Infrastructure",
+    "functionalRequirements": [
+      "Create and validate a user session token on login",
+      "Look up session data (user identity, permissions) on every authenticated request",
+      "Invalidate a session on logout or password change, everywhere immediately",
+      "Support sessions surviving a single data center outage",
+      "Support session data replication across geographic regions for low-latency reads",
+      "Expire sessions automatically after inactivity"
+    ],
+    "nonFunctionalRequirements": [
+      "Session lookup latency should add only a few milliseconds to each request",
+      "Session invalidation (e.g. security logout) must propagate globally within seconds",
+      "Must tolerate a full region failure without logging out unaffected users"
+    ],
+    "hints": [
+      "Use a fast distributed key-value store (e.g. a Redis cluster or DynamoDB global tables) as the session backing store, replicated across regions, so any edge server can validate a session with a local/nearby read rather than round-tripping to a single home region for every request.",
+      "For low read latency with global distribution, use a \"write to home region, replicate asynchronously, read from nearest replica\" model for normal reads, but for security-sensitive events (logout, password change) perform a synchronous invalidation broadcast (e.g. publish an invalidation event to all regions via a pub/sub system) rather than waiting for the normal async replication lag.",
+      "To survive a region outage without logging users out, don't pin a session strictly to one region as the sole source of truth — replicate session writes to at least one other region synchronously (or use a quorum-based store) so a region failure fails over reads to a replica that's already current."
+    ]
+  },
+  {
+    "slug": "multiplayer-game-matchmaking",
+    "title": "Multiplayer Game Matchmaking System",
+    "difficulty": "hard",
+    "order": 28,
+    "description": "Design a matchmaking service that pairs players of similar skill into balanced game sessions at scale, with low wait times.",
+    "category": "Gaming",
+    "functionalRequirements": [
+      "Queue a player for a match, optionally as part of a pre-formed party",
+      "Match players into balanced teams based on skill rating (e.g. Elo/MMR)",
+      "Support different game modes with different team sizes",
+      "Widen matchmaking criteria gradually if a match isn't found quickly",
+      "Assign a matched group to an available game server",
+      "Update player skill ratings after a match concludes"
+    ],
+    "nonFunctionalRequirements": [
+      "Median matchmaking wait time should stay low (seconds, not minutes) even at moderate population",
+      "Support millions of concurrent queued players globally across regions",
+      "Match balance (skill gap between teams) should stay within a reasonable bound"
+    ],
+    "hints": [
+      "Core entities: MatchmakingTicket (player/party, skill rating, queue time, region, game mode), MatchmakingPool (per region/mode), GameServer. Use a skill rating system (Elo or a Bayesian system like TrueSkill) as the primary matching key, bucketing tickets by skill range for efficient candidate search instead of comparing every waiting player pairwise.",
+      "Gradually widen the acceptable skill range (and region) the longer a ticket waits in the pool — this trades off match quality for wait time, which is the fundamental matchmaking trade-off; log both metrics so the widening curve can be tuned.",
+      "Party handling: a pre-formed party must be matched as a unit (never split across teams), and its effective skill for matching purposes is typically an average or weighted combination of its members' individual ratings — treat a party as a single \"virtual player\" with that combined rating when searching the pool."
+    ]
+  },
+  {
+    "slug": "realtime-collaborative-code-editor",
+    "title": "Real-Time Collaborative Code Editor",
+    "difficulty": "hard",
+    "order": 29,
+    "description": "Design a browser-based collaborative code editor (like this app\\",
+    "category": "Developer Tools",
+    "functionalRequirements": [
+      "Multiple users edit the same code file concurrently with live sync",
+      "Show each collaborator's live cursor and selection",
+      "Support running/executing the code and streaming output back to all viewers",
+      "Support multiple files/folders in a shared workspace",
+      "Persist the workspace so it can be reopened later",
+      "Support permission levels (owner, editor, viewer)"
+    ],
+    "nonFunctionalRequirements": [
+      "Keystroke-to-remote-view latency under 100ms for a good typing experience",
+      "Code execution must be sandboxed and resource-limited per session",
+      "Support dozens of concurrent collaborators per workspace without conflicts"
+    ],
+    "hints": [
+      "Text sync uses the same core approach as a collaborative doc editor — a sequence CRDT or OT — but scoped per-file within a shared Workspace; cursor/selection state is much simpler and can be broadcast as ephemeral presence data (not part of the durable document state) via WebSocket without needing conflict resolution.",
+      "Code execution must run in an isolated, resource-capped sandbox (container or microVM) per session — never execute arbitrary user code in the same process as your collaboration server — with strict CPU/memory/time limits and no network access by default to prevent abuse.",
+      "Output streaming: the sandbox's stdout/stderr is streamed back over the same WebSocket channel as an ordered event log, tagged with the execution run ID, so multiple viewers watching the same run see identical, ordered output — treat it as just another real-time stream alongside the document's edit operations."
+    ]
+  },
+  {
+    "slug": "course-registration",
+    "title": "Course Registration System",
+    "difficulty": "hard",
+    "order": 204,
+    "description": "Design a university course registration system where students enrol in course sections, prerequisite chains are validated via a dependency graph, schedule conflicts are detected, waitlists auto-enrol students on drop, and faculty manage their sections — all under high-concurrency during registration windows.",
+    "category": "Education",
+    "functionalRequirements": [
+      "Define courses with prerequisites (supports chains: A → B → C), credit hours, and department",
+      "Faculty create section instances of a course with capacity, meeting times, and room assignment",
+      "Students search available sections filtered by department, time, and remaining seats",
+      "Validate all prerequisite courses are completed before permitting enrolment",
+      "Detect and reject schedule conflicts across a student's enrolled sections",
+      "Waitlist management: auto-enrol the first waitlisted student when a seat opens due to a drop",
+      "Generate a personalized weekly class schedule for each student",
+      "Enforce add/drop deadlines and withdrawal policies with grade consequences"
+    ],
+    "nonFunctionalRequirements": [
+      "Enrolment is atomic — concurrent requests for the last seat must not over-enrol",
+      "Schedule conflict detection runs in O(s) where s = sections already enrolled",
+      "System supports 10,000+ simultaneous students during peak registration windows"
+    ],
+    "hints": [
+      "A must be completed before B",
+      "s CompletedCourses set. Detect cycles in the prerequisite graph at data entry time using DFS + colour marking.\",\n      \"Schedule conflict detection: represent each Section",
+      "s current section list and check each existing TimeSlot against the new section"
+    ]
+  }
+]

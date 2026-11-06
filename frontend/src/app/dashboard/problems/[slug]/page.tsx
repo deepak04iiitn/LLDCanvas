@@ -23,6 +23,7 @@ import {
   Send,
   Loader2,
   NotebookPen,
+  BookOpen,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -36,6 +37,7 @@ import { cn } from '@/lib/utils'
 import { usePlan } from '@/hooks/usePlan'
 import { UpgradeGate } from '@/components/billing/UpgradeGate'
 import { ProblemNotesSection } from '@/components/problems/ProblemNotesSection'
+import { getProblemSolution } from '@/content/problem-solutions'
 
 const DIFF_META = {
   easy:   { label: 'Easy',   color: 'text-emerald-700' },
@@ -627,6 +629,7 @@ export default function ProblemDetailPage() {
   const isSolved = mySolution?.status === 'submitted'
   const isInProgress = mySolution?.status === 'in_progress'
   const dm = DIFF_META[problem.difficulty]
+  const hasOfficialSolution = Boolean(getProblemSolution(slug))
 
   const sections: { id: Section; label: string; count?: number; dot?: boolean }[] = [
     { id: 'brief', label: 'Brief' },
@@ -664,7 +667,7 @@ export default function ProblemDetailPage() {
           onClick={() => router.push(`/editor/${mySolution!.diagramId}?problem=${slug}`)}
           className="inline-flex items-center gap-2 border border-brand/30 bg-brand-tint px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
         >
-          <ExternalLink className="h-4 w-4" /> View solution
+          <ExternalLink className="h-4 w-4" /> Open my diagram
         </button>
       )
     }
@@ -678,6 +681,18 @@ export default function ProblemDetailPage() {
         {starting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
         Start practicing
       </button>
+    )
+  }
+
+  function OfficialSolutionCta() {
+    if (!hasOfficialSolution) return null
+    return (
+      <Link
+        href={`/dashboard/problems/${slug}/solution`}
+        className="inline-flex items-center gap-2 border border-hairline bg-paper px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:border-brand/30 hover:bg-brand-tint hover:text-brand"
+      >
+        <BookOpen className="h-4 w-4" /> Explore Solution
+      </Link>
     )
   }
 
@@ -696,7 +711,8 @@ export default function ProblemDetailPage() {
               <ArrowLeft className="h-3.5 w-3.5" />
               Problems
             </button>
-            <div className="ml-auto">
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              <OfficialSolutionCta />
               <PrimaryCta />
             </div>
           </div>
@@ -744,6 +760,19 @@ export default function ProblemDetailPage() {
               <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-ink-muted">
                 {problem.description}
               </p>
+
+              {hasOfficialSolution && (
+                <div className="mt-5">
+                  <Link
+                    href={`/dashboard/problems/${slug}/solution`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-brand/20 bg-brand-tint px-4 py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-brand/10"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Explore Solution
+                    <ArrowRight className="h-3.5 w-3.5 opacity-70" />
+                  </Link>
+                </div>
+              )}
 
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-ink-faint">
                 <span className="inline-flex items-center gap-1.5">

@@ -8,16 +8,24 @@ import { User } from '../models/user.model'
 // was missed.
 export async function expireLapsedSubscriptions(): Promise<number> {
   const now = new Date()
+  // Active periods that ended, plus cancel-at-period-end rows whose paid
+  // window is over (status may still be active after a scheduled cancel).
   const lapsed = await Subscription.find({
-    status: 'active',
     currentPeriodEnd: { $ne: null, $lte: now },
+    $or: [
+      { status: 'active' },
+      { cancelAtPeriodEnd: true, status: { $in: ['active', 'authenticated', 'cancelled'] } },
+    ],
   })
 
   for (const sub of lapsed) {
     sub.status = 'expired'
-    sub.cancelledAt = now
+    sub.cancelledAt = sub.cancelledAt ?? now
     await sub.save()
-    await User.findByIdAndUpdate(sub.userId, { plan: 'free' })
+    await User.findByIdAndUpdate(sub.userId, {
+      plan: 'free',
+      $unset: { planOverriddenAt: 1 },
+    })
   }
 
   return lapsed.length
