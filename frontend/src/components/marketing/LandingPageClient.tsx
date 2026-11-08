@@ -458,9 +458,9 @@ function ProblemsCommunitySection() {
                 <span className="text-xs font-semibold text-ink">Priya M.</span>
                 <span className="text-[10px] text-ink-faint">· 2h ago</span>
                 <div className="ml-auto flex items-center gap-1 text-[10px] text-ink-faint"><ThumbsUp className="h-2.5 w-2.5" /> 24</div>
-              </div>
+                </div>
               <p className="text-[11px] leading-relaxed text-ink-muted">Used token bucket over leaky bucket - way simpler to handle burst allowance. Shared my full canvas diagram in the thread ↗</p>
-            </div>
+              </div>
             <div className="rounded-xl border border-hairline bg-paper p-3">
               <div className="mb-2 flex items-center gap-2">
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 font-mono text-[8px] font-bold text-white">A</div>
@@ -930,11 +930,11 @@ function DesignStudioSection() {
   const tab = STUDIO_TAB_META.find(t => t.id === activeId)!
 
   return (
-    <div>
+          <div>
       {/* 4-tab picker */}
       <div className="mb-10 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {STUDIO_TAB_META.map(t => (
-          <button
+                  <button
             key={t.id}
             onClick={() => setActiveId(t.id)}
             className={cn(
@@ -949,7 +949,7 @@ function DesignStudioSection() {
               <span className={cn('font-mono text-[9px] font-bold tracking-wider', activeId === t.id ? 'text-brand' : 'text-ink-faint')}>{t.n}</span>
             </div>
             <p className={cn('font-serif text-sm font-semibold leading-snug', activeId === t.id ? 'text-ink' : 'text-ink-muted')}>{t.label}</p>
-          </button>
+                  </button>
         ))}
       </div>
 
@@ -994,8 +994,8 @@ function DesignStudioSection() {
                   <span className="mx-auto font-mono text-[10px] text-ink-faint">ParkingLot.lld — LLDCanvas Editor</span>
                 </div>
                 <div className="p-6"><HeroDiagram /></div>
-              </div>
-            )}
+                </div>
+              )}
             {activeId === 'draft' && <TypewriterDraftBlock />}
             {activeId === 'code' && <CodeExecutionSection />}
             {activeId === 'collab' && (
@@ -1023,7 +1023,7 @@ function DesignStudioSection() {
               </div>
             )}
           </div>
-        </motion.div>
+            </motion.div>
       </AnimatePresence>
     </div>
   )
@@ -1083,7 +1083,7 @@ function PracticeEngineSection() {
             <Link href="/features/revision-notes" className="text-brand underline-offset-2 hover:underline">All 23 patterns + SOLID →</Link>
           </p>
         </div>
-      </motion.div>
+          </motion.div>
 
       {/* Practice Problems — 2 of 3 columns */}
       <motion.div {...inViewProps(0.06)} className="lg:col-span-2 overflow-hidden rounded-2xl border border-hairline bg-paper-elevated">
@@ -1110,7 +1110,7 @@ function PracticeEngineSection() {
                 ))}
                 <span className="font-mono text-[10px] text-ink-faint">{p.attempts}</span>
               </div>
-            </motion.div>
+          </motion.div>
           ))}
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline px-6 py-3">
@@ -1135,7 +1135,7 @@ function PracticeEngineSection() {
               {lab.chips.map(c => (
                 <span key={c} className="rounded-full border border-brand/20 bg-paper-elevated px-2 py-0.5 font-mono text-[9px] text-ink-muted">{c}</span>
               ))}
-            </div>
+        </div>
             <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-brand">
               Explore {lab.title} <ArrowRight className="h-3.5 w-3.5" />
             </span>
@@ -1143,7 +1143,7 @@ function PracticeEngineSection() {
         ))}
       </motion.div>
 
-    </div>
+        </div>
   )
 }
 
@@ -1198,7 +1198,7 @@ function ComparisonTable() {
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-serif text-[15px] font-semibold text-ink">LLDCanvas</span>
                   <span className="rounded-full bg-brand px-2.5 py-0.5 font-mono text-[9px] font-bold text-brand-foreground">LLD-first</span>
-                </div>
+        </div>
               </th>
               {/* Others column */}
               <th className="w-[25%] rounded-tr-xl border border-hairline bg-paper px-5 py-4 text-center">
@@ -1269,7 +1269,7 @@ function ComparisonTable() {
         draw.io and Lucidchart are excellent general-purpose diagramming tools — they&apos;re just not
         built for the specific pressure of an LLD interview round. LLDCanvas is.
       </motion.p>
-    </div>
+        </div>
   )
 }
 
@@ -1386,7 +1386,7 @@ function PlatformIndex() {
                 </Link>
               ))}
             </div>
-          </motion.div>
+              </motion.div>
         ))}
       </div>
 
@@ -1430,7 +1430,7 @@ export function LandingPageClient() {
               A free Low-Level Design interview prep platform — UML class diagram canvas,
               timed Interview Mode, 110+ curated LLD problems, design pattern training,
               and applied challenge labs built around the exact conditions of the LLD round.
-            </motion.p>
+              </motion.p>
 
             {/* Inline stat bar */}
             <motion.div {...fadeUpProps(0.16)}
@@ -1444,9 +1444,9 @@ export function LandingPageClient() {
                 <div key={s.label} className="px-4 py-3 text-center">
                   <p className="font-serif text-2xl font-medium text-ink">{s.n}</p>
                   <p className="font-mono text-[9px] text-ink-muted">{s.label}</p>
-                </div>
-              ))}
-            </motion.div>
+                  </div>
+                ))}
+              </motion.div>
 
             {/* CTAs */}
             <motion.div {...fadeUpProps(0.2)} className="flex flex-wrap items-center gap-3">
@@ -1464,7 +1464,7 @@ export function LandingPageClient() {
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-muted transition-colors hover:text-brand">
                 See all 17 features <ArrowRight className="h-3.5 w-3.5" />
               </Link>
-            </motion.div>
+              </motion.div>
             <motion.p {...fadeUpProps(0.24)} className="mt-4 font-mono text-xs text-ink-faint">
               no account needed to try it
             </motion.p>
@@ -1502,8 +1502,8 @@ export function LandingPageClient() {
                 ))}
               </div>
             </div>
-          </motion.div>
-        </div>
+              </motion.div>
+            </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════ */}
@@ -1512,7 +1512,7 @@ export function LandingPageClient() {
       <section className="border-b border-hairline bg-paper-elevated px-6 py-20 sm:px-10 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <TheProblemSection />
-        </div>
+          </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════ */}
@@ -1672,7 +1672,7 @@ export function LandingPageClient() {
             <Link href="/editor/local"
               className="rounded-full bg-brand-foreground px-8 py-3.5 font-semibold text-brand shadow-sm transition-transform hover:-translate-y-0.5">
               Open the editor
-            </Link>
+              </Link>
             <Link href="/sign-up"
               className="rounded-full border border-brand-foreground/25 px-8 py-3.5 font-semibold text-brand-foreground transition-colors hover:bg-brand-foreground/10">
               Create free account
@@ -1681,7 +1681,7 @@ export function LandingPageClient() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-foreground/60 transition-colors hover:text-brand-foreground">
               See all 17 features <ArrowRight className="h-3.5 w-3.5" />
             </Link>
-          </div>
+            </div>
         </motion.div>
       </section>
 

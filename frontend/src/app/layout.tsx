@@ -70,9 +70,12 @@ export const metadata: Metadata = {
     images: ['/LLDCanvas.png'],
   },
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/LLDCanvas_Icon_512.png', type: 'image/png', sizes: '512x512' },
+    ],
     shortcut: '/favicon.ico',
-    apple: '/LLDCanvas_Logo.png',
+    apple: '/apple-touch-icon.png',
   },
 }
 
