@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { DesignBugSession } from '@/components/learn/debugger/DesignBugSession'
 import { Loader2 } from 'lucide-react'
+import { learnApi } from '@/lib/learn-api'
 
 async function fetchDesignBug(id: string) {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-  const r = await fetch(`${base}/learn/debuglab/design/${id}`, { credentials: 'include' })
-  if (!r.ok) return null
-  return r.json()
+  try {
+    return await learnApi.get(`/learn/debuglab/design/${id}`)
+  } catch {
+    return null
+  }
 }
 
 const BREADCRUMB = [

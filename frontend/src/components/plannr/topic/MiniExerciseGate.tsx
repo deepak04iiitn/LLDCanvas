@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
+import { learnApi } from '@/lib/learn-api'
 import { CheckCircle2, XCircle, Loader2, PenLine, Search, Bug, ClipboardList } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -85,9 +86,7 @@ function DetectiveGate({
   const [result, setResult] = useState<{ isCorrect: boolean; feedback?: string } | null>(null)
 
   useEffect(() => {
-    const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    fetch(`${BASE}/learn/detective/${exerciseId}`, { credentials: 'include' })
-      .then(r => r.json())
+    learnApi.get(`/learn/detective/${exerciseId}`)
       .then(d => setScenario(d.scenario ?? d))
       .catch(() => setError('Could not load detective scenario.'))
       .finally(() => setLoading(false))
@@ -97,15 +96,8 @@ function DetectiveGate({
     if (!scenario) return
     setSubmitting(true)
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
       const answer = scenario.inputType === 'text' ? textAnswer : selected
-      const res = await fetch(`${BASE}/learn/detective/${exerciseId}/submit`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answer }),
-      })
-      const data = await res.json()
+      const data = await learnApi.post(`/learn/detective/${exerciseId}/submit`, { answer })
       setResult({ isCorrect: data.isCorrect, feedback: data.feedback })
       setTimeout(() => onComplete(data.isCorrect ? 90 : 30), 1500)
     } catch {
@@ -252,9 +244,7 @@ function DesignBugGate({
   const [result, setResult] = useState<{ score: number; feedback?: string } | null>(null)
 
   useEffect(() => {
-    const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    fetch(`${BASE}/learn/debuglab/design/${exerciseId}`, { credentials: 'include' })
-      .then(r => r.json())
+    learnApi.get(`/learn/debuglab/design/${exerciseId}`)
       .then(d => setBug(d.bug ?? d))
       .catch(() => setError('Could not load design bug.'))
       .finally(() => setLoading(false))
@@ -270,14 +260,7 @@ function DesignBugGate({
     if (!bug) return
     setSubmitting(true)
     try {
-      const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-      const res = await fetch(`${BASE}/learn/debuglab/design/${exerciseId}/submit`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ issueTypes: selectedIssues }),
-      })
-      const data = await res.json()
+      const data = await learnApi.post(`/learn/debuglab/design/${exerciseId}/submit`, { issueTypes: selectedIssues })
       setResult({ score: data.score ?? 50, feedback: data.feedback })
       setTimeout(() => onComplete(data.score ?? 50), 1500)
     } catch {
@@ -396,9 +379,7 @@ function QuizSetGate({
   const [results, setResults] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    fetch(`${BASE}/learn/quiz/today`, { credentials: 'include' })
-      .then(r => r.json())
+    learnApi.get('/learn/quiz/today')
       .then(d => {
         const allQ: QuizQuestion[] = d.questions ?? []
         const filtered = allQ.filter(q => q.skillTag && buildsSkills.includes(q.skillTag))
@@ -416,19 +397,12 @@ function QuizSetGate({
   async function handleSubmit() {
     if (questions.some(q => !answers[q._id])) return
     setSubmitted(true)
-    const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
     let correct = 0
     const newResults: Record<string, boolean> = {}
     await Promise.all(
       questions.map(async q => {
         try {
-          const res = await fetch(`${BASE}/learn/quiz/${q._id}/answer`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ choiceId: answers[q._id] }),
-          })
-          const data = await res.json()
+          const data = await learnApi.post(`/learn/quiz/${q._id}/answer`, { choiceId: answers[q._id] })
           newResults[q._id] = !!data.isCorrect
           if (data.isCorrect) correct++
         } catch {

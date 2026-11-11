@@ -1,9 +1,11 @@
-﻿'use client'
+'use client'
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react'
 import { signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth'
 import { getFirebaseAuth, googleProvider } from './firebase'
 import { getAuthToken, setAuthToken, clearAuthToken } from './auth-token'
+import { clearApiCache } from './query-client'
+import { primePlan, setAuthPending } from '@/hooks/usePlan'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
@@ -37,12 +39,13 @@ type FetchMeResult =
 
 async function fetchMeOnce(token: string): Promise<FetchMeResult> {
   try {
-    const res = await fetch(`${BASE}/auth/me`, {
+    const res = await fetch(`${BASE}/auth/me?include=plan`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (res.status === 401) return { kind: 'unauthenticated' }
     if (!res.ok) return { kind: 'error' }
     const body = await res.json()
+    if (body.planData) primePlan(body.planData)
     return body.user ? { kind: 'ok', user: body.user } : { kind: 'unauthenticated' }
   } catch {
     return { kind: 'error' }
@@ -73,7 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refetch = useCallback(async () => {
     setIsPending(true)
-    const result = await fetchMe()
+    const pending = fetchMe()
+    setAuthPending(pending)
+    const result = await pending
+    setAuthPending(null)
     if (result.kind === 'ok') setUser(result.user)
     else if (result.kind === 'unauthenticated') setUser(null)
     // 'error' (transient 5xx/network failure): deliberately leave the
@@ -84,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refetch()
   }, [refetch])
+
+  // Never show one user's cached API data to another after sign-in/out.
+  const userId = user?.id ?? null
+  useEffect(() => { clearApiCache() }, [userId])
 
   const value = useMemo(() => ({ user, isPending, refetch }), [user, isPending, refetch])
 

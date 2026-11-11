@@ -5,7 +5,7 @@ import { ProblemLibrary } from '@/components/studio/shell/ProblemLibrary'
 import type { StudioPackSummary } from '@/lib/studio-api'
 import { annotateChallengeAccess } from '@/lib/challenge-access'
 import { usePlan } from '@/hooks/usePlan'
-import { getAuthToken } from '@/lib/auth-token'
+import { learnApi } from '@/lib/learn-api'
 
 export default function DesignBugProblemsPage() {
   const { plan } = usePlan()
@@ -14,18 +14,8 @@ export default function DesignBugProblemsPage() {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-      const token = getAuthToken()
       try {
-        const r = await fetch(`${base}/learn/debuglab/design`, {
-          credentials: 'include',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        })
-        if (!r.ok) {
-          if (!cancelled) setPacks([])
-          return
-        }
-        const data = await r.json()
+        const data = await learnApi.get('/learn/debuglab/design')
         const list = Array.isArray(data?.challenges) ? data.challenges
           : Array.isArray(data?.bugs) ? data.bugs
           : Array.isArray(data) ? data : []

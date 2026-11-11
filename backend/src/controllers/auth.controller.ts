@@ -5,6 +5,7 @@ import { User } from '../models/user.model'
 import { signAuthToken } from '../utils/jwt'
 import { verifyFirebaseIdToken } from '../config/firebase-verify'
 import { createError } from '../middleware/error'
+import { buildPlanPayload } from './billing.controller'
 
 const BCRYPT_ROUNDS = 12
 
@@ -107,7 +108,15 @@ export const authController = {
     }
   },
 
-  me: async (req: Request, res: Response) => {
-    res.json({ user: req.user })
+  // GET /auth/me?include=plan also returns the plan payload so the client
+  // doesn't need a second request to /billing/plan on every page load.
+  me: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (req.query.include === 'plan' && req.user) {
+        res.json({ user: req.user, planData: await buildPlanPayload(req.user.id, req.user.plan) })
+        return
+      }
+      res.json({ user: req.user })
+    } catch (err) { next(err) }
   },
 }

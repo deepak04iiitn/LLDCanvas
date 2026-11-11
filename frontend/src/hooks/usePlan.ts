@@ -107,9 +107,19 @@ let _inflight: Promise<PlanData> | null = null
 let _resolved: PlanData | null = null
 const _listeners = new Set<(data: PlanData) => void>()
 
+// While /auth/me?include=plan is in flight it will prime the plan for us, so
+// wait for it instead of firing a second request in parallel.
+let _authPending: Promise<unknown> | null = null
+export function setAuthPending(p: Promise<unknown> | null) { _authPending = p }
+
 function fetchPlan(): Promise<PlanData> {
   if (_inflight) return _inflight
-  _inflight = api.billing.plan().then((raw: Record<string, unknown>) => {
+  const pre = _authPending ?? Promise.resolve()
+  _inflight = pre.catch(() => undefined).then(() => {
+    const fresh = readCache()
+    if (fresh) return fresh as unknown as Record<string, unknown>
+    return api.billing.plan() as Promise<Record<string, unknown>>
+  }).then((raw: Record<string, unknown>) => {
     const data: PlanData = {
       plan:         raw.plan as PlanName,
       limits:       normalizeLimits(raw.limits as PlanLimits),
@@ -125,6 +135,18 @@ function fetchPlan(): Promise<PlanData> {
     throw new Error('plan fetch failed')
   })
   return _inflight
+}
+
+/** Seed the plan cache from /auth/me?include=plan so no /billing/plan call is needed. */
+export function primePlan(raw: { plan: PlanName; limits: PlanLimits; subscription: PlanData['subscription'] }) {
+  const data: PlanData = {
+    plan:         raw.plan,
+    limits:       normalizeLimits(raw.limits),
+    subscription: raw.subscription,
+  }
+  _resolved = data
+  writeCache(data)
+  _listeners.forEach(fn => fn(data))
 }
 
 export function invalidatePlan() {
@@ -154,6 +176,9 @@ export function usePlan() {
     }
 
     _listeners.add(applyData)
+
+    // A cache younger than its TTL (or a plan primed by /auth/me) means no request is needed.
+    if (readCache()) return () => { _listeners.delete(applyData) }
 
     fetchPlan().catch(() => {
       setState(prev => ({ ...prev, loading: false }))

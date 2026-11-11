@@ -1,8 +1,9 @@
 import { getAuthToken } from './auth-token'
+import { cachedRequest } from './query-client'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function rawRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAuthToken()
   const res = await fetch(`${BASE}${path}`, {
     ...init,
@@ -30,6 +31,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return res.json() as Promise<T>
+}
+
+function request<T>(path: string, init?: RequestInit): Promise<T> {
+  return cachedRequest<T>(path, init, () => rawRequest<T>(path, init))
 }
 
 // ─── Roguelike V2 Types ───────────────────────────────────────────────────────
@@ -293,6 +298,14 @@ export interface ScoreTrendEntry {
 }
 
 export const learnApi = {
+  /** Cached GET for endpoints without a dedicated wrapper (design bugs, etc.). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get: <T = any>(path: string) => request<T>(path),
+  /** POST via the shared wrapper so cached GETs are cleared afterwards. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  post: <T = any>(path: string, body: unknown) =>
+    request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
+
   score: {
     run: (artifactId: string) =>
       request<{ score: ScoreResultPayload }>(`/learn/score/${artifactId}`, {
