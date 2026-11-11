@@ -1,4 +1,5 @@
 import { ChallengePack, type ChallengePackType } from '../../models/studio/challenge-pack.model'
+import { cached } from '../../utils/memo-cache'
 import { ChallengeAttempt } from '../../models/studio/challenge-attempt.model'
 import { createError } from '../../middleware/error'
 import type { PlanName } from '../../config/plans'
@@ -1131,8 +1132,10 @@ export async function submitDepWeb(
 export async function listPublishedPacks(type?: ChallengePackType) {
   const filter: Record<string, unknown> = { status: 'published' }
   if (type) filter.type = type
-  return ChallengePack.find(filter)
-    .select('type slug title difficulty description tags planMin order')
-    .sort({ order: 1, createdAt: -1 })
-    .lean()
+  return cached(`studio:packs:${type ?? 'all'}`, () =>
+    ChallengePack.find(filter)
+      .select('type slug title difficulty description tags planMin order')
+      .sort({ order: 1, createdAt: -1 })
+      .lean(),
+  )
 }

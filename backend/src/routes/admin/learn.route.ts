@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { clearCacheOnWrite } from '../../utils/memo-cache'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 
 import * as quiz      from '../../controllers/learn/quiz.controller'
@@ -8,7 +9,7 @@ import * as debugger_ from '../../controllers/admin/learn/debugger.controller'
 import * as roguelike from '../../controllers/admin/learn/roguelike.controller'
 
 const router = Router()
-router.use(requireAuth, requireAdmin)
+router.use(requireAuth, requireAdmin, clearCacheOnWrite)
 
 // ─── Daily Quiz ───────────────────────────────────────────────────────────────
 

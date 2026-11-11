@@ -67,6 +67,5 @@ const subscriptionSchema = new Schema<ISubscription>(
 )
 
 subscriptionSchema.index({ userId: 1, status: 1 })
-subscriptionSchema.index({ razorpaySubId: 1 })
 
 export const Subscription = model<ISubscription>('Subscription', subscriptionSchema)

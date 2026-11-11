@@ -5,6 +5,7 @@ import { Diagram } from '../models/diagram.model'
 import { createError } from '../middleware/error'
 import { User } from '../models/user.model'
 import { isProblemAccessible } from '../config/plans'
+import { cached } from '../utils/memo-cache'
 
 // Fetch user display info (name + image) in bulk
 async function fetchUserInfo(userIds: string[]): Promise<Map<string, { name: string; image: string | null }>> {
@@ -34,21 +35,27 @@ export const problemsController = {
       if (category)   match.category = { $regex: category, $options: 'i' }
       if (q)          match.title    = { $regex: q,        $options: 'i' }
 
-      const problems = await Problem.find(match)
-        .select('-hints -functionalRequirements -nonFunctionalRequirements')
-        .sort({ difficulty: 1, order: 1 })
-        .lean()
+      // The catalogue and the per-problem submission counts are identical for
+      // every user, so they are cached; only the caller's own solutions are
+      // read fresh (and only the two fields the response uses).
+      const problems = await cached(`problems:list:${difficulty}|${category}|${q}`, () =>
+        Problem.find(match)
+          .select('-hints -functionalRequirements -nonFunctionalRequirements')
+          .sort({ difficulty: 1, order: 1 })
+          .lean(),
+      )
 
-      // Attach submission counts and user's own solution status
       const problemIds = problems.map(p => p._id)
 
-      // Count users who marked each problem as complete (unique — 1 per user via unique index)
       const [submissionCounts, userSolutions] = await Promise.all([
-        UserSolution.aggregate([
-          { $match: { problemId: { $in: problemIds }, status: 'submitted' } },
-          { $group: { _id: '$problemId', count: { $sum: 1 } } },
-        ]),
-        UserSolution.find({ problemId: { $in: problemIds }, userId }).lean(),
+        // Count users who marked each problem as complete (unique — 1 per user via unique index)
+        cached('problems:submission-counts', () =>
+          UserSolution.aggregate([
+            { $match: { status: 'submitted' } },
+            { $group: { _id: '$problemId', count: { $sum: 1 } } },
+          ]),
+        ),
+        UserSolution.find({ problemId: { $in: problemIds }, userId }).select('problemId status').lean(),
       ])
 
       const countMap = new Map(

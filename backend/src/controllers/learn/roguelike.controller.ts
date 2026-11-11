@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { cached } from '../../utils/memo-cache'
 import { Types } from 'mongoose'
 import { RoguelikeScenario } from '../../models/learn/roguelike-scenario.model'
 import {
@@ -213,10 +214,12 @@ function computeEnding(debt: number, isStrategicExit = false): RunEnding {
 
 export async function listScenarios(req: Request, res: Response, next: NextFunction) {
   try {
-    const scenarios = await RoguelikeScenario.find({ status: 'published' })
-      .select('slug title icon description difficulty modes tags order estimatedMinutes initialConstraints')
-      .sort({ order: 1 })
-      .lean()
+    const scenarios = await cached('learn:roguelike:list', () =>
+      RoguelikeScenario.find({ status: 'published' })
+        .select('slug title icon description difficulty modes tags order estimatedMinutes initialConstraints')
+        .sort({ order: 1 })
+        .lean(),
+    )
     res.json({ scenarios: withChallengeLocks('roguelike', req.user?.plan, scenarios) })
   } catch (e) {
     next(e)
@@ -731,7 +734,9 @@ export async function getFeaturedScenario(req: Request, res: Response, next: Nex
     // Rotate daily: use today's date as seed
     const dateStr = new Date().toISOString().slice(0, 10)
     const dateNum = parseInt(dateStr.replace(/-/g, ''), 10)
-    const scenarios = await RoguelikeScenario.find({ status: 'published' }).lean()
+    const scenarios = await cached('learn:roguelike:full', () =>
+      RoguelikeScenario.find({ status: 'published' }).lean(),
+    )
     if (!scenarios.length) { res.json({ scenario: null }); return }
     const idx = dateNum % scenarios.length
     res.json({ scenario: scenarios[idx], date: dateStr })

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { Problem } from '../models/problem.model'
 import { RevisionNote } from '../models/revision-note.model'
 import { createError } from '../middleware/error'
+import { cached, publicCache } from '../utils/memo-cache'
 
 // Used only for URL segments (e.g. "Design Patterns" -> "design-patterns").
 // Mongo already stores the human category string; this is purely cosmetic
@@ -25,11 +26,14 @@ export const publicController = {
   // GET /public/problems
   listProblems: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const problems = await Problem.find({ isActive: true })
-        .select('slug title difficulty category companies tags')
-        .sort({ difficulty: 1, order: 1 })
-        .lean()
+      const problems = await cached('public:problems:list', () =>
+        Problem.find({ isActive: true })
+          .select('slug title difficulty category companies tags')
+          .sort({ difficulty: 1, order: 1 })
+          .lean(),
+      )
 
+      publicCache(res)
       res.json({
         problems: problems.map(p => ({
           slug: p.slug,
@@ -84,11 +88,14 @@ export const publicController = {
   // GET /public/revision-notes
   listRevisionNotes: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const notes = await RevisionNote.find({ isActive: true })
-        .select('slug title category difficulty summary tags')
-        .sort({ category: 1, order: 1 })
-        .lean()
+      const notes = await cached('public:revision-notes:list', () =>
+        RevisionNote.find({ isActive: true })
+          .select('slug title category difficulty summary tags')
+          .sort({ category: 1, order: 1 })
+          .lean(),
+      )
 
+      publicCache(res)
       res.json({
         notes: notes.map(n => ({
           slug: n.slug,

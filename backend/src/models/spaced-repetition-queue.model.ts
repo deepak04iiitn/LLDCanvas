@@ -25,5 +25,10 @@ const schema = new Schema<ISpacedRepetitionItem>({
 }, { timestamps: true })
 
 schema.index({ userId: 1, dueDate: 1, isActive: 1 })
+// Dismissed (inactive) reminders are finished; active ones are never expired.
+schema.index(
+  { updatedAt: 1 },
+  { expireAfterSeconds: 2592000, partialFilterExpression: { isActive: false }, name: 'inactive_ttl_30d' },
+)
 
 export const SpacedRepetitionQueue = model<ISpacedRepetitionItem>('SpacedRepetitionQueue', schema)

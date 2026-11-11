@@ -16,6 +16,7 @@ import accountRouter from './routes/account.route'
 import interviewRouter from './routes/interview.route'
 import statsRouter from './routes/stats.route'
 import adminRouter from './routes/admin.route'
+import { jsonBodyParser } from './middleware/body-parser'
 import analyticsRouter from './routes/analytics.route'
 import shareRouter from './routes/share.route'
 import problemsRouter  from './routes/problems.route'
@@ -73,14 +74,8 @@ const corsOptions: CorsOptions = {
 // ─── Security & parsing ────────────────────────────────────────────────────────
 app.use(helmet())
 app.use(cors(corsOptions))
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
-app.use(express.json({
-  limit: '10mb',
-  verify: (req, _res, buf) => {
-    // Preserve raw body for Dodo Standard Webhooks signature verification
-    ;(req as express.Request & { rawBody?: Buffer }).rawBody = buf
-  },
-}))
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'))
+app.use(jsonBodyParser)
 
 // ─── Global rate limit ─────────────────────────────────────────────────────────
 // Interview sync (PATCH /interview/:id) and analytics heartbeat poll every

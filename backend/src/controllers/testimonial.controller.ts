@@ -1,14 +1,18 @@
 import { Request, Response } from 'express'
 import { Testimonial } from '../models/testimonial.model'
+import { cached, publicCache } from '../utils/memo-cache'
 
 // ─── Public: get approved testimonials ───────────────────────────────────────
 
 export async function getApprovedTestimonials(_req: Request, res: Response): Promise<void> {
   try {
-    const items = await Testimonial.find({ status: 'approved' })
-      .sort({ featured: -1, createdAt: -1 })
-      .select('name role content rating avatar featured createdAt')
-      .lean()
+    const items = await cached('testimonials:approved', () =>
+      Testimonial.find({ status: 'approved' })
+        .sort({ featured: -1, createdAt: -1 })
+        .select('name role content rating avatar featured createdAt')
+        .lean(),
+    )
+    publicCache(res)
     res.json(items)
   } catch {
     res.status(500).json({ error: 'Failed to fetch testimonials' })

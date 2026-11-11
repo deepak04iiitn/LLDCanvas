@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { cached } from '../../utils/memo-cache'
 import { QuizQuestion } from '../../models/learn/quiz-question.model'
 import { DailyQuizSet } from '../../models/learn/daily-quiz-set.model'
 import { QuizAttempt } from '../../models/learn/quiz-attempt.model'
@@ -49,9 +50,12 @@ export async function getTodayQuiz(req: Request, res: Response, next: NextFuncti
     }
 
     // Full published pool
-    let pool = await QuizQuestion.find({ status: 'published' })
-      .select('slug topic difficulty prompt choices skillTag')
-      .lean()
+    // Copy: the cached array is shared across requests and the code below reassigns/filters it.
+    let pool = [...await cached('learn:quiz:pool', () =>
+      QuizQuestion.find({ status: 'published' })
+        .select('slug topic difficulty prompt choices skillTag')
+        .lean(),
+    )]
 
     if (pool.length === 0) { res.json({ dateKey, setId: set!.id, questions: [] }); return }
 
@@ -120,10 +124,13 @@ export async function getTodayQuiz(req: Request, res: Response, next: NextFuncti
       if (existing) {
         // Enrich the stored answers with explanation + correctIndex from question docs
         const enriched = []
+        // One query for all answered questions instead of one per answer.
+        const answeredQs = await QuizQuestion.find({ _id: { $in: existing.answers.map(a => a.questionId) } })
+          .select('slug topic difficulty prompt choices correctIndex explanation skillTag')
+          .lean()
+        const answeredById = new Map(answeredQs.map(q => [String(q._id), q]))
         for (const a of existing.answers) {
-          const q = await QuizQuestion.findById(a.questionId)
-            .select('slug topic difficulty prompt choices correctIndex explanation skillTag')
-            .lean()
+          const q = answeredById.get(String(a.questionId))
           if (q) enriched.push({
             ...(q as any),
             // include what the user answered for review
@@ -169,13 +176,17 @@ export async function submitQuiz(req: Request, res: Response, next: NextFunction
     let correctCount = 0
     const details: { questionId: string; choiceIndex: number; correct: boolean; skillTag?: string }[] = []
 
+    // One query for every submitted question (reused for grading and the response).
+    const submittedQs = await QuizQuestion.find({ _id: { $in: answers.map(a => a.questionId) } }).lean()
+    const questionById = new Map(submittedQs.map(q => [String(q._id), q]))
+
     for (const a of answers) {
-      const q = await QuizQuestion.findById(a.questionId)
+      const q = questionById.get(String(a.questionId))
       if (!q) continue
       const ok = q.correctIndex === a.choiceIndex
       if (ok) correctCount++
       details.push({
-        questionId: q.id,
+        questionId: String(q._id),
         choiceIndex: a.choiceIndex,
         correct: ok,
         skillTag: q.skillTag || undefined,
@@ -235,7 +246,7 @@ export async function submitQuiz(req: Request, res: Response, next: NextFunction
     // ── Enrich details with explanation/correctIndex ──────────────────────────
     const enriched = []
     for (const d of details) {
-      const q = await QuizQuestion.findById(d.questionId)
+      const q = questionById.get(d.questionId)
       enriched.push({
         ...d,
         explanation: q?.explanation ?? '',
