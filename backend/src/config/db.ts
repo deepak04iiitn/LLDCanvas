@@ -29,7 +29,12 @@ export function connectDB(): Promise<typeof mongoose> {
 
   connectionPromise = mongoose.connect(uri, {
     serverSelectionTimeoutMS: 10000,
-    maxPoolSize: 10,
+    // Every warm serverless instance holds its own pool. On the M0 tier
+    // (500 connection cap) 10 per instance is exhausted by ~50 concurrent
+    // instances, so keep pools tiny and release idle sockets quickly.
+    maxPoolSize: 3,
+    minPoolSize: 0,
+    maxIdleTimeMS: 10_000,
   }).catch((err) => {
     // Let the next request retry from a clean slate instead of every future
     // call permanently reusing this one rejected promise.
