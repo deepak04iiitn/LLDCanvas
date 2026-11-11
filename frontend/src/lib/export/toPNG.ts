@@ -1,4 +1,4 @@
-import { toPng, toSvg } from 'html-to-image'
+import { toPng, toJpeg, toSvg } from 'html-to-image'
 import type { CanvasTheme } from '@/types'
 
 const BG: Record<CanvasTheme, string> = {
@@ -44,11 +44,14 @@ export async function generateThumbnail(theme: CanvasTheme): Promise<string | nu
   const el = getCanvasElement()
   if (!el) return null
 
-  return toPng(el, {
+  // JPEG at ~0.7 quality is roughly half the size of PNG for these small
+  // previews; thumbnails are sent with every dashboard diagram list.
+  return toJpeg(el, {
     backgroundColor: BG[theme],
     pixelRatio: 0.5,
     width: 400,
     height: 300,
+    quality: 0.7,
     cacheBust: false,
   }).catch(() => null)
 }

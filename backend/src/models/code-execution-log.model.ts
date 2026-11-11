@@ -33,5 +33,7 @@ schema.index({ userId: 1, createdAt: -1 })
 schema.index({ language: 1, createdAt: -1 })
 // For counting unique solvers per problem efficiently
 schema.index({ problemSlug: 1, status: 1, userId: 1 })
+// Run history + admin charts only need recent runs; the daily limit only looks at today.
+schema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000, name: 'createdAt_ttl_90d' })
 
 export const CodeExecutionLog = model<ICodeExecutionLog>('CodeExecutionLog', schema)

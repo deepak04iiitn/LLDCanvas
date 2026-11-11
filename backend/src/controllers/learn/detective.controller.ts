@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { cached } from '../../utils/memo-cache'
 import { DetectiveScenario } from '../../models/learn/detective-scenario.model'
 import { DetectiveAttempt } from '../../models/learn/detective-attempt.model'
 import { createError } from '../../middleware/error'
@@ -28,10 +29,15 @@ async function findPublished(idOrSlug: string) {
 
 export async function listDetective(req: Request, res: Response, next: NextFunction) {
   try {
-    const scenarios = await DetectiveScenario.find({ status: 'published' })
-      .select('slug title mode difficulty stem choices diagramSnapshot codeSnippet status order')
-      .sort({ order: 1, createdAt: -1 })
-      .lean()
+    // Catalogue is identical for everyone (only the lock flags differ), so read
+    // it once per TTL. Heavy per-scenario fields (diagramSnapshot, codeSnippet)
+    // are not needed to draw the list; they come with POST /:id/start.
+    const scenarios = await cached('learn:detective:list', () =>
+      DetectiveScenario.find({ status: 'published' })
+        .select('slug title mode difficulty stem choices status order')
+        .sort({ order: 1, createdAt: -1 })
+        .lean(),
+    )
     res.json({
       scenarios: withChallengeLocks('detective', req.user?.plan, scenarios as { slug: string; difficulty?: string }[]),
     })

@@ -341,4 +341,7 @@ const journeyTopicSchema = new Schema<IJourneyTopic>(
   { timestamps: true },
 )
 
+// Catalogue reads: published topics ordered by stage then order.
+journeyTopicSchema.index({ status: 1, stage: 1, order: 1 })
+
 export const JourneyTopic = model<IJourneyTopic>('JourneyTopic', journeyTopicSchema)

@@ -26,5 +26,8 @@ const replayEventSchema = new Schema<IReplayEvent>(
 
 replayEventSchema.index({ artifactId: 1, t: 1 })
 replayEventSchema.index({ diagramId: 1, t: 1 })
+// Raw edit-telemetry for Design Replay. The largest-growing collection, so cap
+// it at one year (replay of designs older than that will be empty).
+replayEventSchema.index({ createdAt: 1 }, { expireAfterSeconds: 31536000, name: 'createdAt_ttl_365d' })
 
 export const ReplayEvent = model<IReplayEvent>('ReplayEvent', replayEventSchema)

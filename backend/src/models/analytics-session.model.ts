@@ -33,7 +33,9 @@ const schema = new Schema<IAnalyticsSession>({
 // Indexes for fast live-user and time-range queries
 schema.index({ lastHeartbeat: -1 })
 schema.index({ visitorId: 1 })
-schema.index({ startedAt: -1 })
 schema.index({ userId: 1 })
+// Sessions are only used for charts; drop them after 90 days so the collection
+// can't grow without bound on the small Atlas tier.
+schema.index({ startedAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90, name: 'startedAt_ttl_90d' })
 
 export const AnalyticsSession = model<IAnalyticsSession>('AnalyticsSession', schema)

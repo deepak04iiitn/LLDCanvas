@@ -42,4 +42,11 @@ const challengeAttemptSchema = new Schema<IChallengeAttempt>(
   { timestamps: true },
 )
 
+// Attempts left unfinished (never submitted/revealed) for 90 days are abandoned;
+// finished attempts (results, scores, history) are kept.
+challengeAttemptSchema.index(
+  { updatedAt: 1 },
+  { expireAfterSeconds: 60 * 60 * 24 * 90, partialFilterExpression: { status: 'in_progress' }, name: 'in_progress_ttl_90d' },
+)
+
 export const ChallengeAttempt = model<IChallengeAttempt>('ChallengeAttempt', challengeAttemptSchema)

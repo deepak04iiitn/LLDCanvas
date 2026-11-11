@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { cached } from '../../utils/memo-cache'
 import { DebuggerChallenge } from '../../models/learn/debugger-challenge.model'
 import { DebuggerSolve } from '../../models/learn/debugger-solve.model'
 import { DesignBug } from '../../models/learn/design-bug.model'
@@ -30,10 +31,12 @@ async function findPublished(idOrSlug: string) {
 
 export async function listChallenges(req: Request, res: Response, next: NextFunction) {
   try {
-    const challenges = await DebuggerChallenge.find({ status: 'published' })
-      .select('-explanation')
-      .sort({ order: 1, createdAt: -1 })
-      .lean()
+    const challenges = await cached('learn:debugger:list', () =>
+      DebuggerChallenge.find({ status: 'published' })
+        .select('-explanation')
+        .sort({ order: 1, createdAt: -1 })
+        .lean(),
+    )
     res.json({ challenges: withChallengeLocks('debug-lab', req.user?.plan, challenges) })
   } catch (e) {
     next(e)
@@ -116,10 +119,12 @@ export async function getSolveHistory(req: Request, res: Response, next: NextFun
 
 export async function listDesignBugs(req: Request, res: Response, next: NextFunction) {
   try {
-    const bugs = await DesignBug.find({ status: 'published' })
-      .select('-expectedIssues -explanation')
-      .sort({ order: 1, createdAt: -1 })
-      .lean()
+    const bugs = await cached('learn:designbugs:list', () =>
+      DesignBug.find({ status: 'published' })
+        .select('-expectedIssues -explanation')
+        .sort({ order: 1, createdAt: -1 })
+        .lean(),
+    )
     res.json({ bugs: withChallengeLocks('debug-lab', req.user?.plan, bugs) })
   } catch (e) {
     next(e)

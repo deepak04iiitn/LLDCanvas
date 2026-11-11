@@ -181,6 +181,11 @@ const roguelikeRunSchema = new Schema<IRoguelikeRun>(
 )
 
 roguelikeRunSchema.index({ userId: 1, status: 1 })
+// Abandoned runs are not shown in history/stats; drop them after 90 days.
+roguelikeRunSchema.index(
+  { updatedAt: 1 },
+  { expireAfterSeconds: 7776000, partialFilterExpression: { status: 'abandoned' }, name: 'abandoned_ttl_90d' },
+)
 roguelikeRunSchema.index({ userId: 1, createdAt: -1 })
 
 export const RoguelikeRun = model<IRoguelikeRun>('RoguelikeRun', roguelikeRunSchema)

@@ -22,5 +22,8 @@ const diagramVersionSchema = new Schema<IDiagramVersion>(
 
 diagramVersionSchema.index({ diagramId: 1, createdAt: -1 })
 diagramVersionSchema.index({ userId: 1, createdAt: -1 })
+// Lightweight activity-timeline rows (counts only, no diagram data). The UI
+// shows the latest 50, so very old rows are dead weight.
+diagramVersionSchema.index({ createdAt: 1 }, { expireAfterSeconds: 15552000, name: 'createdAt_ttl_180d' })
 
 export const DiagramVersion = model<IDiagramVersion>('DiagramVersion', diagramVersionSchema)

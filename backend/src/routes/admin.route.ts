@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { clearCacheOnWrite } from '../utils/memo-cache'
 import { requireAuth, requireAdmin } from '../middleware/auth'
 import { adminController } from '../controllers/admin.controller'
 import {
@@ -21,7 +22,7 @@ import { adminGetUserActivity }      from '../controllers/admin/analytics/user-a
 
 const router = Router()
 
-router.use(requireAuth, requireAdmin)
+router.use(requireAuth, requireAdmin, clearCacheOnWrite)
 
 // Overview + live analytics
 router.get('/overview',                       adminController.getOverview)

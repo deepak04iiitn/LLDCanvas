@@ -12,6 +12,7 @@ import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
 import { connectDB } from '../src/config/db'
 import { ensureAdminUser } from '../src/config/admin'
+import { jsonBodyParser } from '../src/middleware/body-parser'
 import { errorHandler } from '../src/middleware/error'
 import { initSocketServer } from '../src/socket'
 import authRouter         from '../src/routes/auth.route'
@@ -70,8 +71,8 @@ const corsOptions: CorsOptions = {
 
 app.use(helmet())
 app.use(cors(corsOptions))
-app.use(morgan('combined'))
-app.use(express.json({ limit: '10mb' }))
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'tiny' : 'dev'))
+app.use(jsonBodyParser)
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 500, standardHeaders: true, legacyHeaders: false }))
 
 app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }))

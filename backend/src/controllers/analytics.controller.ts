@@ -37,12 +37,6 @@ export const analyticsController = {
 
       const now = new Date()
 
-      // Determine if this visitor has been seen in a previous session (only matters for new docs)
-      const isReturning = !!(await AnalyticsSession.exists({
-        visitorId,
-        sessionId: { $ne: sessionId },
-      }))
-
       // Atomic upsert — $setOnInsert only runs when the document is being created,
       // preventing race conditions when concurrent heartbeats arrive simultaneously.
       const result = await AnalyticsSession.findOneAndUpdate(
@@ -50,7 +44,6 @@ export const analyticsController = {
         {
           $setOnInsert: {
             visitorId,
-            isReturning,
             startedAt:   now,
             userAgent:   req.headers['user-agent'] ?? '',
             pageViews:   1,
@@ -68,12 +61,19 @@ export const analyticsController = {
         { upsert: true, new: false } // new:false → returns the doc BEFORE update (null if inserted)
       )
 
-      // For existing sessions: track new page visits
-      const wasExisting = result !== null
-      if (wasExisting && page && result.currentPage !== page) {
+      if (result === null) {
+        // New session: only now check whether this visitor has been seen before
+        // (previously this lookup ran on every single heartbeat).
+        const isReturning = !!(await AnalyticsSession.exists({
+          visitorId,
+          sessionId: { $ne: sessionId },
+        }))
+        if (isReturning) await AnalyticsSession.updateOne({ sessionId }, { $set: { isReturning: true } })
+      } else if (page && result.currentPage !== page) {
+        // Existing session: track new page visits (capped so the array can't grow forever)
         await AnalyticsSession.updateOne(
           { sessionId },
-          { $push: { pages: page }, $inc: { pageViews: 1 } }
+          { $push: { pages: { $each: [page], $slice: -50 } }, $inc: { pageViews: 1 } }
         )
       }
 

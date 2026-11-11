@@ -32,10 +32,15 @@ import {
   practiceEvidenceEvents,
 } from '../../services/plannr/skillEvidence'
 import { getEffectiveWeights } from '../../services/plannr/trackConfig'
+import {
+  getPublishedTopicsLight,
+  getPublishedTopicsForRevise,
+  getPublishedTopicsForPracticeHub,
+} from '../../services/plannr/topicCatalog'
 
 // ── Compute overall progress ───────────────────────────────────────────────────
 async function computeProgress(profile: InstanceType<typeof JourneyProfile>) {
-  const total = await JourneyTopic.countDocuments({ status: 'published' })
+  const total = (await getPublishedTopicsLight()).length
   const done  = profile.topicsCompleted.length
   return { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 }
 }
@@ -203,7 +208,7 @@ export async function getDashboard(req: Request, res: Response, next: NextFuncti
 export async function getRoadmap(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const profile = await JourneyProfile.findOne({ userId: req.user!.id, isActive: true })
-    const topics  = await JourneyTopic.find({ status: 'published' }).sort({ stage: 1, order: 1 })
+    const topics  = await getPublishedTopicsLight()
 
     const completedSet = new Set(profile?.topicsCompleted ?? [])
     const inProgressSet = new Set(profile?.topicsInProgress ?? [])
@@ -237,7 +242,7 @@ export async function getRoadmap(req: Request, res: Response, next: NextFunction
       const roleFit = !roles.length || roles.includes(role) || roles.includes('general')
 
       stageMap[s].push({
-        ...topic.toObject(),
+        ...topic,
         userStatus,
         masteryScore: mp?.masteryScore ?? (completedSet.has(topic.slug) ? 100 : 0),
         trackPriority: onTrack && roleFit ? 'primary' : 'optional',
@@ -419,7 +424,7 @@ export async function completeTopic(req: Request, res: Response, next: NextFunct
     const newInProgress  = profile.topicsInProgress.filter(s => s !== slug)
 
     // Update stage
-    const stageTopics    = await JourneyTopic.find({ stage: profile.currentStage, status: 'published' })
+    const stageTopics    = (await getPublishedTopicsLight()).filter(t => t.stage === profile.currentStage)
     const allDone        = stageTopics.every(t => newCompleted.includes(t.slug))
     const nextStage      = allDone ? Math.min(5, profile.currentStage + 1) : profile.currentStage
 
@@ -553,7 +558,7 @@ export async function getPlan(req: Request, res: Response, next: NextFunction): 
     const profile = await JourneyProfile.findOne({ userId: req.user!.id, isActive: true })
     if (!profile) { res.json({ plan: [] }); return }
 
-    const topics = await JourneyTopic.find({ status: 'published' }).sort({ stage: 1, order: 1 })
+    const topics = await getPublishedTopicsLight()
     const plan = packDayPlan(topics as unknown as IJourneyTopic[], profile)
     const start = profile.startDate ?? new Date()
 
@@ -1272,7 +1277,7 @@ export async function getRevisePack(req: Request, res: Response, next: NextFunct
   try {
     const profile = await JourneyProfile.findOne({ userId: req.user!.id, isActive: true })
     const completed = new Set(profile?.topicsCompleted ?? [])
-    const topics = await JourneyTopic.find({ status: 'published' }).sort({ stage: 1, order: 1 })
+    const topics = await getPublishedTopicsForRevise()
 
     const role = profile?.targetRole ?? 'general'
     const focusAreas = profile?.focusAreas ?? []
@@ -1392,7 +1397,7 @@ export async function getRevisePack(req: Request, res: Response, next: NextFunct
 export async function listPracticeHub(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const profile = await JourneyProfile.findOne({ userId: req.user!.id, isActive: true })
-    const topics = await JourneyTopic.find({ status: 'published' }).sort({ stage: 1, order: 1 })
+    const topics = await getPublishedTopicsForPracticeHub()
     const completed = new Set(profile?.topicsCompleted ?? [])
     const defaultDiff = profile ? defaultPracticeDifficulty(profile) : 'easy'
 

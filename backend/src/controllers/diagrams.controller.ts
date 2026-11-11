@@ -36,10 +36,17 @@ export const diagramsController = {
       const filter: Record<string, unknown> = { userId, origin: { $ne: 'interview' } }
       if (q) filter.title = { $regex: q, $options: 'i' }
 
-      const diagrams = await Diagram.find(filter)
+      // Optional paging (?limit=&skip=). Without it the full list is returned,
+      // exactly as before, so existing clients are unaffected.
+      const limit = Math.min(100, parseInt(String(req.query.limit ?? ''), 10) || 0)
+      const skip  = Math.max(0, parseInt(String(req.query.skip ?? ''), 10) || 0)
+
+      let query = Diagram.find(filter)
         .select('_id title thumbnail updatedAt createdAt isTemplate')
         .sort({ updatedAt: -1 })
-        .lean()
+      if (skip) query = query.skip(skip)
+      if (limit) query = query.limit(limit)
+      const diagrams = await query.lean()
 
       res.json({ diagrams })
     } catch (err) {

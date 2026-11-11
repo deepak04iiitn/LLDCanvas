@@ -6,6 +6,7 @@
 import { JourneyTopic, type IJourneyTopic } from '../../models/journey/journey-topic.model'
 import type { IJourneyProfile, ISkills } from '../../models/journey/journey-profile.model'
 import { getEffectiveWeights } from './trackConfig'
+import { getPublishedTopicsLight } from './topicCatalog'
 import { emptySkills, pickPrioritySkill } from './skillEvidence'
 import { SKILL_KEYS, SKILL_LABELS } from './skillsMeta'
 
@@ -135,7 +136,7 @@ export function scoreTopicForProfile(topic: IJourneyTopic, profile: IJourneyProf
 
 export async function computeRecommendation(profile: IJourneyProfile) {
   const completed = new Set(profile.topicsCompleted ?? [])
-  const topics = await JourneyTopic.find({ status: 'published' }).lean()
+  const topics = await getPublishedTopicsLight()
   const incomplete = topics.filter(
     t => !completed.has(t.slug) && topicFitsLevel(t as unknown as IJourneyTopic, profile.currentLevel),
   )

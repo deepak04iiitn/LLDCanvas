@@ -26,6 +26,12 @@ const collabInviteSchema = new Schema<ICollabInvite>(
 )
 
 collabInviteSchema.index({ diagramId: 1 })
+// Never-accepted invites expire after 45 days (longer than any calendar month,
+// so the per-month invite quota count is unaffected). Accepted/revoked rows stay.
+collabInviteSchema.index(
+  { createdAt: 1 },
+  { expireAfterSeconds: 3888000, partialFilterExpression: { status: 'pending' }, name: 'pending_ttl_45d' },
+)
 collabInviteSchema.index({ email: 1, diagramId: 1 })
 collabInviteSchema.index({ invitedBy: 1, createdAt: -1 })
 

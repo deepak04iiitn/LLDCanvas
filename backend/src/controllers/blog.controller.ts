@@ -5,6 +5,7 @@ import { BlogComment } from '../models/blog-comment.model'
 import { BlogReaction } from '../models/blog-reaction.model'
 import { BLOG_BLOCK_TYPES } from '../types/blog-content'
 import { calcReadingTime, buildTocAndIds } from '../utils/blog-content'
+import { cached, publicCache } from '../utils/memo-cache'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export const blogController = {
       }
       const sortObj = sortMap[sort] ?? sortMap.latest
 
-      const [blogs, total] = await Promise.all([
+      const load = () => Promise.all([
         Blog.find(filter)
           .select(LIST_SELECT)
           .sort(sortObj)
@@ -75,7 +76,12 @@ export const blogController = {
           .lean(),
         Blog.countDocuments(filter),
       ])
+      // Text-search results are rarely repeated, so only cache plain listings.
+      const [blogs, total] = q
+        ? await load()
+        : await cached(`blog:list:${category ?? ''}|${tag ?? ''}|${featured ?? ''}|${sort}|${pageNum}|${limitNum}`, load, 2 * 60 * 1000)
 
+      publicCache(res, 120)
       res.json({ blogs, total, page: pageNum, pages: Math.ceil(total / limitNum) })
     } catch (err) { next(err) }
   },
@@ -83,11 +89,12 @@ export const blogController = {
   /** GET /blog/categories  — list distinct categories with counts */
   categories: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const agg = await Blog.aggregate([
+      const agg = await cached('blog:categories', () => Blog.aggregate([
         { $match: { status: 'published' } },
         { $group: { _id: '$category', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
-      ])
+      ]))
+      publicCache(res)
       res.json(agg.map((a: { _id: string; count: number }) => ({ category: a._id, count: a.count })))
     } catch (err) { next(err) }
   },
@@ -95,13 +102,14 @@ export const blogController = {
   /** GET /blog/tags  — list popular tags */
   tags: async (_req: Request, res: Response, next: NextFunction) => {
     try {
-      const agg = await Blog.aggregate([
+      const agg = await cached('blog:tags', () => Blog.aggregate([
         { $match: { status: 'published' } },
         { $unwind: '$tags' },
         { $group: { _id: '$tags', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 30 },
-      ])
+      ]))
+      publicCache(res)
       res.json(agg.map((a: { _id: string; count: number }) => ({ tag: a._id, count: a.count })))
     } catch (err) { next(err) }
   },

@@ -1,10 +1,11 @@
 import { Router } from 'express'
+import { clearCacheOnWrite } from '../../utils/memo-cache'
 import { requireAuth, requireAdmin } from '../../middleware/auth'
 import * as plannr from '../../controllers/admin/journey/plannr.controller'
 import { getFeatureActivity } from '../../controllers/admin/analytics/feature-activity.controller'
 
 const router = Router()
-router.use(requireAuth, requireAdmin)
+router.use(requireAuth, requireAdmin, clearCacheOnWrite)
 
 // ─── Plannr overview stats ────────────────────────────────────────────────────
 

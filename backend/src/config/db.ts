@@ -29,6 +29,10 @@ export function connectDB(): Promise<typeof mongoose> {
 
   connectionPromise = mongoose.connect(uri, {
     serverSelectionTimeoutMS: 10000,
+    // Mongoose otherwise re-issues createIndex for every model on every cold
+    // start. In production indexes are created once by `npm run sync-indexes`
+    // instead. Set DB_AUTO_INDEX=true to opt back in.
+    autoIndex: !(process.env.NODE_ENV === 'production' && process.env.DB_AUTO_INDEX !== 'true'),
     // Every warm serverless instance holds its own pool. On the M0 tier
     // (500 connection cap) 10 per instance is exhausted by ~50 concurrent
     // instances, so keep pools tiny and release idle sockets quickly.
