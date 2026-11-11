@@ -171,7 +171,6 @@ const roguelikeScenarioSchema = new Schema<IRoguelikeScenario>(
 )
 
 roguelikeScenarioSchema.index({ status: 1, order: 1 })
-roguelikeScenarioSchema.index({ slug: 1 })
 
 export const RoguelikeScenario = model<IRoguelikeScenario>(
   'RoguelikeScenario',
