@@ -10,7 +10,7 @@ import { useSession } from '@/lib/auth'
 import { useAuthModal } from '@/lib/auth-modal-store'
 import { cn } from '@/lib/utils'
 import { LockedChallengeOverlay, challengeLockFrom } from '@/components/billing/ChallengeLockCue'
-import { annotateChallengeAccess } from '@/lib/challenge-access'
+import { annotateChallengeAccess, unlockedFirst } from '@/lib/challenge-access'
 import { usePlan } from '@/hooks/usePlan'
 import {
   FeatureInstructionsPanel,
@@ -94,9 +94,9 @@ export default function BudgetProblemsPage() {
   const daily   = getDailyPack(packs)
   const dailyId = daily ? packIdOf(daily) : null
 
-  const visible = (diff === 'all' ? packs : packs.filter(
+  const visible = unlockedFirst((diff === 'all' ? packs : packs.filter(
     p => (p.difficulty ?? 'easy').toLowerCase() === diff,
-  )).filter(p => packIdOf(p) !== dailyId)
+  )).filter(p => packIdOf(p) !== dailyId))
 
   const showDaily = !!daily && (diff === 'all' || (daily.difficulty ?? 'easy').toLowerCase() === diff)
 

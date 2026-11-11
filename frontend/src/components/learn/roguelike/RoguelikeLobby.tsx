@@ -1,5 +1,6 @@
 'use client'
 
+import { unlockedFirst } from '@/lib/challenge-access'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -253,12 +254,12 @@ export function RoguelikeLobby() {
   const daily   = getDailyScenario(scenarios)
   const dailySlug = daily?.slug ?? null
 
-  const filtered = scenarios.filter(s => {
+  const filtered = unlockedFirst(scenarios.filter(s => {
     if (s.slug === dailySlug) return false // excluded from main list
     if (diff === 'all')    return true
     if (diff === 'hard')   return s.difficulty === 'hard' || s.difficulty === 'hardcore'
     return s.difficulty === diff
-  })
+  }))
 
   const showDaily = !!daily && (
     diff === 'all' || daily.difficulty === diff ||

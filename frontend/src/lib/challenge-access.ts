@@ -279,3 +279,8 @@ function normalizeDifficulty(d: string): ChallengeDifficulty | null {
   if (v === 'hardcore') return 'hard'
   return null
 }
+
+/** Stable sort: unlocked items first, locked last (original order kept within each group). */
+export function unlockedFirst<T extends { locked?: boolean }>(items: T[]): T[] {
+  return [...items.filter(i => !i.locked), ...items.filter(i => i.locked)]
+}
