@@ -1,21 +1,36 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { BlogDetailClient } from '@/components/blog/BlogDetailClient'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
 
-async function getBlog(slug: string) {
+// React.cache dedupes this within one render, so generateMetadata and the
+// page share a single backend call. revalidate lets the CDN serve the page
+// and refresh it at most once per 5 minutes. View counting is separate
+// (POST /blog/:slug/view from the client) so caching doesn't under-count.
+const getBlog = cache(async (slug: string) => {
   try {
-    // no-store: this request also increments the server-side view counter,
-    // so caching it would both under-count views and show stale like/dislike numbers.
-    const res = await fetch(`${BASE}/blog/${slug}`, {
-      cache: 'no-store',
-    })
+    const res = await fetch(`${BASE}/blog/${slug}`, { next: { revalidate: 300 } })
     if (!res.ok) return null
     return res.json()
   } catch {
     return null
+  }
+})
+
+export const revalidate = 300
+
+// Pre-render existing posts at build; new posts render on first request (ISR).
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(`${BASE}/blog?limit=500`)
+    if (!res.ok) return []
+    const { blogs } = await res.json()
+    return (blogs ?? []).map((b: { slug: string }) => ({ slug: b.slug }))
+  } catch {
+    return []
   }
 }
 

@@ -480,6 +480,17 @@ export function BlogDetailClient({ blog, related }: { blog: BlogDetail; related:
   const { data: session } = useSession()
   const [reaction,   setReaction]   = useState<'like' | 'dislike' | null>(null)
   const [likes,      setLikes]      = useState(blog.likes)
+
+  // Count one view per browser session per post (page itself is CDN-cached).
+  useEffect(() => {
+    try {
+      const key = `lld_blog_view_${blog.slug}`
+      if (sessionStorage.getItem(key)) return
+      sessionStorage.setItem(key, '1')
+      const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
+      navigator.sendBeacon(`${base}/blog/${blog.slug}/view`)
+    } catch { /* never break the page for analytics */ }
+  }, [blog.slug])
   const [dislikes,   setDislikes]   = useState(blog.dislikes)
   const [comments,      setComments]      = useState<BlogComment[]>([])
   const [commentsTotal, setCommentsTotal] = useState(0)

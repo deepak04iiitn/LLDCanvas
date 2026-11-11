@@ -8,17 +8,21 @@ export const analyticsController = {
 
   /**
    * POST /analytics/heartbeat
-   * Called every 30 s by the frontend. Creates or updates the browser session.
+   * Called on page change and tab hide by the frontend (no timer). Creates or updates the browser session.
    */
   heartbeat: async (req: Request, res: Response, next: NextFunction) => {
     try {
+      let body: unknown = req.body
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body) } catch { body = {} }
+      }
       const {
         sessionId,
         visitorId,
         userId = null,
         page = '/',
         durationDelta = 0,   // seconds since last heartbeat
-      } = req.body as {
+      } = (body ?? {}) as {
         sessionId: string
         visitorId: string
         userId?: string | null

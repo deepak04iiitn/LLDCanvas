@@ -1,11 +1,11 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useSession } from '@/lib/auth'
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-const HEARTBEAT_INTERVAL_MS = 30_000   // ping every 30 s
+const MAX_DELTA_S           = 300      // cap per event: 5 min
 const VISITOR_ID_KEY        = 'lld_vid'
 const SESSION_ID_KEY        = 'lld_sid'
 
@@ -18,7 +18,10 @@ function getOrCreate(storage: Storage, key: string): string {
   return id
 }
 
-async function sendHeartbeat(payload: {
+// Sent as text/plain via sendBeacon: a "simple" CORS request, so the browser
+// skips the OPTIONS preflight (one function invocation per event, not two)
+// and the request survives tab close.
+function sendHeartbeat(payload: {
   sessionId: string
   visitorId: string
   userId: string | null
@@ -26,17 +29,24 @@ async function sendHeartbeat(payload: {
   durationDelta: number
 }) {
   try {
-    await fetch(`${BASE}/analytics/heartbeat`, {
+    const body = JSON.stringify(payload)
+    if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      navigator.sendBeacon(`${BASE}/analytics/heartbeat`, new Blob([body], { type: 'text/plain' }))
+      return
+    }
+    fetch(`${BASE}/analytics/heartbeat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      keepalive: true,  // survives tab close
-    })
+      headers: { 'Content-Type': 'text/plain' },
+      body,
+      keepalive: true,
+    }).catch(() => undefined)
   } catch {
     // silently ignore - analytics must never break the app
   }
 }
 
+// No recurring timer: one event per page change and one when the tab is
+// hidden/closed. Session duration is the sum of the gaps between events.
 export function useAnalytics() {
   const pathname              = usePathname()
   const { data: session }     = useSession()
@@ -44,48 +54,35 @@ export function useAnalytics() {
   const sessionIdRef          = useRef<string | null>(null)
   const visitorIdRef          = useRef<string | null>(null)
 
-  // Initialise IDs once on the client (storage not available during SSR)
   useEffect(() => {
     visitorIdRef.current = getOrCreate(localStorage,   VISITOR_ID_KEY)
     sessionIdRef.current = getOrCreate(sessionStorage, SESSION_ID_KEY)
   }, [])
 
-  // Send heartbeat on page change + on a timer
   useEffect(() => {
     if (!sessionIdRef.current || !visitorIdRef.current) return
 
-    const userId     = session?.user?.id ?? null
-    const sessionId  = sessionIdRef.current
-    const visitorId  = visitorIdRef.current
+    const userId    = session?.user?.id ?? null
+    const sessionId = sessionIdRef.current
+    const visitorId = visitorIdRef.current
 
-    // Immediate heartbeat on mount / page change
-    const nowMs = Date.now()
-    const delta = Math.round((nowMs - lastHeartbeatAt.current) / 1000)
-    lastHeartbeatAt.current = nowMs
-    sendHeartbeat({ sessionId, visitorId, userId, page: pathname, durationDelta: delta })
+    function send() {
+      const now   = Date.now()
+      // Cap so a tab left open overnight doesn't add hours of "active" time.
+      const delta = Math.min(Math.round((now - lastHeartbeatAt.current) / 1000), MAX_DELTA_S)
+      lastHeartbeatAt.current = now
+      sendHeartbeat({ sessionId, visitorId, userId, page: pathname, durationDelta: delta })
+    }
 
-    // Recurring heartbeat
-    const timer = setInterval(() => {
-      const now2  = Date.now()
-      const d     = Math.round((now2 - lastHeartbeatAt.current) / 1000)
-      lastHeartbeatAt.current = now2
-      sendHeartbeat({ sessionId, visitorId, userId, page: pathname, durationDelta: d })
-    }, HEARTBEAT_INTERVAL_MS)
+    // Page change / mount
+    send()
 
-    // Flush on tab hide/close
     function onVisibilityChange() {
-      if (document.visibilityState === 'hidden') {
-        const now3 = Date.now()
-        const d3   = Math.round((now3 - lastHeartbeatAt.current) / 1000)
-        lastHeartbeatAt.current = now3
-        sendHeartbeat({ sessionId, visitorId, userId, page: pathname, durationDelta: d3 })
-      }
+      if (document.visibilityState === 'hidden') send()
+      else lastHeartbeatAt.current = Date.now() // don't count hidden time
     }
 
     document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [pathname, session?.user?.id])
 }
