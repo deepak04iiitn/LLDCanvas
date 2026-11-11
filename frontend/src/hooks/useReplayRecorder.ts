@@ -62,7 +62,7 @@ export function useReplayRecorder(diagramId: string | null | undefined) {
     flushTimer.current = setTimeout(() => {
       flushTimer.current = null
       void flush()
-    }, 1500)
+    }, 10000)
   }, [flush])
 
   const record = useCallback(
@@ -72,7 +72,7 @@ export function useReplayRecorder(diagramId: string | null | undefined) {
         ...event,
         t: event.t ?? Date.now() - startMs.current,
       })
-      if (buffer.current.length >= 40) {
+      if (buffer.current.length >= 100) {
         if (flushTimer.current) {
           clearTimeout(flushTimer.current)
           flushTimer.current = null
@@ -102,7 +102,7 @@ export function useReplayRecorder(diagramId: string | null | undefined) {
     if (!isPersistableDiagramId(diagramId)) return
     const iv = setInterval(() => {
       if (buffer.current.length > 0) void flush()
-    }, 8000)
+    }, 15000)
     return () => clearInterval(iv)
   }, [diagramId, flush])
 

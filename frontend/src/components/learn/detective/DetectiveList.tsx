@@ -1,5 +1,6 @@
 'use client'
 
+import { unlockedFirst } from '@/lib/challenge-access'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Flame, Loader2 } from 'lucide-react'
@@ -96,9 +97,9 @@ export function DetectiveList() {
   const daily   = getDailyScenario(scenarios)
   const dailyId = daily ? (daily.slug || daily._id || daily.id) : null
 
-  const filtered = (diff === 'all' ? scenarios : scenarios.filter(
+  const filtered = unlockedFirst((diff === 'all' ? scenarios : scenarios.filter(
     s => s.difficulty?.toLowerCase() === diff,
-  )).filter(s => (s.slug || s._id || s.id) !== dailyId)
+  )).filter(s => (s.slug || s._id || s.id) !== dailyId))
 
   const showDaily = !!daily && (
     diff === 'all' || (daily.difficulty ?? 'medium').toLowerCase() === diff

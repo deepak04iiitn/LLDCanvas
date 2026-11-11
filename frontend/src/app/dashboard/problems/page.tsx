@@ -1,5 +1,6 @@
 'use client'
 
+import { unlockedFirst } from '@/lib/challenge-access'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -272,7 +273,7 @@ export default function ProblemsPage() {
     if (diff !== 'all') list = list.filter(p => p.difficulty === diff)
     if (category) list = list.filter(p => p.category === category)
     if (q.trim()) list = list.filter(p => p.title.toLowerCase().includes(q.toLowerCase()))
-    return list
+    return unlockedFirst(list)
   }, [allProblems, diff, category, q])
 
   const total = allProblems.length

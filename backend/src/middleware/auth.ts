@@ -21,6 +21,19 @@ declare global {
   }
 }
 
+// Short-lived per-instance cache of the user lookup: a burst of API calls from
+// one page load then costs one Mongo read instead of one per request. A plan
+// change or block can take up to AUTH_CACHE_TTL_MS to show up on a warm instance.
+type AuthUser = NonNullable<Request['user']>
+const AUTH_CACHE_TTL_MS = 15_000
+const AUTH_CACHE_MAX = 500
+const authCache = new Map<string, { user: AuthUser; exp: number }>()
+
+export function invalidateAuthCache(userId?: string) {
+  if (userId) authCache.delete(userId)
+  else authCache.clear()
+}
+
 function extractToken(req: Request): string | null {
   const header = req.headers.authorization
   if (!header?.startsWith('Bearer ')) return null
@@ -51,12 +64,20 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   // session expired, please log in again" to the end user, even though the
   // JWT itself (valid for 30 days) was never actually invalid.
   try {
+    const hit = authCache.get(payload.id)
+    if (hit && hit.exp > Date.now()) {
+      req.user = hit.user
+      next()
+      return
+    }
+
     const user = await User.findById(payload.id)
     if (!user) {
       res.status(401).json({ error: 'Unauthorized' })
       return
     }
     if (user.blocked) {
+      authCache.delete(payload.id)
       res.status(403).json({ error: 'Account has been blocked. Contact support.' })
       return
     }
@@ -70,6 +91,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       blocked: user.blocked,
       plan: user.plan,
     }
+    if (authCache.size >= AUTH_CACHE_MAX) authCache.clear()
+    authCache.set(payload.id, { user: req.user, exp: Date.now() + AUTH_CACHE_TTL_MS })
     next()
   } catch (err) {
     next(err)

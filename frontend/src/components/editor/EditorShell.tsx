@@ -215,7 +215,7 @@ function EditorInner({ diagramId, initialTitle, initialNodes, initialEdges, onRe
     meta: { theme, zoom: 1, panX: 0, panY: 0 },
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [nodes, edges, theme])
-  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme, 3000, {
+  const { status: saveStatus, retry: retrySave } = useAutosave(diagramId, diagramData, theme, 8000, {
     readOnly,
     shareToken,
   })

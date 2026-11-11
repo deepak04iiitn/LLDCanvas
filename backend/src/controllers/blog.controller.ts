@@ -106,14 +106,18 @@ export const blogController = {
     } catch (err) { next(err) }
   },
 
-  /** GET /blog/:slug  — full blog detail + increment view */
+  /** POST /blog/:slug/view  — count one view (client fires once per session) */
+  view: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await Blog.updateOne({ slug: req.params.slug, status: 'published' }, { $inc: { views: 1 } })
+      res.status(204).end()
+    } catch (err) { next(err) }
+  },
+
+  /** GET /blog/:slug  — full blog detail (read-only, CDN-cacheable) */
   get: async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const blog = await Blog.findOneAndUpdate(
-        { slug: req.params.slug, status: 'published' },
-        { $inc: { views: 1 } },
-        { new: true },
-      ).lean()
+      const blog = await Blog.findOne({ slug: req.params.slug, status: 'published' }).lean()
       if (!blog) { res.status(404).json({ error: 'Blog not found' }); return }
 
       // Fetch related blogs (lightweight)

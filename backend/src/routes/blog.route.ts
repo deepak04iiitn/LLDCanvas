@@ -9,6 +9,7 @@ router.get ('/',                      blogController.list)
 router.get ('/categories',            blogController.categories)
 router.get ('/tags',                  blogController.tags)
 router.get ('/:slug',                 blogController.get)
+router.post('/:slug/view',            blogController.view)
 router.get ('/:slug/comments',        blogController.listComments)
 router.get ('/comments/:id/replies',  blogController.listReplies)
 

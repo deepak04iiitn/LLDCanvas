@@ -12,6 +12,7 @@ import {
   getDodoProductId,
   planFromDodoProductId,
   PRICING,
+  type PlanName,
 } from '../config/plans'
 import { DODO_CURRENCIES, currencyForCountry, isDodoCurrency } from '../config/dodo-currencies'
 import { createError } from '../middleware/error'
@@ -155,17 +156,15 @@ export async function detectGeo(req: Request, res: Response) {
   }
 }
 
-// ── GET /billing/plan ──────────────────────────────────────────────────────────
-export async function getMyPlan(req: Request, res: Response) {
-  const userId = req.user!.id
-  const plan = req.user!.plan
-
+// Shared by GET /billing/plan and GET /auth/me?include=plan so the client
+// can learn the user + plan in a single request.
+export async function buildPlanPayload(userId: string, plan: PlanName) {
   const sub = await Subscription.findOne({
     userId,
     status: { $in: ['active', 'authenticated', 'created', 'pending', 'on_hold'] },
   }).sort({ createdAt: -1 }).lean()
 
-  res.json({
+  return {
     plan,
     limits: getLimits(plan),
     subscription: sub ? {
@@ -178,7 +177,12 @@ export async function getMyPlan(req: Request, res: Response) {
       paymentSource:   sub.paymentSource,
       currency:        sub.currency,
     } : null,
-  })
+  }
+}
+
+// ── GET /billing/plan ──────────────────────────────────────────────────────────
+export async function getMyPlan(req: Request, res: Response) {
+  res.json(await buildPlanPayload(req.user!.id, req.user!.plan))
 }
 
 // ── POST /billing/subscribe ────────────────────────────────────────────────────

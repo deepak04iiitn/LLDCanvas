@@ -1,5 +1,6 @@
 'use client'
 
+import { unlockedFirst } from '@/lib/challenge-access'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Flame } from 'lucide-react'
@@ -108,9 +109,9 @@ export function DebuggerProblemList() {
   const daily   = getDailyChallenge(challenges)
   const dailyId = daily ? (daily.slug || daily._id || daily.id) : null
 
-  const filtered = (diff === 'all' ? challenges : challenges.filter(
+  const filtered = unlockedFirst((diff === 'all' ? challenges : challenges.filter(
     c => c.difficulty?.toLowerCase() === diff,
-  )).filter(c => (c.slug || c._id || c.id) !== dailyId)
+  )).filter(c => (c.slug || c._id || c.id) !== dailyId))
 
   const showDaily = !!daily && (
     diff === 'all' || (daily.difficulty ?? 'easy').toLowerCase() === diff

@@ -15,6 +15,7 @@ import {
 } from '@/components/shared/FeatureInstructionsPanel'
 import type { FeatureInstructionKey } from '@/lib/feature-instructions'
 import { cn } from '@/lib/utils'
+import { unlockedFirst } from '@/lib/challenge-access'
 
 type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard'
 
@@ -124,9 +125,9 @@ export function ProblemLibrary({
   })
 
   // Filtered list
-  const visible = diffFilter === 'all'
+  const visible = unlockedFirst(diffFilter === 'all'
     ? packs
-    : packs.filter(p => (p.difficulty ?? 'easy').toLowerCase() === diffFilter)
+    : packs.filter(p => (p.difficulty ?? 'easy').toLowerCase() === diffFilter))
 
   return (
     <div className="h-full overflow-y-auto bg-paper">

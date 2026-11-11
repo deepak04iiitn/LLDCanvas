@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CheckCircle2, Code2, Loader2, Search } from 'lucide-react'
 import { CategoryShell } from '@/components/studio/shell/CategoryShell'
 import { cn } from '@/lib/utils'
+import { learnApi } from '@/lib/learn-api'
 
 interface SolveRecord {
   _id: string
@@ -29,9 +30,7 @@ export default function DebuggerHistoryPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'
-    fetch(`${base}/learn/debugger/history`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
+    learnApi.get<HistoryData>('/learn/debugger/history')
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
